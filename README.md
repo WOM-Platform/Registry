@@ -22,3 +22,18 @@ Deploy Kubernetes manifests:
 kubectl create -f mysql.yaml
 kubectl create -f web-api.yaml
 ```
+
+### Data access via phpMyAdmin
+
+Start and stop the phpMyAdmin service:
+
+```
+kubectl create -f phpmyadmin.yaml
+kubectl delete -f phpmyadmin.yaml
+```
+
+Access available on IP:8081 as shown with command:
+
+```
+kubectl get service phpmyadmin
+```

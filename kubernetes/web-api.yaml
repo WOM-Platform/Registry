@@ -8,7 +8,7 @@ spec:
   type: LoadBalancer
   ports:
     - port: 80
-      targetPort: 8080
+      targetPort: 5004
       protocol: TCP
   selector:
     app: web-api
@@ -35,11 +35,11 @@ spec:
         app: web-api
     spec:
       containers:
-        - image: gcr.io/google-appengine/aspnetcore:2.0
+        - image: marcells/aspnet-hello-world
           name: web-api
           env:
           ports:
-            - containerPort: 8080
+            - containerPort: 5004
               protocol: TCP
           terminationMessagePath: /dev/termination-log
       restartPolicy: Always
