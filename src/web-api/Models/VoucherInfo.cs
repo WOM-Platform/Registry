@@ -14,5 +14,7 @@ namespace WomPlatform.Web.Api.Models
         public int Longitude { get; set; }
 
         public int Timestamp { get; set; }
+
+        public string Type { get; set; }
     }
 }
