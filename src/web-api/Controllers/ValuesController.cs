@@ -33,7 +33,7 @@ namespace WomPlatform.Web.Api.Controllers
 
         // DELETE api/values/5
         [HttpDelete("{id}")]
-        public void Delete(int id) {
+        public void Delete(int id, bool davvero) {
         }
 
     }
