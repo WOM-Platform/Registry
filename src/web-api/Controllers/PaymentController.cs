@@ -37,7 +37,7 @@ namespace WomPlatform.Web.Api.Controllers
             return new PayGetResponse
             {
                 amount = 3421,
-                filter = "di quel tipo",
+                //filter = "di quel tipo",
                 POS = null
             };
 

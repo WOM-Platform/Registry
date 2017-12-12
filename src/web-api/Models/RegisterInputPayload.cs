@@ -13,8 +13,7 @@ namespace WomPlatform.Web.Api.Models
 
         public int nonceTs { get; set; }
 
-        //json o string?
-        public string filter { get; set; }
+        public FilterInfo Filter { get; set; }
 
         public int amount { get; set; }
 
