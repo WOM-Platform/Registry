@@ -65,7 +65,7 @@ namespace WomPlatform.Web.Api.Controllers
             }
 
             // Sintassi finale:
-            using(var conn = DatabaseManager.Open(Configuration))
+           // using(var conn = DatabaseManager.Open(Configuration))
             {
                 // Crea i voucher
                 //...
