@@ -15,33 +15,38 @@ namespace WomPlatform.Web.Api.Controllers
     [Route("api/[controller]")]
     public class VoucherController : Controller
     {
-
+        
         protected IConfiguration Configuration { get; private set; }
+        protected DatabaseManager DB = new DatabaseManager();
 
         public VoucherController(IConfiguration configuration)
         {
             Configuration = configuration;
         }
-
+        
         // GET api/voucher
         //percorso di prova
         [HttpGet]
         public IEnumerable<string> Get()
         {
+            /*
             var host = Configuration.GetSection("Database")["Host"];
             var port = Convert.ToInt32(Configuration.GetSection("Database")["Port"]);
             var username = Configuration.GetSection("Database")["Username"];
             var password = Configuration.GetSection("Database")["Password"];
             var schema = Configuration.GetSection("Database")["Schema"];
+            var connString = string.Format("server={0};port={1};uid={2};pwd={3};database={4}", host, port, username, password, schema);*/
 
-            var connString = string.Format("server={0};port={1};uid={2};pwd={3};database={4}", host, port, username, password, schema);
-            Console.WriteLine("Connection: {0}", connString);
 
+            var connString = DB.OpenConnection(Configuration);
+                Console.WriteLine("Connection: {0}", connString);
+            //}
             using (DbConnection conn = new MySqlConnection(connString))
             {
+                /*
                 conn.Open();
                 Console.WriteLine(conn.State);
-
+                */
                 //var aim = conn.Query<Aim>("select * from aim");
                 var aim = conn.Query<Aim>("select * from aim where Id < @FiltroId", new { FiltroId = 1 });
                 //var aim = conn.Query<Aim>("select * from aim where Id = @Id", new { Id = 1 }
@@ -73,7 +78,7 @@ namespace WomPlatform.Web.Api.Controllers
                 // ritorna i dati finali
             }
 
-            return new string[] { Configuration.GetSection("Database")["Host"], Configuration.GetSection("Database")["Port"] };
+            return null; //new string[] { Configuration.GetSection("Database")["Host"], Configuration.GetSection("Database")["Port"] };
         }
 
         //POST api/voucher/create
