@@ -5,13 +5,12 @@ using System.Threading.Tasks;
 
 namespace WomPlatform.Web.Api.Models
 {
-    public class CreateResponse
+    public class VoucherRequestInfo
     {
-        public Guid Id { get; set; }
+        public double Latitude { get; set; }
 
-        public string OtcGen { get; set; }
+        public double Longitude { get; set; }
 
         public DateTime Timestamp { get; set; }
-        
     }
 }
