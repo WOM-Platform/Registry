@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Vouchers` (
   `ID_Source` INT NOT NULL,
   `OTC` VARCHAR(100) NOT NULL,
   `ID_PaymentRequest` INT NULL DEFAULT NULL,
-  `Nonce` VARCHAR(45) NOT NULL,
+  `Nonce` BINARY(16) NOT NULL,
   `ID_GenerationRequest` INT NOT NULL,
   PRIMARY KEY (`ID`),
   INDEX `fk_Voucher_Source1_idx` (`ID_Source` ASC),
@@ -168,7 +168,7 @@ ENGINE = InnoDB;
 -- Table `VoucherPiattaforma`.`VoucherArchive`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`VoucherArchive` (
-  `ID` CHAR(32) NOT NULL,
+  `ID` BINARY(16) NOT NULL,
   `Latitude` DOUBLE NOT NULL,
   `Longitude` DOUBLE NOT NULL,
   `Timestamp` TIMESTAMP NOT NULL,
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`VoucherArchive` (
   `ID_Source` INT NOT NULL,
   `OTC` VARCHAR(100) NOT NULL,
   `ID_PaymentRequest` INT NULL DEFAULT NULL,
-  `Nonce` VARCHAR(45) NOT NULL,
+  `Nonce` BINARY(16) NOT NULL,
   `ID_GenerationRequest` INT NOT NULL,
   PRIMARY KEY (`ID`),
   INDEX `fk_VoucherArchive_Source1_idx` (`ID_Source` ASC),

@@ -4,6 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WomPlatform.Web.Api.Models;
+using System.Data.Common;
+using Microsoft.Extensions.Configuration;
+using MySql.Data.MySqlClient;
+using Dapper;
+using WomPlatform.Web.Api.DatabaseModels;
 
 namespace WomPlatform.Web.Api.Controllers 
 {
@@ -11,6 +16,15 @@ namespace WomPlatform.Web.Api.Controllers
     [Route("api/[controller]")]
     public class PaymentController : Controller
     {
+
+        protected IConfiguration Configuration { get; private set; }
+        protected DatabaseManager DB = new DatabaseManager();
+
+        public PaymentController(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
         //POST  api/payment/register
         [HttpPost("register")]
         public RegisterResponse Register([FromBody]RegisterPayload payload)
@@ -19,15 +33,25 @@ namespace WomPlatform.Web.Api.Controllers
             System.Console.Write("posID :");
             System.Console.WriteLine(payload.PosId);
 
-            //
-
-            return new RegisterResponse
+            //insert new instance of payment in db
+            using (DbConnection conn = DB.OpenConnection(Configuration))
             {
-                PosId = 332,
-                nonceId = Guid.NewGuid(),
-                nonceTs = "XX:XX:XXXX",
-                OTCpay = "wwww.ddadsad68454sad.com"
-            };
+                RegisterInputPayload sample = new RegisterInputPayload();   //to do : decript the payload into this
+
+                sample.PosId = payload.PosId;
+
+                //insert the payload into the db
+                var generatedOTC = DB.PaymentRegister(conn, sample);
+
+
+                return new RegisterResponse
+                {
+                    PosId = 332,
+                    nonceId = Guid.NewGuid(),
+                    nonceTs = "XX:XX:XXXX",
+                    OTCpay = generatedOTC
+                };
+            }
         }
 
         //GET api/payment/pay

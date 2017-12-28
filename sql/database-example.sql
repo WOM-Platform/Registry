@@ -13,3 +13,4 @@ INSERT INTO `voucherpiattaforma`.`contacts` (`Email`, `Name`, `Surname`, `Phone`
 INSERT INTO `voucherpiattaforma`.`aims` (`Description`, `ID_Contact`, `Type`, `CreationDate`) VALUES ('Test aim', '1', 'Test', '2017-12-20');
 
 INSERT INTO `voucherpiattaforma`.`sources` (`Key`, `CreationDate`, `Name`, `Descriprion`, `URLSource`, `Aim_ID`, `Contact_ID`) VALUES ('Sample key', '2017-12-20', 'Sample source', 'Sample source', 'http://example.org', '1', '1');
+INSERT INTO `voucherpiattaforma`.`vouchers` (`Latitude`, `Longitude`, `Timestamp`, `Type`, `ID_Source`, `OTC`, `Nonce`, `ID_GenerationRequest`) VALUES ('234', '234', '2017-12-28 19:00:05', '','', '1', 'b0abb564-a606-4131-95da-7f7eb027b4ee', '1');

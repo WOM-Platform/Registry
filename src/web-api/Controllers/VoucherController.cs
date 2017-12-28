@@ -15,7 +15,7 @@ namespace WomPlatform.Web.Api.Controllers
     [Route("api/[controller]")]
     public class VoucherController : Controller
     {
-        
+
         protected IConfiguration Configuration { get; private set; }
         protected DatabaseManager DB = new DatabaseManager();
 
@@ -23,7 +23,7 @@ namespace WomPlatform.Web.Api.Controllers
         {
             Configuration = configuration;
         }
-        
+
         // GET api/voucher
         //percorso di prova
         [HttpGet]
@@ -60,7 +60,7 @@ namespace WomPlatform.Web.Api.Controllers
             }
 
             // Sintassi finale:
-           // using(var conn = DatabaseManager.Open(Configuration))
+            // using(var conn = DatabaseManager.Open(Configuration))
             {
                 // Crea i voucher
                 //...
@@ -81,14 +81,16 @@ namespace WomPlatform.Web.Api.Controllers
             System.Console.Write("payload :");
             System.Console.WriteLine(payload.Payload);
 
+            //open the DB connection
             using (DbConnection conn = DB.OpenConnection(Configuration))
             {
-                //sourceId validation
+                //sourceId parameter validation
                 var source = DB.GetSourceById(conn, payload.SourceId);
                 Console.WriteLine(source);
 
                 //Conversion from crypto-payload
                 CreatePayloadContent content = null; // TODO
+                // to remove
                 content = new CreatePayloadContent
                 {
                     Id = Guid.NewGuid(),
@@ -104,10 +106,10 @@ namespace WomPlatform.Web.Api.Controllers
                     }
                 };
 
-                //Voucher Creation
+                //Voucher Creation in DB
                 var otc = DB.CreateVoucherGeneration(conn, content);
 
-                //Response
+                //Response POST
                 return new CreateResponse
                 {
                     Id = content.Id,
@@ -115,7 +117,7 @@ namespace WomPlatform.Web.Api.Controllers
                     Timestamp = DateTime.UtcNow
                 };
             }
-            
+
 
             //return string.Format("ID {0}", payload.SourceId);
 
@@ -131,22 +133,29 @@ namespace WomPlatform.Web.Api.Controllers
         [HttpPost("redeem")]
         public RedeemResponse Redeem([FromBody]RedeemPayload payload)
         {
-            System.Console.Write("nonceTs :");
-            System.Console.WriteLine(payload.nonceTs);
             System.Console.Write("nonceID :");
             System.Console.WriteLine(payload.nonceId);
+            System.Console.Write("nonceTs :");
+            System.Console.WriteLine(payload.nonceTs);
 
-
-
-            return new RedeemResponse
+            //connect to db
+            using (DbConnection conn = DB.OpenConnection(Configuration))
             {
-                //da aggiungere il payload giusto
-                Payload = null/*new RedeemResponsePayload {
-                    nonceId = Guid.NewGuid(),
-                    nonceTs = "xx:xx:xxxx"
-                };*/
-            };
+
+                //nonce_ID validation, get the valid instance of vouchers
+                var selectedVouchers = DB.GetVoucherById(conn, payload.nonceId); //TO DO 
+
+                //System.Console.WriteLine("voucher : ", selectedVouchers.Count());
+                return new RedeemResponse
+                {
+                    Payload = "crypted payload" //todo
+                };
+            }
+    
         }
+                
+            
+        
 
     }
 }

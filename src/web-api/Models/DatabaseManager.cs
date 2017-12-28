@@ -57,13 +57,17 @@ namespace WomPlatform.Web.Api.Models
             }
         }
 
+        //Controls if the sourceID matches with an instance in the db
         public Source GetSourceById(DbConnection conn, int sourceId)
         {
             return conn.QueryFirstOrDefault<Source>("select * from Sources where Id = @Id", new { Id = sourceId });
         }
 
+
+       
         public string CreateVoucherGeneration(DbConnection conn, CreatePayloadContent creationParameters)
         {
+            //new instance in the generation request table
             var generationRequestId = conn.Insert(new GenerationRequest
             {
                 Source_Id = creationParameters.SourceId,
@@ -86,7 +90,7 @@ namespace WomPlatform.Web.Api.Models
                     OTC = "",
                     ID_Source = creationParameters.SourceId,
                     Type = "",
-                    ID_GenerationRequest = generationRequestId,
+                    ID_GenerationRequest = generationRequestId
                 });
             }
 
@@ -96,5 +100,36 @@ namespace WomPlatform.Web.Api.Models
             // Return OTC code of generation request
             return "";
         }
+
+        public string PaymentRegister(DbConnection conn, RegisterInputPayload instance)
+        {
+            var insertPayment = conn.Insert(new PaymentRequest
+            {
+                POS_Id = instance.PosId,
+                URLAckPocket = instance.ackPocket,
+                URLAckPOS = instance.ackPos,
+                Amount = instance.amount,
+                OTCPay = "",
+                CreatedAt = DateTime.UtcNow,
+                State = "not payed"/*,
+                JsonFilter = new FilterInfo
+                {
+                    position = null,
+                    type = "that type"
+                };*/
+            });
+
+            //returns the OTCpay to the payment request
+            return "";
+        }
+        
+        public IEnumerable<Voucher> GetVoucherById(DbConnection conn, Guid nonceId)
+        {
+            //doesn't work
+            var results = conn.Query<Voucher>("select * from Vouchers where Nonce = '@nonce'", new { nonce = nonceId });
+            //var results = conn.Query<Voucher>("select * from Vouchers");
+            return results;
+        }
+        
     }
 }
