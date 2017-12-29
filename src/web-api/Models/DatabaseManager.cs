@@ -105,7 +105,7 @@ namespace WomPlatform.Web.Api.Models
         {
             var insertPayment = conn.Insert(new PaymentRequest
             {
-                POS_Id = instance.PosId,
+                ID_POS= instance.PosId,
                 URLAckPocket = instance.ackPocket,
                 URLAckPOS = instance.ackPos,
                 Amount = instance.amount,

@@ -32,13 +32,22 @@ namespace WomPlatform.Web.Api.Controllers
 
             System.Console.Write("posID :");
             System.Console.WriteLine(payload.PosId);
+            System.Console.Write("payload :");
+            System.Console.WriteLine(payload.Payload);
+
+            //to do : decrypt the payload from RegisterPayload to RegisterPayloadContent
 
             //insert new instance of payment in db
             using (DbConnection conn = DB.OpenConnection(Configuration))
             {
                 RegisterInputPayload sample = new RegisterInputPayload();   //to do : decript the payload into this
 
+                //this data are included in the decrypted input payload
                 sample.PosId = payload.PosId;
+                sample.ackPocket = "";
+                sample.amount = 1;
+                sample.ackPos = "";
+            
 
                 //insert the payload into the db
                 var generatedOTC = DB.PaymentRegister(conn, sample);
@@ -46,7 +55,7 @@ namespace WomPlatform.Web.Api.Controllers
 
                 return new RegisterResponse
                 {
-                    PosId = 332,
+                    PosId = payload.PosId,
                     nonceId = Guid.NewGuid(),
                     nonceTs = "XX:XX:XXXX",
                     OTCpay = generatedOTC
