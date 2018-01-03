@@ -63,16 +63,31 @@ namespace WomPlatform.Web.Api.Controllers
             }
         }
 
-        //GET api/payment/pay
-        [HttpGet("pay")]
-        public PayGetResponse Get()
+        //GET api/payment/{
+        [HttpGet("{OTCPay}")]
+        public PayGetResponse Get(string OTCpay)
         {
-            return new PayGetResponse
+            //check in the DB if the request can be satisfied
+            using (DbConnection conn = DB.OpenConnection(Configuration))
             {
-                amount = 3421,
-                //filter = "di quel tipo",
-                POS = null
-            };
+                //check if exixst the parameters of the payment
+                var payment = DB.PaymentParameters(conn, OTCpay);
+
+                //get the pos info for the response
+                var pos = DB.GetPosInfoById(conn, payment.ID_POS);
+
+                return new PayGetResponse
+                {
+                    amount = payment.Amount,
+                    //filter = "di quel tipo",
+                    POS = new PosInfo
+                    {
+                        name = pos.Name,
+                        description = pos.Description,
+                        URL = pos.URLPOS
+                    }
+                };
+            }
 
         }
 
@@ -80,11 +95,16 @@ namespace WomPlatform.Web.Api.Controllers
         [HttpPost("pay")]
         public PayPostResponse Pay([FromBody]PayPayload payload)
         {
-            return new PayPostResponse
+            using (DbConnection conn = DB.OpenConnection(Configuration))
             {
-                ackPocket = "confirmed",
-                state = "AlreadyPayed"
-            };
+            //payload.vouchers
+                //foreach ()
+                return new PayPostResponse
+                {
+                    ackPocket = "confirmed",
+                    state = "AlreadyPayed"
+                };
+            }
         }
 
     }

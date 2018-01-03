@@ -126,10 +126,35 @@ namespace WomPlatform.Web.Api.Models
         public IEnumerable<Voucher> GetVoucherById(DbConnection conn, Guid nonceId)
         {
             //doesn't work
-            var results = conn.Query<Voucher>("select * from Vouchers where Nonce = '@nonce'", new { nonce = nonceId });
+            var results = conn.Query<Voucher>("select * from Vouchers where Nonce = @nonce", new { nonce = nonceId });
             //var results = conn.Query<Voucher>("select * from Vouchers");
             return results;
         }
-        
+
+        public PaymentRequest PaymentParameters(DbConnection conn, string OTCPay)
+        {
+
+            var instance = conn.QueryFirstOrDefault<PaymentRequest>("select * from Paymentrequests where OTCPay = @otc", new { otc = OTCPay });
+
+            return instance;
+        }
+
+        public POS GetPosInfoById(DbConnection conn, long PosId)
+        {
+            var pos = conn.QueryFirstOrDefault<POS>("select * from Pos where ID = @id", new { id = PosId });
+            return pos;
+        }
+
+        //return true if the voucher is not used yet, false otherwise
+        public bool VerifyVoucher(DbConnection conn, long voucherId)
+        {
+            bool result = false;
+            
+            var voucher = conn.QueryFirstOrDefault<Voucher>("select * from Vouchers where ID = @id", new { id = voucherId });
+            if (voucher.ID_PaymentRequest == null)
+                //the voucher is not spent yet
+                result = true;
+            return result;
+        }
     }
 }
