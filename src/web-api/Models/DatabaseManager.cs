@@ -146,15 +146,43 @@ namespace WomPlatform.Web.Api.Models
         }
 
         //return true if the voucher is not used yet, false otherwise
-        public bool VerifyVoucher(DbConnection conn, long voucherId)
+        public bool VerifyVoucher(DbConnection conn, Guid voucherId)
         {
             bool result = false;
-            
-            var voucher = conn.QueryFirstOrDefault<Voucher>("select * from Vouchers where ID = @id", new { id = voucherId });
-            if (voucher.ID_PaymentRequest == null)
+
+            var voucher = conn.QueryFirstOrDefault<Voucher>("select * from Vouchers where ID =@id", new { id = voucherId });
+            //if (voucher.ID_PaymentRequest == null)
                 //the voucher is not spent yet
                 result = true;
             return result;
         }
+
+        public void SpendVoucher(DbConnection conn, Guid voucherId, string OTCPay)
+        {
+            //get the id of the payment request
+            var payment = conn.QueryFirstOrDefault<PaymentRequest>("select * from Paymentrequests where OTCPay = @otc", new { otc = OTCPay });
+
+            //write the payment id in the voucher (now is spent)
+            conn.Query("UPDATE `voucherpiattaforma`.`vouchers` SET `ID_PaymentRequest`= @iDPay WHERE `ID`= @iDVoucher", new { idPay = payment.Id, iDVoucher = voucherId });
+
+            //this query works, doesn't read the GUID in Voucher.ID
+            //conn.Query("UPDATE `voucherpiattaforma`.`vouchers` SET `ID_PaymentRequest`= @iDPay WHERE `Latitude` = 123" ,new { idPay = payment.Id });
+        }
+
+
+        public void SetPayedRequest(DbConnection conn, string OTCPay)
+        {
+            conn.Query("UPDATE `voucherpiattaforma`.`paymentrequests` SET `State`='payed' WHERE `OTCPay`= @otc", new { otc = OTCPay });
+        }
+
+
+        /*
+        //sperimental
+        public IEnumerable<Voucher> GETID (DbConnection conn)
+        {
+            var result = conn.Query<Voucher>("select * from Vouchers");
+            return result;
+        }*/
+
     }
 }

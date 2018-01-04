@@ -7,7 +7,9 @@ namespace WomPlatform.Web.Api.Models
 {
     public class PayPayload
     {
-        public int[] vouchers { get; set; }
+        public string OTCPay { get; set; }
+
+        public Guid[] vouchers { get; set; }
 
     }
 }

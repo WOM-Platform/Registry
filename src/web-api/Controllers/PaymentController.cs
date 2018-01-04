@@ -97,12 +97,45 @@ namespace WomPlatform.Web.Api.Controllers
         {
             using (DbConnection conn = DB.OpenConnection(Configuration))
             {
-            //payload.vouchers
-                //foreach ()
+                //payload.vouchers[1] = 2;            //payload.vouchers
+
+                var stateResp = "NotPayed";
+
+                //prova
+                System.Console.WriteLine("COUNT ARRAY: " + payload.vouchers.Count());
+                //controls if the vouchers are valid
+                for (int i = 0; i < payload.vouchers.Count(); i++)
+                {
+
+                    /*
+                    //get voucher id for sperimental 
+                    var voucher = DB.GETID(conn);
+                    voucher.Select(a => a.Id);
+
+                    foreach (var a in voucher)
+                        System.Console.WriteLine("ID Voucher: @guid", new { guid = a });
+                        */
+
+                    //the voucher are valid
+                    if (DB.VerifyVoucher(conn, payload.vouchers.ElementAt(i)))
+                    {
+                        System.Console.WriteLine("Voucher number {0} is valid", i);
+                        //the voucher is not spent yet
+                        DB.SpendVoucher(conn, payload.vouchers.ElementAt(i), payload.OTCPay);
+
+                        //set the paymentRequest as payed
+                        stateResp = "PaidSuccessfully";
+                        DB.SetPayedRequest(conn, payload.OTCPay);
+                    }
+                    else
+                        stateResp = "PaymentError";
+                    
+                }
+
                 return new PayPostResponse
                 {
                     ackPocket = "confirmed",
-                    state = "AlreadyPayed"
+                    state = stateResp
                 };
             }
         }

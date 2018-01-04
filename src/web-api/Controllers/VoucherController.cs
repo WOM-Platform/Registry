@@ -91,8 +91,9 @@ namespace WomPlatform.Web.Api.Controllers
                 //Conversion from crypto-payload
                 CreatePayloadContent content = null; // TODO
                 // to remove
+                
                 content = new CreatePayloadContent
-                {
+                {                    
                     Id = Guid.NewGuid(),
                     SourceId = payload.SourceId,
                     Vouchers = new VoucherRequestInfo[]
