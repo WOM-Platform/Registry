@@ -5,11 +5,8 @@ using System.Threading.Tasks;
 
 namespace WomPlatform.Web.Api.Models
 {
-    public class PayPayload
+    public class RedeemResponseContent
     {
-        public string OTCPay { get; set; }
-
-        public Guid[] vouchers { get; set; }
-
+        public RedeemResponsePayload Payload { get; set; }
     }
 }

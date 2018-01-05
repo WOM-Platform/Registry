@@ -7,6 +7,6 @@ namespace WomPlatform.Web.Api.Models
 {
     public class RedeemResponse
     {
-        public RedeemResponsePayload Payload { get; set; }
+        public string Payload { get; set; }
     }
 }

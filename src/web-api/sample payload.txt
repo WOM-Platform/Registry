@@ -1,0 +1,29 @@
+User-Agent: Fiddler
+Host: localhost:64421
+Content-Length: 80
+Content-Type: Application/Json
+
+create:
+
+{
+"SourceId" : "1",
+"Payload" : "payload di prova"
+}
+
+
+redeem
+
+{
+"nonceId" : "b0abb564-a606-4131-95da-7f7eb027b4ee",
+"nonceTs" : "prova44"
+}
+
+http://localhost:64421/api/payment/pay
+pay: 
+{
+"vouchers" : ["a8927a36-b553-4642-8963-f336ea9a2e1b","93aaa29a-71d2-4e5b-9b5b-afdbf1ea41b7"]
+}
+
+
+voucher con id valido:
+id=a8927a36-b553-4642-8963-f336ea9a2e1b

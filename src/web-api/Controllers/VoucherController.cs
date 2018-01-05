@@ -15,7 +15,7 @@ namespace WomPlatform.Web.Api.Controllers
     [Route("api/[controller]")]
     public class VoucherController : Controller
     {
-        
+
         protected IConfiguration Configuration { get; private set; }
         protected DatabaseManager DB = new DatabaseManager();
 
@@ -23,35 +23,23 @@ namespace WomPlatform.Web.Api.Controllers
         {
             Configuration = configuration;
         }
-        
+
         // GET api/voucher
         //percorso di prova
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            /*
-            var host = Configuration.GetSection("Database")["Host"];
-            var port = Convert.ToInt32(Configuration.GetSection("Database")["Port"]);
-            var username = Configuration.GetSection("Database")["Username"];
-            var password = Configuration.GetSection("Database")["Password"];
-            var schema = Configuration.GetSection("Database")["Schema"];
-            var connString = string.Format("server={0};port={1};uid={2};pwd={3};database={4}", host, port, username, password, schema);*/
-
-
-            var connString = DB.OpenConnection(Configuration);
-                Console.WriteLine("Connection: {0}", connString);
-            //}
-            using (DbConnection conn = new MySqlConnection(connString))
+            using (DbConnection conn = DB.OpenConnection(Configuration))
             {
                 /*
                 conn.Open();
                 Console.WriteLine(conn.State);
                 */
                 //var aim = conn.Query<Aim>("select * from aim");
-                var aim = conn.Query<Aim>("select * from aim where Id < @FiltroId", new { FiltroId = 1 });
+                //var aim = conn.Query<Aim>("select * from aim where Id < @FiltroId", new { FiltroId = 1 });
                 //var aim = conn.Query<Aim>("select * from aim where Id = @Id", new { Id = 1 }
 
-                return aim.Select(a => a.Description); // Linq
+                //return aim.Select(a => a.Description); // Linq
 
                 /*var response = new List<string>();
                 foreach(var a in aim)
@@ -67,10 +55,12 @@ namespace WomPlatform.Web.Api.Controllers
                 Console.WriteLine("Count: " + count);*/
 
 
+                var source = DB.GetSourceById(conn, 123);
+
             }
 
             // Sintassi finale:
-           // using(var conn = DatabaseManager.Open(Configuration))
+            // using(var conn = DatabaseManager.Open(Configuration))
             {
                 // Crea i voucher
                 //...
@@ -91,6 +81,45 @@ namespace WomPlatform.Web.Api.Controllers
             System.Console.Write("payload :");
             System.Console.WriteLine(payload.Payload);
 
+            //open the DB connection
+            using (DbConnection conn = DB.OpenConnection(Configuration))
+            {
+                //sourceId parameter validation
+                var source = DB.GetSourceById(conn, payload.SourceId);
+                Console.WriteLine(source);
+
+                //Conversion from crypto-payload
+                CreatePayloadContent content = null; // TODO
+                // to remove
+                
+                content = new CreatePayloadContent
+                {                    
+                    Id = Guid.NewGuid(),
+                    SourceId = payload.SourceId,
+                    Vouchers = new VoucherRequestInfo[]
+                    {
+                        new VoucherRequestInfo
+                        {
+                            Latitude = 123,
+                            Longitude = 123,
+                            Timestamp = DateTime.UtcNow
+                        }
+                    }
+                };
+
+                //Voucher Creation in DB
+                var otc = DB.CreateVoucherGeneration(conn, content);
+
+                //Response POST
+                return new CreateResponse
+                {
+                    Id = content.Id,
+                    OtcGen = otc,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+
+
             //return string.Format("ID {0}", payload.SourceId);
 
             //acquisisco i valori e li memorizzo su delle variabili
@@ -98,47 +127,36 @@ namespace WomPlatform.Web.Api.Controllers
 
             //restituisco le info necessarie per la risposta
 
-            return new CreateResponse
-            {
-                Id = Guid.NewGuid(),
-                OtcGen = "Prova",
-                Timestamp = "XX:XX:XXXX",
-                nVoucher = new VoucherInfo[]
-                {
-                    new VoucherInfo()
-                    {
-                        VoucherID = 1,
-                        Longitude = 123
-                    },
-                    new VoucherInfo()
-                    {
-                        VoucherID = 2,
-                        Longitude = 124
-                    }
-                }
-            };
+
         }
 
         // POST api/voucher/redeem
         [HttpPost("redeem")]
         public RedeemResponse Redeem([FromBody]RedeemPayload payload)
         {
-            System.Console.Write("nonceTs :");
-            System.Console.WriteLine(payload.nonceTs);
             System.Console.Write("nonceID :");
             System.Console.WriteLine(payload.nonceId);
+            System.Console.Write("nonceTs :");
+            System.Console.WriteLine(payload.nonceTs);
 
-
-
-            return new RedeemResponse
+            //connect to db
+            using (DbConnection conn = DB.OpenConnection(Configuration))
             {
-                //da aggiungere il payload giusto
-                Payload = null/*new RedeemResponsePayload {
-                    nonceId = Guid.NewGuid(),
-                    nonceTs = "xx:xx:xxxx"
-                };*/
-            };
+
+                //nonce_ID validation, get the valid instance of vouchers
+                var selectedVouchers = DB.GetVoucherById(conn, payload.nonceId); //TO DO 
+
+                //System.Console.WriteLine("voucher : ", selectedVouchers.Count());
+                return new RedeemResponse
+                {
+                    Payload = "crypted payload" //todo
+                };
+            }
+    
         }
+                
+            
+        
 
     }
 }

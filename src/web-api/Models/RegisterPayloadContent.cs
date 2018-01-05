@@ -5,13 +5,12 @@ using System.Threading.Tasks;
 
 namespace WomPlatform.Web.Api.Models
 {
-    public class CreateResponse
+    public class RegisterPayloadContent
     {
-        public Guid Id { get; set; }
-
-        public string OtcGen { get; set; }
-
-        public DateTime Timestamp { get; set; }
         
+        public int PosId { get; set; }
+
+        public RegisterInputPayload Payload { get; set; }
     }
 }
+

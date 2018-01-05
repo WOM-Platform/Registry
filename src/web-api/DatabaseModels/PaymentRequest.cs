@@ -8,14 +8,14 @@ namespace WomPlatform.Web.Api.DatabaseModels
 {
     public class PaymentRequest
     {
-        public int Id { get; set; }
-        public int POS_Id { get; set; }
+        public long Id { get; set; }
+        public long ID_POS { get; set; }
         public string URLAckPocket { get; set; }
         public int Amount { get; set; }
         public string URLAckPOS { get; set; }
         public string OTCPay { get; set; }
-        public string CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
         public string State { get; set; }
-        public FilterInfo JsonFilter { get; set; }
+        //public FilterInfo JsonFilter { get; set; }
     }
 }
