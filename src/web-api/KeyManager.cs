@@ -1,11 +1,7 @@
-using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security;
 using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace WomPlatform.Web.Api {
 
@@ -18,8 +14,8 @@ namespace WomPlatform.Web.Api {
         public KeyManager(IConfiguration configuration) {
             var keysConf = configuration.GetSection("RegistryKeys");
 
-            PreloadKey(keysConf["PublicPath"], "-----BEGIN PUBLIC KEY-----", ref _keyPublic);
-            PreloadKey(keysConf["PrivatePath"], "-----BEGIN RSA PRIVATE KEY-----", ref _keyPrivate);
+            PreloadKey(keysConf["PublicPath"], "-----BEGIN PUBLIC KEY-----", ref this._keyPublic);
+            PreloadKey(keysConf["PrivatePath"], "-----BEGIN RSA PRIVATE KEY-----", ref this._keyPrivate);
         }
 
         private void PreloadKey(string path, string expectedHeader, ref byte[] destination) {
@@ -41,13 +37,13 @@ namespace WomPlatform.Web.Api {
 
         public byte[] PrivateKey {
             get {
-                return _keyPrivate;
+                return this._keyPrivate;
             }
         }
 
         public byte[] PublicKey {
             get {
-                return _keyPublic;
+                return this._keyPublic;
             }
         }
 

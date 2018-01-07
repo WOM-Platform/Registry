@@ -12,8 +12,8 @@ namespace WomPlatform.Web.Api {
         protected KeyManager KeyManager { get; private set; }
 
         public CryptoProvider(IConfiguration configuration, KeyManager keyManager) {
-            Configuration = configuration;
-            KeyManager = keyManager;
+            this.Configuration = configuration;
+            this.KeyManager = keyManager;
         }
 
         public const int KeyBits = 4096;

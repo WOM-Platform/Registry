@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,6 +14,7 @@ namespace WomPlatform.Web.Api {
     public class Program {
 
         public static void Main(string[] args) {
+            // Dapper configuration
             SqlMapper.RemoveTypeMap(typeof(Guid));
             SqlMapper.RemoveTypeMap(typeof(Guid?));
             SqlMapper.AddTypeHandler(new MySqlGuidTypeHandler());
@@ -22,13 +23,15 @@ namespace WomPlatform.Web.Api {
         }
 
         public static IWebHost BuildWebHost(string[] args) {
+            // Build configuration
             var confBuilder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json");
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            var configuration = confBuilder.Build();
 
             return WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
-                .UseConfiguration(confBuilder.Build())
+                .UseConfiguration(configuration)
                 .Build();
         }
 
