@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "KeyUtil": {
+      "commandName": "Project",
+      "commandLineArgs": "Prova prova",
+      "workingDirectory": "C:\\Users\\loren\\Projects\\WOM-platform\\src\\KeyUtil"
+    }
+  }
+}
