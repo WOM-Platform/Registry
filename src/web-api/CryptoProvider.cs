@@ -7,13 +7,12 @@ namespace WomPlatform.Web.Api {
 
     public class CryptoProvider {
 
-        protected IConfiguration Configuration { get; private set; }
-
-        protected KeyManager KeyManager { get; private set; }
+        protected readonly IConfiguration _configuration;
+        protected readonly KeyManager _keyManager;
 
         public CryptoProvider(IConfiguration configuration, KeyManager keyManager) {
-            this.Configuration = configuration;
-            this.KeyManager = keyManager;
+            this._configuration = configuration;
+            this._keyManager = keyManager;
         }
 
         public const int KeyBits = 4096;

@@ -11,9 +11,12 @@ namespace WomPlatform.Web.Api {
 
         private const string EndMarker = "-----END";
 
-        public KeyManager(IConfiguration configuration) {
-            var keysConf = configuration.GetSection("RegistryKeys");
+        protected readonly IConfiguration _configuration;
 
+        public KeyManager(IConfiguration configuration) {
+            this._configuration = configuration;
+
+            var keysConf = configuration.GetSection("RegistryKeys");
             PreloadKey(keysConf["PublicPath"], "-----BEGIN PUBLIC KEY-----", ref this._keyPublic);
             PreloadKey(keysConf["PrivatePath"], "-----BEGIN RSA PRIVATE KEY-----", ref this._keyPrivate);
         }
