@@ -23,7 +23,7 @@ USE `VoucherPiattaforma` ;
 CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Aims` (
   `ID` INT NOT NULL AUTO_INCREMENT,
   `Description` VARCHAR(105) NOT NULL,
-  `ID_Contact` INT NOT NULL,
+  `ContactID` INT NOT NULL,
   `Type` VARCHAR(45) NOT NULL,
   `CreationDate` TIMESTAMP NOT NULL,
   PRIMARY KEY (`ID`))
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Contacts` (
   `Email` VARCHAR(45) NOT NULL,
   `Name` VARCHAR(45) NOT NULL,
   `Surname` VARCHAR(45) NOT NULL,
-  `Phone` INT(15) NULL,
+  `Phone` VARCHAR(100) NULL DEFAULT NULL,
   PRIMARY KEY (`ID`))
 ENGINE = InnoDB;
 
@@ -48,13 +48,13 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Sources` (
   `ID` INT NOT NULL AUTO_INCREMENT,
-  `Key` VARCHAR(45) NOT NULL,
+  `Key` VARCHAR(1024) NOT NULL,
   `CreationDate` TIMESTAMP NOT NULL,
   `Name` VARCHAR(45) NOT NULL,
-  `Descriprion` VARCHAR(105) NOT NULL,
-  `URLSource` VARCHAR(85) NOT NULL,
-  `Aim_ID` INT NOT NULL,
-  `Contact_ID` INT NOT NULL,
+  `Description` VARCHAR(255) NULL DEFAULT NULL,
+  `URL` VARCHAR(255) NULL DEFAULT NULL,
+  `AimID` INT NOT NULL,
+  `ContactID` INT NOT NULL,
   PRIMARY KEY (`ID`),
   INDEX `fk_Source_Aim1_idx` (`Aim_ID` ASC),
   INDEX `fk_Source_Contact1_idx` (`Contact_ID` ASC),
@@ -76,11 +76,11 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`POS` (
   `ID` INT NOT NULL AUTO_INCREMENT,
-  `Key` VARCHAR(45) NOT NULL,
   `Name` VARCHAR(45) NOT NULL,
-  `Description` VARCHAR(105) NOT NULL,
+  `Key` VARCHAR(1024) NOT NULL,
+  `Description` VARCHAR(1024) NULL DEFAULT NULL,
   `CreationDate` TIMESTAMP NOT NULL,
-  `URLPOS` VARCHAR(85) NOT NULL,
+  `URL` VARCHAR(1024) NULL DEFAULT NULL,
   PRIMARY KEY (`ID`))
 ENGINE = InnoDB;
 
@@ -90,14 +90,14 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`PaymentRequests` (
   `ID` INT NOT NULL AUTO_INCREMENT,
-  `ID_POS` INT NOT NULL,
-  `URLAckPocket` VARCHAR(85) NOT NULL,
   `Amount` INT NOT NULL,
-  `OTCPay` VARCHAR(85) NOT NULL,
-  `URLAckPOS` VARCHAR(85) NOT NULL,
-  `JsonFilter` VARCHAR(450) NULL,
+  `JsonFilter` VARCHAR(2048) NULL DEFAULT NULL,
+  `OTCPay` VARCHAR(255) NOT NULL,
+  `URLAckPocket` VARCHAR(1024) NOT NULL,
+  `URLAckPOS` VARCHAR(1024) NULL DEFAULT NULL,
   `CreatedAt` TIMESTAMP NOT NULL,
   `State` VARCHAR(45) NOT NULL,
+  `POSID` INT NOT NULL,
   PRIMARY KEY (`ID`),
   INDEX `fk_PaymentRequest_POS1_idx` (`ID_POS` ASC),
   CONSTRAINT `fk_PaymentRequest_POS1`
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`GenerationRequests` (
   `OTC` VARCHAR(45) NOT NULL,
   `CreatedAt` TIMESTAMP NOT NULL,
   `State` VARCHAR(45) NOT NULL,
-  `Source_ID` INT NOT NULL,
+  `SourceID` INT NOT NULL,
   PRIMARY KEY (`ID`),
   INDEX `fk_GenerationRequest_Source1_idx` (`Source_ID` ASC),
   CONSTRAINT `fk_GenerationRequest_Source1`
@@ -136,12 +136,12 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Vouchers` (
   `Latitude` DOUBLE NOT NULL,
   `Longitude` DOUBLE NOT NULL,
   `Timestamp` TIMESTAMP NOT NULL,
+  `OTC` VARCHAR(255) NOT NULL,
   `Type` VARCHAR(45) NOT NULL,
-  `ID_Source` INT NOT NULL,
-  `OTC` VARCHAR(100) NOT NULL,
-  `ID_PaymentRequest` INT NULL DEFAULT NULL,
   `Nonce` BINARY(16) NOT NULL,
-  `ID_GenerationRequest` INT NOT NULL,
+  `SourceID` INT NOT NULL,
+  `PaymentRequestID` INT NULL DEFAULT NULL,
+  `GenerationRequestID` INT NOT NULL,
   PRIMARY KEY (`ID`),
   INDEX `fk_Voucher_Source1_idx` (`ID_Source` ASC),
   INDEX `fk_Voucher_PaymentRequest1_idx` (`ID_PaymentRequest` ASC),

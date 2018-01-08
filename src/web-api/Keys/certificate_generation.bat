@@ -1,1 +1,0 @@
-openssl req -new -x509 -key testkey.pem -out testcert.cer -nodes -days 365 -subj "/C=IT/ST=PU/L=Urbino/O=University of Urbino"

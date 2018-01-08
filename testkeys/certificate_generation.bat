@@ -1,0 +1,1 @@
+openssl req -new -x509 -key registry.pem -out registry.cer -nodes -days 365 -subj "/C=IT/ST=PU/L=Urbino/O=University of Urbino"
