@@ -19,7 +19,6 @@ DROP TABLE `VoucherPiattaforma`.`POS`;
 DROP TABLE `VoucherPiattaforma`.`PaymentRequests`;
 DROP TABLE `VoucherPiattaforma`.`GenerationRequests`;
 DROP TABLE `VoucherPiattaforma`.`Vouchers`;
-DROP TABLE `VoucherPiattaforma`.`VoucherArchive`;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
