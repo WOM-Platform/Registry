@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.0
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "web-api", "web-api\web-api.csproj", "{5F8EDD5D-0EFC-4427-9921-EAA0A5577555}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyUtil", "KeyUtil\KeyUtil.csproj", "{508F78F7-60D3-49CA-8527-B867ED25C454}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KeyUtil", "KeyUtil\KeyUtil.csproj", "{508F78F7-60D3-49CA-8527-B867ED25C454}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtil", "TestUtil\TestUtil.csproj", "{AB8CC519-91A3-411B-932D-B960EDAD7921}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{508F78F7-60D3-49CA-8527-B867ED25C454}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{508F78F7-60D3-49CA-8527-B867ED25C454}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{508F78F7-60D3-49CA-8527-B867ED25C454}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB8CC519-91A3-411B-932D-B960EDAD7921}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB8CC519-91A3-411B-932D-B960EDAD7921}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB8CC519-91A3-411B-932D-B960EDAD7921}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB8CC519-91A3-411B-932D-B960EDAD7921}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

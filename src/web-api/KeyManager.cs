@@ -1,16 +1,18 @@
 using System;
 using System.IO;
 using System.Text;
+#if !ENABLE_TESTING
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+#endif
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.OpenSsl;
 
 namespace WomPlatform.Web.Api {
 
     public class KeyManager {
 
-        private readonly byte[] _keyPrivate, _keyPublic;
-
-        private const string EndMarker = "-----END";
+#if !ENABLE_TESTING
 
         protected readonly IConfiguration _configuration;
         protected readonly ILogger<KeyManager> _logger;
@@ -22,42 +24,45 @@ namespace WomPlatform.Web.Api {
             this._logger.LogTrace(LoggingEvents.KeyManagement, "Loading registry keys");
 
             var keysConf = configuration.GetSection("RegistryKeys");
-            if (!string.IsNullOrEmpty(keysConf.["PublicPath"])) {
-                PreloadKey(keysConf["PublicPath"], "-----BEGIN PUBLIC KEY-----", ref this._keyPublic);
-                this._logger.LogDebug(LoggingEvents.KeyManagement, "Public key loaded, {0} bytes", this._keyPublic.Length);
+            if (!string.IsNullOrEmpty(keysConf["PublicPath"])) {
+                this._keyPublic = LoadKeyFromPem<AsymmetricKeyParameter>(keysConf["PublicPath"]);
+                this._logger.LogDebug(LoggingEvents.KeyManagement, "Public key loaded: {0}", this._keyPublic);
             }
-            if (!string.IsNullOrEmpty(keysConf.["PrivatePath"])) {
-                PreloadKey(keysConf["PrivatePath"], "-----BEGIN RSA PRIVATE KEY-----", ref this._keyPrivate);
-                this._logger.LogDebug(LoggingEvents.KeyManagement, "Private key loaded, {0} bytes", this._keyPrivate.Length);
+            if (!string.IsNullOrEmpty(keysConf["PrivatePath"])) {
+                this._keyPrivate = LoadKeyFromPem<AsymmetricCipherKeyPair>(keysConf["PrivatePath"]).Private;
+                this._logger.LogDebug(LoggingEvents.KeyManagement, "Private key loaded: {0}", this._keyPrivate);
             }
 
             this._logger.LogInformation(LoggingEvents.KeyManagement, "Registry keys loaded");
         }
 
-        private void PreloadKey(string path, string expectedHeader, ref byte[] destination) {
-            using(var reader = new StreamReader(path, Encoding.UTF8)) {
-                if(reader.ReadLine() != expectedHeader) {
-                    throw new ArgumentException("Key file does not start with expected header", nameof(path));
-                }
+#endif
 
-                var buffer = new StringBuilder();
-                string line = reader.ReadLine();
-                while(line != null && !line.StartsWith(EndMarker)) {
-                    buffer.Append(line);
-                    line = reader.ReadLine();
+        public static T LoadKeyFromPem<T>(string path) where T : class {
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read)) {
+                using(var txReader = new StreamReader(fs)) {
+                    var reader = new PemReader(txReader);
+                    return reader.ReadObject() as T;
                 }
-
-                destination = Convert.FromBase64String(buffer.ToString());
             }
         }
 
-        public byte[] PrivateKey {
+        public static T LoadKeyFromString<T>(string pem) where T : class {
+            using(var sr = new StringReader(pem)) {
+                var reader = new PemReader(sr);
+                return reader.ReadObject() as T;
+            }
+        }
+
+        private readonly AsymmetricKeyParameter _keyPrivate, _keyPublic;
+
+        public AsymmetricKeyParameter RegistryPrivateKey {
             get {
                 return this._keyPrivate;
             }
         }
 
-        public byte[] PublicKey {
+        public AsymmetricKeyParameter RegistryPublicKey {
             get {
                 return this._keyPublic;
             }

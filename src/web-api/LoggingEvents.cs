@@ -8,6 +8,7 @@ namespace WomPlatform.Web.Api {
     public static class LoggingEvents {
 
         public const int Database = 1000;
+        public const int DatabaseConnection = 1001;
 
         public const int KeyManagement = 2000;
 

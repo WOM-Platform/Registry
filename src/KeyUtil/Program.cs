@@ -13,27 +13,6 @@ namespace KeyUtil {
 
     class Program {
 
-        private const string EndMarker = "-----END";
-
-        private const int KeyBits = 4096;
-
-        private static string LoadKey(string path, string expectedHeader) {
-            using (var reader = new StreamReader(path, Encoding.UTF8)) {
-                if (reader.ReadLine() != expectedHeader) {
-                    throw new ArgumentException("Key file does not start with expected header", nameof(path));
-                }
-
-                var buffer = new StringBuilder();
-                string line = reader.ReadLine();
-                while (line != null && !line.StartsWith(EndMarker)) {
-                    buffer.Append(line);
-                    line = reader.ReadLine();
-                }
-
-                return buffer.ToString();
-            }
-        }
-
         static void Main(string[] args) {
             if (args.Length < 1) {
                 Console.Error.WriteLine("One input word needed.");

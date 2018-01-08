@@ -12,6 +12,20 @@ INSERT INTO `VoucherPiattaforma`.`Contacts` (`Email`, `Name`, `Surname`, `Phone`
 
 INSERT INTO `VoucherPiattaforma`.`Aims` (`Description`, `ContactID`, `Type`, `CreationDate`) VALUES ('Test aim', 1, 'Test', '2017-12-20');
 
-INSERT INTO `VoucherPiattaforma`.`Sources` (`Key`, `CreationDate`, `Name`, `Description`, `URL`, `AimID`, `ContactID`) VALUES ('MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA3ofbz4kneWa3Fv1PaYzuacxNKC+Fokz9eHNMi6O5GK9GepY5O5aS++fhFGJ15HpwHHFv7hipSKFocTJ7+FoblBZwtIRPfvWBf+nWG1rqEjfVqVm7ZDrB70URrq049NdBEz3UXWTtAoynwq3kU19INicr+ktYw7JYZpV7vgGrF7+tfDQfwP75ZbAFxbK4wK5dtmNuYGwOGTOJV/NQwjNdnOu3tik2ef6znyFTpXtLa9dQjHa1hKqxWzxmoMaEOv8/Fbew017D0i5kq0cqnEnW6sJaozfgBHRplgON3O5d12u2/sy2ome20lZzwWFQDtkHmVupFT3IhM3NyD+Dzl4eMHvY2yr5FCecYuzB4CG585j23gxC5nNGnKrdWnQk+kEXvt4vZRYPLDXhLfmd959pQMVIUw0hw4JqTJcjGGhrJzI7C7f4iRuPUoOXh3WW0j4WZBLEONaDzwI7Nm5IFFL1QA2/o9EPna6iYq/WTnk+vgDr0AGfe2eu6siY5gJ0CDavd1ZMI3PybF9wuLsjzkWVCn/nedIE4Nid4toS738+flFMiXbbFyP0p0L2KQvH5O21569CWlOLBnEdDJ8xV1A+21ILxbD3LDRela0W30fvikokJEZy1/eAZhtDNR3S6BNVpIEACGBml4rbJqZY8EuFl/68yRYlTREY4L4mj9Vb6H0CAwEAAQ==', '2017-12-20', 'Sample source 1', 'First sample source for testing purposes.', 'http://example.org', 1, 1);
+INSERT INTO `VoucherPiattaforma`.`Sources` (`Key`, `CreationDate`, `Name`, `Description`, `URL`, `AimID`, `ContactID`) VALUES ('-----BEGIN PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA3ofbz4kneWa3Fv1PaYzu
+acxNKC+Fokz9eHNMi6O5GK9GepY5O5aS++fhFGJ15HpwHHFv7hipSKFocTJ7+Fob
+lBZwtIRPfvWBf+nWG1rqEjfVqVm7ZDrB70URrq049NdBEz3UXWTtAoynwq3kU19I
+Nicr+ktYw7JYZpV7vgGrF7+tfDQfwP75ZbAFxbK4wK5dtmNuYGwOGTOJV/NQwjNd
+nOu3tik2ef6znyFTpXtLa9dQjHa1hKqxWzxmoMaEOv8/Fbew017D0i5kq0cqnEnW
+6sJaozfgBHRplgON3O5d12u2/sy2ome20lZzwWFQDtkHmVupFT3IhM3NyD+Dzl4e
+MHvY2yr5FCecYuzB4CG585j23gxC5nNGnKrdWnQk+kEXvt4vZRYPLDXhLfmd959p
+QMVIUw0hw4JqTJcjGGhrJzI7C7f4iRuPUoOXh3WW0j4WZBLEONaDzwI7Nm5IFFL1
+QA2/o9EPna6iYq/WTnk+vgDr0AGfe2eu6siY5gJ0CDavd1ZMI3PybF9wuLsjzkWV
+Cn/nedIE4Nid4toS738+flFMiXbbFyP0p0L2KQvH5O21569CWlOLBnEdDJ8xV1A+
+21ILxbD3LDRela0W30fvikokJEZy1/eAZhtDNR3S6BNVpIEACGBml4rbJqZY8EuF
+l/68yRYlTREY4L4mj9Vb6H0CAwEAAQ==
+-----END PUBLIC KEY-----
+', '2017-12-20', 'Sample source 1', 'First sample source for testing purposes.', 'http://example.org', 1, 1);
 
 -- INSERT INTO `VoucherPiattaforma`.`Vouchers` (`Latitude`, `Longitude`, `Timestamp`, `Type`, `ID_Source`, `OTC`, `Nonce`, `ID_GenerationRequest`) VALUES (42.932836, 12.608098, '2017-12-28 19:00:05', '','', 1, 'b0abb564-a606-4131-95da-7f7eb027b4ee', 1);

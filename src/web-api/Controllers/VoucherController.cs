@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -9,154 +9,102 @@ using MySql.Data.MySqlClient;
 using WomPlatform.Web.Api.Models;
 using Dapper;
 using WomPlatform.Web.Api.DatabaseModels;
+using Microsoft.Extensions.Logging;
 
-namespace WomPlatform.Web.Api.Controllers
-{
-    [Route("api/[controller]")]
-    public class VoucherController : Controller
-    {
+namespace WomPlatform.Web.Api.Controllers {
 
-        protected IConfiguration Configuration { get; private set; }
-        protected DatabaseManager DB = new DatabaseManager();
+    [Route("api/voucher")]
+    public class VoucherController : Controller {
 
-        public VoucherController(IConfiguration configuration)
-        {
-            Configuration = configuration;
+        protected readonly IConfiguration _configuration;
+        protected readonly DatabaseManager _database;
+        protected readonly CryptoProvider _crypto;
+        protected readonly ILogger<VoucherController> _logger;
+
+        public VoucherController(IConfiguration configuration, DatabaseManager database, CryptoProvider cryptoProvider, ILogger<VoucherController> logger) {
+            this._configuration = configuration;
+            this._database = database;
+            this._crypto = cryptoProvider;
+            this._logger = logger;
         }
 
         // GET api/voucher
         //percorso di prova
         [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            using (DbConnection conn = DB.OpenConnection(Configuration))
+        public Source Get() {
+            /*
+            conn.Open();
+            Console.WriteLine(conn.State);
+            */
+            //var aim = conn.Query<Aim>("select * from aim");
+            //var aim = conn.Query<Aim>("select * from aim where Id < @FiltroId", new { FiltroId = 1 });
+            //var aim = conn.Query<Aim>("select * from aim where Id = @Id", new { Id = 1 }
+
+            //return aim.Select(a => a.Description); // Linq
+
+            /*var response = new List<string>();
+            foreach(var a in aim)
             {
-                /*
-                conn.Open();
-                Console.WriteLine(conn.State);
-                */
-                //var aim = conn.Query<Aim>("select * from aim");
-                //var aim = conn.Query<Aim>("select * from aim where Id < @FiltroId", new { FiltroId = 1 });
-                //var aim = conn.Query<Aim>("select * from aim where Id = @Id", new { Id = 1 }
-
-                //return aim.Select(a => a.Description); // Linq
-
-                /*var response = new List<string>();
-                foreach(var a in aim)
-                {
-                    response.Add(a.Description);
-                }
-                return response;*/
-
-                /*var com = conn.CreateCommand();
-                com.CommandType = System.Data.CommandType.Text;
-                com.CommandText = "SELECT count(*) FROM Voucher";
-                var count = com.ExecuteScalar();
-                Console.WriteLine("Count: " + count);*/
-
-
-                var source = DB.GetSourceById(conn, 123);
-
+                response.Add(a.Description);
             }
+            return response;*/
 
-            // Sintassi finale:
-            // using(var conn = DatabaseManager.Open(Configuration))
-            {
-                // Crea i voucher
-                //...
+            /*var com = conn.CreateCommand();
+            com.CommandType = System.Data.CommandType.Text;
+            com.CommandText = "SELECT count(*) FROM Voucher";
+            var count = com.ExecuteScalar();
+            Console.WriteLine("Count: " + count);*/
 
-                // ritorna i dati finali
-            }
-
-            return null; //new string[] { Configuration.GetSection("Database")["Host"], Configuration.GetSection("Database")["Port"] };
+            return this._database.Connection.GetSourceById(1);
         }
 
         //POST api/voucher/create
         [HttpPost("create")]
-        public CreateResponse Create([FromBody]CreatePayload payload)
-        {
-            //stampo i dati inviati nella richiesta POST, verranno poi inseriti nel database
-            System.Console.Write("Source id: ");
-            System.Console.WriteLine(payload.SourceId);
-            System.Console.Write("payload :");
-            System.Console.WriteLine(payload.Payload);
+        public CreateResponse Create([FromBody]CreatePayload payload) {
+            this._logger.LogInformation(LoggingEvents.VoucherCreation, "Received create request from Source ID {0}, nonce {1}",
+                payload.SourceId, payload.Nonce
+            );
 
-            //open the DB connection
-            using (DbConnection conn = DB.OpenConnection(Configuration))
-            {
-                //sourceId parameter validation
-                var source = DB.GetSourceById(conn, payload.SourceId);
-                Console.WriteLine(source);
-
-                //Conversion from crypto-payload
-                CreatePayloadContent content = null; // TODO
-                // to remove
-                
-                content = new CreatePayloadContent
-                {                    
-                    Id = Guid.NewGuid(),
-                    SourceId = payload.SourceId,
-                    Vouchers = new VoucherRequestInfo[]
-                    {
-                        new VoucherRequestInfo
-                        {
-                            Latitude = 123,
-                            Longitude = 123,
-                            Timestamp = DateTime.UtcNow
-                        }
-                    }
-                };
-
-                //Voucher Creation in DB
-                var otc = DB.CreateVoucherGeneration(conn, content);
-
-                //Response POST
-                return new CreateResponse
-                {
-                    Id = content.Id,
-                    OtcGen = otc,
-                    Timestamp = DateTime.UtcNow
-                };
+            var source = this._database.Connection.GetSourceById(payload.SourceId);
+            if(source == null) {
+                this._logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
+                // TODO: correct error handling
+                return null;
             }
 
+            // Conversion from crypto-payload
+            var payloadContent = this._crypto.DecryptPayload<CreatePayloadContent>(payload.Payload, KeyManager.LoadKeyFromString<Org.BouncyCastle.Crypto.AsymmetricKeyParameter>(source.Key));
+            if(payload.SourceId != payloadContent.SourceId) {
+                this._logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
+                // TODO
+                return null;
+            }
+            // TODO: additional verification
 
-            //return string.Format("ID {0}", payload.SourceId);
+            this._logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0}, nonce {1}", payload.SourceId, payload.Nonce);
 
-            //acquisisco i valori e li memorizzo su delle variabili
-            //li inserisco nel database
+            var otc = this._database.Connection.CreateVoucherGeneration(payload.Nonce, payloadContent);
 
-            //restituisco le info necessarie per la risposta
+            this._logger.LogTrace(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
 
-
+            // TODO: this must be encrypted
+            return new CreateResponse {
+                Id = payloadContent.Id,
+                OtcGen = otc,
+                Timestamp = DateTime.UtcNow
+            };
         }
 
         // POST api/voucher/redeem
-        [HttpPost("redeem")]
-        public RedeemResponse Redeem([FromBody]RedeemPayload payload)
-        {
-            System.Console.Write("nonceID :");
-            System.Console.WriteLine(payload.nonceId);
-            System.Console.Write("nonceTs :");
-            System.Console.WriteLine(payload.nonceTs);
+        [HttpPost("redeem/{otcPart}")]
+        public RedeemResponse Redeem([FromRoute]string otcPart, [FromBody]RedeemPayload payload) {
+            this._logger.LogInformation(LoggingEvents.VoucherRedemption, "Received redeem request with nonce {0}",
+                payload.Nonce
+            );
 
-            //connect to db
-            using (DbConnection conn = DB.OpenConnection(Configuration))
-            {
-
-                //nonce_ID validation, get the valid instance of vouchers
-                var selectedVouchers = DB.GetVoucherById(conn, payload.nonceId); //TO DO 
-
-                //System.Console.WriteLine("voucher : ", selectedVouchers.Count());
-                return new RedeemResponse
-                {
-                    Payload = "crypted payload" //todo
-                };
-            }
-    
+            return null;
         }
-                
-            
-        
 
     }
+
 }

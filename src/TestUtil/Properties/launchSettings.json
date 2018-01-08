@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "TestUtil": {
+      "commandName": "Project",
+      "commandLineArgs": "localhost 64421 vcreate",
+      "workingDirectory": "C:\\Users\\loren\\Projects\\WOM-platform\\src\\TestUtil"
+    }
+  }
+}

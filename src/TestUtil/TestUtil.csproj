@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0;ENABLE_TESTING</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\web-api\CryptoProvider.cs" Link="CryptoProvider.cs" />
+    <Compile Include="..\web-api\KeyManager.cs" Link="KeyManager.cs" />
+    <Compile Include="..\web-api\Models\CreatePayload.cs" Link="Models\CreatePayload.cs" />
+    <Compile Include="..\web-api\Models\CreatePayloadContent.cs" Link="Models\CreatePayloadContent.cs" />
+    <Compile Include="..\web-api\Models\CreateResponse.cs" Link="Models\CreateResponse.cs" />
+    <Compile Include="..\web-api\Models\FilterInfo.cs" Link="Models\FilterInfo.cs" />
+    <Compile Include="..\web-api\Models\PayGetResponse.cs" Link="Models\PayGetResponse.cs" />
+    <Compile Include="..\web-api\Models\PayPayload.cs" Link="Models\PayPayload.cs" />
+    <Compile Include="..\web-api\Models\PayPostResponse.cs" Link="Models\PayPostResponse.cs" />
+    <Compile Include="..\web-api\Models\PosInfo.cs" Link="Models\PosInfo.cs" />
+    <Compile Include="..\web-api\Models\RedeemPayload.cs" Link="Models\RedeemPayload.cs" />
+    <Compile Include="..\web-api\Models\RedeemResponse.cs" Link="Models\RedeemResponse.cs" />
+    <Compile Include="..\web-api\Models\RedeemResponseContent.cs" Link="Models\RedeemResponseContent.cs" />
+    <Compile Include="..\web-api\Models\RedeemResponsePayload.cs" Link="Models\RedeemResponsePayload.cs" />
+    <Compile Include="..\web-api\Models\RegisterInputPayload.cs" Link="Models\RegisterInputPayload.cs" />
+    <Compile Include="..\web-api\Models\RegisterPayload.cs" Link="Models\RegisterPayload.cs" />
+    <Compile Include="..\web-api\Models\RegisterPayloadContent.cs" Link="Models\RegisterPayloadContent.cs" />
+    <Compile Include="..\web-api\Models\RegisterResponse.cs" Link="Models\RegisterResponse.cs" />
+    <Compile Include="..\web-api\Models\VoucherInfo.cs" Link="Models\VoucherInfo.cs" />
+    <Compile Include="..\web-api\Models\VoucherRequestInfo.cs" Link="Models\VoucherRequestInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle" Version="1.8.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="RestSharp" Version="106.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
+</Project>
