@@ -56,15 +56,15 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Sources` (
   `AimID` INT NOT NULL,
   `ContactID` INT NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_Source_Aim1_idx` (`Aim_ID` ASC),
-  INDEX `fk_Source_Contact1_idx` (`Contact_ID` ASC),
+  INDEX `fk_Source_Aim1_idx` (`AimID` ASC),
+  INDEX `fk_Source_Contact1_idx` (`ContactID` ASC),
   CONSTRAINT `fk_Source_Aim1`
-    FOREIGN KEY (`Aim_ID`)
+    FOREIGN KEY (`AimID`)
     REFERENCES `VoucherPiattaforma`.`Aims` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Source_Contact1`
-    FOREIGN KEY (`Contact_ID`)
+    FOREIGN KEY (`ContactID`)
     REFERENCES `VoucherPiattaforma`.`Contacts` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
@@ -99,9 +99,9 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`PaymentRequests` (
   `State` VARCHAR(45) NOT NULL,
   `POSID` INT NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_PaymentRequest_POS1_idx` (`ID_POS` ASC),
+  INDEX `fk_PaymentRequest_POS1_idx` (`POSID` ASC),
   CONSTRAINT `fk_PaymentRequest_POS1`
-    FOREIGN KEY (`ID_POS`)
+    FOREIGN KEY (`POSID`)
     REFERENCES `VoucherPiattaforma`.`POS` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
@@ -119,9 +119,9 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`GenerationRequests` (
   `State` VARCHAR(45) NOT NULL,
   `SourceID` INT NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_GenerationRequest_Source1_idx` (`Source_ID` ASC),
+  INDEX `fk_GenerationRequest_Source1_idx` (`SourceID` ASC),
   CONSTRAINT `fk_GenerationRequest_Source1`
-    FOREIGN KEY (`Source_ID`)
+    FOREIGN KEY (`SourceID`)
     REFERENCES `VoucherPiattaforma`.`Sources` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
@@ -143,57 +143,21 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Vouchers` (
   `PaymentRequestID` INT NULL DEFAULT NULL,
   `GenerationRequestID` INT NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_Voucher_Source1_idx` (`ID_Source` ASC),
-  INDEX `fk_Voucher_PaymentRequest1_idx` (`ID_PaymentRequest` ASC),
-  INDEX `fk_Voucher_GenerationRequest1_idx` (`ID_GenerationRequest` ASC),
+  INDEX `fk_Voucher_Source1_idx` (`SourceID` ASC),
+  INDEX `fk_Voucher_PaymentRequest1_idx` (`PaymentRequestID` ASC),
+  INDEX `fk_Voucher_GenerationRequest1_idx` (`GenerationRequestID` ASC),
   CONSTRAINT `fk_Voucher_Source1`
-    FOREIGN KEY (`ID_Source`)
+    FOREIGN KEY (`SourceID`)
     REFERENCES `VoucherPiattaforma`.`Sources` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Voucher_PaymentRequest1`
-    FOREIGN KEY (`ID_PaymentRequest`)
+    FOREIGN KEY (`PaymentRequestID`)
     REFERENCES `VoucherPiattaforma`.`PaymentRequests` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Voucher_GenerationRequest1`
-    FOREIGN KEY (`ID_GenerationRequest`)
-    REFERENCES `VoucherPiattaforma`.`GenerationRequests` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`VoucherArchive`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`VoucherArchive` (
-  `ID` BINARY(16) NOT NULL,
-  `Latitude` DOUBLE NOT NULL,
-  `Longitude` DOUBLE NOT NULL,
-  `Timestamp` TIMESTAMP NOT NULL,
-  `Type` VARCHAR(45) NOT NULL,
-  `ID_Source` INT NOT NULL,
-  `OTC` VARCHAR(100) NOT NULL,
-  `ID_PaymentRequest` INT NULL DEFAULT NULL,
-  `Nonce` BINARY(16) NOT NULL,
-  `ID_GenerationRequest` INT NOT NULL,
-  PRIMARY KEY (`ID`),
-  INDEX `fk_VoucherArchive_Source1_idx` (`ID_Source` ASC),
-  INDEX `fk_VoucherArchive_PaymentRequest1_idx` (`ID_PaymentRequest` ASC),
-  INDEX `fk_VoucherArchive_GenerationRequest1_idx` (`ID_GenerationRequest` ASC),
-  CONSTRAINT `fk_VoucherArchive_Source1`
-    FOREIGN KEY (`ID_Source`)
-    REFERENCES `VoucherPiattaforma`.`Sources` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_VoucherArchive_PaymentRequest1`
-    FOREIGN KEY (`ID_PaymentRequest`)
-    REFERENCES `VoucherPiattaforma`.`PaymentRequests` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_VoucherArchive_GenerationRequest1`
-    FOREIGN KEY (`ID_GenerationRequest`)
+    FOREIGN KEY (`GenerationRequestID`)
     REFERENCES `VoucherPiattaforma`.`GenerationRequests` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
