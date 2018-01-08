@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace WomPlatform.Web.Api {
 
@@ -12,13 +13,25 @@ namespace WomPlatform.Web.Api {
         private const string EndMarker = "-----END";
 
         protected readonly IConfiguration _configuration;
+        protected readonly ILogger<KeyManager> _logger;
 
-        public KeyManager(IConfiguration configuration) {
+        public KeyManager(IConfiguration configuration, ILogger<KeyManager> logger) {
             this._configuration = configuration;
+            this._logger = logger;
+
+            this._logger.LogTrace(LoggingEvents.KeyManagement, "Loading registry keys");
 
             var keysConf = configuration.GetSection("RegistryKeys");
-            PreloadKey(keysConf["PublicPath"], "-----BEGIN PUBLIC KEY-----", ref this._keyPublic);
-            PreloadKey(keysConf["PrivatePath"], "-----BEGIN RSA PRIVATE KEY-----", ref this._keyPrivate);
+            if (!string.IsNullOrEmpty(keysConf.["PublicPath"])) {
+                PreloadKey(keysConf["PublicPath"], "-----BEGIN PUBLIC KEY-----", ref this._keyPublic);
+                this._logger.LogDebug(LoggingEvents.KeyManagement, "Public key loaded, {0} bytes", this._keyPublic.Length);
+            }
+            if (!string.IsNullOrEmpty(keysConf.["PrivatePath"])) {
+                PreloadKey(keysConf["PrivatePath"], "-----BEGIN RSA PRIVATE KEY-----", ref this._keyPrivate);
+                this._logger.LogDebug(LoggingEvents.KeyManagement, "Private key loaded, {0} bytes", this._keyPrivate.Length);
+            }
+
+            this._logger.LogInformation(LoggingEvents.KeyManagement, "Registry keys loaded");
         }
 
         private void PreloadKey(string path, string expectedHeader, ref byte[] destination) {

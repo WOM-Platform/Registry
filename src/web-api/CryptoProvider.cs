@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,10 +10,12 @@ namespace WomPlatform.Web.Api {
 
         protected readonly IConfiguration _configuration;
         protected readonly KeyManager _keyManager;
+        protected readonly ILogger<CryptoProvider> _logger;
 
-        public CryptoProvider(IConfiguration configuration, KeyManager keyManager) {
+        public CryptoProvider(IConfiguration configuration, KeyManager keyManager, ILogger<CryptoProvider> logger) {
             this._configuration = configuration;
             this._keyManager = keyManager;
+            this._logger = logger;
         }
 
         public const int KeyBits = 4096;

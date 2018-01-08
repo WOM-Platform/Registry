@@ -32,6 +32,11 @@ namespace WomPlatform.Web.Api {
             return WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .UseConfiguration(configuration)
+                .ConfigureLogging((context, logging) => {
+                    logging.AddConfiguration(context.Configuration.GetSection("Logging"));
+                    logging.AddDebug();
+                    logging.AddConsole();
+                })
                 .Build();
         }
 
