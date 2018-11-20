@@ -1,0 +1,9 @@
+# Production-specific config
+version: '3'
+
+services:
+  api:
+    restart: always
+
+  database:
+    restart: always
