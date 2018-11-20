@@ -15,7 +15,14 @@ services:
 
   database:
     container_name: wom-database
-    image: mysql:8.0.13
+    image: mysql:5.7
     volumes:
     - wom_registry_database:/var/lib/mysql:rw
+    env_file: config.env
+
+  database-client:
+    container_name: wom-database-client
+    build: ../src/MysqlClient
+    depends_on:
+      - database
     env_file: config.env
