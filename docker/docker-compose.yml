@@ -1,0 +1,28 @@
+version: '3'
+volumes:
+  wom_registry_database:
+    external: true
+
+services:
+  api:
+    container_name: wom-api
+    build: ../src/ApiServer
+    depends_on:
+    - database
+    env_file: config.env
+    ports:
+      - "8779:5004" # "WO" in ASCII
+
+  database:
+    container_name: wom-database
+    image: mysql:5.7
+    volumes:
+    - wom_registry_database:/var/lib/mysql:rw
+    env_file: config.env
+
+  database-client:
+    container_name: wom-database-client
+    build: ../src/MysqlClient
+    depends_on:
+      - database
+    env_file: config.env

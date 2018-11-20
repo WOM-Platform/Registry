@@ -8,19 +8,15 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
--- Schema VoucherPiattaforma
+-- Schema Wom
 -- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `Wom` DEFAULT CHARACTER SET utf8 ;
+USE `Wom` ;
 
 -- -----------------------------------------------------
--- Schema VoucherPiattaforma
+-- Table `Wom`.`Aim`
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `VoucherPiattaforma` DEFAULT CHARACTER SET utf8 ;
-USE `VoucherPiattaforma` ;
-
--- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`Aim`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Aims` (
+CREATE TABLE IF NOT EXISTS `Wom`.`Aims` (
   `ID` INT NOT NULL AUTO_INCREMENT,
   `Description` VARCHAR(105) NOT NULL,
   `ContactID` INT NOT NULL,
@@ -31,9 +27,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`Contact`
+-- Table `Wom`.`Contact`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Contacts` (
+CREATE TABLE IF NOT EXISTS `Wom`.`Contacts` (
   `ID` INT NOT NULL AUTO_INCREMENT,
   `Email` VARCHAR(45) NOT NULL,
   `Name` VARCHAR(45) NOT NULL,
@@ -44,9 +40,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`Source`
+-- Table `Wom`.`Source`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Sources` (
+CREATE TABLE IF NOT EXISTS `Wom`.`Sources` (
   `ID` INT NOT NULL AUTO_INCREMENT,
   `Key` VARCHAR(1024) NOT NULL,
   `CreationDate` TIMESTAMP NOT NULL,
@@ -60,21 +56,21 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Sources` (
   INDEX `fk_Source_Contact1_idx` (`ContactID` ASC),
   CONSTRAINT `fk_Source_Aim1`
     FOREIGN KEY (`AimID`)
-    REFERENCES `VoucherPiattaforma`.`Aims` (`ID`)
+    REFERENCES `Wom`.`Aims` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Source_Contact1`
     FOREIGN KEY (`ContactID`)
-    REFERENCES `VoucherPiattaforma`.`Contacts` (`ID`)
+    REFERENCES `Wom`.`Contacts` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`POS`
+-- Table `Wom`.`POS`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`POS` (
+CREATE TABLE IF NOT EXISTS `Wom`.`POS` (
   `ID` INT NOT NULL AUTO_INCREMENT,
   `Name` VARCHAR(45) NOT NULL,
   `Key` VARCHAR(1024) NOT NULL,
@@ -86,9 +82,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`PaymentRequest`
+-- Table `Wom`.`PaymentRequest`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`PaymentRequests` (
+CREATE TABLE IF NOT EXISTS `Wom`.`PaymentRequests` (
   `ID` INT NOT NULL AUTO_INCREMENT,
   `Amount` INT NOT NULL,
   `JsonFilter` VARCHAR(2048) NULL DEFAULT NULL,
@@ -102,16 +98,16 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`PaymentRequests` (
   INDEX `fk_PaymentRequest_POS1_idx` (`POSID` ASC),
   CONSTRAINT `fk_PaymentRequest_POS1`
     FOREIGN KEY (`POSID`)
-    REFERENCES `VoucherPiattaforma`.`POS` (`ID`)
+    REFERENCES `Wom`.`POS` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`GenerationRequest`
+-- Table `Wom`.`GenerationRequest`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`GenerationRequests` (
+CREATE TABLE IF NOT EXISTS `Wom`.`GenerationRequests` (
   `ID` INT NOT NULL AUTO_INCREMENT,
   `Amount` INT NOT NULL,
   `OTC` VARCHAR(45) NOT NULL,
@@ -122,16 +118,16 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`GenerationRequests` (
   INDEX `fk_GenerationRequest_Source1_idx` (`SourceID` ASC),
   CONSTRAINT `fk_GenerationRequest_Source1`
     FOREIGN KEY (`SourceID`)
-    REFERENCES `VoucherPiattaforma`.`Sources` (`ID`)
+    REFERENCES `Wom`.`Sources` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `VoucherPiattaforma`.`Voucher`
+-- Table `Wom`.`Voucher`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Vouchers` (
+CREATE TABLE IF NOT EXISTS `Wom`.`Vouchers` (
   `ID` BINARY(16) NOT NULL,
   `Latitude` DOUBLE NOT NULL,
   `Longitude` DOUBLE NOT NULL,
@@ -148,17 +144,17 @@ CREATE TABLE IF NOT EXISTS `VoucherPiattaforma`.`Vouchers` (
   INDEX `fk_Voucher_GenerationRequest1_idx` (`GenerationRequestID` ASC),
   CONSTRAINT `fk_Voucher_Source1`
     FOREIGN KEY (`SourceID`)
-    REFERENCES `VoucherPiattaforma`.`Sources` (`ID`)
+    REFERENCES `Wom`.`Sources` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Voucher_PaymentRequest1`
     FOREIGN KEY (`PaymentRequestID`)
-    REFERENCES `VoucherPiattaforma`.`PaymentRequests` (`ID`)
+    REFERENCES `Wom`.`PaymentRequests` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Voucher_GenerationRequest1`
     FOREIGN KEY (`GenerationRequestID`)
-    REFERENCES `VoucherPiattaforma`.`GenerationRequests` (`ID`)
+    REFERENCES `Wom`.`GenerationRequests` (`ID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
