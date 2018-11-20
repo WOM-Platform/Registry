@@ -1,15 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace WomPlatform.Web.Api.Models
 {
-    public class PayPayload
+    public class PayPostResponse
     {
-        public string OTCPay { get; set; }
+        public string ackPocket { get; set; }
 
-        public Guid[] vouchers { get; set; }
-
+        public string state { get; set; }
     }
 }
