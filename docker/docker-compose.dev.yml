@@ -5,3 +5,5 @@ services:
   api:
     environment:
     - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+    - ../testkeys:/testkeys:ro
