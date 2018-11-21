@@ -12,6 +12,8 @@ namespace WomPlatform.Web.Api.DatabaseModels {
         [Key]
         public uint Id { get; set; }
 
+        public byte[] Secret { get; set; }
+
         public double Latitude { get; set; }
 
         public double Longitude { get; set; }

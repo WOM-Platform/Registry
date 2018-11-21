@@ -134,6 +134,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Vouchers` (
   `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `Secret` BINARY(16) NOT NULL,
   `Latitude` DOUBLE NOT NULL,
   `Longitude` DOUBLE NOT NULL,
   `Timestamp` DATETIME NOT NULL,
