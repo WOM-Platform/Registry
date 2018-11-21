@@ -35,8 +35,8 @@ namespace WomPlatform.Web.Api {
                 .UseStartup<Startup>()
                 .UseConfiguration(configuration)
                 .ConfigureLogging((context, logging) => {
+                    logging.ClearProviders();
                     logging.AddConfiguration(context.Configuration.GetSection("Logging"));
-                    logging.AddDebug();
                     logging.AddConsole();
                 })
                 .Build();
