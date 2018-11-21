@@ -17,12 +17,12 @@ USE `Wom` ;
 -- Table `Wom`.`Aim`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Aims` (
-  `ID` INT NOT NULL AUTO_INCREMENT,
-  `Description` VARCHAR(105) NOT NULL,
-  `ContactID` INT NOT NULL,
-  `Type` VARCHAR(45) NOT NULL,
-  `CreationDate` TIMESTAMP NOT NULL,
-  PRIMARY KEY (`ID`))
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `Description` VARCHAR(256) NOT NULL,
+  `ContactID` INT UNSIGNED NOT NULL,
+  `CreationDate` DATETIME NOT NULL,
+  PRIMARY KEY (`ID`)
+)
 ENGINE = InnoDB;
 
 
@@ -30,12 +30,12 @@ ENGINE = InnoDB;
 -- Table `Wom`.`Contact`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Contacts` (
-  `ID` INT NOT NULL AUTO_INCREMENT,
-  `Email` VARCHAR(45) NOT NULL,
-  `Name` VARCHAR(45) NOT NULL,
-  `Surname` VARCHAR(45) NOT NULL,
-  `Phone` VARCHAR(100) NULL DEFAULT NULL,
-  PRIMARY KEY (`ID`))
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `Email` VARCHAR(1024) NOT NULL,
+  `Name` VARCHAR(256) NOT NULL,
+  `Surname` VARCHAR(256) NOT NULL,
+  PRIMARY KEY (`ID`)
+)
 ENGINE = InnoDB;
 
 
@@ -43,27 +43,27 @@ ENGINE = InnoDB;
 -- Table `Wom`.`Source`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Sources` (
-  `ID` INT NOT NULL AUTO_INCREMENT,
-  `Key` VARCHAR(1024) NOT NULL,
-  `CreationDate` TIMESTAMP NOT NULL,
-  `Name` VARCHAR(45) NOT NULL,
-  `Description` VARCHAR(255) NULL DEFAULT NULL,
-  `URL` VARCHAR(255) NULL DEFAULT NULL,
-  `AimID` INT NOT NULL,
-  `ContactID` INT NOT NULL,
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `PublicKey` VARCHAR(1024) NOT NULL,
+  `CreationDate` DATETIME NOT NULL,
+  `Name` VARCHAR(256) NOT NULL,
+  `URL` VARCHAR(2048) NULL DEFAULT NULL,
+  `AimID` INT UNSIGNED NOT NULL,
+  `ContactID` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_Source_Aim1_idx` (`AimID` ASC),
-  INDEX `fk_Source_Contact1_idx` (`ContactID` ASC),
-  CONSTRAINT `fk_Source_Aim1`
-    FOREIGN KEY (`AimID`)
+  INDEX `fk_Source_Aim_idx` (`AimID` ASC),
+  CONSTRAINT `fk_Source_Aim`
+    FOREIGN KEY `fk_Source_Aim_idx` (`AimID`)
     REFERENCES `Wom`.`Aims` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Source_Contact1`
-    FOREIGN KEY (`ContactID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT,
+  INDEX `fk_Source_Contact_idx` (`ContactID` ASC),
+  CONSTRAINT `fk_Source_Contact`
+    FOREIGN KEY `fk_Source_Contact_idx` (`ContactID`)
     REFERENCES `Wom`.`Contacts` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+)
 ENGINE = InnoDB;
 
 
@@ -71,13 +71,13 @@ ENGINE = InnoDB;
 -- Table `Wom`.`POS`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`POS` (
-  `ID` INT NOT NULL AUTO_INCREMENT,
-  `Name` VARCHAR(45) NOT NULL,
-  `Key` VARCHAR(1024) NOT NULL,
-  `Description` VARCHAR(1024) NULL DEFAULT NULL,
-  `CreationDate` TIMESTAMP NOT NULL,
-  `URL` VARCHAR(1024) NULL DEFAULT NULL,
-  PRIMARY KEY (`ID`))
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `Name` VARCHAR(256) NOT NULL,
+  `PublicKey` VARCHAR(1024) NOT NULL,
+  `CreationDate` DATETIME NOT NULL,
+  `URL` VARCHAR(2048) NULL DEFAULT NULL,
+  PRIMARY KEY (`ID`)
+)
 ENGINE = InnoDB;
 
 
@@ -85,22 +85,24 @@ ENGINE = InnoDB;
 -- Table `Wom`.`PaymentRequest`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`PaymentRequests` (
-  `ID` INT NOT NULL AUTO_INCREMENT,
-  `Amount` INT NOT NULL,
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `Amount` SMALLINT UNSIGNED NOT NULL,
   `JsonFilter` VARCHAR(2048) NULL DEFAULT NULL,
-  `OTCPay` VARCHAR(255) NOT NULL,
-  `URLAckPocket` VARCHAR(1024) NOT NULL,
-  `URLAckPOS` VARCHAR(1024) NULL DEFAULT NULL,
-  `CreatedAt` TIMESTAMP NOT NULL,
-  `State` VARCHAR(45) NOT NULL,
-  `POSID` INT NOT NULL,
+  `OTCPay` CHAR(32) NOT NULL,
+  `URLAckPocket` VARCHAR(2048) NOT NULL,
+  `URLAckPOS` VARCHAR(2048) NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL,
+  `Performed` BIT(1) NOT NULL DEFAULT b'0',
+  `POSID` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_PaymentRequest_POS1_idx` (`POSID` ASC),
-  CONSTRAINT `fk_PaymentRequest_POS1`
-    FOREIGN KEY (`POSID`)
+  INDEX `OTCPay_idx` (`OTCPay` ASC),
+  INDEX `fk_PaymentRequest_POS_idx` (`POSID` ASC),
+  CONSTRAINT `fk_PaymentRequest_POS`
+    FOREIGN KEY `fk_PaymentRequest_POS_idx` (`POSID`)
     REFERENCES `Wom`.`POS` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+)
 ENGINE = InnoDB;
 
 
@@ -108,19 +110,22 @@ ENGINE = InnoDB;
 -- Table `Wom`.`GenerationRequest`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`GenerationRequests` (
-  `ID` INT NOT NULL AUTO_INCREMENT,
-  `Amount` INT NOT NULL,
-  `OTC` VARCHAR(45) NOT NULL,
-  `CreatedAt` TIMESTAMP NOT NULL,
-  `State` VARCHAR(45) NOT NULL,
-  `SourceID` INT NOT NULL,
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `Amount` SMALLINT UNSIGNED NOT NULL,
+  `OTCGen` CHAR(32) NOT NULL,
+  `CreatedAt` DATETIME NOT NULL,
+  `Performed` BIT(1) NOT NULL DEFAULT b'0',
+  `SourceID` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_GenerationRequest_Source1_idx` (`SourceID` ASC),
-  CONSTRAINT `fk_GenerationRequest_Source1`
-    FOREIGN KEY (`SourceID`)
+  INDEX `OTCGen_idx` (`OTCGen` ASC),
+  INDEX `SourceID_idx` (`SourceID` ASC),
+  INDEX `fk_GenerationRequest_Source_idx` (`SourceID` ASC),
+  CONSTRAINT `fk_GenerationRequest_Source`
+    FOREIGN KEY `fk_GenerationRequest_Source_idx` (`SourceID`)
     REFERENCES `Wom`.`Sources` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+)
 ENGINE = InnoDB;
 
 
@@ -128,35 +133,33 @@ ENGINE = InnoDB;
 -- Table `Wom`.`Voucher`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Vouchers` (
-  `ID` BINARY(16) NOT NULL,
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Latitude` DOUBLE NOT NULL,
   `Longitude` DOUBLE NOT NULL,
-  `Timestamp` TIMESTAMP NOT NULL,
-  `OTC` VARCHAR(255) NOT NULL,
-  `Type` VARCHAR(45) NOT NULL,
-  `Nonce` BINARY(16) NOT NULL,
-  `SourceID` INT NOT NULL,
-  `PaymentRequestID` INT NULL DEFAULT NULL,
-  `GenerationRequestID` INT NOT NULL,
+  `Timestamp` DATETIME NOT NULL,
+  `SourceID` INT UNSIGNED NOT NULL,
+  `PaymentRequestID` INT UNSIGNED NULL DEFAULT NULL,
+  `GenerationRequestID` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`ID`),
-  INDEX `fk_Voucher_Source1_idx` (`SourceID` ASC),
-  INDEX `fk_Voucher_PaymentRequest1_idx` (`PaymentRequestID` ASC),
-  INDEX `fk_Voucher_GenerationRequest1_idx` (`GenerationRequestID` ASC),
-  CONSTRAINT `fk_Voucher_Source1`
-    FOREIGN KEY (`SourceID`)
+  INDEX `fk_Voucher_Source_idx` (`SourceID` ASC),
+  CONSTRAINT `fk_Voucher_Source`
+    FOREIGN KEY `fk_Voucher_Source_idx` (`SourceID`)
     REFERENCES `Wom`.`Sources` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Voucher_PaymentRequest1`
-    FOREIGN KEY (`PaymentRequestID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT,
+  INDEX `fk_Voucher_PaymentRequest_idx` (`PaymentRequestID` ASC),
+  CONSTRAINT `fk_Voucher_PaymentRequest`
+    FOREIGN KEY `fk_Voucher_PaymentRequest_idx` (`PaymentRequestID`)
     REFERENCES `Wom`.`PaymentRequests` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Voucher_GenerationRequest1`
-    FOREIGN KEY (`GenerationRequestID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT,
+  INDEX `fk_Voucher_GenerationRequest_idx` (`GenerationRequestID` ASC),
+  CONSTRAINT `fk_Voucher_GenerationRequest`
+    FOREIGN KEY `fk_Voucher_GenerationRequest_idx` (`GenerationRequestID`)
     REFERENCES `Wom`.`GenerationRequests` (`ID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+)
 ENGINE = InnoDB;
 
 
