@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>WomPlatform.Web.Api</RootNamespace>
   </PropertyGroup>
 
@@ -14,13 +14,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BouncyCastle" Version="1.8.1" />
-    <PackageReference Include="Dapper" Version="1.50.4" />
-    <PackageReference Include="Dapper.Contrib" Version="1.50.4" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.3" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.0.1" />
-    <PackageReference Include="MySql.Data" Version="6.10.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="BouncyCastle" Version="1.8.4" />
+    <PackageReference Include="Dapper" Version="1.50.5" />
+    <PackageReference Include="Dapper.Contrib" Version="1.50.5" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.6" />
+    <PackageReference Include="MySql.Data" Version="8.0.13" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
   <ItemGroup>
