@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS `Wom`.`Vouchers` (
   `SourceID` INT UNSIGNED NOT NULL,
   `PaymentRequestID` INT UNSIGNED NULL DEFAULT NULL,
   `GenerationRequestID` INT UNSIGNED NOT NULL,
+  `Void` BIT(1) NOT NULL DEFAULT b'0',
   PRIMARY KEY (`ID`),
   INDEX `fk_Voucher_Source_idx` (`SourceID` ASC),
   CONSTRAINT `fk_Voucher_Source`

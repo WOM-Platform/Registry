@@ -24,6 +24,8 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public uint GenerationRequestId { get; set; }
 
+        public bool Void { get; set; }
+
     }
 
 }
