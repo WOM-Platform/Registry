@@ -21,10 +21,10 @@ drop_volumes: confirmation
 	@echo 'External volumes dropped'
 
 .PHONY: install install_example
-install: create_volumes up
+install:
 	${DC_RUN} database-client -h wom-database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < sql/database-create.sql
 
-install_example: install
+install_example:
 	${DC_RUN} database-client -h wom-database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < sql/database-example.sql
 
 .PHONY: mysql
