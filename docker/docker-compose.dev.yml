@@ -1,2 +1,7 @@
 # Development-specific config
 version: '3'
+
+services:
+  api:
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development

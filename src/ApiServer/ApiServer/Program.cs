@@ -26,7 +26,9 @@ namespace WomPlatform.Web.Api {
             // Build configuration
             var confBuilder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddEnvironmentVariables()
+            ;
             var configuration = confBuilder.Build();
 
             return WebHost.CreateDefaultBuilder(args)
