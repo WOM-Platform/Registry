@@ -11,25 +11,25 @@ namespace WomPlatform.Web.Api.DatabaseModels {
     public class PaymentRequest {
 
         [Key]
-        public long Id { get; set; }
+        public uint Id { get; set; }
 
-        public int Amount { get; set; }
+        public ushort Amount { get; set; }
 
         public string JsonFilter { get; set; }
 
         // TODO: parsed JSON filter access with [Computed]
 
-        public string OTCPay { get; set; }
+        public string OtcPay { get; set; }
 
-        public string URLAckPocket { get; set; }
+        public string UrlAckPocket { get; set; }
 
-        public string URLAckPOS { get; set; }
+        public string UrlAckPos { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
-        public string State { get; set; }
+        public bool Performed { get; set; }
 
-        public long PosId { get; set; }
+        public uint PosId { get; set; }
 
     }
 

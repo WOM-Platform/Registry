@@ -10,15 +10,13 @@ namespace WomPlatform.Web.Api.DatabaseModels {
     public class Contact {
 
         [Key]
-        public long Id { get; set; }
+        public uint Id { get; set; }
 
         public string Email { get; set; }
 
         public string Name { get; set; }
 
         public string Surname { get; set; }
-
-        public string Phone { get; set; }
 
     }
 

@@ -10,13 +10,11 @@ namespace WomPlatform.Web.Api.DatabaseModels {
     public class POS {
 
         [Key]
-        public long Id { get; set; }
+        public uint Id { get; set; }
 
         public string Name { get; set; }
 
-        public string Key { get; set; }
-
-        public string Description { get; set; }
+        public string PublicKey { get; set; }
 
         public DateTime CreationDate { get; set; }
 

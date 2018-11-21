@@ -10,17 +10,17 @@ namespace WomPlatform.Web.Api.DatabaseModels {
     public class GenerationRequest {
 
         [Key]
-        public long Id { get; set; }
+        public uint Id { get; set; }
 
-        public int Amount { get; set; }
+        public ushort Amount { get; set; }
 
-        public string Otc { get; set; }
+        public string OtcGen { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
-        public string State { get; set; }
+        public bool Performed { get; set; }
 
-        public long SourceId { get; set; }
+        public uint SourceId { get; set; }
 
     }
 

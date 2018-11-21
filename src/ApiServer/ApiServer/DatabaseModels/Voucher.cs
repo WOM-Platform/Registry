@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace WomPlatform.Web.Api.DatabaseModels {
 
+    [Table("Vouchers")]
     public class Voucher {
 
-        [ExplicitKey]
-        public Guid Id { get; set; }
+        [Key]
+        public uint Id { get; set; }
 
         public double Latitude { get; set; }
 
@@ -17,17 +18,11 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public DateTime Timestamp { get; set; }
 
-        public string OTC { get; set; }
+        public uint SourceId { get; set; }
 
-        public string Type { get; set; }
+        public uint? PaymentRequestId { get; set; }
 
-        public Guid Nonce { get; set; }
-
-        public long SourceId { get; set; }
-
-        public long? PaymentRequestId { get; set; }
-
-        public long GenerationRequestId { get; set; }
+        public uint GenerationRequestId { get; set; }
 
     }
 
