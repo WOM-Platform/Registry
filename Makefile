@@ -47,6 +47,12 @@ ps:
 rs:
 	${DC} restart
 
+.PHONY: rebuild
+rebuild:
+	${DC} rm -sf api
+	${DC} build api
+	${DC} up -d
+
 .PHONY: stop
 stop:
 	${DC} stop
