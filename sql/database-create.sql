@@ -10,8 +10,8 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 -- -----------------------------------------------------
 -- Schema Wom
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `Wom` DEFAULT CHARACTER SET utf8 ;
-USE `Wom` ;
+CREATE SCHEMA IF NOT EXISTS `Wom` DEFAULT CHARACTER SET utf8;
+USE `Wom`;
 
 -- -----------------------------------------------------
 -- Table `Wom`.`Aim`
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `Wom`.`PaymentRequests` (
   `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Amount` SMALLINT UNSIGNED NOT NULL,
   `JsonFilter` VARCHAR(2048) NULL DEFAULT NULL,
-  `OTCPay` CHAR(32) NOT NULL,
+  `OTCPay` BINARY(16) NOT NULL,
   `URLAckPocket` VARCHAR(2048) NOT NULL,
   `URLAckPOS` VARCHAR(2048) NULL DEFAULT NULL,
   `CreatedAt` DATETIME NOT NULL,
@@ -112,7 +112,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `Wom`.`GenerationRequests` (
   `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Amount` SMALLINT UNSIGNED NOT NULL,
-  `OTCGen` CHAR(32) NOT NULL,
+  `OTCGen` BINARY(16) NOT NULL,
   `CreatedAt` DATETIME NOT NULL,
   `Performed` BIT(1) NOT NULL DEFAULT b'0',
   `SourceID` INT UNSIGNED NOT NULL,
