@@ -69,6 +69,32 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        /// <summary>
+        /// Redeems vouchers tied to a given OTC_gen code and marks
+        /// the generation request instance as completed.
+        /// </summary>
+        public static IEnumerable<Voucher> GenerateVouchers(this DbConnection conn, Guid otcGen) {
+            var request = conn.QueryFirstOrDefault<GenerationRequest>(
+                "SELECT * FROM GenerationRequests WHERE OtcGen = @OtcGen",
+                new { OtcGen = otcGen }
+            );
+            if(request == null) {
+                throw new ArgumentException("OTC code matches no voucher generation request", nameof(otcGen));
+            }
+            if(request.Performed) {
+                throw new InvalidOperationException("Voucher generation request has already been performed");
+            }
+
+            var vouchers = conn.Query<Voucher>(
+                "SELECT * FROM Vouchers WHERE `GenerationRequestId` = @ReqId",
+                new { ReqId = request.Id }
+            );
+
+            conn.Query("UPDATE GenerationRequests SET `Performed` = 1 WHERE `Id` = @Id", new { Id = request.Id });
+
+            return vouchers;
+        }
+
         public static PaymentRequest PaymentParameters(this DbConnection conn, string OTCPay) {
             var instance = conn.QueryFirstOrDefault<PaymentRequest>("select * from Paymentrequests where OTCPay = @otc", new { otc = OTCPay });
 

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -105,9 +106,28 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.NotFound();
             }
 
-            var gen = this._database.Connection.GetGenerationRequestByOtc(otcGen);
+            try {
+                var vouchers = this._database.Connection.GenerateVouchers(otcGen);
+                var converted = (from v in vouchers
+                                 select new VoucherRedeemResponse.VoucherInfo {
+                                     Id = v.Id,
+                                     Secret = Convert.ToBase64String(v.Secret),
+                                     Latitude = v.Latitude,
+                                     Longitude = v.Longitude,
+                                     Source = "https://wom.social/sources/" + v.SourceId,
+                                     Timestamp = v.Timestamp
+                                 });
 
-            return this.Ok(gen);
+                return this.Ok(new VoucherRedeemResponse {
+                    Nonce = payload.Nonce,
+                    Vouchers = converted.ToArray()
+                });
+            }
+            catch(Exception ex) {
+                this._logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to generate vouchers");
+
+                throw;
+            }
         }
 
     }
