@@ -14,7 +14,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public ushort Amount { get; set; }
 
-        public string OtcGen { get; set; }
+        public Guid OtcGen { get; set; }
 
         public DateTime CreatedAt { get; set; }
 

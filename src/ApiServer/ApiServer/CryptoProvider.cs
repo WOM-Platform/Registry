@@ -1,14 +1,14 @@
-#if !ENABLE_TESTING
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-#endif
+using System;
+using System.Globalization;
+using System.Text;
 using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Encodings;
 using Org.BouncyCastle.Crypto.Engines;
-using System;
-using System.Globalization;
-using System.Text;
+#if !ENABLE_TESTING
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+#endif
 
 namespace WomPlatform.Web.Api {
 
@@ -48,19 +48,26 @@ namespace WomPlatform.Web.Api {
                 throw new ArgumentException("Public key required for decryption", nameof(key));
             }
 
-            var payloadBytes = Convert.FromBase64String(payload);
-
-            var engine = new Pkcs1Encoding(new RsaEngine());
-            engine.Init(false, key);
-
-            var decryptedBytes = engine.ProcessBlock(payloadBytes, 0, payloadBytes.Length);
-            var decryptedPaylod = Encoding.UTF8.GetString(decryptedBytes);
+            var decryptedPaylod = Encoding.UTF8.GetString(this.DecryptBase64(payload, key));
 
             return JsonConvert.DeserializeObject<T>(decryptedPaylod);
         }
 
+        public byte[] DecryptBase64(string base64Payload, AsymmetricKeyParameter key) {
+            var payloadBytes = Convert.FromBase64String(base64Payload);
+
+            var engine = new Pkcs1Encoding(new RsaEngine());
+            engine.Init(false, key);
+            return engine.ProcessBlock(payloadBytes, 0, payloadBytes.Length);
+        }
+
+        public string DecryptBase64AsString(string base64Payload, AsymmetricKeyParameter key) {
+            return Encoding.UTF8.GetString(this.DecryptBase64(base64Payload, key));
+        }
+
         /// <summary>
         /// Encrypts a payload by encoding in JSON and using a given private key.
+        /// Result is encoded in Base64.
         /// </summary>
         /// <typeparam name="T">Type of the object to encrypt.</typeparam>
         /// <param name="payload">Object to encode in JSON and to encrypt.</param>
@@ -68,7 +75,7 @@ namespace WomPlatform.Web.Api {
         /// <returns>Base64-encoded encrypted JSON-encoded payload.</returns>
         public string EncryptPayload<T>(T payload, AsymmetricKeyParameter key) {
             if (!key.IsPrivate) {
-                throw new ArgumentException("Private key required for decryption", nameof(key));
+                throw new ArgumentException("Private key required for encryption", nameof(key));
             }
 
             var payloadEncoded = JsonConvert.SerializeObject(payload, Formatting.None, new JsonSerializerSettings {
@@ -79,14 +86,30 @@ namespace WomPlatform.Web.Api {
                 Formatting = Formatting.None,
                 NullValueHandling = NullValueHandling.Include
             });
+            var payloadBytes = Encoding.UTF8.GetBytes(payloadEncoded);
 
+            return this.EncryptBytes(payloadBytes, key);
+        }
+
+        /// <summary>
+        /// Encrypts a byte payload using a given key.
+        /// Result is encoded in Base64.
+        /// </summary>
+        public string EncryptBytes(byte[] payload, AsymmetricKeyParameter key) {
             var engine = new Pkcs1Encoding(new RsaEngine());
             engine.Init(true, key);
 
-            var payloadBytes = Encoding.UTF8.GetBytes(payloadEncoded);
-            var encryptedBytes = engine.ProcessBlock(payloadBytes, 0, payloadBytes.Length);
+            var encryptedBytes = engine.ProcessBlock(payload, 0, payload.Length);
 
             return Convert.ToBase64String(encryptedBytes);
+        }
+
+        /// <summary>
+        /// Encrypts a string payload (UTF8) using a given key.
+        /// Resut is encoded in Base64.
+        /// </summary>
+        public string EncryptString(string payload, AsymmetricKeyParameter key) {
+            return this.EncryptBytes(Encoding.UTF8.GetBytes(payload), key);
         }
 
     }

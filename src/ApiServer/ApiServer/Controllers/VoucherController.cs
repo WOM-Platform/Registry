@@ -1,19 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
-using WomPlatform.Web.Api.Models;
-using Dapper;
-using WomPlatform.Web.Api.DatabaseModels;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
+using WomPlatform.Web.Api.DatabaseModels;
+using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("api/voucher")]
+    [Route("api/v1/voucher")]
     public class VoucherController : Controller {
 
         protected readonly IConfiguration _configuration;
@@ -28,7 +23,7 @@ namespace WomPlatform.Web.Api.Controllers {
             this._logger = logger;
         }
 
-        // GET api/voucher
+        // GET /api/v1/voucher
         //percorso di prova
         [HttpGet]
         public Source Get() {
@@ -58,9 +53,9 @@ namespace WomPlatform.Web.Api.Controllers {
             return this._database.Connection.GetSourceById(1);
         }
 
-        //POST api/voucher/create
+        // POST api/v1/voucher/create
         [HttpPost("create")]
-        public CreateResponse Create([FromBody]CreatePayload payload) {
+        public VoucherCreateResponse Create([FromBody]VoucherCreatePayload payload) {
             this._logger.LogInformation(LoggingEvents.VoucherCreation, "Received create request from Source ID {0}, nonce {1}",
                 payload.SourceId, payload.Nonce
             );
@@ -72,14 +67,20 @@ namespace WomPlatform.Web.Api.Controllers {
                 return null;
             }
 
+            var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
+
             // Conversion from crypto-payload
-            var payloadContent = this._crypto.DecryptPayload<CreatePayloadContent>(payload.Payload, KeyManager.LoadKeyFromString<Org.BouncyCastle.Crypto.AsymmetricKeyParameter>(source.Key));
+            var payloadContent = this._crypto.DecryptPayload<VoucherCreatePayloadContent>(payload.Payload, sourcePublicKey);
             if(payload.SourceId != payloadContent.SourceId) {
                 this._logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
                 // TODO
                 return null;
             }
-            // TODO: additional verification
+            if(payload.Nonce != payloadContent.Nonce) {
+                this._logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
+                // TODO
+                return null;
+            }
 
             this._logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0}, nonce {1}", payload.SourceId, payload.Nonce);
 
@@ -87,22 +88,26 @@ namespace WomPlatform.Web.Api.Controllers {
 
             this._logger.LogTrace(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
 
-            // TODO: this must be encrypted
-            return new CreateResponse {
-                Id = payloadContent.Id,
-                OtcGen = otc,
-                Timestamp = DateTime.UtcNow
+            return new VoucherCreateResponse {
+                EncryptedOtc = this._crypto.EncryptString(otc.ToString("D"), sourcePublicKey),
+                VoucherAmount = payloadContent.Vouchers.Length
             };
         }
 
-        // POST api/voucher/redeem
-        [HttpPost("redeem/{otcPart}")]
-        public RedeemResponse Redeem([FromRoute]string otcPart, [FromBody]RedeemPayload payload) {
-            this._logger.LogInformation(LoggingEvents.VoucherRedemption, "Received redeem request with nonce {0}",
-                payload.Nonce
+        // POST api/v1/voucher/redeem/{OTC}
+        [HttpPost("redeem/{otc}")]
+        public ActionResult Redeem([FromRoute]string otc, [FromBody]VoucherRedeemPayload payload) {
+            this._logger.LogInformation(LoggingEvents.VoucherRedemption, "Received redeem request with OTC {0}",
+                otc
             );
 
-            return null;
+            if(!Guid.TryParseExact(otc, "N", out Guid otcGen)) {
+                return this.NotFound();
+            }
+
+            var gen = this._database.Connection.GetGenerationRequestByOtc(otcGen);
+
+            return this.Ok(gen);
         }
 
     }

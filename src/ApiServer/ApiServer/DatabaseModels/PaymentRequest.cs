@@ -19,7 +19,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         // TODO: parsed JSON filter access with [Computed]
 
-        public string OtcPay { get; set; }
+        public Guid OtcPay { get; set; }
 
         public string UrlAckPocket { get; set; }
 

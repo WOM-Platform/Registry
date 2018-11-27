@@ -42,6 +42,10 @@ namespace WomPlatform.Web.Api {
         }
 
         public static T LoadKeyFromString<T>(string pem) where T : class {
+            if(string.IsNullOrWhiteSpace(pem)) {
+                throw new ArgumentException("PEM cannot be empty or null", nameof(pem));
+            }
+
             using(var sr = new StringReader(pem)) {
                 var reader = new PemReader(sr);
                 return reader.ReadObject() as T;

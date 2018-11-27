@@ -9,6 +9,12 @@ namespace WomPlatform.Web.Api.DatabaseModels {
     [Table("Vouchers")]
     public class Voucher {
 
+        public const int SecretLength = 16;
+
+        public Voucher() {
+            this.Secret = new byte[SecretLength];
+        }
+
         [Key]
         public uint Id { get; set; }
 
