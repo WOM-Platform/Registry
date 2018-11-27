@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "TestUtil": {
+      "commandName": "Project",
+      "commandLineArgs": "wom.social 80 vcreate",
+      "workingDirectory": "C:\\Users\\loren\\Projects\\WOM Platform Registry\\src\\TestUtil\\TestUtil"
+    }
+  }
+}

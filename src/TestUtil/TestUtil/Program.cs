@@ -6,6 +6,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using WomPlatform.Web.Api;
+using WomPlatform.Web.Api.Models;
 
 namespace TestUtil {
 
@@ -16,7 +18,7 @@ namespace TestUtil {
 
         private static RestClient Client {
             get {
-                return new RestClient($"http://{Host}:{Port}/api");
+                return new RestClient($"http://{Host}:{Port}/api/v1");
             }
         }
 
@@ -42,25 +44,33 @@ namespace TestUtil {
         }
 
         private static void CreateVouchers(string[] args) {
-            var privateKey = WomPlatform.Web.Api.KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("../../testkeys/source1.pem").Private;
-            var crypto = new WomPlatform.Web.Api.CryptoProvider();
+            var privateKey = KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("../../../testkeys/source1.pem").Private;
+            var crypto = new CryptoProvider();
 
-            var request = new RestRequest("voucher/create", Method.POST);
-            request.RequestFormat = DataFormat.Json;
+            var nonce = Guid.NewGuid();
+
+            var request = new RestRequest("voucher/create", Method.POST) {
+                RequestFormat = DataFormat.Json
+            };
             request.AddHeader("Accept", "application/json");
-            request.AddJsonBody(new WomPlatform.Web.Api.Models.CreatePayload {
+            request.AddJsonBody(new VoucherCreatePayload {
                 SourceId = 1,
-                Nonce = Guid.NewGuid(),
-                Payload = crypto.EncryptPayload(new WomPlatform.Web.Api.Models.CreatePayloadContent {
-                    Id = Guid.NewGuid(),
+                Nonce = nonce,
+                Payload = crypto.EncryptPayload(new VoucherCreatePayloadContent {
+                    Nonce = nonce,
                     SourceId = 1,
-                    Vouchers = new WomPlatform.Web.Api.Models.VoucherRequestInfo[] { }
+                    Vouchers = new VoucherCreatePayloadContent.VoucherInfo[] {
+
+                    }
                 }, privateKey)
             });
 
-            var response = Client.Execute(request);
+            var response = Client.Execute<VoucherCreateResponse>(request);
             Console.WriteLine("HTTP {0}, {1} bytes, {2}", response.StatusCode, response.ContentLength, response.ContentType);
             Console.WriteLine("Response: {0}", response.Content);
+
+            var decryptedOtc = crypto.DecryptBase64AsString(response.Data.EncryptedOtc, privateKey);
+            Console.WriteLine("OTC: {0}", decryptedOtc);
         }
 
     }
