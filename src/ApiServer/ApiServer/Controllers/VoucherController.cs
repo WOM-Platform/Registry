@@ -24,36 +24,6 @@ namespace WomPlatform.Web.Api.Controllers {
             this._logger = logger;
         }
 
-        // GET /api/v1/voucher
-        //percorso di prova
-        [HttpGet]
-        public Source Get() {
-            /*
-            conn.Open();
-            Console.WriteLine(conn.State);
-            */
-            //var aim = conn.Query<Aim>("select * from aim");
-            //var aim = conn.Query<Aim>("select * from aim where Id < @FiltroId", new { FiltroId = 1 });
-            //var aim = conn.Query<Aim>("select * from aim where Id = @Id", new { Id = 1 }
-
-            //return aim.Select(a => a.Description); // Linq
-
-            /*var response = new List<string>();
-            foreach(var a in aim)
-            {
-                response.Add(a.Description);
-            }
-            return response;*/
-
-            /*var com = conn.CreateCommand();
-            com.CommandType = System.Data.CommandType.Text;
-            com.CommandText = "SELECT count(*) FROM Voucher";
-            var count = com.ExecuteScalar();
-            Console.WriteLine("Count: " + count);*/
-
-            return this._database.Connection.GetSourceById(1);
-        }
-
         // POST api/v1/voucher/create
         [HttpPost("create")]
         public VoucherCreateResponse Create([FromBody]VoucherCreatePayload payload) {
@@ -85,7 +55,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             this._logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0}, nonce {1}", payload.SourceId, payload.Nonce);
 
-            var otc = this._database.Connection.CreateVoucherGeneration(payload.Nonce, payloadContent);
+            var otc = this._database.Connection.CreateVoucherGeneration(payloadContent);
 
             this._logger.LogTrace(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
 

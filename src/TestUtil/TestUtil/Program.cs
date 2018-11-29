@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Encodings;
 using Org.BouncyCastle.Crypto.Engines;
@@ -36,6 +37,10 @@ namespace TestUtil {
                     CreateVouchers(args.Skip(3).ToArray());
                     break;
 
+                case "vredeem":
+                    RedeemVouchers(args.Skip(3).ToArray());
+                    break;
+
                 default:
                     Console.Error.WriteLine("Unknown command");
                     Environment.Exit(1);
@@ -71,6 +76,34 @@ namespace TestUtil {
 
             var decryptedOtc = crypto.DecryptBase64AsString(response.Data.EncryptedOtc, privateKey);
             Console.WriteLine("OTC: {0}", decryptedOtc);
+        }
+
+        private static void RedeemVouchers(string[] args) {
+            if(args.Length < 1) {
+                throw new ArgumentNullException("Requires voucher redemption ID");
+            }
+            if(!Guid.TryParse(args[0], out Guid redemptionId)) {
+                throw new ArgumentException("Requires voucher redemption ID as GUID");
+            }
+
+            var request = new RestRequest("voucher/redeem/" + redemptionId.ToString("N"), Method.POST) {
+                RequestFormat = DataFormat.Json
+            };
+            request.AddHeader("Accept", "application/json");
+            request.AddJsonBody(new VoucherRedeemPayload {
+                Nonce = Guid.NewGuid()
+            });
+
+            var response = Client.Execute(request);
+            Console.WriteLine("HTTP {0}, {1} bytes, {2}", response.StatusCode, response.ContentLength, response.ContentType);
+            var data = JsonConvert.DeserializeObject<VoucherRedeemResponse>(response.Content);
+            Console.WriteLine("Response contains {0} vouchers:", data.Vouchers.Length);
+            foreach(var v in data.Vouchers) {
+                Console.WriteLine();
+                Console.WriteLine("V #{0} from {1}", v.Id, v.Source);
+                Console.WriteLine("  @ {2} in {0},{1}", v.Latitude, v.Longitude, v.Timestamp);
+            }
+            Console.WriteLine("===");
         }
 
     }
