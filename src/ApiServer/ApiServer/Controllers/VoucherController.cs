@@ -84,7 +84,7 @@ namespace WomPlatform.Web.Api.Controllers {
                                      Secret = Convert.ToBase64String(v.Secret),
                                      Latitude = v.Latitude,
                                      Longitude = v.Longitude,
-                                     Source = "https://wom.social/sources/" + v.SourceId,
+                                     Source = UrlGenerator.GenerateSourceUrl(v.SourceId),
                                      Timestamp = v.Timestamp
                                  });
 
