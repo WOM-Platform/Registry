@@ -4,28 +4,12 @@ namespace WomPlatform.Web.Api.Models {
 
     public class VoucherRedeemResponse {
 
-        public Guid Nonce { get; set; }
+        public Guid Signature { get; set; }
 
         /// <summary>
-        /// Encapsulates info about a single voucher.
+        /// Signed payload, encoded as an <see cref="VoucherRedeemResponseContent" /> instance.
         /// </summary>
-        public class VoucherInfo {
-
-            public uint Id { get; set; }
-
-            public string Secret { get; set; }
-
-            public double Latitude { get; set; }
-
-            public double Longitude { get; set; }
-
-            public DateTime Timestamp { get; set; }
-
-            public string Source { get; set; }
-
-        }
-
-        public VoucherInfo[] Vouchers { get; set; }
+        public string Payload { get; set; }
 
     }
 

@@ -86,6 +86,9 @@ namespace TestUtil {
                 throw new ArgumentException("Requires voucher redemption ID as GUID");
             }
 
+            var publicKey = KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("../../../testkeys/registry.pem").Public;
+            var crypto = new CryptoProvider();
+
             var request = new RestRequest("voucher/redeem/" + redemptionId.ToString("N"), Method.POST) {
                 RequestFormat = DataFormat.Json
             };
@@ -97,8 +100,9 @@ namespace TestUtil {
             var response = Client.Execute(request);
             Console.WriteLine("HTTP {0}, {1} bytes, {2}", response.StatusCode, response.ContentLength, response.ContentType);
             var data = JsonConvert.DeserializeObject<VoucherRedeemResponse>(response.Content);
-            Console.WriteLine("Response contains {0} vouchers:", data.Vouchers.Length);
-            foreach(var v in data.Vouchers) {
+            var content = crypto.DecryptPayload<VoucherRedeemResponseContent>(data.Payload, publicKey);
+            Console.WriteLine("Response contains {0} vouchers:", content.Vouchers.Length);
+            foreach(var v in content.Vouchers) {
                 Console.WriteLine();
                 Console.WriteLine("V #{0} from {1}", v.Id, v.Source);
                 Console.WriteLine("  @ {2} in {0},{1}", v.Latitude, v.Longitude, v.Timestamp);

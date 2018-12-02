@@ -17,26 +17,6 @@ namespace WomPlatform.Web.Api {
     /// </summary>
     public class CryptoProvider {
 
-#if !ENABLE_TESTING
-
-        protected readonly IConfiguration _configuration;
-        protected readonly KeyManager _keyManager;
-        protected readonly ILogger<CryptoProvider> _logger;
-
-        public CryptoProvider(IConfiguration configuration, KeyManager keyManager, ILogger<CryptoProvider> logger) {
-            this._configuration = configuration;
-            this._keyManager = keyManager;
-            this._logger = logger;
-        }
-
-#else
-
-        public CryptoProvider() {
-
-        }
-
-#endif
-
         /// <summary>
         /// Attempts to decrypt an encrypted JSON payload (encoded in base64) and interprets it as a JSON object.
         /// </summary>
@@ -58,7 +38,18 @@ namespace WomPlatform.Web.Api {
 
             var engine = new Pkcs1Encoding(new RsaEngine());
             engine.Init(false, key);
-            return engine.ProcessBlock(payloadBytes, 0, payloadBytes.Length);
+
+            int inBlockSize = engine.GetInputBlockSize();
+            int outBlockSize = engine.GetOutputBlockSize();
+            int blocks = (int)Math.Ceiling(payloadBytes.Length / (double)inBlockSize);
+            byte[] output = new byte[blocks * outBlockSize];
+            for (int i = 0; i < blocks; ++i) {
+                int offset = i * inBlockSize;
+                var cryptoBlock = engine.ProcessBlock(payloadBytes, offset, Math.Min(inBlockSize, payloadBytes.Length - offset));
+                cryptoBlock.CopyTo(output, i * outBlockSize);
+            }
+
+            return output;
         }
 
         public string DecryptBase64AsString(string base64Payload, AsymmetricKeyParameter key) {
@@ -99,9 +90,17 @@ namespace WomPlatform.Web.Api {
             var engine = new Pkcs1Encoding(new RsaEngine());
             engine.Init(true, key);
 
-            var encryptedBytes = engine.ProcessBlock(payload, 0, payload.Length);
+            int inBlockSize = engine.GetInputBlockSize();
+            int outBlockSize = engine.GetOutputBlockSize();
+            int blocks = (int)Math.Ceiling(payload.Length / (double)inBlockSize);
+            byte[] output = new byte[blocks * outBlockSize];
+            for(int i = 0; i < blocks; ++i) {
+                int offset = i * inBlockSize;
+                var cryptoBlock = engine.ProcessBlock(payload, offset, Math.Min(inBlockSize, payload.Length - offset));
+                cryptoBlock.CopyTo(output, i * outBlockSize);
+            }
 
-            return Convert.ToBase64String(encryptedBytes);
+            return Convert.ToBase64String(output);
         }
 
         /// <summary>

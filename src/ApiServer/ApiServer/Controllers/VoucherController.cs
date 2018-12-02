@@ -79,7 +79,7 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 var vouchers = this._database.Connection.GenerateVouchers(otcGen);
                 var converted = (from v in vouchers
-                                 select new VoucherRedeemResponse.VoucherInfo {
+                                 select new VoucherRedeemResponseContent.VoucherInfo {
                                      Id = v.Id,
                                      Secret = Convert.ToBase64String(v.Secret),
                                      Latitude = v.Latitude,
@@ -87,10 +87,13 @@ namespace WomPlatform.Web.Api.Controllers {
                                      Source = UrlGenerator.GenerateSourceUrl(v.SourceId),
                                      Timestamp = v.Timestamp
                                  });
-
-                return this.Ok(new VoucherRedeemResponse {
+                var content = new VoucherRedeemResponseContent {
                     Nonce = payload.Nonce,
                     Vouchers = converted.ToArray()
+                };
+
+                return this.Ok(new VoucherRedeemResponse {
+                    Payload = this.Crypto.EncryptPayload(content, this.KeyManager.RegistryPrivateKey)
                 });
             }
             catch(Exception ex) {
