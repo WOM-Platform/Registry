@@ -43,12 +43,12 @@ dotnet_style_collection_initializer = true:warning
 dotnet_style_explicit_tuple_names = true:warning
 dotnet_style_null_propagation = true:warning
 dotnet_style_object_initializer = true:warning
-dotnet_style_predefined_type_for_locals_parameters_members = true:warning
-dotnet_style_predefined_type_for_member_access = true:warning
-dotnet_style_qualification_for_event = true:warning
-dotnet_style_qualification_for_field = true:warning
-dotnet_style_qualification_for_method = true:warning
-dotnet_style_qualification_for_property = true:warning
+dotnet_style_predefined_type_for_locals_parameters_members = true:error
+dotnet_style_predefined_type_for_member_access = true:error
+dotnet_style_qualification_for_event = false:suggestion
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
 
 # Indentation Options
 csharp_indent_block_contents = true:warning
@@ -56,5 +56,6 @@ csharp_indent_braces = false:warning
 csharp_indent_case_contents = true:warning
 csharp_indent_labels = no_change:warning
 csharp_indent_switch_labels = true:warning
+
 # New Line Options
 csharp_new_line_before_open_brace = none
