@@ -31,7 +31,7 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Creates a new voucher generation instance.
         /// </summary>
-        public static Guid CreateVoucherGeneration(this DbConnection conn, VoucherCreatePayloadContent creationParameters) {
+        public static Guid CreateVoucherGeneration(this DbConnection conn, VoucherCreatePayload.Content creationParameters) {
             var otc = Guid.NewGuid();
 
             // New generation instance

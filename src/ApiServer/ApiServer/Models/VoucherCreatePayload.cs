@@ -3,7 +3,7 @@ using System;
 namespace WomPlatform.Web.Api.Models {
 
     /// <summary>
-    /// Body payload for voucher creation.
+    /// Request payload for voucher creation.
     /// </summary>
     public class VoucherCreatePayload {
 
@@ -15,12 +15,47 @@ namespace WomPlatform.Web.Api.Models {
         /// <summary>
         /// Nonce to prevent repetition.
         /// </summary>
-        public Guid Nonce { get; set; }
+        public string Nonce { get; set; }
 
         /// <summary>
-        /// Encrypted payload (resolves to <see cref="VoucherCreatePayloadContent" />
+        /// Payload signed and encrypted by source (encoded as <see cref="Content" />).
         /// </summary>
         public string Payload { get; set; }
+
+        /// <summary>
+        /// Inner payload signed and encrypted by source.
+        /// </summary>
+        public class Content {
+
+            /// <summary>
+            /// Unique ID of the source.
+            /// </summary>
+            public uint SourceId { get; set; }
+
+            /// <summary>
+            /// Nonce to prevent repetition.
+            /// </summary>
+            public string Nonce { get; set; }
+
+            /// <summary>
+            /// Details of the vouchers to create.
+            /// </summary>
+            public VoucherInfo[] Vouchers { get; set; }
+
+        }
+
+        /// <summary>
+        /// Encapsulates information about a single voucher.
+        /// </summary>
+        public class VoucherInfo {
+
+            public double Latitude { get; set; }
+
+            public double Longitude { get; set; }
+
+            public DateTime Timestamp { get; set; }
+
+        }
 
     }
 

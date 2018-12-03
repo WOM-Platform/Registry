@@ -10,65 +10,80 @@ using WomPlatform.Web.Api.Models;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("api/v1/voucher")]
-    public class VoucherController : Controller {
+    public class VoucherController : ControllerBase {
 
-        protected readonly IConfiguration _configuration;
-        protected readonly DatabaseManager _database;
-        protected readonly CryptoProvider _crypto;
-        protected readonly ILogger<VoucherController> _logger;
-
-        public VoucherController(IConfiguration configuration, DatabaseManager database, CryptoProvider cryptoProvider, ILogger<VoucherController> logger) {
-            this._configuration = configuration;
-            this._database = database;
-            this._crypto = cryptoProvider;
-            this._logger = logger;
+        public VoucherController(
+            IConfiguration configuration,
+            DatabaseManager databaseManager,
+            CryptoProvider cryptoProvider,
+            KeyManager keyManager,
+            ILogger<VoucherController> logger)
+        {
+            this.Configuration = configuration;
+            this.Database = databaseManager;
+            this.Crypto = cryptoProvider;
+            this.KeyManager = keyManager;
+            this.Logger = logger;
         }
+
+        protected IConfiguration Configuration { get; }
+        protected DatabaseManager Database { get; }
+        protected CryptoProvider Crypto { get; }
+        protected KeyManager KeyManager { get; }
+        protected ILogger<VoucherController> Logger { get; }
 
         // POST api/v1/voucher/create
         [HttpPost("create")]
         public VoucherCreateResponse Create([FromBody]VoucherCreatePayload payload) {
-            this._logger.LogInformation(LoggingEvents.VoucherCreation, "Received create request from Source ID {0}, nonce {1}",
+            this.Logger.LogInformation(LoggingEvents.VoucherCreation, "Received create request from Source ID {0}, nonce {1}",
                 payload.SourceId, payload.Nonce
             );
 
-            var source = this._database.Connection.GetSourceById(payload.SourceId);
+            var source = this.Database.Connection.GetSourceById(payload.SourceId);
             if(source == null) {
-                this._logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
+                this.Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
                 // TODO: correct error handling
                 return null;
             }
 
             var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
 
-            // Conversion from crypto-payload
-            var payloadContent = this._crypto.DecryptPayload<VoucherCreatePayloadContent>(payload.Payload, sourcePublicKey);
+            var payloadContent = this.Crypto.DecryptAndVerify<VoucherCreatePayload.Content>(payload.Payload,
+                sourcePublicKey, this.KeyManager.RegistryPublicKey);
+
             if(payload.SourceId != payloadContent.SourceId) {
-                this._logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
+                this.Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
                 // TODO
                 return null;
             }
             if(payload.Nonce != payloadContent.Nonce) {
-                this._logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
+                this.Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
                 // TODO
                 return null;
             }
+            // TODO: check whether nonce is valid
 
-            this._logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0}, nonce {1}", payload.SourceId, payload.Nonce);
+            var nextNonce = "todo";
 
-            var otc = this._database.Connection.CreateVoucherGeneration(payloadContent);
+            this.Logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0}, nonce {1}", payload.SourceId, payload.Nonce);
 
-            this._logger.LogTrace(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
+            var otc = this.Database.Connection.CreateVoucherGeneration(payloadContent);
+
+            this.Logger.LogTrace(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
 
             return new VoucherCreateResponse {
-                EncryptedOtc = this._crypto.EncryptString(otc.ToString("D"), sourcePublicKey),
-                VoucherAmount = payloadContent.Vouchers.Length
+                Payload = this.Crypto.SignAndEncrypt(new VoucherCreateResponse.Content {
+                    Source = UrlGenerator.GenerateSourceUrl(source.Id),
+                    NextNonce = nextNonce,
+                    Otc = otc
+                }, KeyManager.RegistryPrivateKey, sourcePublicKey)
             };
         }
 
         // POST api/v1/voucher/redeem/{OTC}
         [HttpPost("redeem/{otc}")]
         public ActionResult Redeem([FromRoute]string otc, [FromBody]VoucherRedeemPayload payload) {
-            this._logger.LogInformation(LoggingEvents.VoucherRedemption, "Received redeem request with OTC {0}",
+            this.Logger.LogInformation(LoggingEvents.VoucherRedemption, "Received redeem request with OTC {0}",
                 otc
             );
 
@@ -77,9 +92,9 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var vouchers = this._database.Connection.GenerateVouchers(otcGen);
+                var vouchers = this.Database.Connection.GenerateVouchers(otcGen);
                 var converted = (from v in vouchers
-                                 select new VoucherRedeemResponseContent.VoucherInfo {
+                                 select new VoucherRedeemResponse.VoucherInfo {
                                      Id = v.Id,
                                      Secret = Convert.ToBase64String(v.Secret),
                                      Latitude = v.Latitude,
@@ -87,17 +102,17 @@ namespace WomPlatform.Web.Api.Controllers {
                                      Source = UrlGenerator.GenerateSourceUrl(v.SourceId),
                                      Timestamp = v.Timestamp
                                  });
-                var content = new VoucherRedeemResponseContent {
+                var content = new VoucherRedeemResponse.Content {
                     Nonce = payload.Nonce,
                     Vouchers = converted.ToArray()
                 };
 
                 return this.Ok(new VoucherRedeemResponse {
-                    Payload = this.Crypto.EncryptPayload(content, this.KeyManager.RegistryPrivateKey)
+                    Payload = this.Crypto.Sign(content, this.KeyManager.RegistryPrivateKey)
                 });
             }
             catch(Exception ex) {
-                this._logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to generate vouchers");
+                this.Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to generate vouchers");
 
                 throw;
             }

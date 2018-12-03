@@ -50,10 +50,10 @@ namespace TestUtil {
 
         private static void CreateVouchers(string[] args) {
             var privateKey = KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("../../../testkeys/source1.pem").Private;
-            var crypto = new CryptoProvider();
+            var crypto = new CryptoProvider(new ConsoleLogger<CryptoProvider>());
 
             var nonce = Guid.NewGuid();
-
+            /*
             var request = new RestRequest("voucher/create", Method.POST) {
                 RequestFormat = DataFormat.Json
             };
@@ -75,7 +75,7 @@ namespace TestUtil {
             Console.WriteLine("Response: {0}", response.Content);
 
             var decryptedOtc = crypto.DecryptBase64AsString(response.Data.EncryptedOtc, privateKey);
-            Console.WriteLine("OTC: {0}", decryptedOtc);
+            Console.WriteLine("OTC: {0}", decryptedOtc);*/
         }
 
         private static void RedeemVouchers(string[] args) {
@@ -87,7 +87,7 @@ namespace TestUtil {
             }
 
             var publicKey = KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("../../../testkeys/registry.pem").Public;
-            var crypto = new CryptoProvider();
+            var crypto = new CryptoProvider(new ConsoleLogger<CryptoProvider>());
 
             var request = new RestRequest("voucher/redeem/" + redemptionId.ToString("N"), Method.POST) {
                 RequestFormat = DataFormat.Json
@@ -100,7 +100,7 @@ namespace TestUtil {
             var response = Client.Execute(request);
             Console.WriteLine("HTTP {0}, {1} bytes, {2}", response.StatusCode, response.ContentLength, response.ContentType);
             var data = JsonConvert.DeserializeObject<VoucherRedeemResponse>(response.Content);
-            var content = crypto.DecryptPayload<VoucherRedeemResponseContent>(data.Payload, publicKey);
+            var content = crypto.Verify<VoucherRedeemResponse.Content>(data.Payload, publicKey);
             Console.WriteLine("Response contains {0} vouchers:", content.Vouchers.Length);
             foreach(var v in content.Vouchers) {
                 Console.WriteLine();
