@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <StartupObject>TestUtil.Program</StartupObject>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -11,10 +12,20 @@
 
   <ItemGroup>
     <Compile Include="..\..\ApiServer\ApiServer\CryptoProvider.cs" Link="CryptoProvider.cs" />
+    <Compile Include="..\..\ApiServer\ApiServer\RandomExtensions.cs" Link="RandomExtensions.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\StringExtensions.cs" Link="StringExtensions.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\Models\*.cs">
         <Link>Models\%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\testkeys\registry.pem" Link="registry.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\..\testkeys\source1.pem" Link="source1.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
