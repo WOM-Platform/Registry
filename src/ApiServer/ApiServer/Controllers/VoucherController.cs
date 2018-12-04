@@ -48,7 +48,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
 
             var payloadContent = Crypto.DecryptAndVerify<VoucherCreatePayload.Content>(payload.Payload,
-                sourcePublicKey, KeyManager.RegistryPublicKey);
+                sourcePublicKey, KeyManager.RegistryPrivateKey);
 
             if(payload.SourceId != payloadContent.SourceId) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
