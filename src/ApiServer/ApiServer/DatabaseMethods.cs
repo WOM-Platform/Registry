@@ -47,7 +47,7 @@ namespace WomPlatform.Web.Api {
                 var v = new Voucher {
                     Latitude = voucher.Latitude,
                     Longitude = voucher.Longitude,
-                    Timestamp = DateTime.UtcNow,
+                    Timestamp = voucher.Timestamp,
                     SourceId = creationParameters.SourceId,
                     GenerationRequestId = (uint)generationRequestId
                 };
