@@ -15,7 +15,7 @@ namespace WomPlatform.Web.Api {
         }
 
         public static string GenerateSourceUrl(uint sourceId) {
-            return string.Format("{0}/{1}/sources/{2}", RootUrl, ApiPath, sourceId);
+            return string.Format("{0}/sources/{1}", RootUrl, sourceId);
         }
 
     }
