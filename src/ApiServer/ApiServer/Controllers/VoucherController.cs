@@ -79,19 +79,13 @@ namespace WomPlatform.Web.Api.Controllers {
             };
         }
 
-        // POST api/v1/voucher/redeem/{OTC}
-        [HttpPost("redeem/{otc}")]
-        public ActionResult Redeem([FromRoute]string otc, [FromBody]VoucherRedeemPayload payload) {
-            Logger.LogInformation(LoggingEvents.VoucherRedemption, "Received redeem request with OTC {0}",
-                otc
-            );
-
-            if(!Guid.TryParseExact(otc, "N", out Guid otcGen)) {
-                return NotFound();
-            }
+        // POST api/v1/voucher/redeem
+        [HttpPost("redeem")]
+        public ActionResult Redeem([FromBody]VoucherRedeemPayload payload) {
+            var payloadContent = Crypto.Decrypt<VoucherRedeemPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             try {
-                var vouchers = Database.Connection.GenerateVouchers(otcGen);
+                var vouchers = Database.Connection.GenerateVouchers(payloadContent.Otc);
                 var converted = (from v in vouchers
                                  select new VoucherRedeemResponse.VoucherInfo {
                                      Id = v.Id,
@@ -102,7 +96,6 @@ namespace WomPlatform.Web.Api.Controllers {
                                      Timestamp = v.Timestamp
                                  });
                 var content = new VoucherRedeemResponse.Content {
-                    Nonce = payload.Nonce,
                     Vouchers = converted.ToArray()
                 };
 

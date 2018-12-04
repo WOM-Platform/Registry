@@ -160,6 +160,44 @@ namespace WomPlatform.Web.Api {
             return JsonConvert.DeserializeObject<T>(verifyBytes.AsUtf8String(), JsonSettings);
         }
 
+        /// <summary>
+        /// Encrypts an object payload.
+        /// If successful, payload is encoded as a base64 string.
+        /// </summary>
+        /// <typeparam name="T">Type of the object to sign.</typeparam>
+        public string Encrypt<T>(T payload, AsymmetricKeyParameter receiverPublicKey) {
+            if (receiverPublicKey.IsPrivate) {
+                throw new ArgumentException("Public key of receiver required for encryption", nameof(receiverPublicKey));
+            }
+
+            var payloadBytes = JsonConvert.SerializeObject(payload, JsonSettings).ToBytes();
+            var signedBytes = Encrypt(payloadBytes, receiverPublicKey);
+
+            Logger.LogTrace("Encrypt object (bytes {0} => {1})",
+                payloadBytes.Length, signedBytes.Length);
+
+            return signedBytes.ToBase64();
+        }
+
+        /// <summary>
+        /// Decrypts a base64 payload.
+        /// If successful, the data is parsed as an UTF8 JSON string.
+        /// </summary>
+        /// <typeparam name="T">Type of the object to decrypt.</typeparam>
+        public T Decrypt<T>(string payload, AsymmetricKeyParameter receiverPrivateKey) {
+            if (!receiverPrivateKey.IsPrivate) {
+                throw new ArgumentException("Private key of receiver required for decryption", nameof(receiverPrivateKey));
+            }
+
+            var payloadBytes = payload.FromBase64();
+            var decryptedBytes = Decrypt(payloadBytes, receiverPrivateKey);
+
+            Logger.LogTrace("Verify {2} chars (bytes {0} => {1})",
+                payloadBytes.Length, decryptedBytes.Length, payload.Length);
+
+            return JsonConvert.DeserializeObject<T>(decryptedBytes.AsUtf8String(), JsonSettings);
+        }
+
     }
 
 }

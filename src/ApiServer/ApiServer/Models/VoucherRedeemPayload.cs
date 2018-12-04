@@ -4,7 +4,16 @@ namespace WomPlatform.Web.Api.Models {
 
     public class VoucherRedeemPayload {
 
-        public Guid Nonce { get; set; }
+        /// <summary>
+        /// Payload signed and encrypted (encoded as <see cref="Content" />).
+        /// </summary>
+        public string Payload { get; set; }
+
+        public class Content {
+
+            public Guid Otc { get; set; }
+
+        }
 
     }
 

@@ -14,8 +14,6 @@ namespace WomPlatform.Web.Api.Models {
         /// </summary>
         public class Content {
 
-            public Guid Nonce { get; set; }
-
             public VoucherInfo[] Vouchers { get; set; }
 
         }
