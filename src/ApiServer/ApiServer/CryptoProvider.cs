@@ -38,15 +38,28 @@ namespace WomPlatform.Web.Api {
             int inBlockSize = engine.GetInputBlockSize();
             int outBlockSize = engine.GetOutputBlockSize();
             int blocks = (int)Math.Ceiling(payload.Length / (double)inBlockSize);
+            int outputLength = 0;
             byte[] output = new byte[blocks * outBlockSize];
             for (int i = 0; i < blocks; ++i) {
                 int offset = i * inBlockSize;
-                var cryptoBlock = engine.ProcessBlock(payload, offset, Math.Min(inBlockSize, payload.Length - offset));
+                int blockLength = Math.Min(inBlockSize, payload.Length - offset);
+                var cryptoBlock = engine.ProcessBlock(payload, offset, blockLength);
                 cryptoBlock.CopyTo(output, i * outBlockSize);
+                outputLength += cryptoBlock.Length;
+
+                Logger.LogTrace("Decrypt {0}th block (offset {1} length {2}) to {3} bytes (offset {4})",
+                    i + 1, offset, blockLength, cryptoBlock.Length, i * outBlockSize);
             }
 
-            Logger.LogTrace("Decrypt {0} bytes ({1} blocks {2} to {3} bytes), output {4} bytes",
-                payload.Length, blocks, inBlockSize, outBlockSize, output.Length);
+            if (outputLength != output.Length) {
+                // Rescale output array
+                byte[] tmp = new byte[outputLength];
+                Array.Copy(output, tmp, outputLength);
+                output = tmp;
+            }
+
+            Logger.LogTrace("Decrypted {0} bytes into {1} blocks of {3} bytes, output {4} bytes",
+                payload.Length, blocks, outBlockSize, output.Length);
 
             return output;
         }
@@ -61,15 +74,28 @@ namespace WomPlatform.Web.Api {
             int inBlockSize = engine.GetInputBlockSize();
             int outBlockSize = engine.GetOutputBlockSize();
             int blocks = (int)Math.Ceiling(payload.Length / (double)inBlockSize);
+            int outputLength = 0;
             byte[] output = new byte[blocks * outBlockSize];
             for (int i = 0; i < blocks; ++i) {
                 int offset = i * inBlockSize;
-                var cryptoBlock = engine.ProcessBlock(payload, offset, Math.Min(inBlockSize, payload.Length - offset));
+                int blockLength = Math.Min(inBlockSize, payload.Length - offset);
+                var cryptoBlock = engine.ProcessBlock(payload, offset, blockLength);
                 cryptoBlock.CopyTo(output, i * outBlockSize);
+                outputLength += cryptoBlock.Length;
+
+                Logger.LogTrace("Encrypt {0}th block (offset {1} length {2}) to {3} bytes (offset {4})",
+                    i + 1, offset, blockLength, cryptoBlock.Length, i * outBlockSize);
             }
 
-            Logger.LogTrace("Encrypt {0} bytes ({1} blocks {2} to {3} bytes), output {4} bytes",
-                payload.Length, blocks, inBlockSize, outBlockSize, output.Length);
+            if(outputLength != output.Length) {
+                // Rescale output array
+                byte[] tmp = new byte[outputLength];
+                Array.Copy(output, tmp, outputLength);
+                output = tmp;
+            }
+
+            Logger.LogTrace("Encrypted {0} bytes into {1} blocks of {2} bytes, output {3} bytes",
+                payload.Length, blocks, outBlockSize, output.Length);
 
             return output;
         }
