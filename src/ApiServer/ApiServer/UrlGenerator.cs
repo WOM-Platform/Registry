@@ -11,7 +11,7 @@ namespace WomPlatform.Web.Api {
         private const string ApiPath = "api/v1";
 
         public static string GenerateRedeemUrl(Guid otcGen) {
-            return string.Format("{0}/redeem/{1:N}", RootUrl, otcGen);
+            return string.Format("{0}/vouchers/{1:N}", RootUrl, otcGen);
         }
 
         public static string GenerateSourceUrl(uint sourceId) {
