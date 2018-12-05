@@ -105,3 +105,7 @@ Contents below:
     ]
 }
 ```
+
+## Payment generation and processing
+
+Coming soon.

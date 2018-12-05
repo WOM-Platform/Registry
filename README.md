@@ -24,5 +24,6 @@ Work in progress.
 
 * [Entities and URLs](/docs/entities.md)
 * [Protocol implementation details](/docs/protocols.md)
+* [Voucher filtering](/docs/filtering.md)
 
 Check out our paper “[Introducing a flexible rewarding platform for mobile crowd-sensing applications](https://www.researchgate.net/publication/323868710_Introducing_a_flexible_rewarding_platform_for_mobile_crowd-sensing_applications)”, presented at CASPer’18 (PERCOM, Athens).&nbsp;📃
