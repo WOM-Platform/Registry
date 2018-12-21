@@ -19,9 +19,9 @@ FROM microsoft/dotnet:2.1-aspnetcore-runtime AS runtime
 WORKDIR /app
 COPY --from=build /app/ApiServer/out ./
 
-# Run on localhost:5004
-ENV ASPNETCORE_URLS http://+:5004
-EXPOSE 5004
+# Run on localhost:8779
+ENV ASPNETCORE_URLS http://+:8779
+EXPOSE 8779
 
 # Drop privileges
 USER 1000

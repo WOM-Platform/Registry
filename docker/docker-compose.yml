@@ -3,19 +3,35 @@ volumes:
   wom_registry_database:
     external: true
 
+networks:
+  web:
+    external: true
+  backend:
+
 services:
   api:
     container_name: wom-api
     build: ../src/ApiServer
     depends_on:
     - database
+    networks:
+    - web
+    - backend
     env_file: config.env
-    ports:
-      - "8779:5004" # "WO" in ASCII
+    expose:
+      - "8779"
+    labels:
+    - "traefik.enable=true"
+    - "traefik.network=web"
+    - "traefik.basic.protocol=http"
+    - "traefik.basic.port=8779"
+    - "traefik.basic.frontend.rule=Host:wom.social,PathPrefix:/api"
 
   database:
     container_name: wom-database
     image: mysql:5.7
+    networks:
+    - backend
     volumes:
     - wom_registry_database:/var/lib/mysql:rw
     env_file: config.env
@@ -24,5 +40,7 @@ services:
     container_name: wom-database-client
     build: ../src/MysqlClient
     depends_on:
-      - database
+    - database
+    networks:
+    - backend
     env_file: config.env

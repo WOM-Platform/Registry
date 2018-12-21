@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 ENV ?= dev
-DC := docker-compose -f docker/docker-compose.yml -f docker/docker-compose.${ENV}.yml
+DC := docker-compose -f docker/docker-compose.yml -f docker/docker-compose.${ENV}.yml --project-name wom
 DC_RUN := ${DC} run --rm
 
 include docker/config.env
