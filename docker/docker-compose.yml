@@ -22,9 +22,10 @@ services:
     labels:
     - "traefik.enable=true"
     - "traefik.network=web"
-    - "traefik.basic.protocol=http"
-    - "traefik.basic.port=8779"
-    - "traefik.basic.frontend.rule=Host:wom.social,PathPrefix:/api"
+    - "traefik.protocol=http"
+    - "traefik.port=8779"
+    - "traefik.frontend.rule=Host:wom.social;PathPrefix:/api"
+    - "traefik.frontend.entryPoints=http"
 
   database:
     image: mysql:5.7
