@@ -22,14 +22,14 @@ drop_volumes: confirmation
 
 .PHONY: install install_example
 install:
-	${DC_RUN} database-client -h wom-database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < sql/database-create.sql
+	${DC_RUN} database-client -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < sql/database-create.sql
 
 install_example:
-	${DC_RUN} database-client -h wom-database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < sql/database-example.sql
+	${DC_RUN} database-client -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < sql/database-example.sql
 
 .PHONY: mysql
 mysql: up
-	${DC_RUN} database-client -h wom-database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE}
+	${DC_RUN} database-client -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE}
 
 .PHONY: up
 up:

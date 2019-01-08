@@ -10,7 +10,6 @@ networks:
 
 services:
   api:
-    container_name: wom-api
     build: ../src/ApiServer
     depends_on:
     - database
@@ -28,7 +27,6 @@ services:
     - "traefik.basic.frontend.rule=Host:wom.social,PathPrefix:/api"
 
   database:
-    container_name: wom-database
     image: mysql:5.7
     networks:
     - backend
@@ -37,7 +35,6 @@ services:
     env_file: config.env
 
   database-client:
-    container_name: wom-database-client
     build: ../src/MysqlClient
     depends_on:
     - database
