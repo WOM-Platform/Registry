@@ -11,6 +11,11 @@ export
 confirmation:
 	@echo -n 'Are you sure? [y|N] ' && read ans && [ $$ans == y ]
 
+.PHONY: cmd
+cmd:
+	@echo 'Docker-Compose command for ${ENV} environment:'
+	@echo '${DC}'
+
 .PHONY: create_volumes drop_volumes
 create_volumes:
 	docker volume create wom_registry_database
@@ -63,5 +68,5 @@ stop:
 	${DC} stop
 
 .PHONY: rm
-rm rmc: stop
-	${DC} rm -f
+rm:
+	${DC} rm -fs
