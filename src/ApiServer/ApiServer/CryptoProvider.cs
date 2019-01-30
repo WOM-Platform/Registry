@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Encodings;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Paddings;
+using Org.BouncyCastle.Crypto.Parameters;
 
 namespace WomPlatform.Web.Api {
 
@@ -222,6 +224,50 @@ namespace WomPlatform.Web.Api {
                 payloadBytes.Length, decryptedBytes.Length, payload.Length);
 
             return JsonConvert.DeserializeObject<T>(decryptedBytes.AsUtf8String(), JsonSettings);
+        }
+
+        /// <summary>
+        /// Encrypts an object payload.
+        /// If successful, payload is encoded as a base64 string.
+        /// </summary>
+        public string Encrypt<T>(T payload, byte[] sessionKey) {
+            var payloadBytes = JsonConvert.SerializeObject(payload, JsonSettings).ToBytes();
+
+            var cipher = new PaddedBufferedBlockCipher(new AesEngine(), new Pkcs7Padding());
+            cipher.Init(true, new KeyParameter(sessionKey));
+
+            int outputSize = cipher.GetOutputSize(payloadBytes.Length);
+            byte[] output = new byte[outputSize];
+
+            Logger.LogTrace(LoggingEvents.Crypto, "Encrypting {0} to {1} bytes with {2}",
+                payloadBytes.Length, outputSize, cipher.AlgorithmName);
+
+            int outputLength = cipher.ProcessBytes(payloadBytes, output, 0);
+            int finalLength = cipher.DoFinal(output, outputLength);
+
+            Logger.LogTrace(LoggingEvents.Crypto, "Output {0}b, final {1}b", outputLength, finalLength);
+
+            return output.ToBase64();
+        }
+
+        public T Decrypt<T>(string payload, byte[] sessionKey) {
+            var payloadBytes = payload.FromBase64();
+
+            var cipher = new PaddedBufferedBlockCipher(new AesEngine(), new Pkcs7Padding());
+            cipher.Init(false, new KeyParameter(sessionKey));
+
+            int outputSize = cipher.GetOutputSize(payloadBytes.Length);
+            byte[] output = new byte[outputSize];
+
+            Logger.LogTrace(LoggingEvents.Crypto, "Decrypting {0} to {1} bytes with {2}",
+                payloadBytes.Length, outputSize, cipher.AlgorithmName);
+
+            int outputLength = cipher.ProcessBytes(payloadBytes, output, 0);
+            int finalLength = cipher.DoFinal(output, outputLength);
+
+            Logger.LogTrace(LoggingEvents.Crypto, "Output {0}b, final {1}b", outputLength, finalLength);
+
+            return JsonConvert.DeserializeObject<T>(output.AsUtf8String(), JsonSettings);
         }
 
     }

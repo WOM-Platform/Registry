@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 
 namespace WomPlatform.Web.Api {
@@ -19,6 +19,13 @@ namespace WomPlatform.Web.Api {
 
         public static string AsUtf8String(this byte[] b) {
             return Encoding.UTF8.GetString(b);
+        }
+
+        public static bool LengthIsBetween(this string s, int min, int max) {
+            if (s == null)
+                return false;
+
+            return s.Length >= min && s.Length <= max;
         }
 
     }

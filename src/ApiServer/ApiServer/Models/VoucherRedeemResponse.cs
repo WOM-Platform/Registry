@@ -10,7 +10,7 @@ namespace WomPlatform.Web.Api.Models {
         public string Payload { get; set; }
 
         /// <summary>
-        /// Payload signed by the registry.
+        /// Payload encrypted with session key.
         /// </summary>
         public class Content {
 

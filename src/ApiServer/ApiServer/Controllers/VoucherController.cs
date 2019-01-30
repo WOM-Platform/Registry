@@ -84,23 +84,29 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Redeem([FromBody]VoucherRedeemPayload payload) {
             var payloadContent = Crypto.Decrypt<VoucherRedeemPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
+            byte[] ks = payloadContent.SessionKey.FromBase64();
+            if(ks.Length != 32) {
+                Logger.LogError(LoggingEvents.VoucherRedemption, "Insufficient session key length ({0} bytes)", ks.Length);
+                return UnprocessableEntity();
+            }
+
             try {
-                var vouchers = Database.Connection.GenerateVouchers(payloadContent.Otc);
-                var converted = (from v in vouchers
-                                 select new VoucherRedeemResponse.VoucherInfo {
-                                     Id = v.Id,
-                                     Secret = Convert.ToBase64String(v.Secret),
-                                     Latitude = v.Latitude,
-                                     Longitude = v.Longitude,
-                                     Source = UrlGenerator.GenerateSourceUrl(v.SourceId),
-                                     Timestamp = v.Timestamp
-                                 });
+                var vouchers = Database.Context.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
+
                 var content = new VoucherRedeemResponse.Content {
-                    Vouchers = converted.ToArray()
+                    Vouchers = (from v in vouchers
+                                select new VoucherRedeemResponse.VoucherInfo {
+                                    Id = v.Id,
+                                    Secret = Convert.ToBase64String(v.Secret),
+                                    Aim = UrlGenerator.GenerateAimUrl(v.AimCode),
+                                    Latitude = v.Latitude,
+                                    Longitude = v.Longitude,
+                                    Timestamp = v.Timestamp
+                                }).ToArray()
                 };
 
                 return Ok(new VoucherRedeemResponse {
-                    Payload = Crypto.Sign(content, KeyManager.RegistryPrivateKey)
+                    Payload = Crypto.Encrypt(content, ks)
                 });
             }
             catch(Exception ex) {

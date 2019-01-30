@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\ApiServer\ApiServer\CryptoProvider.cs" Link="CryptoProvider.cs" />
+    <Compile Include="..\..\ApiServer\ApiServer\LoggingEvents.cs" Link="LoggingEvents.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\RandomExtensions.cs" Link="RandomExtensions.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\StringExtensions.cs" Link="StringExtensions.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\Models\*.cs">
