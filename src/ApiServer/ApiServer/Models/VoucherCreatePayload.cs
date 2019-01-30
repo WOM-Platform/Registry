@@ -10,10 +10,10 @@ namespace WomPlatform.Web.Api.Models {
         /// <summary>
         /// Unique ID of the source.
         /// </summary>
-        public uint SourceId { get; set; }
+        public long SourceId { get; set; }
 
         /// <summary>
-        /// Nonce to prevent repetition.
+        /// Nonce to prevent repetition (base64-encoded).
         /// </summary>
         public string Nonce { get; set; }
 
@@ -30,12 +30,17 @@ namespace WomPlatform.Web.Api.Models {
             /// <summary>
             /// Unique ID of the source.
             /// </summary>
-            public uint SourceId { get; set; }
+            public long SourceId { get; set; }
 
             /// <summary>
-            /// Nonce to prevent repetition.
+            /// Nonce to prevent repetition (base64-encoded).
             /// </summary>
             public string Nonce { get; set; }
+
+            /// <summary>
+            /// Password specified by user.
+            /// </summary>
+            public string Password { get; set; }
 
             /// <summary>
             /// Details of the vouchers to create.
@@ -48,6 +53,8 @@ namespace WomPlatform.Web.Api.Models {
         /// Encapsulates information about a single voucher.
         /// </summary>
         public class VoucherInfo {
+
+            public string Aim { get; set; }
 
             public double Latitude { get; set; }
 

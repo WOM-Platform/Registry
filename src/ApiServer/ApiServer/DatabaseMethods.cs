@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
-using Dapper;
-using Dapper.Contrib;
-using Dapper.Contrib.Extensions;
 using WomPlatform.Web.Api.DatabaseModels;
 using WomPlatform.Web.Api.Models;
 
@@ -21,40 +18,57 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets a source by its primary ID or null if not found.
         /// </summary>
-        public static Source GetSourceById(this DbConnection conn, uint sourceId) {
-            return conn.QueryFirstOrDefault<Source>(
-                "SELECT * FROM Sources WHERE Id = @Id",
-                new { Id = sourceId }
-            );
+        public static Source GetSourceById(this DataContext data, long sourceId) {
+            return (from s in data.Sources
+                    where s.Id == sourceId
+                    select s).SingleOrDefault();
+        }
+
+        /// <summary>
+        /// Gets all aims.
+        /// </summary>
+        /// <param name="conn"></param>
+        /// <returns></returns>
+        public static IEnumerable<Aim> GetAims(this DataContext data) {
+            return from a in data.Aims
+                   orderby a.Code
+                   select a;
         }
 
         /// <summary>
         /// Creates a new voucher generation instance.
         /// </summary>
-        public static Guid CreateVoucherGeneration(this DbConnection conn, VoucherCreatePayload.Content creationParameters) {
+        public static Guid CreateVoucherGeneration(this DataContext data, VoucherCreatePayload.Content creationParameters) {
+            // TODO: validate whether source is allowed to generate vouchers
+
             var otc = Guid.NewGuid();
 
-            // New generation instance
-            var generationRequestId = conn.Insert(new GenerationRequest {
-                SourceId = creationParameters.SourceId,
+            var genRequest = new GenerationRequest {
                 Amount = (ushort)creationParameters.Vouchers.Length,
                 OtcGen = otc,
                 CreatedAt = DateTime.UtcNow,
-                Performed = false
-            });
+                Performed = false,
+                SourceId = creationParameters.SourceId,
+                Nonce = creationParameters.Nonce.FromBase64(),
+                Password = creationParameters.Password
+            };
+            data.GenerationRequests.Add(genRequest);
+            data.SaveChanges();
 
             foreach (var voucher in creationParameters.Vouchers) {
                 var v = new Voucher {
+                    AimCode = voucher.Aim,
                     Latitude = voucher.Latitude,
                     Longitude = voucher.Longitude,
                     Timestamp = voucher.Timestamp,
-                    SourceId = creationParameters.SourceId,
-                    GenerationRequestId = (uint)generationRequestId
+                    GenerationRequestId = genRequest.Id,
+                    Void = false
                 };
                 _random.NextBytes(v.Secret);
 
-                conn.Insert(v);
+                data.Vouchers.Add(v);
             }
+            data.SaveChanges();
 
             return otc;
         }
@@ -62,22 +76,20 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets a generation request by its unique OTC_gen code.
         /// </summary>
-        public static GenerationRequest GetGenerationRequestByOtc(this DbConnection conn, Guid otcGen) {
-            return conn.QueryFirstOrDefault<GenerationRequest>(
-                "SELECT * FROM GenerationRequests WHERE OtcGen = @OtcGen",
-                new { OtcGen = otcGen }
-            );
+        public static GenerationRequest GetGenerationRequestByOtc(this DataContext data, Guid otcGen) {
+            return (from g in data.GenerationRequests
+                    where g.OtcGen == otcGen
+                    select g).SingleOrDefault();
         }
 
         /// <summary>
         /// Redeems vouchers tied to a given OTC_gen code and marks
         /// the generation request instance as completed.
         /// </summary>
-        public static IEnumerable<Voucher> GenerateVouchers(this DbConnection conn, Guid otcGen) {
-            var request = conn.QueryFirstOrDefault<GenerationRequest>(
-                "SELECT * FROM GenerationRequests WHERE OtcGen = @OtcGen",
-                new { OtcGen = otcGen }
-            );
+        public static IEnumerable<Voucher> GenerateVouchers(this DataContext data, Guid otcGen, string password) {
+            var request = (from g in data.GenerationRequests
+                           where g.OtcGen == otcGen
+                           select g).SingleOrDefault();
             if(request == null) {
                 throw new ArgumentException("OTC code matches no voucher generation request", nameof(otcGen));
             }
@@ -85,27 +97,15 @@ namespace WomPlatform.Web.Api {
                 throw new InvalidOperationException("Voucher generation request has already been performed");
             }
 
-            var vouchers = conn.Query<Voucher>(
-                "SELECT * FROM Vouchers WHERE `GenerationRequestId` = @ReqId",
-                new { ReqId = request.Id }
-            );
+            var vouchers = from v in data.Vouchers
+                           where v.GenerationRequestId == request.Id
+                           select v;
 
-            conn.Query("UPDATE GenerationRequests SET `Performed` = 1 WHERE `Id` = @Id", new { Id = request.Id });
+            request.Performed = true;
+            data.SaveChanges();
 
             return vouchers;
         }
-
-        public static PaymentRequest PaymentParameters(this DbConnection conn, string OTCPay) {
-            var instance = conn.QueryFirstOrDefault<PaymentRequest>("select * from Paymentrequests where OTCPay = @otc", new { otc = OTCPay });
-
-            return instance;
-        }
-
-        /*
-        public void SetPayedRequest(DbConnection conn, string OTCPay) {
-            conn.Query("UPDATE `voucherpiattaforma`.`paymentrequests` SET `State`='payed' WHERE `OTCPay`= @otc", new { otc = OTCPay });
-        }
-        */
 
     }
 

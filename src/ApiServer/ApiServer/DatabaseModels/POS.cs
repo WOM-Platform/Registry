@@ -1,8 +1,6 @@
-using Dapper.Contrib.Extensions;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WomPlatform.Web.Api.DatabaseModels {
 
@@ -10,6 +8,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
     public class POS {
 
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public uint Id { get; set; }
 
         public string Name { get; set; }

@@ -1,8 +1,6 @@
-using Dapper.Contrib.Extensions;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WomPlatform.Web.Api.DatabaseModels {
 
@@ -12,13 +10,16 @@ namespace WomPlatform.Web.Api.DatabaseModels {
         public const int SecretLength = 16;
 
         public Voucher() {
-            this.Secret = new byte[SecretLength];
+            Secret = new byte[SecretLength];
         }
 
         [Key]
-        public uint Id { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long Id { get; set; }
 
         public byte[] Secret { get; set; }
+
+        public string AimCode { get; set; }
 
         public double Latitude { get; set; }
 
@@ -26,11 +27,9 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public DateTime Timestamp { get; set; }
 
-        public uint SourceId { get; set; }
+        public long GenerationRequestId { get; set; }
 
-        public uint? PaymentRequestId { get; set; }
-
-        public uint GenerationRequestId { get; set; }
+        public long? PaymentRequestId { get; set; }
 
         public bool Void { get; set; }
 

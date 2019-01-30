@@ -14,8 +14,16 @@ namespace WomPlatform.Web.Api {
             return string.Format("{0}/vouchers/{1:N}", RootUrl, otcGen);
         }
 
+        public static string GeneratePaymentUrl(Guid otcPay) {
+            return string.Format("{0}/payment/{1:N}", RootUrl, otcPay);
+        }
+
         public static string GenerateSourceUrl(uint sourceId) {
-            return string.Format("{0}/sources/{1}", RootUrl, sourceId);
+            return string.Format("{0}/{1}/source/{2}", RootUrl, ApiPath, sourceId);
+        }
+
+        public static string GenerateAimUrl(string code) {
+            return string.Format("{0}/{1}/aim/{2}", RootUrl, ApiPath, code);
         }
 
     }

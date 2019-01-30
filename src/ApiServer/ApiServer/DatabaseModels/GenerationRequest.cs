@@ -1,18 +1,23 @@
-using Dapper.Contrib.Extensions;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WomPlatform.Web.Api.DatabaseModels {
 
     [Table("GenerationRequests")]
     public class GenerationRequest {
 
-        [Key]
-        public uint Id { get; set; }
+        public const int NonceMinLength = 16;
+        public const int NonceMaxLength = 32;
 
-        public ushort Amount { get; set; }
+        public const int PasswordMinLength = 4;
+        public const int PasswordMaxLength = 8;
+
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long Id { get; set; }
+
+        public int Amount { get; set; }
 
         public Guid OtcGen { get; set; }
 
@@ -20,7 +25,11 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public bool Performed { get; set; }
 
-        public uint SourceId { get; set; }
+        public long SourceId { get; set; }
+
+        public byte[] Nonce { get; set; }
+
+        public string Password { get; set; }
 
     }
 

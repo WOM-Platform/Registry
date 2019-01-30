@@ -8,11 +8,13 @@
 -- -----------------------------------------------------
 USE `Wom` ;
 
-INSERT INTO `Wom`.`Contacts` (`Email`, `Name`, `Surname`) VALUES ('example@example.org', 'Name', 'Surname');
+INSERT INTO `Wom`.`Contacts` (`Email`, `Name`, `Surname`) VALUES ('example@example.org', 'Sample', 'Sample');
 
-INSERT INTO `Wom`.`Aims` (`Description`, `ContactID`, `CreationDate`) VALUES ('Test aim', 1, '2017-12-20');
+INSERT INTO `Wom`.`Aims` (`Code`, `Description`, `CreationDate`) VALUES ('1', '1. Sample one', '2017-12-20');
+INSERT INTO `Wom`.`Aims` (`Code`, `Description`, `CreationDate`) VALUES ('1/1', '1.1. Sub aim one', '2019-01-29');
+INSERT INTO `Wom`.`Aims` (`Code`, `Description`, `CreationDate`) VALUES ('2', '2. Sample two', '2019-01-29');
 
-INSERT INTO `Wom`.`Sources` (`PublicKey`, `CreationDate`, `Name`, `URL`, `AimID`, `ContactID`) VALUES ('-----BEGIN PUBLIC KEY-----
+INSERT INTO `Wom`.`Sources` (`Name`, `PublicKey`, `CreationDate`, `URL`, `ContactID`) VALUES ('Sample source 1', '-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA3ofbz4kneWa3Fv1PaYzu
 acxNKC+Fokz9eHNMi6O5GK9GepY5O5aS++fhFGJ15HpwHHFv7hipSKFocTJ7+Fob
 lBZwtIRPfvWBf+nWG1rqEjfVqVm7ZDrB70URrq049NdBEz3UXWTtAoynwq3kU19I
@@ -26,6 +28,4 @@ Cn/nedIE4Nid4toS738+flFMiXbbFyP0p0L2KQvH5O21569CWlOLBnEdDJ8xV1A+
 21ILxbD3LDRela0W30fvikokJEZy1/eAZhtDNR3S6BNVpIEACGBml4rbJqZY8EuF
 l/68yRYlTREY4L4mj9Vb6H0CAwEAAQ==
 -----END PUBLIC KEY-----
-', '2017-12-20', 'Sample source 1', 'http://example.org', 1, 1);
-
--- INSERT INTO `Wom`.`Vouchers` (`Latitude`, `Longitude`, `Timestamp`, `Type`, `ID_Source`, `OTC`, `Nonce`, `ID_GenerationRequest`) VALUES (42.932836, 12.608098, '2017-12-28 19:00:05', '','', 1, 'b0abb564-a606-4131-95da-7f7eb027b4ee', 1);
+', '2017-12-20', 'http://example.org', 1);
