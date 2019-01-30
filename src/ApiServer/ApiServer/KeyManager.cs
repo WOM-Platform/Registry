@@ -10,26 +10,28 @@ namespace WomPlatform.Web.Api {
 
     public class KeyManager {
 
-        protected readonly IConfiguration _configuration;
-        protected readonly ILogger<KeyManager> _logger;
+        protected IConfiguration Configuration { get; }
+        protected ILogger<KeyManager> Logger { get; }
 
-        public KeyManager(IConfiguration configuration, ILogger<KeyManager> logger) {
-            this._configuration = configuration;
-            this._logger = logger;
+        public KeyManager(
+            IConfiguration configuration, ILogger<KeyManager> logger
+        ) {
+            Configuration = configuration;
+            Logger = logger;
 
-            this._logger.LogTrace(LoggingEvents.KeyManagement, "Loading registry keys");
+            Logger.LogTrace(LoggingEvents.KeyManagement, "Loading registry keys");
 
             var keysConf = configuration.GetSection("RegistryKeys");
             if (!string.IsNullOrEmpty(keysConf["PublicPath"])) {
-                this.RegistryPublicKey = LoadKeyFromPem<AsymmetricKeyParameter>(keysConf["PublicPath"]);
-                this._logger.LogDebug(LoggingEvents.KeyManagement, "Public key loaded: {0}", this.RegistryPublicKey);
+                RegistryPublicKey = LoadKeyFromPem<AsymmetricKeyParameter>(keysConf["PublicPath"]);
+                Logger.LogDebug(LoggingEvents.KeyManagement, "Public key loaded: {0}", RegistryPublicKey);
             }
             if (!string.IsNullOrEmpty(keysConf["PrivatePath"])) {
-                this.RegistryPrivateKey = LoadKeyFromPem<AsymmetricCipherKeyPair>(keysConf["PrivatePath"]).Private;
-                this._logger.LogDebug(LoggingEvents.KeyManagement, "Private key loaded: {0}", this.RegistryPrivateKey);
+                RegistryPrivateKey = LoadKeyFromPem<AsymmetricCipherKeyPair>(keysConf["PrivatePath"]).Private;
+                Logger.LogDebug(LoggingEvents.KeyManagement, "Private key loaded: {0}", RegistryPrivateKey);
             }
 
-            this._logger.LogInformation(LoggingEvents.KeyManagement, "Registry keys loaded");
+            Logger.LogTrace(LoggingEvents.KeyManagement, "Registry keys loaded");
         }
 
         public static T LoadKeyFromPem<T>(string path) where T : class {
