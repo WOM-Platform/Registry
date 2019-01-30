@@ -69,7 +69,7 @@ namespace ApiServer.Controllers {
 
             var result = Database.Context.CreateVoucherGeneration(new VoucherCreatePayload.Content {
                 SourceId = testSource.Id,
-                Nonce = "", // is unused at this point
+                Nonce = Guid.NewGuid().ToString("N"),
                 Password = pin,
                 Vouchers = voucherInfos.ToArray()
             });
@@ -77,7 +77,7 @@ namespace ApiServer.Controllers {
             Logger.LogTrace("New voucher generation request created with code {0}", result);
 
             return Ok( new {
-                OtcGen = result.ToString("N"),
+                OtcGen = UrlGenerator.GenerateRedeemUrl(result),
                 Pin = pin
             });
         }
