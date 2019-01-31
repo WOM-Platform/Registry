@@ -73,7 +73,7 @@ They are encoded as a hierarchy of JSON objects, in the following form:
 
 Where:
 * `Source`, `Age`, and `BoundingBox` work just like in simple filters;
-* `TimeRange` expressed an interval of time, encoded as ISO dates;
+* `TimeRange` expresses an interval of time, encoded as a couple of ISO&nbsp;dates;
 * `Geometry` can take any [GeoJSON](https://tools.ietf.org/html/rfc7946) geometry object (but only `Polygon` types make sense and are supported by default);
 * `Age` and `TimeRange`, `BoundingBox` and `Geometry` are mutually exclusive.
 

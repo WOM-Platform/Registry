@@ -76,7 +76,9 @@ Contents below:
 
 ```json
 {
-    "Otc": "string, see above"
+    "Otc": "string, represents the redemption ID",
+    "Password": "string, short user-provided code [4–8 characters, numeric]",
+    "SessionKey": "string, base64-encoded session key [32 bytes]"
 }
 ```
 
@@ -88,19 +90,19 @@ Contents below:
 }
 ```
 
-Payload encoded in JSON, as UTF-8 string, signed with the registry's public key.
-Contents below:
+The payload is encoded in JSON, as a UTF-8 string, encrypted with the *session key* specified in the request.
+Encryption makes use of the 256-bit AES&nbsp;algorithm, with PKCS#7 padding.
 
 ```json
 {
     "Vouchers": [
         {
             "Id": "integer, unique",
-            "Secret": "string",
+            "Secret": "string, base64-encoded random bytes",
+            "Aim": "string, URL to the voucher aim",
             "Latitude": "double",
             "Longitude": "double",
-            "Timestamp": "string, in ISO 8601 format",
-            "Source": "string, URL to the generating source"
+            "Timestamp": "string, in ISO 8601 format"
         }
     ]
 }
