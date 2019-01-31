@@ -47,7 +47,9 @@ namespace WomPlatform.Web.Api {
                 Amount = (ushort)creationParameters.Vouchers.Length,
                 OtcGen = otc,
                 CreatedAt = DateTime.UtcNow,
-                Performed = false,
+                Verified = false,
+                PerformedAt = null,
+                Void = false,
                 SourceId = creationParameters.SourceId,
                 Nonce = creationParameters.Nonce.FromBase64(),
                 Password = creationParameters.Password
@@ -62,7 +64,7 @@ namespace WomPlatform.Web.Api {
                     Longitude = voucher.Longitude,
                     Timestamp = voucher.Timestamp,
                     GenerationRequestId = genRequest.Id,
-                    Void = false
+                    Spent = false
                 };
                 _random.NextBytes(v.Secret);
 
@@ -93,19 +95,27 @@ namespace WomPlatform.Web.Api {
             if(request == null) {
                 throw new ArgumentException("OTC code matches no voucher generation request");
             }
-            if(request.Performed) {
-                throw new InvalidOperationException("Voucher generation request has already been performed");
+            if (!request.Verified) {
+                throw new InvalidOperationException("Voucher generation request not verified");
             }
-            if(!request.Password.Equals(password, StringComparison.Ordinal)) {
-                // TODO: make generation request void
-                throw new ArgumentException("Password does not match");
+            if (request.PerformedAt.HasValue) {
+                throw new InvalidOperationException("Vouchers already redeemed");
+            }
+            if (request.Void) {
+                throw new InvalidOperationException("Voucher generation request has been voided");
+            }
+            if (!request.Password.Equals(password, StringComparison.Ordinal)) {
+                request.Void = true;
+                data.SaveChanges();
+
+                throw new ArgumentException("Password does not match, request has been voided");
             }
 
             var vouchers = from v in data.Vouchers
                            where v.GenerationRequestId == request.Id
                            select v;
 
-            request.Performed = true;
+            request.PerformedAt = DateTime.UtcNow;
             data.SaveChanges();
 
             return vouchers;

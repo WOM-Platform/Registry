@@ -23,7 +23,11 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public DateTime CreatedAt { get; set; }
 
-        public bool Performed { get; set; }
+        public bool Verified { get; set; }
+
+        public DateTime? PerformedAt { get; set; }
+
+        public bool Void { get; set; }
 
         public long SourceId { get; set; }
 

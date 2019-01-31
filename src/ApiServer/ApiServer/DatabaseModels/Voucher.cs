@@ -31,7 +31,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public long? PaymentRequestId { get; set; }
 
-        public bool Void { get; set; }
+        public bool Spent { get; set; }
 
     }
 
