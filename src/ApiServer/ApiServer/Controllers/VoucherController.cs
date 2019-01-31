@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
+using WomPlatform.Web.Api;
 using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -87,7 +88,7 @@ namespace WomPlatform.Web.Api.Controllers {
             byte[] ks = payloadContent.SessionKey.FromBase64();
             if(ks.Length != 32) {
                 Logger.LogError(LoggingEvents.VoucherRedemption, "Insufficient session key length ({0} bytes)", ks.Length);
-                return UnprocessableEntity();
+                return this.ProblemParameter($"Length of {nameof(payloadContent.SessionKey)} not valid");
             }
 
             try {
@@ -109,10 +110,17 @@ namespace WomPlatform.Web.Api.Controllers {
                     Payload = Crypto.Encrypt(content, ks)
                 });
             }
+            catch(ArgumentException ex) {
+                Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Generation request parameter not valid");
+                return this.ProblemParameter(ex.Message);
+            }
+            catch(InvalidOperationException ex) {
+                Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Cannot perform voucher generation");
+                return this.RequestVoid("Voucher generation already requested");
+            }
             catch(Exception ex) {
                 Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to generate vouchers");
-
-                throw;
+                return this.UnexpectedError();
             }
         }
 

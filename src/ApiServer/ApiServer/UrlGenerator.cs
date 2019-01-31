@@ -26,6 +26,10 @@ namespace WomPlatform.Web.Api {
             return string.Format("{0}/{1}/aim/{2}", RootUrl, ApiPath, code);
         }
 
+        public static string GenerateProblemUrl(string code) {
+            return string.Format("{0}/{1}/problem/{2}", RootUrl, ApiPath, code);
+        }
+
     }
 
 }

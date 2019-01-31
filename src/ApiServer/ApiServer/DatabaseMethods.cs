@@ -91,10 +91,14 @@ namespace WomPlatform.Web.Api {
                            where g.OtcGen == otcGen
                            select g).SingleOrDefault();
             if(request == null) {
-                throw new ArgumentException("OTC code matches no voucher generation request", nameof(otcGen));
+                throw new ArgumentException("OTC code matches no voucher generation request");
             }
             if(request.Performed) {
                 throw new InvalidOperationException("Voucher generation request has already been performed");
+            }
+            if(!request.Password.Equals(password, StringComparison.Ordinal)) {
+                // TODO: make generation request void
+                throw new ArgumentException("Password does not match");
             }
 
             var vouchers = from v in data.Vouchers
