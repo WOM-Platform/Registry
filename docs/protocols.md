@@ -3,15 +3,13 @@
 The registry API protocol is composed of two major parts: voucher generation and payments.
 Both parts are based on 2&nbsp;API methods.
 
-## Voucher generation and redemption
-
-### Voucher creation request
+## Voucher creation request
 
 Request from *instrument* to *registry*, generating a new voucher generation request.
 
 `POST /api/v1/voucher/create`
 
-#### Payload
+### Payload
 
 ```json
 {
@@ -38,7 +36,7 @@ Contents as follows:
 }
 ```
 
-#### Result
+### Result
 
 ```json
 {
@@ -57,57 +55,62 @@ Contents below:
 }
 ```
 
-### Voucher redemption
+## Voucher redemption
 
 Request from *pocket* to *registry*, completing the voucher generation request and returning instances of vouchers to the pocket, which can use them to process payments.
 
 `POST /api/v1/voucher/redeem`
 
-#### Payload
+### Payload
 
 ```json
 {
-    "Payload": "string, see below"
+    "Payload": ""
 }
 ```
 
-`Payload` content encoded in JSON, as UTF-8 string, encrypted with the registry's public key.
-Contents below:
+`Payload` is a JSON-encoded object, encrypted with the *registry's public key*.
+Contents of the object are shown below:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Otc` | string | Uniquely represents the voucher generation instance. Is a GUID in the current implementation. |
+| `Password` | string | Short user-provided code that secures transmission of the `Otc`. 4 to 8 numeric characters. |
+| `SessionKey` | string | 256-bit session key used to encrypt the response. Encoded in base64. |
+
+### Result
 
 ```json
 {
-    "Otc": "string, represents the redemption ID",
-    "Password": "string, short user-provided code [4–8 characters, numeric]",
-    "SessionKey": "string, base64-encoded session key [32 bytes]"
+    "Payload": ""
 }
 ```
 
-#### Result
-
-```json
-{
-    "Payload": "string"
-}
-```
-
-The payload is encoded in JSON, as a UTF-8 string, encrypted with the *session key* specified in the request.
+`Payload` is a JSON-encoded object, encrypted with the *session key* specified in the request.
 Encryption makes use of the 256-bit AES&nbsp;algorithm, with PKCS#7 padding.
+Contents of the object are shown below:
 
 ```json
 {
-    "Vouchers": [
-        {
-            "Id": "integer, unique",
-            "Secret": "string, base64-encoded random bytes",
-            "Aim": "string, URL to the voucher aim",
-            "Latitude": "double",
-            "Longitude": "double",
-            "Timestamp": "string, in ISO 8601 format"
-        }
-    ]
+    "Vouchers": [ { } ]
 }
 ```
 
-## Payment generation and processing
+Each voucher object has the following properties:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Id` | integer | Unique voucher ID. |
+| `Secret` | string | Sequence of random bytes (16&nbsp;in current implementation), encoded in base64. |
+| `Aim` | string | URL representing the voucher’s aim. |
+| `Latitude` | number | |
+| `Longitude` | number | |
+| `Timestamp` | string | Time and date, ISO&nbsp;8601 format. |
+
+# Payment generation
+
+Coming soon.
+
+# Payment processing
 
 Coming soon.
