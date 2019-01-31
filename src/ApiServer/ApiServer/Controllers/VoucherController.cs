@@ -47,8 +47,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
 
-            var payloadContent = Crypto.DecryptAndVerify<VoucherCreatePayload.Content>(payload.Payload,
-                sourcePublicKey, KeyManager.RegistryPrivateKey);
+            var payloadContent = Crypto.Decrypt<VoucherCreatePayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             if(payload.SourceId != payloadContent.SourceId) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
@@ -67,11 +66,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogDebug(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
 
                 return Ok(new VoucherCreateResponse {
-                    Payload = Crypto.SignAndEncrypt(new VoucherCreateResponse.Content {
+                    Payload = Crypto.Encrypt(new VoucherCreateResponse.Content {
                         RegistryUrl = "https://wom.social",
                         Nonce = payloadContent.Nonce,
                         Otc = otc
-                    }, KeyManager.RegistryPrivateKey, sourcePublicKey)
+                    }, sourcePublicKey)
                 });
             }
             catch(Exception ex) {

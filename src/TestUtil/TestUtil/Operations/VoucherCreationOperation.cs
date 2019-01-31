@@ -33,16 +33,16 @@ namespace TestUtil.Operations {
             var request = CreateJsonRequest("voucher/create", new VoucherCreatePayload {
                 SourceId = 1,
                 Nonce = nonce,
-                Payload = Crypto.SignAndEncrypt(new VoucherCreatePayload.Content {
+                Payload = Crypto.Encrypt(new VoucherCreatePayload.Content {
                     SourceId = 1,
                     Nonce = nonce,
                     Password = password,
                     Vouchers = voucherInfos.ToArray()
-                }, privateKey, publicRegistryKey)
+                }, publicRegistryKey)
             });
 
             var response = PerformRequest<VoucherCreateResponse>(request);
-            var responseContent = Crypto.DecryptAndVerify<VoucherCreateResponse.Content>(response.Payload, publicRegistryKey, privateKey);
+            var responseContent = Crypto.Decrypt<VoucherCreateResponse.Content>(response.Payload, privateKey);
             Console.WriteLine("Voucher generation requested");
             Console.WriteLine(JsonConvert.SerializeObject(responseContent, Formatting.Indented));
             Console.WriteLine();

@@ -220,7 +220,7 @@ namespace WomPlatform.Web.Api {
             var payloadBytes = payload.FromBase64();
             var decryptedBytes = Decrypt(payloadBytes, receiverPrivateKey);
 
-            Logger.LogTrace("Verify {2} chars (bytes {0} => {1})",
+            Logger.LogTrace("Decrypt {2} chars (bytes {0} => {1})",
                 payloadBytes.Length, decryptedBytes.Length, payload.Length);
 
             return JsonConvert.DeserializeObject<T>(decryptedBytes.AsUtf8String(), JsonSettings);
