@@ -93,7 +93,7 @@ namespace WomPlatform.Web.Api {
                            where g.OtcGen == otcGen
                            select g).SingleOrDefault();
             if(request == null) {
-                throw new ArgumentException("OTC code matches no voucher generation request");
+                throw new ArgumentException("OTC code not valid");
             }
             if (!request.Verified) {
                 throw new InvalidOperationException("Voucher generation request not verified");

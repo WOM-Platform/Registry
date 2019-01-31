@@ -37,7 +37,8 @@ namespace TestUtil.Operations {
             var response = Client.Execute(request);
             Console.Error.WriteLine("HTTP {0}, {1} bytes, content type: {2}", response.StatusCode, response.ContentLength, response.ContentType);
             if(response.StatusCode != System.Net.HttpStatusCode.OK) {
-                throw new InvalidOperationException("API did not return 200 OK");
+                Console.Error.WriteLine(response.Content);
+                throw new InvalidOperationException();
             }
 
             return JsonConvert.DeserializeObject<T>(response.Content);

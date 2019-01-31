@@ -32,8 +32,9 @@ namespace TestUtil {
             catch(Exception ex) {
                 Console.Error.WriteLine("Error: {0}", ex.Message);
                 Console.Error.WriteLine(ex.StackTrace);
-                Environment.Exit(1);
             }
+
+            Console.Read();
         }
 
         private static BaseOperation CreateOperation(string code) {
