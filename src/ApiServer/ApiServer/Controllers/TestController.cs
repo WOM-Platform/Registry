@@ -52,7 +52,7 @@ namespace ApiServer.Controllers {
             var testSource = Database.Context.GetSourceById(1);
             var aims = Database.Context.GetAims().ToList();
 
-            Logger.LogDebug("Test source: {0}, aims: {1}", testSource.Name, string.Join(", ", from a in aims select a.Code));
+            Logger.LogTrace("Test source: {0}, aims: {1}", testSource.Name, string.Join(", ", from a in aims select a.Code));
 
             var now = DateTime.UtcNow;
             var voucherInfos = new List<VoucherCreatePayload.VoucherInfo>();
@@ -74,7 +74,11 @@ namespace ApiServer.Controllers {
                 Vouchers = voucherInfos.ToArray()
             });
 
-            Logger.LogTrace("New voucher generation request created with code {0}", result);
+            Logger.LogDebug("New voucher generation request created with code {0}", result);
+
+            Database.Context.VerifyGenerationRequest(result);
+
+            Logger.LogDebug("Voucher generation request verified");
 
             return Ok( new {
                 OtcGen = UrlGenerator.GenerateRedeemUrl(result),
