@@ -15,14 +15,14 @@ namespace WomPlatform.Web.Api.Models {
         public class Content {
 
             /// <summary>
-            /// Identifies the source as an URL.
+            /// Identifies the registry.
             /// </summary>
-            public string Source { get; set; }
+            public string RegistryUrl { get; set; }
 
             /// <summary>
-            /// Provides the next nonce to use in a voucher creation request.
+            /// Returns the nonce originally sent by the source.
             /// </summary>
-            public string NextNonce { get; set; }
+            public string Nonce { get; set; }
 
             /// <summary>
             /// Voucher redemption OTC.

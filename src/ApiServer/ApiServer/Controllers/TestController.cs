@@ -45,7 +45,7 @@ namespace ApiServer.Controllers {
                 throw new ArgumentOutOfRangeException(nameof(count), "Voucher count out of range");
             }
 
-            var pin = _rnd.GeneratePin(4);
+            var pin = _rnd.GeneratePassword(4);
 
             Logger.LogInformation("Creating {0} test vouchers", count);
 

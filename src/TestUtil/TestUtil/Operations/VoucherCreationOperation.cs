@@ -11,6 +11,7 @@ namespace TestUtil.Operations {
 
         public override void Execute(string[] args) {
             var rnd = new Random();
+            var password = rnd.GeneratePassword(4);
 
             var privateKey = KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("source1.pem").Private;
             var publicRegistryKey = KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("registry.pem").Public;
@@ -19,6 +20,7 @@ namespace TestUtil.Operations {
             var voucherInfos = new List<VoucherCreatePayload.VoucherInfo>();
             for (int i = 0; i < 5; ++i) {
                 voucherInfos.Add(new VoucherCreatePayload.VoucherInfo {
+                    Aim = "1",
                     Latitude = rnd.NextBetween(5, 40),
                     Longitude = rnd.NextBetween(5, 50),
                     Timestamp = now
@@ -27,12 +29,14 @@ namespace TestUtil.Operations {
                 now = now.Subtract(TimeSpan.FromMinutes(30));
             }
 
+            var nonce = Guid.NewGuid().ToString("N");
             var request = CreateJsonRequest("voucher/create", new VoucherCreatePayload {
                 SourceId = 1,
-                Nonce = "",
+                Nonce = nonce,
                 Payload = Crypto.SignAndEncrypt(new VoucherCreatePayload.Content {
                     SourceId = 1,
-                    Nonce = "",
+                    Nonce = nonce,
+                    Password = password,
                     Vouchers = voucherInfos.ToArray()
                 }, privateKey, publicRegistryKey)
             });
@@ -41,6 +45,9 @@ namespace TestUtil.Operations {
             var responseContent = Crypto.DecryptAndVerify<VoucherCreateResponse.Content>(response.Payload, publicRegistryKey, privateKey);
             Console.WriteLine("Voucher generation requested");
             Console.WriteLine(JsonConvert.SerializeObject(responseContent, Formatting.Indented));
+            Console.WriteLine();
+            Console.WriteLine("OTCgen: {0:N}", responseContent.Otc);
+            Console.WriteLine("Password: {0}", password);
         }
     }
 

@@ -32,6 +32,30 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public static ActionResult SourceNotFound(this ControllerBase c) {
+            return new ProblemResult(
+                404,
+                "source-not-found",
+                "Source with the specified ID does not exist"
+            );
+        }
+
+        public static ActionResult SourceVerificationFailure(this ControllerBase c) {
+            return new ProblemResult(
+                401,
+                "source-verification-failed",
+                "Failed to verifiy source identity"
+            );
+        }
+
+        public static ActionResult PayloadVerificationFailure(this ControllerBase c, string title = null) {
+            return new ProblemResult(
+                403,
+                "payload-verification-failure",
+                title ?? "Failed to verify request contents"
+            );
+        }
+
     }
 
 }

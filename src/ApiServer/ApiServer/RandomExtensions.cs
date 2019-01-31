@@ -20,7 +20,7 @@ namespace WomPlatform.Web.Api {
             return source[r.Next(c)];
         }
 
-        public static string GeneratePin(this Random r, int length) {
+        public static string GeneratePassword(this Random r, int length) {
             var sb = new StringBuilder(length);
             for(int i = 0; i < length; ++i) {
                 sb.Append(r.Next(10).ToString());

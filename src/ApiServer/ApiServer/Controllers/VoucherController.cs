@@ -34,16 +34,15 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST api/v1/voucher/create
         [HttpPost("create")]
-        public VoucherCreateResponse Create([FromBody]VoucherCreatePayload payload) {
-            Logger.LogInformation(LoggingEvents.VoucherCreation, "Received create request from Source ID {0}, nonce {1}",
+        public ActionResult Create([FromBody]VoucherCreatePayload payload) {
+            Logger.LogDebug(LoggingEvents.VoucherCreation, "Received create request from Source ID {0}, nonce {1}",
                 payload.SourceId, payload.Nonce
             );
 
-            var source = Database.Connection.GetSourceById(payload.SourceId);
+            var source = Database.Context.GetSourceById(payload.SourceId);
             if(source == null) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
-                // TODO: correct error handling
-                return null;
+                return this.SourceNotFound();
             }
 
             var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
@@ -53,31 +52,34 @@ namespace WomPlatform.Web.Api.Controllers {
 
             if(payload.SourceId != payloadContent.SourceId) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
-                // TODO
-                return null;
+                return this.PayloadVerificationFailure("Verification of source ID in payload failed");
             }
             if(payload.Nonce != payloadContent.Nonce) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
-                // TODO
-                return null;
+                return this.PayloadVerificationFailure("Verification of nonce in payload failed");
             }
-            // TODO: check whether nonce is valid
 
-            var nextNonce = "todo";
+            Logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0} and nonce {1}", payload.SourceId, payload.Nonce);
 
-            Logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0}, nonce {1}", payload.SourceId, payload.Nonce);
+            try {
+                var otc = Database.Context.CreateVoucherGeneration(payloadContent);
 
-            var otc = Database.Connection.CreateVoucherGeneration(payloadContent);
+                Logger.LogDebug(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
 
-            Logger.LogTrace(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
+                return Ok(new VoucherCreateResponse {
+                    Payload = Crypto.SignAndEncrypt(new VoucherCreateResponse.Content {
+                        RegistryUrl = "https://wom.social",
+                        Nonce = payloadContent.Nonce,
+                        Otc = otc
+                    }, KeyManager.RegistryPrivateKey, sourcePublicKey)
+                });
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.VoucherCreation, ex, "Failed to request vouchers");
+                return this.UnexpectedError();
+            }
+        }
 
-            return new VoucherCreateResponse {
-                Payload = Crypto.SignAndEncrypt(new VoucherCreateResponse.Content {
-                    Source = UrlGenerator.GenerateSourceUrl(source.Id),
-                    NextNonce = nextNonce,
-                    Otc = otc
-                }, KeyManager.RegistryPrivateKey, sourcePublicKey)
-            };
         }
 
         // POST api/v1/voucher/redeem
