@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api {
         /// Creates a new voucher generation instance.
         /// </summary>
         public static Guid CreateVoucherGeneration(this DataContext data, VoucherCreatePayload.Content creationParameters) {
-            // TODO: validate whether source is allowed to generate vouchers
+            // TODO: validate whether source is allowed to generate vouchers (check aims)
 
             var otc = Guid.NewGuid();
 
@@ -76,12 +76,21 @@ namespace WomPlatform.Web.Api {
         }
 
         /// <summary>
-        /// Gets a generation request by its unique OTC_gen code.
+        /// Verifies a voucher generation request.
         /// </summary>
-        public static GenerationRequest GetGenerationRequestByOtc(this DataContext data, Guid otcGen) {
-            return (from g in data.GenerationRequests
-                    where g.OtcGen == otcGen
-                    select g).SingleOrDefault();
+        public static void VerifyGenerationRequest(this DataContext data, Guid otcGen) {
+            var request = (from g in data.GenerationRequests
+                           where g.OtcGen == otcGen
+                           select g).SingleOrDefault();
+
+            if(request == null) {
+                throw new ArgumentException("OTC code not valid");
+            }
+
+            if(!request.Verified) {
+                request.Verified = true;
+                data.SaveChanges();
+            }
         }
 
         /// <summary>
@@ -96,7 +105,7 @@ namespace WomPlatform.Web.Api {
                 throw new ArgumentException("OTC code not valid");
             }
             if (!request.Verified) {
-                throw new InvalidOperationException("Voucher generation request not verified");
+                throw new ArgumentException("OTC code not verified");
             }
             if (request.PerformedAt.HasValue) {
                 throw new InvalidOperationException("Vouchers already redeemed");

@@ -79,6 +79,26 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        [HttpPost("verify")]
+        public ActionResult Verify([FromBody]VoucherVerifyPayload payload) {
+            Logger.LogDebug(LoggingEvents.VoucherVerification, "Received verification request");
+
+            var payloadContent = Crypto.Decrypt<VoucherVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+
+            try {
+                Database.Context.VerifyGenerationRequest(payloadContent.Otc);
+                Logger.LogInformation(LoggingEvents.VoucherVerification, "Voucher generation {0} verified", payloadContent.Otc);
+
+                return Ok();
+            }
+            catch(ArgumentException ex) {
+                Logger.LogError(LoggingEvents.VoucherVerification, ex, "Cannot verify voucher generation {0}", payloadContent.Otc);
+                return this.ProblemParameter(ex.Message);
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.VoucherVerification, ex, "Failed to verify vouchers");
+                return this.UnexpectedError();
+            }
         }
 
         // POST api/v1/voucher/redeem

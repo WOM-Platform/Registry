@@ -45,6 +45,9 @@ namespace TestUtil {
                 case "vredeem":
                     return new VoucherRedemptionOperation();
 
+                case "vverify":
+                    return new VoucherVerificationOperation();
+
                 default:
                     throw new ArgumentException("Unsupported operation", nameof(code));
             }

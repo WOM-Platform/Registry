@@ -11,10 +11,10 @@ namespace TestUtil.Operations {
 
         public override void Execute(string[] args) {
             if (args.Length < 2) {
-                throw new ArgumentNullException("Requires voucher redemption ID and Password");
+                throw new ArgumentNullException("Requires voucher redemption OTC and Password");
             }
             if (!Guid.TryParse(args[0], out Guid redemptionId)) {
-                throw new ArgumentException("Requires voucher redemption ID as GUID");
+                throw new ArgumentException("Requires voucher redemption OTC as GUID");
             }
 
             var rnd = new Random();
