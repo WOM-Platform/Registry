@@ -77,6 +77,7 @@ Contents of the object are shown below:
 | `Nonce` | string | Non-repetition string, must match that of request. |
 | `Otc` | string | Unique one-time code identifying the voucher generation request. |
 
+
 ## Voucher creation verification
 
 Request from *instrument* to *registry*, verifying a previous voucher generation request.
@@ -107,6 +108,7 @@ The JSON object `Payload` is encrypted with the *registry’s public key* and ha
 ### Result
 
 This method will return an empty response with HTTP&nbsp;status `200` to confirm verification.
+
 
 ## Voucher redemption
 
@@ -140,8 +142,12 @@ Contents of the object are shown below:
 ```
 
 `Payload` is a JSON-encoded object, encrypted with the *session key* specified in the request.
-Encryption makes use of the 256-bit AES&nbsp;algorithm, with PKCS#7 padding.
-Contents of the object are shown below:
+
+*Note:* encryption makes use of the 256-bit AES&nbsp;algorithm in CBC mode, with PKCS#7 padding.
+The first 128&nbsp;bits of the payload make up the CBC Initial Vector.
+The rest of the payload is the actual encrypted data.
+
+Contents of the decrypted JSON object have the following structure:
 
 ```json
 {
@@ -160,10 +166,12 @@ Each voucher object has the following properties:
 | `Longitude` | number | |
 | `Timestamp` | string | Time and date, UTC, ISO&nbsp;8601 format. |
 
-# Payment generation
+
+## Payment generation
 
 Coming soon.
 
-# Payment processing
+
+## Payment processing
 
 Coming soon.
