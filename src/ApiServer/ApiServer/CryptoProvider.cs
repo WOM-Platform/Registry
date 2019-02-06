@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Encodings;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Paddings;
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -226,26 +227,46 @@ namespace WomPlatform.Web.Api {
             return JsonConvert.DeserializeObject<T>(decryptedBytes.AsUtf8String(), JsonSettings);
         }
 
+        private const int AesBlockSize = 128 / 8;
+        private const int AesMinKeySize = 256 / 8;
+
+        private IBufferedCipher CreateAesCipher(bool encrypt, byte[] initialVector, byte[] key) {
+            if(key == null || key.Length != AesMinKeySize) {
+                throw new ArgumentException(string.Format("AES key is not {0} bytes long", AesMinKeySize));
+            }
+            if(initialVector == null || initialVector.Length != AesBlockSize) {
+                throw new ArgumentException(string.Format("AES initial vector is not {0} bytes long", AesBlockSize));
+            }
+
+            var cipher = new PaddedBufferedBlockCipher(new CbcBlockCipher(new AesEngine()), new Pkcs7Padding());
+            cipher.Init(encrypt, new ParametersWithIV(new KeyParameter(key), initialVector));
+
+            return cipher;
+        }
+
         /// <summary>
         /// Encrypts an object payload.
         /// If successful, payload is encoded as a base64 string.
         /// </summary>
-        public string Encrypt<T>(T payload, byte[] sessionKey) {
+        /// <param name="sessionKey">Temporary session key of 256 bits.</param>
+        /// <param name="rnd">Random generator for IV generation.</param>
+        public string Encrypt<T>(T payload, byte[] sessionKey, Random rnd) {
             var payloadBytes = JsonConvert.SerializeObject(payload, JsonSettings).ToBytes();
 
-            var cipher = new PaddedBufferedBlockCipher(new AesEngine(), new Pkcs7Padding());
-            cipher.Init(true, new KeyParameter(sessionKey));
+            byte[] iv = new byte[AesBlockSize];
+            rnd.NextBytes(iv);
+
+            var cipher = CreateAesCipher(true, iv, sessionKey);
 
             int outputSize = cipher.GetOutputSize(payloadBytes.Length);
-            byte[] output = new byte[outputSize];
+            byte[] output = new byte[outputSize + AesBlockSize];
+            Array.Copy(iv, output, iv.Length);
 
-            Logger.LogTrace(LoggingEvents.Crypto, "Encrypting {0} to {1} bytes with {2}",
+            Logger.LogTrace(LoggingEvents.Crypto, "Encrypting {0} bytes to {1} bytes with {2}",
                 payloadBytes.Length, outputSize, cipher.AlgorithmName);
 
-            int outputLength = cipher.ProcessBytes(payloadBytes, output, 0);
-            int finalLength = cipher.DoFinal(output, outputLength);
-
-            Logger.LogTrace(LoggingEvents.Crypto, "Output {0}b, final {1}b", outputLength, finalLength);
+            int outputLength = cipher.ProcessBytes(payloadBytes, output, AesBlockSize);
+            int finalLength = cipher.DoFinal(output, AesBlockSize + outputLength);
 
             return output.ToBase64();
         }
@@ -253,19 +274,22 @@ namespace WomPlatform.Web.Api {
         public T Decrypt<T>(string payload, byte[] sessionKey) {
             var payloadBytes = payload.FromBase64();
 
-            var cipher = new PaddedBufferedBlockCipher(new AesEngine(), new Pkcs7Padding());
-            cipher.Init(false, new KeyParameter(sessionKey));
+            if(payloadBytes.Length < AesBlockSize) {
+                throw new ArgumentException("AES payload too short to contain IV");
+            }
+            byte[] iv = new byte[AesBlockSize];
+            Array.Copy(payloadBytes, iv, AesBlockSize);
+
+            var cipher = CreateAesCipher(false, iv, sessionKey);
 
             int outputSize = cipher.GetOutputSize(payloadBytes.Length);
             byte[] output = new byte[outputSize];
 
-            Logger.LogTrace(LoggingEvents.Crypto, "Decrypting {0} to {1} bytes with {2}",
+            Logger.LogTrace(LoggingEvents.Crypto, "Decrypting {0} bytes to {1} bytes with {2}",
                 payloadBytes.Length, outputSize, cipher.AlgorithmName);
 
-            int outputLength = cipher.ProcessBytes(payloadBytes, output, 0);
+            int outputLength = cipher.ProcessBytes(payloadBytes, AesBlockSize, payloadBytes.Length - AesBlockSize, output, 0);
             int finalLength = cipher.DoFinal(output, outputLength);
-
-            Logger.LogTrace(LoggingEvents.Crypto, "Output {0}b, final {1}b", outputLength, finalLength);
 
             return JsonConvert.DeserializeObject<T>(output.AsUtf8String(), JsonSettings);
         }

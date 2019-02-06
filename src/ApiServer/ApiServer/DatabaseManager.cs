@@ -41,7 +41,7 @@ namespace WomPlatform.Web.Api {
                 host, port, username, password, schema
             );
 
-            Logger.LogTrace(LoggingEvents.Database, "Database connection string: {0}", ConnectionString);
+            Logger.LogDebug(LoggingEvents.Database, "Database connection string: {0}", ConnectionString);
         }
 
         private DataContext _context = null;
@@ -58,7 +58,7 @@ namespace WomPlatform.Web.Api {
                     );
                     ContextAccessor.HttpContext.Response.RegisterForDispose(_context);
 
-                    Logger.LogDebug(LoggingEvents.DatabaseConnection, "Opening DataContext");
+                    Logger.LogTrace(LoggingEvents.DatabaseConnection, "Opening DataContext");
                 }
 
                 return _context;
