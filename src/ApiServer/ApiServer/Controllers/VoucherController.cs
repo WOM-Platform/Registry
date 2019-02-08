@@ -12,8 +12,6 @@ namespace WomPlatform.Web.Api.Controllers {
     [Route("api/v1/voucher")]
     public class VoucherController : ControllerBase {
 
-        protected static readonly Random _rnd = new Random();
-
         public VoucherController(
             IConfiguration configuration,
             DatabaseManager databaseManager,
@@ -130,7 +128,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 };
 
                 return Ok(new VoucherRedeemResponse {
-                    Payload = Crypto.Encrypt(content, ks, _rnd)
+                    Payload = Crypto.Encrypt(content, ks)
                 });
             }
             catch(ArgumentException ex) {

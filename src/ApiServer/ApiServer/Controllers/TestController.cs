@@ -13,8 +13,6 @@ namespace ApiServer.Controllers {
     [Route("api/debug")]
     public class TestController : ControllerBase {
 
-        protected static readonly Random _rnd = new Random();
-
         public TestController(
             IConfiguration configuration,
             DatabaseManager database,
@@ -45,7 +43,7 @@ namespace ApiServer.Controllers {
                 throw new ArgumentOutOfRangeException(nameof(count), "Voucher count out of range");
             }
 
-            var pin = _rnd.GeneratePassword(4);
+            var pin = Crypto.Generator.GeneratePassword(4);
 
             Logger.LogInformation("Creating {0} test vouchers", count);
 
@@ -58,9 +56,9 @@ namespace ApiServer.Controllers {
             var voucherInfos = new List<VoucherCreatePayload.VoucherInfo>();
             for(int i = 0; i < count; ++i) {
                 voucherInfos.Add(new VoucherCreatePayload.VoucherInfo {
-                    Aim = _rnd.Pick(aims).Code,
-                    Latitude = _rnd.NextBetween(5, 40),
-                    Longitude = _rnd.NextBetween(5, 50),
+                    Aim = Crypto.Generator.Pick(aims).Code,
+                    Latitude = Crypto.Generator.NextBetween(5, 40),
+                    Longitude = Crypto.Generator.NextBetween(5, 50),
                     Timestamp = now
                 });
 

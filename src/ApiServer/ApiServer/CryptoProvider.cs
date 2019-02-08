@@ -16,6 +16,8 @@ namespace WomPlatform.Web.Api {
     /// </summary>
     public class CryptoProvider {
 
+        public Random Generator { get; } = new Random();
+
         public CryptoProvider(ILogger<CryptoProvider> logger) {
             Logger = logger;
         }
@@ -249,12 +251,11 @@ namespace WomPlatform.Web.Api {
         /// If successful, payload is encoded as a base64 string.
         /// </summary>
         /// <param name="sessionKey">Temporary session key of 256 bits.</param>
-        /// <param name="rnd">Random generator for IV generation.</param>
-        public string Encrypt<T>(T payload, byte[] sessionKey, Random rnd) {
+        public string Encrypt<T>(T payload, byte[] sessionKey) {
             var payloadBytes = JsonConvert.SerializeObject(payload, JsonSettings).ToBytes();
 
             byte[] iv = new byte[AesBlockSize];
-            rnd.NextBytes(iv);
+            Generator.NextBytes(iv);
 
             var cipher = CreateAesCipher(true, iv, sessionKey);
 
