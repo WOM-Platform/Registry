@@ -15,13 +15,11 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public uint Id { get; set; }
+        public long Id { get; set; }
 
         public int Amount { get; set; }
 
         public string JsonFilter { get; set; }
-
-        // TODO: parsed JSON filter access with [Computed]
 
         public Guid OtcPay { get; set; }
 
@@ -31,9 +29,16 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public DateTime CreatedAt { get; set; }
 
-        public bool Performed { get; set; }
+        public bool Verified { get; set; }
 
-        public uint PosId { get; set; }
+        public DateTime? PerformedAt { get; set; }
+
+        public bool Void { get; set; }
+
+        public long PosId { get; set; }
+
+        [ForeignKey(nameof(PosId))]
+        public POS Pos { get; set; }
 
         public byte[] Nonce { get; set; }
 
