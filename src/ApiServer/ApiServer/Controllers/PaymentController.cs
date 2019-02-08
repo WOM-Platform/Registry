@@ -1,143 +1,148 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using WomPlatform.Web.Api.Models;
 using System.Data.Common;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
-using Dapper;
-using WomPlatform.Web.Api.DatabaseModels;
+using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
+using WomPlatform.Web.Api.Models;
 
-namespace WomPlatform.Web.Api.Controllers 
-{
-    // api/payment
-    [Route("api/[controller]")]
-    public class PaymentController : Controller
-    {
+namespace WomPlatform.Web.Api.Controllers {
 
-        protected IConfiguration Configuration { get; private set; }
-        protected DatabaseManager DB = new DatabaseManager();
+    [Route("api/v1/payment")]
+    public class PaymentController : ControllerBase {
 
-        public PaymentController(IConfiguration configuration)
+        public PaymentController(
+            IConfiguration configuration,
+            DatabaseManager databaseManager,
+            CryptoProvider cryptoProvider,
+            KeyManager keyManager,
+            ILogger<PaymentController> logger)
         {
             Configuration = configuration;
+            Database = databaseManager;
+            Crypto = cryptoProvider;
+            KeyManager = keyManager;
+            Logger = logger;
         }
 
-        //POST  api/payment/register
+        protected IConfiguration Configuration { get; }
+        protected DatabaseManager Database { get; }
+        protected CryptoProvider Crypto { get; }
+        protected KeyManager KeyManager { get; }
+        protected ILogger<PaymentController> Logger { get; }
+
+        // POST /api/v1/payment/register
         [HttpPost("register")]
-        public RegisterResponse Register([FromBody]RegisterPayload payload)
-        {
+        public ActionResult Register([FromBody]PaymentRegisterPayload payload) {
+            Logger.LogDebug(LoggingEvents.PaymentCreation, "Received create request from POS ID {0}, nonce {1}",
+                payload.PosId, payload.Nonce
+            );
 
-            System.Console.Write("posID :");
-            System.Console.WriteLine(payload.PosId);
-            System.Console.Write("payload :");
-            System.Console.WriteLine(payload.Payload);
+            var pos = Database.Context.GetPosById(payload.PosId);
+            if (pos == null) {
+                Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
+                return this.PosNotFound();
+            }
 
-            //to do : decrypt the payload from RegisterPayload to RegisterPayloadContent
+            var posPublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(pos.PublicKey);
 
-            //insert new instance of payment in db
-            using (DbConnection conn = DB.OpenConnection(Configuration))
-            {
-                RegisterInputPayload sample = new RegisterInputPayload();   //to do : decript the payload into this
+            var payloadContent = Crypto.Decrypt<PaymentRegisterPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
-                //this data are included in the decrypted input payload
-                sample.PosId = payload.PosId;
-                sample.ackPocket = "";
-                sample.amount = 1;
-                sample.ackPos = "";
-            
+            if (payload.PosId != payloadContent.PosId) {
+                Logger.LogError(LoggingEvents.PaymentCreation, "Verification failed, POS ID {0} differs from ID {1} in payload", payload.PosId, payloadContent.PosId);
+                return this.PayloadVerificationFailure("Verification of POS ID in payload failed");
+            }
+            if (payload.Nonce != payloadContent.Nonce) {
+                Logger.LogError(LoggingEvents.PaymentCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
+                return this.PayloadVerificationFailure("Verification of nonce in payload failed");
+            }
 
-                //insert the payload into the db
-                var generatedOTC = DB.PaymentRegister(conn, sample);
+            Logger.LogInformation(LoggingEvents.PaymentCreation, "Processing payment creation for POS {0} and nonce {1}", payload.PosId, payload.Nonce);
 
+            try {
+                var otc = Database.Context.CreatePaymentRequest(payloadContent);
 
-                return new RegisterResponse
-                {
-                    PosId = payload.PosId,
-                    nonceId = Guid.NewGuid(),
-                    nonceTs = "XX:XX:XXXX",
-                    OTCpay = generatedOTC
-                };
+                Logger.LogDebug(LoggingEvents.PaymentCreation, "Payment instance created with OTC {0}", otc);
+
+                return Ok(new PaymentRegisterResponse {
+                    Payload = Crypto.Encrypt(new PaymentRegisterResponse.Content {
+                        RegistryUrl = "https://wom.social",
+                        Nonce = payloadContent.Nonce,
+                        Otc = otc
+                    }, posPublicKey)
+                });
+            }
+            catch (Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentCreation, ex, "Failed to create payment");
+                return this.UnexpectedError();
             }
         }
 
-        //GET api/payment/{
-        [HttpGet("{OTCPay}")]
-        public PayGetResponse Get(string OTCpay)
-        {
-            //check in the DB if the request can be satisfied
-            using (DbConnection conn = DB.OpenConnection(Configuration))
-            {
-                //check if exixst the parameters of the payment
-                var payment = DB.PaymentParameters(conn, OTCpay);
+        [HttpPost("verify")]
+        public ActionResult Verify([FromBody]PaymentVerifyPayload payload) {
+            Logger.LogDebug(LoggingEvents.PaymentVerification, "Received verification request");
 
-                //get the pos info for the response
-                var pos = DB.GetPosInfoById(conn, payment.ID_POS);
+            var payloadContent = Crypto.Decrypt<PaymentVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
-                return new PayGetResponse
-                {
-                    amount = payment.Amount,
-                    //filter = "di quel tipo",
-                    POS = new PosInfo
-                    {
-                        name = pos.Name,
-                        description = pos.Description,
-                        URL = pos.URLPOS
-                    }
-                };
+            try {
+                Database.Context.VerifyPaymentRequest(payloadContent.Otc);
+                Logger.LogInformation(LoggingEvents.PaymentVerification, "Payment creation {0} verified", payloadContent.Otc);
+
+                return Ok();
             }
-
+            catch (ArgumentException ex) {
+                Logger.LogError(LoggingEvents.PaymentVerification, ex, "Cannot verify payment {0}", payloadContent.Otc);
+                return this.ProblemParameter(ex.Message);
+            }
+            catch (Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentVerification, ex, "Failed to verify payment");
+                return this.UnexpectedError();
+            }
         }
 
-        //POST api/payment/pay
-        [HttpPost("pay")]
-        public PayPostResponse Pay([FromBody]PayPayload payload)
-        {
-            using (DbConnection conn = DB.OpenConnection(Configuration))
-            {
-                //payload.vouchers[1] = 2;            //payload.vouchers
+        // POST /api/v1/payment/info
+        [HttpPost("info")]
+        public ActionResult GetInformation([FromBody]PaymentInfoPayload payload) {
+            var payloadContent = Crypto.Decrypt<PaymentInfoPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
-                var stateResp = "NotPayed";
-
-                //prova
-                System.Console.WriteLine("COUNT ARRAY: " + payload.vouchers.Count());
-                //controls if the vouchers are valid
-                for (int i = 0; i < payload.vouchers.Count(); i++)
-                {
-
-                    /*
-                    //get voucher id for sperimental 
-                    var voucher = DB.GETID(conn);
-                    voucher.Select(a => a.Id);
-
-                    foreach (var a in voucher)
-                        System.Console.WriteLine("ID Voucher: @guid", new { guid = a });
-                        */
-
-                    //the voucher are valid
-                    if (DB.VerifyVoucher(conn, payload.vouchers.ElementAt(i)))
-                    {
-                        System.Console.WriteLine("Voucher number {0} is valid", i);
-                        //the voucher is not spent yet
-                        DB.SpendVoucher(conn, payload.vouchers.ElementAt(i), payload.OTCPay);
-
-                        //set the paymentRequest as payed
-                        stateResp = "PaidSuccessfully";
-                        DB.SetPayedRequest(conn, payload.OTCPay);
-                    }
-                    else
-                        stateResp = "PaymentError";
-                    
-                }
-
-                return new PayPostResponse
-                {
-                    ackPocket = "confirmed",
-                    state = stateResp
-                };
+            byte[] ks = payloadContent.SessionKey.FromBase64();
+            if (ks.Length != 32) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, "Insufficient session key length ({0} bytes)", ks.Length);
+                return this.ProblemParameter($"Length of {nameof(payloadContent.SessionKey)} not valid");
             }
+
+            try {
+                (var payment, var filter) = Database.Context.GetPaymentRequestInfo(payloadContent.Otc, payloadContent.Password);
+
+                var content = new PaymentInfoResponse.Content {
+                    Amount = payment.Amount,
+                    PosId = payment.Pos.Id,
+                    SimpleFilter = filter?.Simple
+                };
+
+                return Ok(new PaymentInfoResponse {
+                    Payload = Crypto.Encrypt(content, ks)
+                });
+            }
+            catch (ArgumentException ex) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Payment parameter not valid");
+                return this.ProblemParameter(ex.Message);
+            }
+            catch (InvalidOperationException ex) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Payment in invalid status");
+                return this.RequestVoid(ex.Message);
+            }
+            catch (Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Failed to access payment information");
+                return this.UnexpectedError();
+            }
+        }
+
+        // POST /api/v1/payment/confirm
+        [HttpPost("confirm")]
+        public ActionResult Confirm([FromBody]PaymentConfirmPayload payload) {
+            return Ok();
         }
 
     }

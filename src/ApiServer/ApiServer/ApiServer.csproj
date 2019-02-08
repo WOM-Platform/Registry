@@ -6,13 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\PaymentController.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Controllers\PaymentController.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

@@ -40,6 +40,14 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public static ActionResult PosNotFound(this ControllerBase c) {
+            return new ProblemResult(
+                404,
+                "pos-not-found",
+                "POS with the specified ID does not exist"
+            );
+        }
+
         public static ActionResult SourceVerificationFailure(this ControllerBase c) {
             return new ProblemResult(
                 401,

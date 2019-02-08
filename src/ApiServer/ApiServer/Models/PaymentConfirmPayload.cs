@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace WomPlatform.Web.Api.Models {
 
-    public class VoucherRedeemPayload {
+    public class PaymentConfirmPayload {
 
         /// <summary>
         /// Encrypted payload (instance of <see cref="Content" />).
@@ -19,6 +22,16 @@ namespace WomPlatform.Web.Api.Models {
             /// Base64-encoded session key to be used in response.
             /// </summary>
             public string SessionKey { get; set; }
+
+            public VoucherInfo[] Vouchers { get; set; }
+
+        }
+
+        public class VoucherInfo {
+
+            public long Id { get; set; }
+
+            public string Secret { get; set; }
 
         }
 

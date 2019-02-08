@@ -28,7 +28,6 @@ namespace WomPlatform.Web.Api {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
-
             // Fix boolean type conversion
             foreach(var entityType in modelBuilder.Model.GetEntityTypes()) {
                 foreach(var property in entityType.GetProperties()) {

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using WomPlatform.Web.Api.DatabaseModels;
 using WomPlatform.Web.Api.Models;
 
@@ -15,6 +17,13 @@ namespace WomPlatform.Web.Api {
 
         private static Random _random = new Random();
 
+        private static JsonSerializerSettings DatabaseSerializerSettings { get; } = new JsonSerializerSettings {
+            DateFormatHandling = DateFormatHandling.IsoDateFormat,
+            DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate,
+            Formatting = Formatting.None,
+            NullValueHandling = NullValueHandling.Ignore
+        };
+
         /// <summary>
         /// Gets a source by its primary ID or null if not found.
         /// </summary>
@@ -22,6 +31,15 @@ namespace WomPlatform.Web.Api {
             return (from s in data.Sources
                     where s.Id == sourceId
                     select s).SingleOrDefault();
+        }
+
+        /// <summary>
+        /// Gets a POS by its primary ID or null if not found.
+        /// </summary>
+        public static POS GetPosById(this DataContext data, long posId) {
+            return (from p in data.POS
+                    where p.Id == posId
+                    select p).SingleOrDefault();
         }
 
         /// <summary>
@@ -101,6 +119,7 @@ namespace WomPlatform.Web.Api {
             var request = (from g in data.GenerationRequests
                            where g.OtcGen == otcGen
                            select g).SingleOrDefault();
+
             if(request == null) {
                 throw new ArgumentException("OTC code not valid");
             }
@@ -128,6 +147,89 @@ namespace WomPlatform.Web.Api {
             data.SaveChanges();
 
             return vouchers;
+        }
+
+        /// <summary>
+        /// Creates a new voucher generation instance.
+        /// </summary>
+        public static Guid CreatePaymentRequest(this DataContext data, PaymentRegisterPayload.Content creationParameters) {
+            var otc = Guid.NewGuid();
+
+            var payRequest = new PaymentRequest {
+                Amount = creationParameters.Amount,
+                JsonFilter = JsonConvert.SerializeObject(
+                    new Filter {
+                        Simple = creationParameters.SimpleFilter
+                    },
+                    DatabaseSerializerSettings
+                ),
+                OtcPay = otc,
+                UrlAckPocket = creationParameters.PocketAckUrl,
+                UrlAckPos = creationParameters.PosAckUrl,
+                CreatedAt = DateTime.UtcNow,
+                Verified = false,
+                PerformedAt = null,
+                Void = false,
+                PosId = creationParameters.PosId,
+                Nonce = creationParameters.Nonce.FromBase64(),
+                Password = creationParameters.Password
+            };
+            data.PaymentRequests.Add(payRequest);
+            data.SaveChanges();
+
+            return otc;
+        }
+
+        /// <summary>
+        /// Verifies a payment creation request.
+        /// </summary>
+        public static void VerifyPaymentRequest(this DataContext data, Guid otcPay) {
+            var request = (from g in data.PaymentRequests
+                           where g.OtcPay == otcPay
+                           select g).SingleOrDefault();
+
+            if (request == null) {
+                throw new ArgumentException("OTC code not valid");
+            }
+
+            if (!request.Verified) {
+                request.Verified = true;
+                data.SaveChanges();
+            }
+        }
+
+        public static (PaymentRequest payment, Filter filter) GetPaymentRequestInfo(this DataContext data, Guid otcPay, string password) {
+            var request = (from g in data.PaymentRequests
+                           where g.OtcPay == otcPay
+                           select g)
+                           .Include(nameof(PaymentRequest.Pos))
+                           .SingleOrDefault();
+
+            if (request == null) {
+                throw new ArgumentException("OTC code not valid");
+            }
+            if (!request.Verified) {
+                throw new ArgumentException("OTC code not verified");
+            }
+            if (request.PerformedAt.HasValue) {
+                throw new InvalidOperationException("Payment already confirmed");
+            }
+            if (request.Void) {
+                throw new InvalidOperationException("Payment has been voided");
+            }
+            if (!request.Password.Equals(password, StringComparison.Ordinal)) {
+                request.Void = true;
+                data.SaveChanges();
+
+                throw new ArgumentException("Password does not match, payment has been voided");
+            }
+
+            Filter f = null;
+            if(request.JsonFilter != null) {
+                f = JsonConvert.DeserializeObject<Filter>(request.JsonFilter, DatabaseSerializerSettings);
+            }
+
+            return (request, f);
         }
 
     }
