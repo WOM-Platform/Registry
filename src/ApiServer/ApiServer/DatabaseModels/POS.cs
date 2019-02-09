@@ -9,7 +9,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public uint Id { get; set; }
+        public long Id { get; set; }
 
         public string Name { get; set; }
 
