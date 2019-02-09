@@ -15,12 +15,16 @@
     <Compile Include="..\..\ApiServer\ApiServer\LoggingEvents.cs" Link="LoggingEvents.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\RandomExtensions.cs" Link="RandomExtensions.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\StringExtensions.cs" Link="StringExtensions.cs" />
+    <Compile Include="..\..\ApiServer\ApiServer\UrlGenerator.cs" Link="UrlGenerator.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\Models\*.cs">
         <Link>Models\%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\..\testkeys\pos1.pem" Link="pos1.pem">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="..\..\..\testkeys\registry.pem" Link="registry.pem">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

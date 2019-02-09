@@ -42,51 +42,25 @@ namespace TestUtil {
                 case "vcreate":
                     return new VoucherCreationOperation();
 
+                case "vverify":
+                    return new VoucherVerificationOperation();
+
                 case "vredeem":
                     return new VoucherRedemptionOperation();
 
-                case "vverify":
-                    return new VoucherVerificationOperation();
+                case "pregister":
+                    return new PaymentCreationOperation();
+
+                case "pverify":
+                    return new PaymentVerificationOperation();
+
+                case "pinfo":
+                    return new PaymentInformationOperation();
 
                 default:
                     throw new ArgumentException("Unsupported operation", nameof(code));
             }
         }
-
-/*
-        private static void RedeemVouchers(string[] args) {
-            if(args.Length < 1) {
-                throw new ArgumentNullException("Requires voucher redemption ID");
-            }
-            if(!Guid.TryParse(args[0], out Guid redemptionId)) {
-                throw new ArgumentException("Requires voucher redemption ID as GUID");
-            }
-
-            var publicKey = KeyManager.LoadKeyFromPem<AsymmetricCipherKeyPair>("../../../testkeys/registry.pem").Public;
-            var crypto = new CryptoProvider(new ConsoleLogger<CryptoProvider>());
-
-            var request = new RestRequest("voucher/redeem", Method.POST) {
-                RequestFormat = DataFormat.Json
-            };
-            request.AddHeader("Accept", "application/json");
-            request.AddJsonBody(new VoucherRedeemPayload {
-                Payload = crypto.Encrypt(new VoucherRedeemPayload.Content {
-                    Otc = redemptionId
-                }, publicKey)
-            });
-
-            var response = Client.Execute(request);
-            Console.WriteLine("HTTP {0}, {1} bytes, {2}", response.StatusCode, response.ContentLength, response.ContentType);
-            var data = JsonConvert.DeserializeObject<VoucherRedeemResponse>(response.Content);
-            var content = crypto.Verify<VoucherRedeemResponse.Content>(data.Payload, publicKey);
-            Console.WriteLine("Response contains {0} vouchers:", content.Vouchers.Length);
-            foreach(var v in content.Vouchers) {
-                Console.WriteLine();
-                Console.WriteLine("V #{0} from {1}", v.Id, v.Source);
-                Console.WriteLine("  @ {2} in {0},{1}", v.Latitude, v.Longitude, v.Timestamp);
-            }
-            Console.WriteLine("===");
-        }*/
 
     }
 
