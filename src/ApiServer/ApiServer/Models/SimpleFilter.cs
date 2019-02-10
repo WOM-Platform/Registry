@@ -11,7 +11,7 @@ namespace WomPlatform.Web.Api.Models {
 
         public Bounds GeoBounds { get; set; }
 
-        public long MaxAge { get; set; }
+        public long? MaxAge { get; set; }
 
     }
 

@@ -142,7 +142,37 @@ namespace WomPlatform.Web.Api.Controllers {
         // POST /api/v1/payment/confirm
         [HttpPost("confirm")]
         public ActionResult Confirm([FromBody]PaymentConfirmPayload payload) {
-            return Ok();
+            var payloadContent = Crypto.Decrypt<PaymentConfirmPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+
+            byte[] ks = payloadContent.SessionKey.FromBase64();
+            if (ks.Length != 32) {
+                Logger.LogError(LoggingEvents.PaymentProcessing, "Insufficient session key length ({0} bytes)", ks.Length);
+                return this.ProblemParameter($"Length of {nameof(payloadContent.SessionKey)} not valid");
+            }
+
+            try {
+                var payment = Database.ProcessPayment(payloadContent);
+
+                var content = new PaymentConfirmResponse.Content {
+                    AckUrl = payment.UrlAckPocket
+                };
+
+                return Ok(new PaymentConfirmResponse {
+                    Payload = Crypto.Encrypt(content, ks)
+                });
+            }
+            catch (ArgumentException ex) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Payment parameter not valid");
+                return this.ProblemParameter(ex.Message);
+            }
+            catch (InvalidOperationException ex) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Payment in invalid status");
+                return this.RequestVoid(ex.Message);
+            }
+            catch (Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Failed to process payment");
+                return this.UnexpectedError();
+            }
         }
 
     }

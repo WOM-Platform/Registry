@@ -232,6 +232,64 @@ namespace WomPlatform.Web.Api {
             return (request, f);
         }
 
+        public static PaymentRequest ProcessPayment(this DataContext data, PaymentConfirmPayload.Content request) {
+            (var payment, var filter) = GetPaymentRequestInfo(data, request.Otc, request.Password);
+
+            if(request.Vouchers.Length != payment.Amount) {
+                throw new ArgumentException("Wrong number of vouchers");
+            }
+
+            // Fetch non-spent vouchers from DB
+            var voucherIds = request.Vouchers.Select(v => v.Id).ToArray();
+            var voucherMap = (from v in data.Vouchers
+                              where voucherIds.Contains(v.Id)
+                              where !v.Spent
+                              select v).ToDictionary(v => v.Id);
+
+            bool CheckVoucher(PaymentConfirmPayload.VoucherInfo vi) {
+                if (!voucherMap.ContainsKey(vi.Id)) {
+                    // Voucher not found or already spent
+                    return false;
+                }
+                var voucher = voucherMap[vi.Id];
+
+                if(!vi.Secret.FromBase64().SequenceEqual(voucher.Secret)) {
+                    // Secret does not match
+                    return false;
+                }
+
+                if(filter?.Simple.Aim != null && !voucher.AimCode.StartsWith(filter.Simple.Aim)) {
+                    // Voucher does not match aim filter
+                    return false;
+                }
+
+                if(filter?.Simple.GeoBounds != null) {
+                    // TODO: implement geo filtering
+                }
+
+                if(filter?.Simple.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromDays(filter.Simple.MaxAge.Value)) {
+                    // Voucher too old
+                    return false;
+                }
+
+                return true;
+            }
+
+            // Check all voucher secrets
+            if(!request.Vouchers.All(CheckVoucher)) {
+                throw new ArgumentException("One or more vouchers not valid for payment");
+            }
+
+            // Update payment status
+            foreach(var v in voucherMap.Values) {
+                v.Spent = true;
+            }
+            payment.Void = true;
+            data.SaveChanges();
+
+            return payment;
+        }
+
     }
 
 }
