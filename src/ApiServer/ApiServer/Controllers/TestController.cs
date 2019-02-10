@@ -15,7 +15,7 @@ namespace ApiServer.Controllers {
 
         public TestController(
             IConfiguration configuration,
-            DatabaseManager database,
+            DataContext database,
             CryptoProvider cryptoProvider,
             IHostingEnvironment hosting,
             ILogger<TestController> logger
@@ -28,7 +28,7 @@ namespace ApiServer.Controllers {
         }
 
         protected IConfiguration Configuration { get; }
-        protected DatabaseManager Database { get; }
+        protected DataContext Database { get; }
         protected CryptoProvider Crypto { get; }
         protected IHostingEnvironment Hosting { get; }
         protected ILogger<TestController> Logger { get; }
@@ -47,8 +47,8 @@ namespace ApiServer.Controllers {
 
             Logger.LogInformation("Creating {0} test vouchers", count);
 
-            var testSource = Database.Context.GetSourceById(1);
-            var aims = Database.Context.GetAims().ToList();
+            var testSource = Database.GetSourceById(1);
+            var aims = Database.GetAims().ToList();
 
             Logger.LogTrace("Test source: {0}, aims: {1}", testSource.Name, string.Join(", ", from a in aims select a.Code));
 
@@ -65,7 +65,7 @@ namespace ApiServer.Controllers {
                 now = now.Subtract(TimeSpan.FromMinutes(5));
             }
 
-            var result = Database.Context.CreateVoucherGeneration(new VoucherCreatePayload.Content {
+            var result = Database.CreateVoucherGeneration(new VoucherCreatePayload.Content {
                 SourceId = testSource.Id,
                 Nonce = Guid.NewGuid().ToString("N"),
                 Password = pin,
@@ -74,7 +74,7 @@ namespace ApiServer.Controllers {
 
             Logger.LogDebug("New voucher generation request created with code {0}", result);
 
-            Database.Context.VerifyGenerationRequest(result);
+            Database.VerifyGenerationRequest(result);
 
             Logger.LogDebug("Voucher generation request verified");
 

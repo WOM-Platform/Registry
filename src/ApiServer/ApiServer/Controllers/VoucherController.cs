@@ -14,7 +14,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public VoucherController(
             IConfiguration configuration,
-            DatabaseManager databaseManager,
+            DataContext databaseManager,
             CryptoProvider cryptoProvider,
             KeyManager keyManager,
             ILogger<VoucherController> logger)
@@ -27,7 +27,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         protected IConfiguration Configuration { get; }
-        protected DatabaseManager Database { get; }
+        protected DataContext Database { get; }
         protected CryptoProvider Crypto { get; }
         protected KeyManager KeyManager { get; }
         protected ILogger<VoucherController> Logger { get; }
@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.SourceId, payload.Nonce
             );
 
-            var source = Database.Context.GetSourceById(payload.SourceId);
+            var source = Database.GetSourceById(payload.SourceId);
             if(source == null) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
                 return this.SourceNotFound();
@@ -61,7 +61,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0} and nonce {1}", payload.SourceId, payload.Nonce);
 
             try {
-                var otc = Database.Context.CreateVoucherGeneration(payloadContent);
+                var otc = Database.CreateVoucherGeneration(payloadContent);
 
                 Logger.LogDebug(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
 
@@ -86,7 +86,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var payloadContent = Crypto.Decrypt<VoucherVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             try {
-                Database.Context.VerifyGenerationRequest(payloadContent.Otc);
+                Database.VerifyGenerationRequest(payloadContent.Otc);
                 Logger.LogInformation(LoggingEvents.VoucherVerification, "Voucher generation {0} verified", payloadContent.Otc);
 
                 return Ok();
@@ -113,7 +113,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var vouchers = Database.Context.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
+                var vouchers = Database.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
 
                 var content = new VoucherRedeemResponse.Content {
                     Vouchers = (from v in vouchers

@@ -12,19 +12,15 @@ namespace WomPlatform.Web.Api {
 
     public class DataContext : DbContext {
 
-        public string ConnectionString { get; }
-        protected ILogger<DataContext> Logger;
+        protected ILogger<DataContext> Logger { get; }
 
         public DataContext(
-            string connectionString,
+            DbContextOptions options,
             ILogger<DataContext> logger
-        ) {
-            ConnectionString = connectionString;
+        ) : base(options) {
             Logger = logger;
-        }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-            optionsBuilder.UseMySQL(ConnectionString);
+            Logger.LogDebug(LoggingEvents.DatabaseConnection, "Creating DataContext");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {

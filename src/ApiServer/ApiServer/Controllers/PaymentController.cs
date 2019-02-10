@@ -14,7 +14,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public PaymentController(
             IConfiguration configuration,
-            DatabaseManager databaseManager,
+            DataContext databaseManager,
             CryptoProvider cryptoProvider,
             KeyManager keyManager,
             ILogger<PaymentController> logger)
@@ -27,7 +27,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         protected IConfiguration Configuration { get; }
-        protected DatabaseManager Database { get; }
+        protected DataContext Database { get; }
         protected CryptoProvider Crypto { get; }
         protected KeyManager KeyManager { get; }
         protected ILogger<PaymentController> Logger { get; }
@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.PosId, payload.Nonce
             );
 
-            var pos = Database.Context.GetPosById(payload.PosId);
+            var pos = Database.GetPosById(payload.PosId);
             if (pos == null) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
                 return this.PosNotFound();
@@ -61,7 +61,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation(LoggingEvents.PaymentCreation, "Processing payment creation for POS {0} and nonce {1}", payload.PosId, payload.Nonce);
 
             try {
-                var otc = Database.Context.CreatePaymentRequest(payloadContent);
+                var otc = Database.CreatePaymentRequest(payloadContent);
 
                 Logger.LogDebug(LoggingEvents.PaymentCreation, "Payment instance created with OTC {0}", otc);
 
@@ -86,7 +86,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var payloadContent = Crypto.Decrypt<PaymentVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             try {
-                Database.Context.VerifyPaymentRequest(payloadContent.Otc);
+                Database.VerifyPaymentRequest(payloadContent.Otc);
                 Logger.LogInformation(LoggingEvents.PaymentVerification, "Payment creation {0} verified", payloadContent.Otc);
 
                 return Ok();
@@ -113,7 +113,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var payment, var filter) = Database.Context.GetPaymentRequestInfo(payloadContent.Otc, payloadContent.Password);
+                (var payment, var filter) = Database.GetPaymentRequestInfo(payloadContent.Otc, payloadContent.Password);
 
                 var content = new PaymentInfoResponse.Content {
                     Amount = payment.Amount,
