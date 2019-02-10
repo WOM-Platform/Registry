@@ -39,8 +39,7 @@ namespace TestUtil.Operations {
             Console.WriteLine("Payment generated");
             Console.WriteLine(JsonConvert.SerializeObject(responseContent, Formatting.Indented));
             Console.WriteLine();
-            Console.WriteLine("OTCgen: {0:N}", responseContent.Otc);
-            Console.WriteLine("Password: {0}", password);
+            Console.WriteLine("{0:N} {1}", responseContent.Otc, password);
         }
     }
 
