@@ -14,7 +14,8 @@ namespace WomPlatform.Web.Api {
         protected ILogger<KeyManager> Logger { get; }
 
         public KeyManager(
-            IConfiguration configuration, ILogger<KeyManager> logger
+            IConfiguration configuration,
+            ILogger<KeyManager> logger
         ) {
             Configuration = configuration;
             Logger = logger;
