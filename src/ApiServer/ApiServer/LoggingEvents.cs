@@ -9,6 +9,7 @@ namespace WomPlatform.Web.Api {
 
         public const int Database = 1000;
         public const int DatabaseConnection = 1001;
+        public const int DatabaseOperation = 1002;
 
         public const int KeyManagement = 2000;
 

@@ -14,20 +14,20 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public VoucherController(
             IConfiguration configuration,
-            DataContext databaseManager,
+            DatabaseOperator databaseOperator,
             CryptoProvider cryptoProvider,
             KeyManager keyManager,
             ILogger<VoucherController> logger)
         {
             Configuration = configuration;
-            Database = databaseManager;
+            Database = databaseOperator;
             Crypto = cryptoProvider;
             KeyManager = keyManager;
             Logger = logger;
         }
 
         protected IConfiguration Configuration { get; }
-        protected DataContext Database { get; }
+        protected DatabaseOperator Database { get; }
         protected CryptoProvider Crypto { get; }
         protected KeyManager KeyManager { get; }
         protected ILogger<VoucherController> Logger { get; }

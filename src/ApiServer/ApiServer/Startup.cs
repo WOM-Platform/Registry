@@ -39,7 +39,8 @@ namespace WomPlatform.Web.Api {
             // Add services to dependency registry
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
-            services.AddScoped<CryptoProvider>();
+            services.AddSingleton<CryptoProvider>();
+            services.AddScoped<DatabaseOperator>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env) {

@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using WomPlatform.Web.Api.DatabaseModels;
 using WomPlatform.Web.Api.Models;
@@ -11,9 +10,20 @@ using WomPlatform.Web.Api.Models;
 namespace WomPlatform.Web.Api {
 
     /// <summary>
-    /// Extensions methods that operate on a database connection.
+    /// Data access class.
     /// </summary>
-    public static class DatabaseMethods {
+    public class DatabaseOperator {
+
+        protected DataContext Data { get; }
+        protected ILogger<DatabaseOperator> Logger { get; }
+
+        public DatabaseOperator(
+            DataContext context,
+            ILogger<DatabaseOperator> logger
+        ) {
+            Data = context;
+            Logger = logger;
+        }
 
         private static Random _random = new Random();
 
@@ -27,8 +37,8 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets a source by its primary ID or null if not found.
         /// </summary>
-        public static Source GetSourceById(this DataContext data, long sourceId) {
-            return (from s in data.Sources
+        public Source GetSourceById(long sourceId) {
+            return (from s in Data.Sources
                     where s.Id == sourceId
                     select s).SingleOrDefault();
         }
@@ -36,8 +46,8 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets a POS by its primary ID or null if not found.
         /// </summary>
-        public static POS GetPosById(this DataContext data, long posId) {
-            return (from p in data.POS
+        public POS GetPosById(long posId) {
+            return (from p in Data.POS
                     where p.Id == posId
                     select p).SingleOrDefault();
         }
@@ -45,8 +55,8 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets all aims.
         /// </summary>
-        public static IEnumerable<Aim> GetAims(this DataContext data) {
-            return from a in data.Aims
+        public IEnumerable<Aim> GetAims() {
+            return from a in Data.Aims
                    orderby a.Code
                    select a;
         }
@@ -54,7 +64,7 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Creates a new voucher generation instance.
         /// </summary>
-        public static Guid CreateVoucherGeneration(this DataContext data, VoucherCreatePayload.Content creationParameters) {
+        public Guid CreateVoucherGeneration(VoucherCreatePayload.Content creationParameters) {
             // TODO: validate whether source is allowed to generate vouchers (check aims)
 
             var otc = Guid.NewGuid();
@@ -70,8 +80,8 @@ namespace WomPlatform.Web.Api {
                 Nonce = creationParameters.Nonce.FromBase64(),
                 Password = creationParameters.Password
             };
-            data.GenerationRequests.Add(genRequest);
-            data.SaveChanges();
+            Data.GenerationRequests.Add(genRequest);
+            Data.SaveChanges();
 
             foreach (var voucher in creationParameters.Vouchers) {
                 var v = new Voucher {
@@ -84,9 +94,9 @@ namespace WomPlatform.Web.Api {
                 };
                 _random.NextBytes(v.Secret);
 
-                data.Vouchers.Add(v);
+                Data.Vouchers.Add(v);
             }
-            data.SaveChanges();
+            Data.SaveChanges();
 
             return otc;
         }
@@ -94,8 +104,8 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Verifies a voucher generation request.
         /// </summary>
-        public static void VerifyGenerationRequest(this DataContext data, Guid otcGen) {
-            var request = (from g in data.GenerationRequests
+        public void VerifyGenerationRequest(Guid otcGen) {
+            var request = (from g in Data.GenerationRequests
                            where g.OtcGen == otcGen
                            select g).SingleOrDefault();
 
@@ -105,7 +115,7 @@ namespace WomPlatform.Web.Api {
 
             if(!request.Verified) {
                 request.Verified = true;
-                data.SaveChanges();
+                Data.SaveChanges();
             }
         }
 
@@ -113,8 +123,8 @@ namespace WomPlatform.Web.Api {
         /// Redeems vouchers tied to a given OTC_gen code and marks
         /// the generation request instance as completed.
         /// </summary>
-        public static IEnumerable<Voucher> GenerateVouchers(this DataContext data, Guid otcGen, string password) {
-            var request = (from g in data.GenerationRequests
+        public IEnumerable<Voucher> GenerateVouchers(Guid otcGen, string password) {
+            var request = (from g in Data.GenerationRequests
                            where g.OtcGen == otcGen
                            select g).SingleOrDefault();
 
@@ -132,17 +142,17 @@ namespace WomPlatform.Web.Api {
             }
             if (!request.Password.Equals(password, StringComparison.Ordinal)) {
                 request.Void = true;
-                data.SaveChanges();
+                Data.SaveChanges();
 
                 throw new ArgumentException("Password does not match, request has been voided");
             }
 
-            var vouchers = from v in data.Vouchers
+            var vouchers = from v in Data.Vouchers
                            where v.GenerationRequestId == request.Id
                            select v;
 
             request.PerformedAt = DateTime.UtcNow;
-            data.SaveChanges();
+            Data.SaveChanges();
 
             return vouchers;
         }
@@ -150,7 +160,7 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Creates a new voucher generation instance.
         /// </summary>
-        public static Guid CreatePaymentRequest(this DataContext data, PaymentRegisterPayload.Content creationParameters) {
+        public Guid CreatePaymentRequest(PaymentRegisterPayload.Content creationParameters) {
             var otc = Guid.NewGuid();
 
             var payRequest = new PaymentRequest {
@@ -172,8 +182,8 @@ namespace WomPlatform.Web.Api {
                 Nonce = creationParameters.Nonce.FromBase64(),
                 Password = creationParameters.Password
             };
-            data.PaymentRequests.Add(payRequest);
-            data.SaveChanges();
+            Data.PaymentRequests.Add(payRequest);
+            Data.SaveChanges();
 
             return otc;
         }
@@ -181,8 +191,8 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Verifies a payment creation request.
         /// </summary>
-        public static void VerifyPaymentRequest(this DataContext data, Guid otcPay) {
-            var request = (from g in data.PaymentRequests
+        public void VerifyPaymentRequest(Guid otcPay) {
+            var request = (from g in Data.PaymentRequests
                            where g.OtcPay == otcPay
                            select g).SingleOrDefault();
 
@@ -192,12 +202,12 @@ namespace WomPlatform.Web.Api {
 
             if (!request.Verified) {
                 request.Verified = true;
-                data.SaveChanges();
+                Data.SaveChanges();
             }
         }
 
-        public static (PaymentRequest payment, Filter filter) GetPaymentRequestInfo(this DataContext data, Guid otcPay, string password) {
-            var request = (from g in data.PaymentRequests
+        public (PaymentRequest payment, Filter filter) GetPaymentRequestInfo(Guid otcPay, string password) {
+            var request = (from g in Data.PaymentRequests
                            where g.OtcPay == otcPay
                            select g)
                            .Include(nameof(PaymentRequest.Pos))
@@ -217,7 +227,7 @@ namespace WomPlatform.Web.Api {
             }
             if (!request.Password.Equals(password, StringComparison.Ordinal)) {
                 request.Void = true;
-                data.SaveChanges();
+                Data.SaveChanges();
 
                 throw new ArgumentException("Password does not match, payment has been voided");
             }
@@ -230,16 +240,17 @@ namespace WomPlatform.Web.Api {
             return (request, f);
         }
 
-        public static PaymentRequest ProcessPayment(this DataContext data, PaymentConfirmPayload.Content request) {
-            (var payment, var filter) = GetPaymentRequestInfo(data, request.Otc, request.Password);
+        public PaymentRequest ProcessPayment(PaymentConfirmPayload.Content request) {
+            (var payment, var filter) = GetPaymentRequestInfo(request.Otc, request.Password);
 
             if(request.Vouchers.Length != payment.Amount) {
+                Logger.LogInformation(LoggingEvents.DatabaseOperation, "{0} vouchers given instead of {1}", request.Vouchers.Length, payment.Amount);
                 throw new ArgumentException("Wrong number of vouchers");
             }
 
             // Fetch non-spent vouchers from DB
             var voucherIds = request.Vouchers.Select(v => v.Id).ToArray();
-            var voucherMap = (from v in data.Vouchers
+            var voucherMap = (from v in Data.Vouchers
                               where voucherIds.Contains(v.Id)
                               where !v.Spent
                               select v).ToDictionary(v => v.Id);
@@ -247,17 +258,20 @@ namespace WomPlatform.Web.Api {
             bool CheckVoucher(PaymentConfirmPayload.VoucherInfo vi) {
                 if (!voucherMap.ContainsKey(vi.Id)) {
                     // Voucher not found or already spent
+                    Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} not found or already spent", vi.Id);
                     return false;
                 }
                 var voucher = voucherMap[vi.Id];
 
                 if(!vi.Secret.FromBase64().SequenceEqual(voucher.Secret)) {
                     // Secret does not match
+                    Logger.LogInformation(LoggingEvents.DatabaseOperation, "Secret for voucher {0} does not match", vi.Id);
                     return false;
                 }
 
                 if(filter?.Simple?.Aim != null && !voucher.AimCode.StartsWith(filter.Simple.Aim)) {
                     // Voucher does not match aim filter
+                    Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} does not match aim filter '{1}'", vi.Id, filter.Simple.Aim);
                     return false;
                 }
 
@@ -267,6 +281,7 @@ namespace WomPlatform.Web.Api {
 
                 if(filter?.Simple?.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromDays(filter.Simple.MaxAge.Value)) {
                     // Voucher too old
+                    Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} is older than {1} days (age {2})", vi.Id, filter.Simple.MaxAge.Value, DateTime.UtcNow.Subtract(voucher.Timestamp));
                     return false;
                 }
 
@@ -283,7 +298,7 @@ namespace WomPlatform.Web.Api {
                 v.Spent = true;
             }
             payment.Void = true;
-            data.SaveChanges();
+            Data.SaveChanges();
 
             return payment;
         }

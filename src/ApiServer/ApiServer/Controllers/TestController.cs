@@ -15,20 +15,20 @@ namespace ApiServer.Controllers {
 
         public TestController(
             IConfiguration configuration,
-            DataContext database,
+            DatabaseOperator databaseOperator,
             CryptoProvider cryptoProvider,
             IHostingEnvironment hosting,
             ILogger<TestController> logger
         ) {
             Configuration = configuration;
-            Database = database;
+            Database = databaseOperator;
             Crypto = cryptoProvider;
             Hosting = hosting;
             Logger = logger;
         }
 
         protected IConfiguration Configuration { get; }
-        protected DataContext Database { get; }
+        protected DatabaseOperator Database { get; }
         protected CryptoProvider Crypto { get; }
         protected IHostingEnvironment Hosting { get; }
         protected ILogger<TestController> Logger { get; }
