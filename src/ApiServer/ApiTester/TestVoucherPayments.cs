@@ -20,6 +20,8 @@ namespace ApiTester {
 
         protected CryptoProvider Crypto { get; } = new CryptoProvider(new ConsoleLogger<CryptoProvider>());
 
+        protected Random Random { get; } = new Random();
+
         protected RestRequest CreateJsonRequest(string urlPath, object jsonBody) {
             var request = new RestRequest(urlPath, Method.POST) {
                 RequestFormat = DataFormat.Json
@@ -76,7 +78,7 @@ namespace ApiTester {
                     Otc = responseContent.Otc
                 }, _keyRegistry)
             });
-            response = PerformRequest<VoucherCreateResponse>(request);
+            PerformRequest<VoucherCreateResponse>(request);
 
             return responseContent.Otc;
         }
@@ -96,27 +98,75 @@ namespace ApiTester {
             return responseContent.Vouchers;
         }
 
-        [Test]
-        public void CreateAndRedeemRandomVouchers() {
-            var rnd = new Random();
-
+        private VoucherCreatePayload.VoucherInfo[] CreateRandomVoucherRequests(int count, string aimCode = null) {
             var now = DateTime.UtcNow;
             var voucherInfos = new List<VoucherCreatePayload.VoucherInfo>();
-            for (int i = 0; i < 10; ++i) {
+            for (int i = 0; i < count; ++i) {
                 voucherInfos.Add(new VoucherCreatePayload.VoucherInfo {
-                    Aim = "1",
-                    Latitude = rnd.NextBetween(5, 40),
-                    Longitude = rnd.NextBetween(5, 50),
+                    Aim = aimCode ?? "1",
+                    Latitude = Random.NextBetween(5, 40),
+                    Longitude = Random.NextBetween(5, 50),
                     Timestamp = now
                 });
 
                 now = now.Subtract(TimeSpan.FromMinutes(30));
             }
+            return voucherInfos.ToArray();
+        }
 
-            var otcGen = CreateVouchers("1234", voucherInfos.ToArray());
+        private Guid CreatePayment(string password, int amount, string pocketAckUrl, SimpleFilter filter = null) {
+            var nonce = Guid.NewGuid().ToString("N");
+            var request = CreateJsonRequest("payment/register", new PaymentRegisterPayload {
+                PosId = 1,
+                Nonce = nonce,
+                Payload = Crypto.Encrypt(new PaymentRegisterPayload.Content {
+                    PosId = 1,
+                    Nonce = nonce,
+                    Password = password,
+                    Amount = amount,
+                    PosAckUrl = string.Format("https://example.org/pos/test/{0:N}", nonce),
+                    PocketAckUrl = pocketAckUrl,
+                    SimpleFilter = filter
+                }, _keyRegistry)
+            });
+
+            var response = PerformRequest<PaymentRegisterResponse>(request);
+            var responseContent = Crypto.Decrypt<PaymentRegisterResponse.Content>(response.Payload, _keyPos);
+
+            request = CreateJsonRequest("payment/verify", new PaymentVerifyPayload {
+                Payload = Crypto.Encrypt(new PaymentVerifyPayload.Content {
+                    Otc = responseContent.Otc
+                }, _keyRegistry)
+            });
+
+            PerformRequest<VoucherCreateResponse>(request);
+
+            return responseContent.Otc;
+        }
+
+        private string ProcessPayment(Guid otc, string password, params PaymentConfirmPayload.VoucherInfo[] vouchers) {
+            var request = CreateJsonRequest("payment/confirm", new PaymentConfirmPayload {
+                Payload = Crypto.Encrypt(new PaymentConfirmPayload.Content {
+                    Otc = otc,
+                    Password = password,
+                    SessionKey = _keySession.ToBase64(),
+                    Vouchers = vouchers
+                }, _keyRegistry)
+            });
+
+            var response = PerformRequest<PaymentConfirmResponse>(request);
+            var responseContent = Crypto.Decrypt<PaymentConfirmResponse.Content>(response.Payload, _keySession);
+
+            return responseContent.AckUrl;
+        }
+
+        [Test]
+        public void CreateAndRedeemRandomVouchers() {
+            var voucherInfos = CreateRandomVoucherRequests(Random.Next(5) + 5);
+            var otcGen = CreateVouchers("1234", voucherInfos);
             var vouchers = RedeemVouchers(otcGen, "1234");
 
-            Assert.AreEqual(voucherInfos.Count, vouchers.Length);
+            Assert.AreEqual(voucherInfos.Length, vouchers.Length);
             Console.WriteLine("Redeemed vouchers {0}", string.Join(", ", from v in vouchers select v.Id));
 
             var zip = (from v in voucherInfos orderby v.Timestamp select v)
@@ -127,6 +177,27 @@ namespace ApiTester {
                 Assert.AreEqual(a.Longitude, b.Longitude);
                 Assert.AreEqual(a.Timestamp.ToSecondPrecision(), b.Timestamp);
             }
+        }
+
+        [Test]
+        public void CreateVouchersAndProcessSimplePayment() {
+            var voucherInfos = CreateRandomVoucherRequests(5);
+            var otcGen = CreateVouchers("1234", voucherInfos);
+            var vouchers = RedeemVouchers(otcGen, "1234");
+
+            Assert.AreEqual(5, vouchers.Length);
+
+            var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
+
+            var payOtc = CreatePayment("2345", 5, ackUrl);
+
+            string returnAckUrl = ProcessPayment(payOtc, "2345", (from v in vouchers
+                                            select new PaymentConfirmPayload.VoucherInfo {
+                                                Id = v.Id,
+                                                Secret = v.Secret
+                                            }).ToArray());
+
+            Assert.AreEqual(ackUrl, returnAckUrl);
         }
 
     }
