@@ -6,6 +6,7 @@ WORKDIR /app
 # Copy solution as distinct layer
 COPY *.sln .
 COPY ApiServer/*.csproj ./ApiServer/
+COPY ApiTester/*.csproj ./ApiTester/
 RUN dotnet restore
 
 # Copy everything else and build
