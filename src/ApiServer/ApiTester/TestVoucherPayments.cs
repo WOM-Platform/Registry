@@ -200,6 +200,64 @@ namespace ApiTester {
             Assert.AreEqual(ackUrl, returnAckUrl);
         }
 
+        [Test]
+        public void FailedPaymentInsufficientVouchers() {
+            var voucherInfos = CreateRandomVoucherRequests(1);
+            var otcGen = CreateVouchers("1234", voucherInfos);
+            var vouchers = RedeemVouchers(otcGen, "1234");
+
+            Assert.AreEqual(1, vouchers.Length);
+
+            var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
+
+            var payOtc = CreatePayment("2345", 2, ackUrl);
+
+            Assert.Throws<InvalidOperationException>(() => {
+                ProcessPayment(payOtc, "2345", (from v in vouchers
+                                                select new PaymentConfirmPayload.VoucherInfo {
+                                                    Id = v.Id,
+                                                    Secret = v.Secret
+                                                }).ToArray());
+            });
+        }
+
+        [Test]
+        public void FailedPaymentWrongAim() {
+            var otcGen = CreateVouchers("1234",
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "1/1",
+                    Latitude = 12,
+                    Longitude = 12,
+                    Timestamp = DateTime.UtcNow
+                },
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "2",
+                    Latitude = 12,
+                    Longitude = 12,
+                    Timestamp = DateTime.UtcNow
+                }
+            );
+            var vouchers = RedeemVouchers(otcGen, "1234");
+
+            Assert.AreEqual(2, vouchers.Length);
+            Assert.IsTrue(vouchers[0].Aim.EndsWith("/1/1"));
+            Assert.IsTrue(vouchers[1].Aim.EndsWith("/2"));
+
+            var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
+
+            var payOtc = CreatePayment("2345", 2, ackUrl, new SimpleFilter {
+                Aim = "1"
+            });
+
+            Assert.Throws<InvalidOperationException>(() => {
+                ProcessPayment(payOtc, "2345", (from v in vouchers
+                                                select new PaymentConfirmPayload.VoucherInfo {
+                                                    Id = v.Id,
+                                                    Secret = v.Secret
+                                                }).ToArray());
+            });
+        }
+
     }
 
 }
