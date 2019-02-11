@@ -45,8 +45,6 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets all aims.
         /// </summary>
-        /// <param name="conn"></param>
-        /// <returns></returns>
         public static IEnumerable<Aim> GetAims(this DataContext data) {
             return from a in data.Aims
                    orderby a.Code
@@ -258,16 +256,16 @@ namespace WomPlatform.Web.Api {
                     return false;
                 }
 
-                if(filter?.Simple.Aim != null && !voucher.AimCode.StartsWith(filter.Simple.Aim)) {
+                if(filter?.Simple?.Aim != null && !voucher.AimCode.StartsWith(filter.Simple.Aim)) {
                     // Voucher does not match aim filter
                     return false;
                 }
 
-                if(filter?.Simple.GeoBounds != null) {
+                if(filter?.Simple?.GeoBounds != null) {
                     // TODO: implement geo filtering
                 }
 
-                if(filter?.Simple.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromDays(filter.Simple.MaxAge.Value)) {
+                if(filter?.Simple?.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromDays(filter.Simple.MaxAge.Value)) {
                     // Voucher too old
                     return false;
                 }
