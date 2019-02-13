@@ -9,7 +9,7 @@ namespace WomPlatform.Web.Api.Models {
 
         public string Aim { get; set; }
 
-        public Bounds GeoBounds { get; set; }
+        public Bounds Bounds { get; set; }
 
         public long? MaxAge { get; set; }
 

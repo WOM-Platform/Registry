@@ -30,6 +30,24 @@ namespace WomPlatform.Web.Api {
             return inLatRange && inLngRange;
         }
 
+        /// <summary>
+        /// Create a geo bounds instance from data model bounds.
+        /// </summary>
+        public static GeoBounds ToGeo(this Models.Bounds modelBounds) => new GeoBounds {
+            LeftTop = modelBounds.LeftTop.ToCoords(),
+            RightBottom = modelBounds.RightBottom.ToCoords()
+        };
+
+        /// <summary>
+        /// Check whether data model bounds contain a geographical point.
+        /// </summary>
+        public static bool Contains(this Models.Bounds modelBounds, double latitude, double longitude) {
+            return modelBounds.ToGeo().Contains(new GeoCoords {
+                Latitude = latitude,
+                Longitude = longitude
+            });
+        }
+
     }
 
 }

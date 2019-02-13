@@ -275,8 +275,10 @@ namespace WomPlatform.Web.Api {
                     return false;
                 }
 
-                if(filter?.Simple?.GeoBounds != null) {
-                    // TODO: implement geo filtering
+                if(filter?.Simple?.Bounds != null && !filter.Simple.Bounds.Contains(voucher.Latitude, voucher.Longitude)) {
+                    // Voucher not contained in geographical bounds
+                    Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} is outside geographical bounds", vi.Id);
+                    return false;
                 }
 
                 if(filter?.Simple?.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromDays(filter.Simple.MaxAge.Value)) {
