@@ -258,6 +258,65 @@ namespace ApiTester {
             });
         }
 
+        [Test]
+        public void PaymentGeoBounds() {
+            var otcGen = CreateVouchers("1234",
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "1/1",
+                    Latitude = 10,
+                    Longitude = 10,
+                    Timestamp = DateTime.UtcNow
+                },
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "1/1",
+                    Latitude = 20,
+                    Longitude = 20,
+                    Timestamp = DateTime.UtcNow
+                },
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "1/1",
+                    Latitude = -60,
+                    Longitude = -60,
+                    Timestamp = DateTime.UtcNow
+                }
+            );
+            var vouchers = RedeemVouchers(otcGen, "1234");
+
+            Assert.AreEqual(3, vouchers.Length);
+
+            // Correct payment with voucher 1
+            var ackUrl = string.Format("http://www.example.org/geo-test/{0:N}", Guid.NewGuid());
+            var payOtc = CreatePayment("2345", 1, ackUrl, new SimpleFilter {
+                Bounds = new Bounds {
+                    LeftTop = new double[] { 15, 5 },
+                    RightBottom = new double[] { 5, 15 }
+                }
+            });
+            string returnAckUrl = ProcessPayment(payOtc, "2345",
+                new PaymentConfirmPayload.VoucherInfo {
+                    Id = vouchers[0].Id,
+                    Secret = vouchers[0].Secret
+                }
+            );
+            Assert.AreEqual(ackUrl, returnAckUrl);
+
+            // Fail payment with voucher 2
+            payOtc = CreatePayment("2345", 1, ackUrl, new SimpleFilter {
+                Bounds = new Bounds {
+                    LeftTop = new double[] { 30, 25 },
+                    RightBottom = new double[] { 10, 35 }
+                }
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                ProcessPayment(payOtc, "2345",
+                    new PaymentConfirmPayload.VoucherInfo {
+                        Id = vouchers[1].Id,
+                        Secret = vouchers[1].Secret
+                    }
+                );
+            });
+        }
+
     }
 
 }
