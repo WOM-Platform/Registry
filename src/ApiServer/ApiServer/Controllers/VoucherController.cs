@@ -57,6 +57,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
                 return this.PayloadVerificationFailure("Verification of nonce in payload failed");
             }
+            // TODO: check password requisites
 
             Logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0} and nonce {1}", payload.SourceId, payload.Nonce);
 

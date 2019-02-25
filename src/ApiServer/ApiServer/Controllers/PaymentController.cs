@@ -57,6 +57,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
                 return this.PayloadVerificationFailure("Verification of nonce in payload failed");
             }
+            // TODO: check password requisites
 
             Logger.LogInformation(LoggingEvents.PaymentCreation, "Processing payment creation for POS {0} and nonce {1}", payload.PosId, payload.Nonce);
 

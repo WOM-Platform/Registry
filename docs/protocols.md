@@ -31,6 +31,7 @@ The JSON object `Payload` has the following structure:
 {
     "SourceId": 1,
     "Nonce": "91553f9f3d404a5399a7a7d651bb0ddd",
+    "Password": "1234",
     "Vouchers": [
         {
             "Aim": "https://wom.social/api/v1/aim/1",
@@ -46,6 +47,7 @@ The JSON object `Payload` has the following structure:
 | --- | --- | --- |
 | `SourceID` | integer | Unique source identifier, must match that of container object. |
 | `Nonce` | string | Non-repetition string, must match that of container object. |
+| `Password` | string | User-supplied password for voucher generation confirmation. Between&nbsp;4 and&nbsp;8 numeric characters. |
 | `Vouchers` | string | Array of voucher information. |
 | `Aim` | string | URL identifying a *common good* aim within the WOM&nbsp;platform. |
 | `Latitude` | numeric | |
