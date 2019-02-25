@@ -34,7 +34,7 @@ namespace ApiServer.Controllers {
         protected ILogger<TestController> Logger { get; }
 
         [HttpPost("create-vouchers/{count=10}")]
-        public IActionResult CreateVouchers([FromRoute]int count) {
+        public ActionResult CreateVouchers([FromRoute]int count) {
             if(!Hosting.IsDevelopment()) {
                 return Unauthorized();
             }
@@ -78,8 +78,48 @@ namespace ApiServer.Controllers {
 
             Logger.LogDebug("Voucher generation request verified");
 
-            return Ok( new {
+            return Ok(new {
                 OtcGen = UrlGenerator.GenerateRedeemUrl(result),
+                Pin = pin
+            });
+        }
+
+        [HttpPost("create-payment")]
+        public ActionResult CreatePayment(string ackUrl, int amount = 10, [FromBody]SimpleFilter filter = null) {
+            if (!Hosting.IsDevelopment()) {
+                return Unauthorized();
+            }
+
+            if(amount <= 0) {
+                throw new ArgumentOutOfRangeException("Amount cannot be zero or negative", nameof(amount));
+            }
+            if(string.IsNullOrWhiteSpace(ackUrl)) {
+                throw new ArgumentException("Acknowledgment URL cannot be void", nameof(ackUrl));
+            }
+
+            var pin = Crypto.Generator.GeneratePassword(4);
+
+            Logger.LogInformation("Creating payment for {0} vouchers", amount);
+
+            var testPos = Database.GetPosById(1);
+
+            var otcPay = Database.CreatePaymentRequest(new PaymentRegisterPayload.Content {
+                Amount = amount,
+                Password = pin,
+                Nonce = Guid.NewGuid().ToString("N"),
+                SimpleFilter = filter,
+                PocketAckUrl = ackUrl,
+                PosId = testPos.Id
+            });
+
+            Logger.LogDebug("New payment request created with code {0}", otcPay);
+
+            Database.VerifyPaymentRequest(otcPay);
+
+            Logger.LogDebug("Payment request verified");
+
+            return Ok(new {
+                OtcPay = UrlGenerator.GeneratePaymentUrl(otcPay),
                 Pin = pin
             });
         }
