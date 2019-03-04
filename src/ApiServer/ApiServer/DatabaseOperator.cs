@@ -165,12 +165,7 @@ namespace WomPlatform.Web.Api {
 
             var payRequest = new PaymentRequest {
                 Amount = creationParameters.Amount,
-                JsonFilter = JsonConvert.SerializeObject(
-                    new Filter {
-                        Simple = creationParameters.SimpleFilter
-                    },
-                    DatabaseSerializerSettings
-                ),
+                JsonFilter = null,
                 OtcPay = otc,
                 UrlAckPocket = creationParameters.PocketAckUrl,
                 UrlAckPos = creationParameters.PosAckUrl,
@@ -182,6 +177,14 @@ namespace WomPlatform.Web.Api {
                 Nonce = creationParameters.Nonce.FromBase64(),
                 Password = creationParameters.Password
             };
+            if(creationParameters.SimpleFilter != null) {
+                payRequest.JsonFilter = JsonConvert.SerializeObject(
+                    new Filter {
+                        Simple = creationParameters.SimpleFilter
+                    },
+                    DatabaseSerializerSettings
+                );
+            }
             Data.PaymentRequests.Add(payRequest);
             Data.SaveChanges();
 
