@@ -19,7 +19,11 @@ namespace WomPlatform.Web.Api {
 
         public void ConfigureServices(IServiceCollection services) {
             services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                .AddMvcOptions(opts => {
+                    opts.AllowEmptyInputInBodyModelBinding = true;
+                    opts.InputFormatters.Add(new PermissiveInputFormatter());
+                });
 
             services.AddDbContext<DataContext>(o => {
                 var dbSection = Configuration.GetSection("Database");

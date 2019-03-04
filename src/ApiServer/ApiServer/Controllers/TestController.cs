@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using WomPlatform.Web.Api;
 using WomPlatform.Web.Api.Models;
 
@@ -85,7 +86,7 @@ namespace ApiServer.Controllers {
         }
 
         [HttpPost("create-payment")]
-        public ActionResult CreatePayment(string ackUrl, int amount = 10, [FromBody]SimpleFilter filter = null) {
+        public ActionResult CreatePayment(string ackUrl, int amount = 10, [FromBody] SimpleFilter filter = null) {
             if (!Hosting.IsDevelopment()) {
                 return Unauthorized();
             }
@@ -99,7 +100,7 @@ namespace ApiServer.Controllers {
 
             var pin = Crypto.Generator.GeneratePassword(4);
 
-            Logger.LogInformation("Creating payment for {0} vouchers", amount);
+            Logger.LogInformation("Creating payment for {0} vouchers, filter: {1}", amount, JsonConvert.SerializeObject(filter));
 
             var testPos = Database.GetPosById(1);
 
