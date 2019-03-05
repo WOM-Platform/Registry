@@ -230,7 +230,7 @@ The JSON object `Payload` has the following structure:
 | `SimpleFilter` | object | Optional filter that vouchers must satisfy to be used for payment. |
 | `Aim` | string | Code identifying a *common good* aim within the platform. |
 | `Bounds` | object | Couple of coordinates identifying a square geographical region. |
-| `MaxAge` | integet | Maximum age of vouchers, in days. |
+| `MaxAge` | integer | Maximum age of vouchers, in days. |
 | `PocketAckUrl` | string | Required. Confirmation URL that will be invoked by *Pocket* on payment success. |
 | `PosAckUrl` | string | Optional. URL invoked via HTTP request by the *Registry* on payment success. |
 
@@ -290,6 +290,74 @@ The JSON object `Payload` is encrypted with the *registry’s public key* and ha
 ### Result
 
 This method will return an empty response with HTTP&nbsp;status `200` to confirm verification.
+
+
+## Payment information
+
+Request from *pocket* to *registry*, querying information about a payment.
+
+`POST /api/v1/payment/info`
+
+### Payload
+
+```json
+{
+    "Payload": "<see below>"
+}
+```
+
+`Payload` is a JSON-encoded object, encrypted with the *registry's public key*.
+Contents of the decrypted JSON object have the following structure:
+
+```json
+{
+    "Otc": "8b7abe3dda5f42e0b8235a819b0088b8",
+    "Password": "1234",
+    "SessionKey": "cXVlc3RpcXVlc3RpcXVlc3RpcXVlc3RpcXVlc3RpMjI="
+}
+```
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Otc` | string | Uniquely represents the payment instance. Is a GUID in the current implementation. |
+| `Password` | string | Short user-provided code that secures transmission of the `Otc`. 4 to 8 numeric characters. |
+| `SessionKey` | string | 256-bit session key used to encrypt the response. Encoded in base64. |
+
+### Result
+
+```json
+{
+    "Payload": "<see below>"
+}
+```
+
+`Payload` is a JSON-encoded object, encrypted with the *session key* specified in the request.
+
+Contents of the decrypted JSON object have the following structure:
+
+```json
+{
+    "PosId": 1,
+    "Amount": 10,
+    "SimpleFilter": {
+        "Aim": "1/1",
+        "Bounds": {
+            "LeftTop": [ 45.0, -170.0 ],
+            "RightBottom": [ 50.0, -160.0 ]
+        },
+        "MaxAge": 14
+    }
+}
+```
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `PosId` | integer | Unique ID of the POS that generated the payment. |
+| `Amount` | integer | Amount of vouchers required to confirm the payment. |
+| `SimpleFilter` | object | Filter that vouchers must satisfy in order to be accepted. May be null. |
+| `Aim` | string | Code identifying a *common good* aim within the platform. |
+| `Bounds` | object | Couple of coordinates identifying a square geographical region. |
+| `MaxAge` | integer | Maximum age of vouchers, in days. |
 
 
 ## Payment processing
