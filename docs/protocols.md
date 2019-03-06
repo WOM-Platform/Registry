@@ -153,11 +153,13 @@ Contents of the decrypted JSON object have the following structure:
 
 ```json
 {
+    "SourceId": 1,
+    "SourceName": "Sample source",
     "Vouchers": [
         {
             "Id": 456,
             "Secret": "l2gLa87JhEVwF5KH8VkkPA==",
-            "Aim": "https://wom.social/api/v1/aim/1/1",
+            "Aim": "1/1",
             "Latitude": 10.0,
             "Longitude": 12.3,
             "Timestamp": "2019-02-25T22:58:13Z"
@@ -338,6 +340,7 @@ Contents of the decrypted JSON object have the following structure:
 ```json
 {
     "PosId": 1,
+    "PosName": "Sample POS",
     "Amount": 10,
     "SimpleFilter": {
         "Aim": "1/1",
