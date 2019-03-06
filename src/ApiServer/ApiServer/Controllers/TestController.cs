@@ -100,7 +100,7 @@ namespace ApiServer.Controllers {
 
             var pin = Crypto.Generator.GeneratePassword(4);
 
-            Logger.LogInformation("Creating payment for {0} vouchers, filter: {1}", amount, JsonConvert.SerializeObject(filter));
+            Logger.LogInformation("Creating payment for {0} vouchers with filter: {1}", amount, JsonConvert.SerializeObject(filter));
 
             var testPos = Database.GetPosById(1);
 

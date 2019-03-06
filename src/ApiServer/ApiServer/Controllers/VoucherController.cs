@@ -35,7 +35,7 @@ namespace WomPlatform.Web.Api.Controllers {
         // POST api/v1/voucher/create
         [HttpPost("create")]
         public ActionResult Create([FromBody]VoucherCreatePayload payload) {
-            Logger.LogDebug(LoggingEvents.VoucherCreation, "Received create request from Source ID {0}, nonce {1}",
+            Logger.LogDebug(LoggingEvents.VoucherCreation, "Received voucher creation from Source ID {0} with nonce {1}",
                 payload.SourceId, payload.Nonce
             );
 
@@ -59,12 +59,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
             // TODO: check password requisites
 
-            Logger.LogInformation(LoggingEvents.VoucherCreation, "Processing voucher generation for source {0} and nonce {1}", payload.SourceId, payload.Nonce);
-
             try {
                 var otc = Database.CreateVoucherGeneration(payloadContent);
 
-                Logger.LogDebug(LoggingEvents.VoucherCreation, "Voucher generation instance created with OTC {0}", otc);
+                Logger.LogInformation(LoggingEvents.VoucherCreation, "Voucher generation successfully requested with code {0} for source {1}", otc, payload.SourceId);
 
                 return Ok(new VoucherCreateResponse {
                     Payload = Crypto.Encrypt(new VoucherCreateResponse.Content {
@@ -82,12 +80,13 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpPost("verify")]
         public ActionResult Verify([FromBody]VoucherVerifyPayload payload) {
-            Logger.LogDebug(LoggingEvents.VoucherVerification, "Received verification request");
+            Logger.LogDebug(LoggingEvents.VoucherVerification, "Received voucher generation verification request");
 
             var payloadContent = Crypto.Decrypt<VoucherVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             try {
                 Database.VerifyGenerationRequest(payloadContent.Otc);
+
                 Logger.LogInformation(LoggingEvents.VoucherVerification, "Voucher generation {0} verified", payloadContent.Otc);
 
                 return Ok();
@@ -105,6 +104,8 @@ namespace WomPlatform.Web.Api.Controllers {
         // POST api/v1/voucher/redeem
         [HttpPost("redeem")]
         public ActionResult Redeem([FromBody]VoucherRedeemPayload payload) {
+            Logger.LogDebug("Received voucher redemption request");
+
             var payloadContent = Crypto.Decrypt<VoucherRedeemPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
@@ -115,6 +116,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
             try {
                 var (source, vouchers) = Database.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
+
+                Logger.LogInformation("Successfully redeemed vouchers by source {0}", vouchers, source.Id);
 
                 var content = new VoucherRedeemResponse.Content {
                     SourceId = source.Id,

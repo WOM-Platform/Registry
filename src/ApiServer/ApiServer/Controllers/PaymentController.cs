@@ -35,7 +35,7 @@ namespace WomPlatform.Web.Api.Controllers {
         // POST /api/v1/payment/register
         [HttpPost("register")]
         public ActionResult Register([FromBody]PaymentRegisterPayload payload) {
-            Logger.LogDebug(LoggingEvents.PaymentCreation, "Received create request from POS ID {0}, nonce {1}",
+            Logger.LogDebug(LoggingEvents.PaymentCreation, "Received payment creation request from POS ID {0} with nonce {1}",
                 payload.PosId, payload.Nonce
             );
 
@@ -59,12 +59,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
             // TODO: check password requisites
 
-            Logger.LogInformation(LoggingEvents.PaymentCreation, "Processing payment creation for POS {0} and nonce {1}", payload.PosId, payload.Nonce);
-
             try {
                 var otc = Database.CreatePaymentRequest(payloadContent);
 
-                Logger.LogDebug(LoggingEvents.PaymentCreation, "Payment instance created with OTC {0}", otc);
+                Logger.LogInformation(LoggingEvents.PaymentCreation, "Payment request successfully created with code {0} for POS {1}", otc, payload.PosId);
 
                 return Ok(new PaymentRegisterResponse {
                     Payload = Crypto.Encrypt(new PaymentRegisterResponse.Content {
@@ -88,6 +86,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             try {
                 Database.VerifyPaymentRequest(payloadContent.Otc);
+
                 Logger.LogInformation(LoggingEvents.PaymentVerification, "Payment creation {0} verified", payloadContent.Otc);
 
                 return Ok();
@@ -105,6 +104,8 @@ namespace WomPlatform.Web.Api.Controllers {
         // POST /api/v1/payment/info
         [HttpPost("info")]
         public ActionResult GetInformation([FromBody]PaymentInfoPayload payload) {
+            Logger.LogDebug("Received payment information request");
+
             var payloadContent = Crypto.Decrypt<PaymentInfoPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
@@ -115,6 +116,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
             try {
                 (var payment, var filter) = Database.GetPaymentRequestInfo(payloadContent.Otc, payloadContent.Password);
+
+                Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.OtcPay, payment.PosId, payment.Amount);
 
                 var content = new PaymentInfoResponse.Content {
                     Amount = payment.Amount,
@@ -144,6 +147,8 @@ namespace WomPlatform.Web.Api.Controllers {
         // POST /api/v1/payment/confirm
         [HttpPost("confirm")]
         public ActionResult Confirm([FromBody]PaymentConfirmPayload payload) {
+            Logger.LogDebug("Received payment confirmation request");
+
             var payloadContent = Crypto.Decrypt<PaymentConfirmPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
@@ -155,12 +160,12 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 var payment = Database.ProcessPayment(payloadContent);
 
-                var content = new PaymentConfirmResponse.Content {
-                    AckUrl = payment.UrlAckPocket
-                };
+                Logger.LogInformation("Successfully processed payment {0}", payment.OtcPay);
 
                 return Ok(new PaymentConfirmResponse {
-                    Payload = Crypto.Encrypt(content, ks)
+                    Payload = Crypto.Encrypt(new PaymentConfirmResponse.Content {
+                        AckUrl = payment.UrlAckPocket
+                    }, ks)
                 });
             }
             catch (ArgumentException ex) {

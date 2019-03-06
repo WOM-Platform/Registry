@@ -20,7 +20,7 @@ namespace WomPlatform.Web.Api {
         ) : base(options) {
             Logger = logger;
 
-            Logger.LogDebug(LoggingEvents.DatabaseConnection, "Creating DataContext");
+            Logger.LogTrace(LoggingEvents.DatabaseConnection, "Creating DataContext");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -35,7 +35,7 @@ namespace WomPlatform.Web.Api {
         }
 
         public override void Dispose() {
-            Logger.LogDebug(LoggingEvents.DatabaseConnection, "Disposing DataContext");
+            Logger.LogTrace(LoggingEvents.DatabaseConnection, "Disposing DataContext");
             base.Dispose();
         }
 
