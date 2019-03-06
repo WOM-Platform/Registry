@@ -40,7 +40,9 @@ namespace WomPlatform.Web.Api {
         public Source GetSourceById(long sourceId) {
             return (from s in Data.Sources
                     where s.Id == sourceId
-                    select s).SingleOrDefault();
+                    select s)
+                    .Include(nameof(Source.Contact))
+                    .SingleOrDefault();
         }
 
         /// <summary>
@@ -59,6 +61,22 @@ namespace WomPlatform.Web.Api {
             return from a in Data.Aims
                    orderby a.Code
                    select a;
+        }
+
+        /// <summary>
+        /// Gets an aim by its code (exact match).
+        /// </summary>
+        public Aim GetAimByCode(string aimCode) {
+            return (from a in Data.Aims
+                    where a.Code == aimCode
+                    select a).SingleOrDefault();
+        }
+
+        public IEnumerable<Aim> GetSubAims(Aim aim) {
+            return (from a in Data.Aims
+                    where a.Code.StartsWith(aim.Code + "/")
+                    orderby a.Code ascending
+                    select a);
         }
 
         /// <summary>

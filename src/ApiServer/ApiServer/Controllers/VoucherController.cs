@@ -9,8 +9,9 @@ using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    [Produces("application/json")]
     [Route("api/v1/voucher")]
-    public class VoucherController : ControllerBase {
+    public class VoucherController : Controller {
 
         public VoucherController(
             IConfiguration configuration,

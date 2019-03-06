@@ -9,8 +9,9 @@ using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    [Produces("application/json")]
     [Route("api/v1/payment")]
-    public class PaymentController : ControllerBase {
+    public class PaymentController : Controller {
 
         public PaymentController(
             IConfiguration configuration,

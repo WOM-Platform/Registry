@@ -11,8 +11,9 @@ using WomPlatform.Web.Api.Models;
 
 namespace ApiServer.Controllers {
 
+    [Produces("application/json")]
     [Route("api/debug")]
-    public class TestController : ControllerBase {
+    public class TestController : Controller {
 
         public TestController(
             IConfiguration configuration,
