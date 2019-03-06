@@ -31,6 +31,9 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public long SourceId { get; set; }
 
+        [ForeignKey(nameof(SourceId))]
+        public Source Source { get; set; }
+
         public byte[] Nonce { get; set; }
 
         public string Password { get; set; }

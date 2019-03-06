@@ -22,7 +22,10 @@ namespace WomPlatform.Web.Api.Models {
             /// </summary>
             public long PosId { get; set; }
 
-            // TODO: additional POS and payment information goes here
+            /// <summary>
+            /// Name of the POS.
+            /// </summary>
+            public string PosName { get; set; }
 
             /// <summary>
             /// Amount of vouchers to consume for payment.

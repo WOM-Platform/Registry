@@ -119,6 +119,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var content = new PaymentInfoResponse.Content {
                     Amount = payment.Amount,
                     PosId = payment.Pos.Id,
+                    PosName = payment.Pos.Name,
                     SimpleFilter = filter?.Simple
                 };
 

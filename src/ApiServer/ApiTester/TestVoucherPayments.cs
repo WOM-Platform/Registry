@@ -83,7 +83,7 @@ namespace ApiTester {
             return responseContent.Otc;
         }
 
-        private VoucherRedeemResponse.VoucherInfo[] RedeemVouchers(Guid otc, string password) {
+        private VoucherRedeemResponse.Content RedeemVouchers(Guid otc, string password) {
             var request = CreateJsonRequest("voucher/redeem", new VoucherRedeemPayload {
                 Payload = Crypto.Encrypt(new VoucherRedeemPayload.Content {
                     Otc = otc,
@@ -93,9 +93,7 @@ namespace ApiTester {
             });
 
             var response = PerformRequest<VoucherRedeemResponse>(request);
-            var responseContent = Crypto.Decrypt<VoucherRedeemResponse.Content>(response.Payload, _keySession);
-
-            return responseContent.Vouchers;
+            return Crypto.Decrypt<VoucherRedeemResponse.Content>(response.Payload, _keySession);
         }
 
         private VoucherCreatePayload.VoucherInfo[] CreateRandomVoucherRequests(int count, string aimCode = null) {
@@ -144,7 +142,7 @@ namespace ApiTester {
             return responseContent.Otc;
         }
 
-        private string ProcessPayment(Guid otc, string password, params PaymentConfirmPayload.VoucherInfo[] vouchers) {
+        private PaymentConfirmResponse.Content ProcessPayment(Guid otc, string password, params PaymentConfirmPayload.VoucherInfo[] vouchers) {
             var request = CreateJsonRequest("payment/confirm", new PaymentConfirmPayload {
                 Payload = Crypto.Encrypt(new PaymentConfirmPayload.Content {
                     Otc = otc,
@@ -155,22 +153,36 @@ namespace ApiTester {
             });
 
             var response = PerformRequest<PaymentConfirmResponse>(request);
-            var responseContent = Crypto.Decrypt<PaymentConfirmResponse.Content>(response.Payload, _keySession);
+            return Crypto.Decrypt<PaymentConfirmResponse.Content>(response.Payload, _keySession);
+        }
 
-            return responseContent.AckUrl;
+        private PaymentInfoResponse.Content GetPaymentInfo(Guid otc, string password) {
+            var request = CreateJsonRequest("payment/info", new PaymentInfoPayload {
+                Payload = Crypto.Encrypt(new PaymentInfoPayload.Content {
+                    Otc = otc,
+                    Password = password,
+                    SessionKey = _keySession.ToBase64()
+                }, _keyRegistry)
+            });
+
+            var response = PerformRequest<PaymentInfoResponse>(request);
+            return Crypto.Decrypt<PaymentInfoResponse.Content>(response.Payload, _keySession);
         }
 
         [Test]
         public void CreateAndRedeemRandomVouchers() {
             var voucherInfos = CreateRandomVoucherRequests(Random.Next(5) + 5);
             var otcGen = CreateVouchers("1234", voucherInfos);
-            var vouchers = RedeemVouchers(otcGen, "1234");
+            var response = RedeemVouchers(otcGen, "1234");
 
-            Assert.AreEqual(voucherInfos.Length, vouchers.Length);
-            Console.WriteLine("Redeemed vouchers {0}", string.Join(", ", from v in vouchers select v.Id));
+            Assert.AreEqual(voucherInfos.Length, response.Vouchers.Length);
+            Console.WriteLine("Redeemed vouchers {0}", string.Join(", ", from v in response.Vouchers select v.Id));
+
+            Assert.AreEqual(1, response.SourceId);
+            Assert.AreEqual("Sample source 1", response.SourceName);
 
             var zip = (from v in voucherInfos orderby v.Timestamp select v)
-                .Zip(from v in vouchers orderby v.Timestamp select v, (a, b) => (a, b));
+                .Zip(from v in response.Vouchers orderby v.Timestamp select v, (a, b) => (a, b));
             foreach((var a, var b) in zip) {
                 Assert.IsTrue(b.Aim.EndsWith(a.Aim));
                 Assert.AreEqual(a.Latitude, b.Latitude);
@@ -183,37 +195,45 @@ namespace ApiTester {
         public void CreateVouchersAndProcessSimplePayment() {
             var voucherInfos = CreateRandomVoucherRequests(5);
             var otcGen = CreateVouchers("1234", voucherInfos);
-            var vouchers = RedeemVouchers(otcGen, "1234");
+            var response = RedeemVouchers(otcGen, "1234");
 
-            Assert.AreEqual(5, vouchers.Length);
+            Assert.AreEqual(5, response.Vouchers.Length);
+            Assert.AreEqual(1, response.SourceId);
 
             var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
 
             var payOtc = CreatePayment("2345", 5, ackUrl);
 
-            string returnAckUrl = ProcessPayment(payOtc, "2345", (from v in vouchers
+            var payInfo = GetPaymentInfo(payOtc, "2345");
+            Assert.AreEqual(5, payInfo.Amount);
+            Assert.AreEqual(1, payInfo.PosId);
+            Assert.AreEqual("Sample POS 1", payInfo.PosName);
+            Assert.IsNull(payInfo.SimpleFilter);
+
+            var payResponse = ProcessPayment(payOtc, "2345", (from v in response.Vouchers
                                             select new PaymentConfirmPayload.VoucherInfo {
                                                 Id = v.Id,
                                                 Secret = v.Secret
                                             }).ToArray());
 
-            Assert.AreEqual(ackUrl, returnAckUrl);
+            Assert.AreEqual(ackUrl, payResponse.AckUrl);
         }
 
         [Test]
         public void FailedPaymentInsufficientVouchers() {
             var voucherInfos = CreateRandomVoucherRequests(1);
             var otcGen = CreateVouchers("1234", voucherInfos);
-            var vouchers = RedeemVouchers(otcGen, "1234");
+            var response = RedeemVouchers(otcGen, "1234");
 
-            Assert.AreEqual(1, vouchers.Length);
+            Assert.AreEqual(1, response.Vouchers.Length);
+            Assert.AreEqual(1, response.SourceId);
 
             var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
 
             var payOtc = CreatePayment("2345", 2, ackUrl);
 
             Assert.Throws<InvalidOperationException>(() => {
-                ProcessPayment(payOtc, "2345", (from v in vouchers
+                ProcessPayment(payOtc, "2345", (from v in response.Vouchers
                                                 select new PaymentConfirmPayload.VoucherInfo {
                                                     Id = v.Id,
                                                     Secret = v.Secret
@@ -237,11 +257,11 @@ namespace ApiTester {
                     Timestamp = DateTime.UtcNow
                 }
             );
-            var vouchers = RedeemVouchers(otcGen, "1234");
+            var response = RedeemVouchers(otcGen, "1234");
 
-            Assert.AreEqual(2, vouchers.Length);
-            Assert.IsTrue(vouchers[0].Aim.EndsWith("/1/1"));
-            Assert.IsTrue(vouchers[1].Aim.EndsWith("/2"));
+            Assert.AreEqual(2, response.Vouchers.Length);
+            Assert.IsTrue(response.Vouchers[0].Aim.EndsWith("/1/1"));
+            Assert.IsTrue(response.Vouchers[1].Aim.EndsWith("/2"));
 
             var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
 
@@ -249,8 +269,16 @@ namespace ApiTester {
                 Aim = "1"
             });
 
+            var payInfo = GetPaymentInfo(payOtc, "2345");
+            Assert.AreEqual(1, payInfo.PosId);
+            Assert.AreEqual(2, payInfo.Amount);
+            Assert.IsNotNull(payInfo.SimpleFilter);
+            Assert.AreEqual("1", payInfo.SimpleFilter.Aim);
+            Assert.IsNull(payInfo.SimpleFilter.Bounds);
+            Assert.IsNull(payInfo.SimpleFilter.MaxAge);
+
             Assert.Throws<InvalidOperationException>(() => {
-                ProcessPayment(payOtc, "2345", (from v in vouchers
+                ProcessPayment(payOtc, "2345", (from v in response.Vouchers
                                                 select new PaymentConfirmPayload.VoucherInfo {
                                                     Id = v.Id,
                                                     Secret = v.Secret
@@ -280,9 +308,9 @@ namespace ApiTester {
                     Timestamp = DateTime.UtcNow
                 }
             );
-            var vouchers = RedeemVouchers(otcGen, "1234");
+            var response = RedeemVouchers(otcGen, "1234");
 
-            Assert.AreEqual(3, vouchers.Length);
+            Assert.AreEqual(3, response.Vouchers.Length);
 
             // Correct payment with voucher 1
             var ackUrl = string.Format("http://www.example.org/geo-test/{0:N}", Guid.NewGuid());
@@ -292,13 +320,13 @@ namespace ApiTester {
                     RightBottom = new double[] { 5, 15 }
                 }
             });
-            string returnAckUrl = ProcessPayment(payOtc, "2345",
+            var payReponse = ProcessPayment(payOtc, "2345",
                 new PaymentConfirmPayload.VoucherInfo {
-                    Id = vouchers[0].Id,
-                    Secret = vouchers[0].Secret
+                    Id = response.Vouchers[0].Id,
+                    Secret = response.Vouchers[0].Secret
                 }
             );
-            Assert.AreEqual(ackUrl, returnAckUrl);
+            Assert.AreEqual(ackUrl, payReponse.AckUrl);
 
             // Fail payment with voucher 2
             payOtc = CreatePayment("2345", 1, ackUrl, new SimpleFilter {
@@ -310,8 +338,8 @@ namespace ApiTester {
             Assert.Throws<InvalidOperationException>(() => {
                 ProcessPayment(payOtc, "2345",
                     new PaymentConfirmPayload.VoucherInfo {
-                        Id = vouchers[1].Id,
-                        Secret = vouchers[1].Secret
+                        Id = response.Vouchers[1].Id,
+                        Secret = response.Vouchers[1].Secret
                     }
                 );
             });

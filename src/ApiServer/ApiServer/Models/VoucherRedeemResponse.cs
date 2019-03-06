@@ -14,6 +14,19 @@ namespace WomPlatform.Web.Api.Models {
         /// </summary>
         public class Content {
 
+            /// <summary>
+            /// ID of the source.
+            /// </summary>
+            public long SourceId { get; set; }
+
+            /// <summary>
+            /// Name of the source.
+            /// </summary>
+            public string SourceName { get; set; }
+
+            /// <summary>
+            /// List of redeemed vouchers.
+            /// </summary>
             public VoucherInfo[] Vouchers { get; set; }
 
         }
@@ -23,8 +36,14 @@ namespace WomPlatform.Web.Api.Models {
         /// </summary>
         public class VoucherInfo {
 
+            /// <summary>
+            /// Unique voucher ID.
+            /// </summary>
             public long Id { get; set; }
 
+            /// <summary>
+            /// Voucher secret for usage.
+            /// </summary>
             public string Secret { get; set; }
 
             public string Aim { get; set; }

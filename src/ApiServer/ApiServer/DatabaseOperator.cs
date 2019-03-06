@@ -123,10 +123,12 @@ namespace WomPlatform.Web.Api {
         /// Redeems vouchers tied to a given OTC_gen code and marks
         /// the generation request instance as completed.
         /// </summary>
-        public IEnumerable<Voucher> GenerateVouchers(Guid otcGen, string password) {
+        public (Source Source, IEnumerable<Voucher> Vouchers) GenerateVouchers(Guid otcGen, string password) {
             var request = (from g in Data.GenerationRequests
                            where g.OtcGen == otcGen
-                           select g).SingleOrDefault();
+                           select g)
+                           .Include(nameof(GenerationRequest.Source))
+                           .SingleOrDefault();
 
             if(request == null) {
                 throw new ArgumentException("OTC code not valid");
@@ -154,7 +156,7 @@ namespace WomPlatform.Web.Api {
             request.PerformedAt = DateTime.UtcNow;
             Data.SaveChanges();
 
-            return vouchers;
+            return (request.Source, vouchers);
         }
 
         /// <summary>

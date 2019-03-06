@@ -114,9 +114,11 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var vouchers = Database.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
+                var (source, vouchers) = Database.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
 
                 var content = new VoucherRedeemResponse.Content {
+                    SourceId = source.Id,
+                    SourceName = source.Name,
                     Vouchers = (from v in vouchers
                                 select new VoucherRedeemResponse.VoucherInfo {
                                     Id = v.Id,
