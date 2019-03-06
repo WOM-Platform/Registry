@@ -46,6 +46,9 @@ namespace WomPlatform.Web.Api.Models {
             /// </summary>
             public string Secret { get; set; }
 
+            /// <summary>
+            /// Simple Aim code.
+            /// </summary>
             public string Aim { get; set; }
 
             public double Latitude { get; set; }

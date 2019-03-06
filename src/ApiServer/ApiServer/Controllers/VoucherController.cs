@@ -123,7 +123,7 @@ namespace WomPlatform.Web.Api.Controllers {
                                 select new VoucherRedeemResponse.VoucherInfo {
                                     Id = v.Id,
                                     Secret = Convert.ToBase64String(v.Secret),
-                                    Aim = UrlGenerator.GenerateAimUrl(v.AimCode),
+                                    Aim = v.AimCode,
                                     Latitude = v.Latitude,
                                     Longitude = v.Longitude,
                                     Timestamp = v.Timestamp
