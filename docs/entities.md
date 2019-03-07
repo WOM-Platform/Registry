@@ -17,7 +17,9 @@ Many WOM entities are uniquely represented by an URL on the registry's domain.
 
 * **Aim**  
   `https://wom.social/api/v1/aim/CODE`  
-  Represents a social aim, within a hierarchical structure. `CODE` may include `/` characters that indicate the relation of the aim with its parent.
+  Represents a social aim, within a hierarchical structure. `CODE` may include `/` characters that indicate the relation of the aim with its parent.  
+  `https://wom.social/api/v1/aims`  
+  Retrieves a full list of all available aims.
 
 * **Problem**  
   `https://wom.social/api/v1/problem/CODE`  
