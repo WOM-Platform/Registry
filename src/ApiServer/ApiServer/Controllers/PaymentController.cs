@@ -1,9 +1,8 @@
 using System;
-using System.Data.Common;
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using WomPlatform.Web.Api.Models;
 
@@ -48,7 +47,18 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var posPublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(pos.PublicKey);
 
-            var payloadContent = Crypto.Decrypt<PaymentRegisterPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            PaymentRegisterPayload.Content payloadContent = null;
+            try {
+                payloadContent = Crypto.Decrypt<PaymentRegisterPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            }
+            catch(JsonSerializationException jsonEx) {
+                Logger.LogError(LoggingEvents.PaymentCreation, jsonEx, "Failed to decode JSON payload");
+                return this.ProblemParameter("Invalid JSON");
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentCreation, ex, "Failed to decrypt payload");
+                return this.PayloadVerificationFailure();
+            }
 
             if (payload.PosId != payloadContent.PosId) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Verification failed, POS ID {0} differs from ID {1} in payload", payload.PosId, payloadContent.PosId);
@@ -83,7 +93,18 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Verify([FromBody]PaymentVerifyPayload payload) {
             Logger.LogDebug(LoggingEvents.PaymentVerification, "Received verification request");
 
-            var payloadContent = Crypto.Decrypt<PaymentVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            PaymentVerifyPayload.Content payloadContent = null;
+            try {
+                payloadContent = Crypto.Decrypt<PaymentVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            }
+            catch(JsonSerializationException jsonEx) {
+                Logger.LogError(LoggingEvents.PaymentVerification, jsonEx, "Failed to decode JSON payload");
+                return this.ProblemParameter("Invalid JSON");
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentVerification, ex, "Failed to decrypt payload");
+                return this.PayloadVerificationFailure();
+            }
 
             try {
                 Database.VerifyPaymentRequest(payloadContent.Otc);
@@ -107,7 +128,18 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult GetInformation([FromBody]PaymentInfoPayload payload) {
             Logger.LogDebug("Received payment information request");
 
-            var payloadContent = Crypto.Decrypt<PaymentInfoPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            PaymentInfoPayload.Content payloadContent = null;
+            try {
+                payloadContent = Crypto.Decrypt<PaymentInfoPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            }
+            catch(JsonSerializationException jsonEx) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, jsonEx, "Failed to decode JSON payload");
+                return this.ProblemParameter("Invalid JSON");
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Failed to decrypt payload");
+                return this.PayloadVerificationFailure();
+            }
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
             if (ks.Length != 32) {
@@ -150,7 +182,18 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Confirm([FromBody]PaymentConfirmPayload payload) {
             Logger.LogDebug("Received payment confirmation request");
 
-            var payloadContent = Crypto.Decrypt<PaymentConfirmPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            PaymentConfirmPayload.Content payloadContent = null;
+            try {
+                payloadContent = Crypto.Decrypt<PaymentConfirmPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            }
+            catch(JsonSerializationException jsonEx) {
+                Logger.LogError(LoggingEvents.PaymentProcessing, jsonEx, "Failed to decode JSON payload");
+                return this.ProblemParameter("Invalid JSON");
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentProcessing, ex, "Failed to decrypt payload");
+                return this.PayloadVerificationFailure();
+            }
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
             if (ks.Length != 32) {

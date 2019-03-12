@@ -3,8 +3,8 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
-using WomPlatform.Web.Api;
 using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -48,7 +48,18 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
 
-            var payloadContent = Crypto.Decrypt<VoucherCreatePayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            VoucherCreatePayload.Content payloadContent = null;
+            try {
+                payloadContent = Crypto.Decrypt<VoucherCreatePayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            }
+            catch(JsonSerializationException jsonEx) {
+                Logger.LogError(LoggingEvents.VoucherCreation, jsonEx, "Failed to decode JSON payload");
+                return this.ProblemParameter("Invalid JSON");
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.VoucherCreation, ex, "Failed to decrypt payload");
+                return this.PayloadVerificationFailure();
+            }
 
             if(payload.SourceId != payloadContent.SourceId) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, source ID {0} differs from ID {1} in payload", payload.SourceId, payloadContent.SourceId);
@@ -83,7 +94,18 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Verify([FromBody]VoucherVerifyPayload payload) {
             Logger.LogDebug(LoggingEvents.VoucherVerification, "Received voucher generation verification request");
 
-            var payloadContent = Crypto.Decrypt<VoucherVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            VoucherVerifyPayload.Content payloadContent = null;
+            try {
+                payloadContent = Crypto.Decrypt<VoucherVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            }
+            catch(JsonSerializationException jsonEx) {
+                Logger.LogError(LoggingEvents.VoucherVerification, jsonEx, "Failed to decode JSON payload");
+                return this.ProblemParameter("Invalid JSON");
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.VoucherVerification, ex, "Failed to decrypt payload");
+                return this.PayloadVerificationFailure();
+            }
 
             try {
                 Database.VerifyGenerationRequest(payloadContent.Otc);
@@ -107,7 +129,18 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Redeem([FromBody]VoucherRedeemPayload payload) {
             Logger.LogDebug("Received voucher redemption request");
 
-            var payloadContent = Crypto.Decrypt<VoucherRedeemPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            VoucherRedeemPayload.Content payloadContent = null;
+            try {
+                payloadContent = Crypto.Decrypt<VoucherRedeemPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
+            }
+            catch(JsonSerializationException jsonEx) {
+                Logger.LogError(LoggingEvents.VoucherRedemption, jsonEx, "Failed to decode JSON payload");
+                return this.ProblemParameter("Invalid JSON");
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to decrypt payload");
+                return this.PayloadVerificationFailure();
+            }
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
             if(ks.Length != 32) {
