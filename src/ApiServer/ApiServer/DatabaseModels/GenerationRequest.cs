@@ -19,6 +19,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public int Amount { get; set; }
 
+        [Column(TypeName = "CHAR(36)")]
         public Guid OtcGen { get; set; }
 
         public DateTime CreatedAt { get; set; }

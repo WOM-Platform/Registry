@@ -33,7 +33,7 @@ namespace WomPlatform.Web.Api {
                 var password = dbSection["Password"];
                 var schema = dbSection["Schema"];
                 var connectionString = string.Format(
-                    "server={0};port={1};uid={2};pwd={3};database={4}",
+                    "server={0};port={1};uid={2};pwd={3};database={4};Old Guids=false",
                     host, port, username, password, schema
                 );
 

@@ -21,6 +21,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public string JsonFilter { get; set; }
 
+        [Column(TypeName = "CHAR(36)")]
         public Guid OtcPay { get; set; }
 
         public string UrlAckPocket { get; set; }
