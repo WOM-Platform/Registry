@@ -21,7 +21,7 @@ services:
       - "8779"
     labels:
     - "traefik.enable=true"
-    - "traefik.network=web"
+    - "traefik.docker.network=web"
     - "traefik.protocol=http"
     - "traefik.port=8779"
     - "traefik.frontend.rule=Host:wom.social;PathPrefix:/api"
