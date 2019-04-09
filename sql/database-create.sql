@@ -14,14 +14,31 @@ CREATE SCHEMA IF NOT EXISTS `Wom` DEFAULT CHARACTER SET utf8;
 USE `Wom`;
 
 -- -----------------------------------------------------
--- Table `Wom`.`Aim`
+-- Table `Wom`.`Aims`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Aims` (
-  `Code` VARBINARY(64) NOT NULL,
-  `Description` VARCHAR(2048) DEFAULT NULL,
-  `CreationDate` DATETIME NOT NULL,
+  `Code` VARBINARY(3) NOT NULL,
+  `IconFile` VARCHAR(128) DEFAULT NULL,
 
   PRIMARY KEY (`Code`)
+)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `Wom`.`AimTitles`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Wom`.`AimTitles` (
+  `Code` VARBINARY(3) NOT NULL,
+  `LanguageCode` CHAR(2) NOT NULL,
+  `Title` VARCHAR(256) NOT NULL,
+
+  PRIMARY KEY (`Code`, `LanguageCode`),
+  CONSTRAINT `fk_Aim_AimTitle`
+    FOREIGN KEY `fk_Aim_AimTitle` (`Code`)
+    REFERENCES `Wom`.`Aims` (`Code`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
 )
 ENGINE = InnoDB;
 

@@ -27,7 +27,12 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(from a in aims
                       select new {
                           a.Code,
-                          a.Description
+                          a.IconFile,
+                          Titles = (from t in a.Titles
+                                    select new {
+                                        t.LanguageCode,
+                                        t.Title
+                                    }).ToList()
                       });
         }
 

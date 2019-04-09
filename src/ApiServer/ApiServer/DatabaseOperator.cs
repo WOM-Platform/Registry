@@ -58,9 +58,10 @@ namespace WomPlatform.Web.Api {
         /// Gets all aims.
         /// </summary>
         public IEnumerable<Aim> GetAims() {
-            return from a in Data.Aims
-                   orderby a.Code
-                   select a;
+            return (from a in Data.Aims
+                    orderby a.Code
+                    select a)
+                    .Include(nameof(Aim.Titles));
         }
 
         /// <summary>
@@ -69,14 +70,21 @@ namespace WomPlatform.Web.Api {
         public Aim GetAimByCode(string aimCode) {
             return (from a in Data.Aims
                     where a.Code == aimCode
-                    select a).SingleOrDefault();
+                    select a)
+                    .Include(nameof(Aim.Titles))
+                    .SingleOrDefault();
         }
 
+        /// <summary>
+        /// Gets sub-aims of a given aim.
+        /// </summary>
         public IEnumerable<Aim> GetSubAims(Aim aim) {
             return (from a in Data.Aims
-                    where a.Code.StartsWith(aim.Code + "/")
+                    where a.Code.StartsWith(aim.Code)
+                    where a.Code != aim.Code
                     orderby a.Code ascending
-                    select a);
+                    select a)
+                    .Include(nameof(Aim.Titles));
         }
 
         /// <summary>

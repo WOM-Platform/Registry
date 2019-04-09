@@ -10,9 +10,22 @@ USE `Wom` ;
 
 INSERT INTO `Wom`.`Contacts` (`Email`, `Name`, `Surname`) VALUES ('example@example.org', 'Sample', 'Sample');
 
-INSERT INTO `Wom`.`Aims` (`Code`, `Description`, `CreationDate`) VALUES ('1', '1. Sample one', '2017-12-20');
-INSERT INTO `Wom`.`Aims` (`Code`, `Description`, `CreationDate`) VALUES ('1/1', '1.1. Sub aim one', '2019-01-29');
-INSERT INTO `Wom`.`Aims` (`Code`, `Description`, `CreationDate`) VALUES ('2', '2. Sample two', '2019-01-29');
+INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`) VALUES ('1', 'aim-1');
+INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`) VALUES ('2', 'aim-2');
+INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`) VALUES ('11', 'aim-1-1');
+INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`) VALUES ('21', 'aim-2-1');
+INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`) VALUES ('211', 'aim-2-1-1');
+
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('1', 'en', 'Aim 1 English');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('1', 'it', 'Aim 1 Italiano');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('2', 'en', 'Aim 2 English');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('2', 'it', 'Aim 2 Italiano');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('11', 'en', 'Aim 1-1 English');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('11', 'it', 'Aim 1-1 Italiano');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('21', 'en', 'Aim 2-1 English');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('21', 'it', 'Aim 2-1 Italiano');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('211', 'en', 'Aim 2-1-1 English');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('211', 'it', 'Aim 2-1-1 Italiano');
 
 INSERT INTO `Wom`.`Sources` (`Name`, `PublicKey`, `CreationDate`, `URL`, `ContactID`) VALUES ('Sample source 1', '-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA3ofbz4kneWa3Fv1PaYzu
