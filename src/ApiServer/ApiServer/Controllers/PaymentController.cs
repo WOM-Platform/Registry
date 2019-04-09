@@ -10,27 +10,16 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Produces("application/json")]
     [Route("api/v1/payment")]
-    public class PaymentController : Controller {
+    public class PaymentController : BaseRegistryController {
 
         public PaymentController(
             IConfiguration configuration,
-            DatabaseOperator databaseOperator,
-            CryptoProvider cryptoProvider,
+            DatabaseOperator database,
             KeyManager keyManager,
+            CryptoProvider crypto,
             ILogger<PaymentController> logger)
-        {
-            Configuration = configuration;
-            Database = databaseOperator;
-            Crypto = cryptoProvider;
-            KeyManager = keyManager;
-            Logger = logger;
+        : base(configuration, crypto, keyManager, database, logger) {
         }
-
-        protected IConfiguration Configuration { get; }
-        protected DatabaseOperator Database { get; }
-        protected CryptoProvider Crypto { get; }
-        protected KeyManager KeyManager { get; }
-        protected ILogger<PaymentController> Logger { get; }
 
         // POST /api/v1/payment/register
         [HttpPost("register")]
@@ -44,20 +33,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
                 return this.PosNotFound();
             }
-
             var posPublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(pos.PublicKey);
 
-            PaymentRegisterPayload.Content payloadContent = null;
-            try {
-                payloadContent = Crypto.Decrypt<PaymentRegisterPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(LoggingEvents.PaymentCreation, jsonEx, "Failed to decode JSON payload");
-                return this.ProblemParameter("Invalid JSON");
-            }
-            catch(Exception ex) {
-                Logger.LogError(LoggingEvents.PaymentCreation, ex, "Failed to decrypt payload");
-                return this.PayloadVerificationFailure();
+            (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentRegisterPayload.Content>(payload.Payload, LoggingEvents.PaymentCreation);
+            if(decryptResult != null) {
+                return decryptResult;
             }
 
             if (payload.PosId != payloadContent.PosId) {
@@ -93,17 +73,9 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Verify([FromBody]PaymentVerifyPayload payload) {
             Logger.LogDebug(LoggingEvents.PaymentVerification, "Received verification request");
 
-            PaymentVerifyPayload.Content payloadContent = null;
-            try {
-                payloadContent = Crypto.Decrypt<PaymentVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(LoggingEvents.PaymentVerification, jsonEx, "Failed to decode JSON payload");
-                return this.ProblemParameter("Invalid JSON");
-            }
-            catch(Exception ex) {
-                Logger.LogError(LoggingEvents.PaymentVerification, ex, "Failed to decrypt payload");
-                return this.PayloadVerificationFailure();
+            (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentVerifyPayload.Content>(payload.Payload, LoggingEvents.PaymentVerification);
+            if(decryptResult != null) {
+                return decryptResult;
             }
 
             try {
@@ -128,17 +100,9 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult GetInformation([FromBody]PaymentInfoPayload payload) {
             Logger.LogDebug("Received payment information request");
 
-            PaymentInfoPayload.Content payloadContent = null;
-            try {
-                payloadContent = Crypto.Decrypt<PaymentInfoPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(LoggingEvents.PaymentInformationAccess, jsonEx, "Failed to decode JSON payload");
-                return this.ProblemParameter("Invalid JSON");
-            }
-            catch(Exception ex) {
-                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Failed to decrypt payload");
-                return this.PayloadVerificationFailure();
+            (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentInfoPayload.Content>(payload.Payload, LoggingEvents.PaymentInformationAccess);
+            if(decryptResult != null) {
+                return decryptResult;
             }
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
@@ -182,17 +146,9 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Confirm([FromBody]PaymentConfirmPayload payload) {
             Logger.LogDebug("Received payment confirmation request");
 
-            PaymentConfirmPayload.Content payloadContent = null;
-            try {
-                payloadContent = Crypto.Decrypt<PaymentConfirmPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(LoggingEvents.PaymentProcessing, jsonEx, "Failed to decode JSON payload");
-                return this.ProblemParameter("Invalid JSON");
-            }
-            catch(Exception ex) {
-                Logger.LogError(LoggingEvents.PaymentProcessing, ex, "Failed to decrypt payload");
-                return this.PayloadVerificationFailure();
+            (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentConfirmPayload.Content>(payload.Payload, LoggingEvents.PaymentProcessing);
+            if(decryptResult != null) {
+                return decryptResult;
             }
 
             byte[] ks = payloadContent.SessionKey.FromBase64();

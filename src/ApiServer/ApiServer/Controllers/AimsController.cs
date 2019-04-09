@@ -9,20 +9,16 @@ using Microsoft.Extensions.Logging;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("api/v1/aims")]
-    public class AimsController : Controller {
+    public class AimsController : BaseRegistryController {
 
         public AimsController(
             IConfiguration configuration,
-            DatabaseOperator databaseOperator,
-            ILogger<AimsController> logger) {
-            Configuration = configuration;
-            Database = databaseOperator;
-            Logger = logger;
+            DatabaseOperator database,
+            KeyManager keyManager,
+            CryptoProvider crypto,
+            ILogger<AimsController> logger)
+        : base(configuration, crypto, keyManager, database, logger) {
         }
-
-        protected IConfiguration Configuration { get; }
-        protected DatabaseOperator Database { get; }
-        protected ILogger<AimsController> Logger { get; }
 
         [Produces("application/json")]
         [HttpGet]

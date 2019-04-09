@@ -11,27 +11,17 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Produces("application/json")]
     [Route("api/v1/voucher")]
-    public class VoucherController : Controller {
+    public class VoucherController : BaseRegistryController {
 
         public VoucherController(
             IConfiguration configuration,
-            DatabaseOperator databaseOperator,
-            CryptoProvider cryptoProvider,
+            DatabaseOperator database,
             KeyManager keyManager,
+            CryptoProvider crypto,
             ILogger<VoucherController> logger)
+        : base(configuration, crypto, keyManager, database, logger)
         {
-            Configuration = configuration;
-            Database = databaseOperator;
-            Crypto = cryptoProvider;
-            KeyManager = keyManager;
-            Logger = logger;
         }
-
-        protected IConfiguration Configuration { get; }
-        protected DatabaseOperator Database { get; }
-        protected CryptoProvider Crypto { get; }
-        protected KeyManager KeyManager { get; }
-        protected ILogger<VoucherController> Logger { get; }
 
         // POST api/v1/voucher/create
         [HttpPost("create")]
@@ -48,17 +38,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
 
-            VoucherCreatePayload.Content payloadContent = null;
-            try {
-                payloadContent = Crypto.Decrypt<VoucherCreatePayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(LoggingEvents.VoucherCreation, jsonEx, "Failed to decode JSON payload");
-                return this.ProblemParameter("Invalid JSON");
-            }
-            catch(Exception ex) {
-                Logger.LogError(LoggingEvents.VoucherCreation, ex, "Failed to decrypt payload");
-                return this.PayloadVerificationFailure();
+            (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherCreatePayload.Content>(payload.Payload, LoggingEvents.VoucherCreation);
+            if(decryptResult != null) {
+                return decryptResult;
             }
 
             if(payload.SourceId != payloadContent.SourceId) {
@@ -94,17 +76,9 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Verify([FromBody]VoucherVerifyPayload payload) {
             Logger.LogDebug(LoggingEvents.VoucherVerification, "Received voucher generation verification request");
 
-            VoucherVerifyPayload.Content payloadContent = null;
-            try {
-                payloadContent = Crypto.Decrypt<VoucherVerifyPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(LoggingEvents.VoucherVerification, jsonEx, "Failed to decode JSON payload");
-                return this.ProblemParameter("Invalid JSON");
-            }
-            catch(Exception ex) {
-                Logger.LogError(LoggingEvents.VoucherVerification, ex, "Failed to decrypt payload");
-                return this.PayloadVerificationFailure();
+            (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherVerifyPayload.Content>(payload.Payload, LoggingEvents.VoucherVerification);
+            if(decryptResult != null) {
+                return decryptResult;
             }
 
             try {
@@ -129,17 +103,9 @@ namespace WomPlatform.Web.Api.Controllers {
         public ActionResult Redeem([FromBody]VoucherRedeemPayload payload) {
             Logger.LogDebug("Received voucher redemption request");
 
-            VoucherRedeemPayload.Content payloadContent = null;
-            try {
-                payloadContent = Crypto.Decrypt<VoucherRedeemPayload.Content>(payload.Payload, KeyManager.RegistryPrivateKey);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(LoggingEvents.VoucherRedemption, jsonEx, "Failed to decode JSON payload");
-                return this.ProblemParameter("Invalid JSON");
-            }
-            catch(Exception ex) {
-                Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to decrypt payload");
-                return this.PayloadVerificationFailure();
+            (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherRedeemPayload.Content>(payload.Payload, LoggingEvents.VoucherRedemption);
+            if(decryptResult != null) {
+                return decryptResult;
             }
 
             byte[] ks = payloadContent.SessionKey.FromBase64();

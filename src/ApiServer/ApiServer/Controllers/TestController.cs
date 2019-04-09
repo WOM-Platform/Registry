@@ -6,34 +6,26 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using WomPlatform.Web.Api;
 using WomPlatform.Web.Api.Models;
 
-namespace ApiServer.Controllers {
+namespace WomPlatform.Web.Api.Controllers {
 
     [Produces("application/json")]
     [Route("api/debug")]
-    public class TestController : Controller {
+    public class TestController : BaseRegistryController {
 
         public TestController(
             IConfiguration configuration,
-            DatabaseOperator databaseOperator,
-            CryptoProvider cryptoProvider,
+            CryptoProvider crypto,
+            KeyManager keyManager,
+            DatabaseOperator database,
             IHostingEnvironment hosting,
             ILogger<TestController> logger
-        ) {
-            Configuration = configuration;
-            Database = databaseOperator;
-            Crypto = cryptoProvider;
+        ) : base(configuration, crypto, keyManager, database, logger) {
             Hosting = hosting;
-            Logger = logger;
         }
 
-        protected IConfiguration Configuration { get; }
-        protected DatabaseOperator Database { get; }
-        protected CryptoProvider Crypto { get; }
         protected IHostingEnvironment Hosting { get; }
-        protected ILogger<TestController> Logger { get; }
 
         [HttpPost("create-vouchers/{count=10}")]
         public ActionResult CreateVouchers([FromRoute]int count) {

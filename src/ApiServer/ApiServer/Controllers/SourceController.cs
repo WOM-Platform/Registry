@@ -11,20 +11,16 @@ using WomPlatform.Web.Api.DatabaseModels;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("api/v1/source")]
-    public class SourceController : Controller {
+    public class SourceController : BaseRegistryController {
 
         public SourceController(
             IConfiguration configuration,
-            DatabaseOperator databaseOperator,
-            ILogger<SourceController> logger) {
-            Configuration = configuration;
-            Database = databaseOperator;
-            Logger = logger;
+            DatabaseOperator database,
+            KeyManager keyManager,
+            CryptoProvider crypto,
+            ILogger<SourceController> logger)
+        : base(configuration, crypto, keyManager, database, logger) {
         }
-
-        protected IConfiguration Configuration { get; }
-        protected DatabaseOperator Database { get; }
-        protected ILogger<SourceController> Logger { get; }
 
         [HttpGet("{sourceId}")]
         public IActionResult Show(int sourceId) {
