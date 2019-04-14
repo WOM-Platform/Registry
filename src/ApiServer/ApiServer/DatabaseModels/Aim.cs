@@ -13,6 +13,8 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public string IconFile { get; set; }
 
+        public int Order { get; set; }
+
         [InverseProperty(nameof(AimTitle.Aim))]
         public List<AimTitle> Titles { get; set; }
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using WomPlatform.Web.Api.DatabaseModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -20,20 +21,47 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, database, logger) {
         }
 
+        private object AimToNodeObject(IndexedNodeOf<char, Aim> aim) {
+            return new {
+                aim.Item.Code,
+                aim.Item.IconFile,
+                Titles = aim.Item.Titles.ToDictionary(t => t.LanguageCode, t => t.Title),
+                Children = from sub in aim.Children.Values select AimToNodeObject(sub)
+            };
+        }
+
+        private IList<object> AimsToFlatList(IDictionary<char, IndexedNodeOf<char, Aim>> aims) {
+            List<object> ret = new List<object>();
+
+            void AddToList(IList<object> list, IndexedNodeOf<char, Aim> item) {
+                list.Add(new {
+                    item.Item.Code,
+                    item.Item.IconFile,
+                    Titles = item.Item.Titles.ToDictionary(t => t.LanguageCode, t => t.Title),
+                });
+
+                foreach(var subitem in item.Children) {
+                    AddToList(list, subitem.Value);
+                }
+            }
+
+            foreach(var item in aims) {
+                AddToList(ret, item.Value);
+            }
+
+            return ret;
+        }
+
         [Produces("application/json")]
         [HttpGet]
-        public IActionResult List() {
-            var aims = Database.GetAims();
-            return Ok(from a in aims
-                      select new {
-                          a.Code,
-                          a.IconFile,
-                          Titles = (from t in a.Titles
-                                    select new {
-                                        t.LanguageCode,
-                                        t.Title
-                                    }).ToList()
-                      });
+        public IActionResult List(string format = "hierarchical") {
+            var aims = Database.GetAimHierarchy();
+
+            var obj = format.Equals("flat", StringComparison.InvariantCultureIgnoreCase) ?
+                AimsToFlatList(aims) :
+                from a in aims.Values select AimToNodeObject(a);
+
+            return Ok(obj);
         }
 
     }

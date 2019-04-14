@@ -43,6 +43,7 @@ namespace WomPlatform.Web.Api {
         }
 
         public DbSet<Aim> Aims { get; set; }
+        public DbSet<AimTitle> AimTitles { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<GenerationRequest> GenerationRequests { get; set; }
         public DbSet<PaymentRequest> PaymentRequests { get; set; }

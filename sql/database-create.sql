@@ -17,8 +17,9 @@ USE `Wom`;
 -- Table `Wom`.`Aims`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Aims` (
-  `Code` VARBINARY(3) NOT NULL,
+  `Code` VARCHAR(3) NOT NULL COLLATE latin1_general_ci,
   `IconFile` VARCHAR(128) DEFAULT NULL,
+  `Order` MEDIUMINT UNSIGNED NOT NULL,
 
   PRIMARY KEY (`Code`)
 )
@@ -29,8 +30,8 @@ ENGINE = InnoDB;
 -- Table `Wom`.`AimTitles`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`AimTitles` (
-  `Code` VARBINARY(3) NOT NULL,
-  `LanguageCode` CHAR(2) NOT NULL,
+  `Code` VARCHAR(3) NOT NULL COLLATE latin1_general_ci,
+  `LanguageCode` CHAR(2) NOT NULL COLLATE latin1_general_ci,
   `Title` VARCHAR(256) NOT NULL,
 
   PRIMARY KEY (`Code`, `LanguageCode`),
@@ -159,7 +160,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `Wom`.`Vouchers` (
   `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Secret` BINARY(16) NOT NULL,
-  `AimCode` VARBINARY(64) NOT NULL,
+  `AimCode` VARCHAR(3) NOT NULL COLLATE latin1_general_ci,
   `Latitude` DOUBLE NOT NULL,
   `Longitude` DOUBLE NOT NULL,
   `Timestamp` DATETIME NOT NULL,

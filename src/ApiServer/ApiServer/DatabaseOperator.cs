@@ -55,13 +55,31 @@ namespace WomPlatform.Web.Api {
         }
 
         /// <summary>
-        /// Gets all aims.
+        /// Get full aims hierarchy.
         /// </summary>
-        public IEnumerable<Aim> GetAims() {
-            return (from a in Data.Aims
-                    orderby a.Code
-                    select a)
-                    .Include(nameof(Aim.Titles));
+        public IDictionary<char, IndexedNodeOf<char, Aim>> GetAimHierarchy() {
+#pragma warning disable EF1000 // Possible SQL injection vulnerability
+            var tableName = Data.Model.FindEntityType(typeof(Aim)).Relational().TableName;
+            var sql = $"SELECT * From {tableName} ORDER BY CHAR_LENGTH(`{nameof(Aim.Code)}`) ASC, `{nameof(Aim.Order)}` ASC";
+            var flatAims = Data.Aims.FromSql(sql)
+                .AsNoTracking()
+                .ToList();
+#pragma warning restore EF1000 // Possible SQL injection vulnerability
+
+            var aimTitles = Data.AimTitles.ToLookup(at => at.Code);
+
+            var map = new Dictionary<char, IndexedNodeOf<char, Aim>>();
+            foreach(var aim in flatAims) {
+                aim.Titles = aimTitles[aim.Code].ToList();
+
+                IDictionary<char, IndexedNodeOf<char, Aim>> curr = map;
+                for(int c = 0; c < aim.Code.Length - 1; ++c) {
+                    curr = curr[aim.Code[c]].Item2;
+                }
+                curr[aim.Code.Last()] = new IndexedNodeOf<char, Aim>(aim, new Dictionary<char, IndexedNodeOf<char, Aim>>());
+            }
+
+            return map;
         }
 
         /// <summary>
@@ -82,7 +100,7 @@ namespace WomPlatform.Web.Api {
             return (from a in Data.Aims
                     where a.Code.StartsWith(aim.Code)
                     where a.Code != aim.Code
-                    orderby a.Code ascending
+                    orderby a.Order
                     select a)
                     .Include(nameof(Aim.Titles));
         }
