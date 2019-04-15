@@ -3,7 +3,11 @@ version: '3'
 
 services:
   api:
+    build:
+      dockerfile: Dockerfile.dev
     environment:
     - ASPNETCORE_ENVIRONMENT=Development
     volumes:
     - ../testkeys:/testkeys:ro
+    ports:
+    - "8080:22"
