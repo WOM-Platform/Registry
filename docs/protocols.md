@@ -34,7 +34,7 @@ The JSON object `Payload` has the following structure:
     "Password": "1234",
     "Vouchers": [
         {
-            "Aim": "https://wom.social/api/v1/aim/1",
+            "Aim": "1",
             "Latitude": 12.34,
             "Longitude": 12.34,
             "Timestamp": "timestamp in ISO 8601 format"
@@ -159,7 +159,7 @@ Contents of the decrypted JSON object have the following structure:
         {
             "Id": 456,
             "Secret": "l2gLa87JhEVwF5KH8VkkPA==",
-            "Aim": "1/1",
+            "Aim": "11",
             "Latitude": 10.0,
             "Longitude": 12.3,
             "Timestamp": "2019-02-25T22:58:13Z"
@@ -211,7 +211,7 @@ The JSON object `Payload` has the following structure:
     "Password": "1234",
     "Amount": 10,
     "SimpleFilter": {
-        "Aim": "1/1",
+        "Aim": "11",
         "Bounds": {
             "LeftTop": [ 45.0, -170.0 ],
             "RightBottom": [ 50.0, -160.0 ]
@@ -343,7 +343,7 @@ Contents of the decrypted JSON object have the following structure:
     "PosName": "Sample POS",
     "Amount": 10,
     "SimpleFilter": {
-        "Aim": "1/1",
+        "Aim": "11",
         "Bounds": {
             "LeftTop": [ 45.0, -170.0 ],
             "RightBottom": [ 50.0, -160.0 ]
