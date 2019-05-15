@@ -38,8 +38,6 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw new ArgumentOutOfRangeException(nameof(count), "Voucher count out of range");
             }
 
-            var pin = Crypto.Generator.GeneratePassword(4);
-
             Logger.LogInformation("Creating {0} test vouchers", count);
 
             var testSource = Database.GetSourceById(1);
@@ -60,10 +58,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 now = now.Subtract(TimeSpan.FromMinutes(5));
             }
 
-            var result = Database.CreateVoucherGeneration(new VoucherCreatePayload.Content {
+            (var result, var password) = Database.CreateVoucherGeneration(new VoucherCreatePayload.Content {
                 SourceId = testSource.Id,
                 Nonce = Guid.NewGuid().ToString("N"),
-                Password = pin,
                 Vouchers = voucherInfos.ToArray()
             });
 
@@ -75,7 +72,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(new {
                 OtcGen = UrlGenerator.GenerateRedeemUrl(result),
-                Pin = pin
+                Pin = password
             });
         }
 

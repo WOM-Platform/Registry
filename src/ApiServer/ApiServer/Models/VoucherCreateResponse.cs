@@ -29,6 +29,11 @@ namespace WomPlatform.Web.Api.Models {
             /// </summary>
             public Guid Otc { get; set; }
 
+            /// <summary>
+            /// Voucher redemption password.
+            /// </summary>
+            public string Password { get; set; }
+
         }
 
     }

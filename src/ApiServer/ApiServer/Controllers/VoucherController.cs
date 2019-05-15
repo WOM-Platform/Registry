@@ -57,7 +57,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var otc = Database.CreateVoucherGeneration(payloadContent);
+                (var otc, var password) = Database.CreateVoucherGeneration(payloadContent);
 
                 Logger.LogInformation(LoggingEvents.VoucherCreation, "Voucher generation successfully requested with code {0} for source {1}", otc, payload.SourceId);
 
@@ -65,7 +65,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Payload = Crypto.Encrypt(new VoucherCreateResponse.Content {
                         RegistryUrl = "https://wom.social",
                         Nonce = payloadContent.Nonce,
-                        Otc = otc
+                        Otc = otc,
+                        Password = password
                     }, sourcePublicKey)
                 });
             }
