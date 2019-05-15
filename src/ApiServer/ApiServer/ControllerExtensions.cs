@@ -64,6 +64,14 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public static ActionResult PasswordUnacceptableFailure(this ControllerBase c, string title = null) {
+            return new ProblemResult(
+                422, // Unprocessable Entity, see https://httpstatuses.com/422
+                "password-unacceptable",
+                title ?? "Supplied password is not acceptable"
+            );
+        }
+
     }
 
 }
