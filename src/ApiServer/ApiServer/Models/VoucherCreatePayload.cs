@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using Newtonsoft.Json;
 
 namespace WomPlatform.Web.Api.Models {
 
@@ -61,6 +63,10 @@ namespace WomPlatform.Web.Api.Models {
             public double Longitude { get; set; }
 
             public DateTime Timestamp { get; set; }
+
+            [DefaultValue(1)]
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+            public int Count { get; set; } = 1;
 
         }
 

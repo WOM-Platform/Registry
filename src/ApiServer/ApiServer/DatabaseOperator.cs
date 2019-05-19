@@ -138,17 +138,19 @@ namespace WomPlatform.Web.Api {
             Data.SaveChanges();
 
             foreach (var voucher in creationParameters.Vouchers) {
-                var v = new Voucher {
-                    AimCode = voucher.Aim,
-                    Latitude = voucher.Latitude,
-                    Longitude = voucher.Longitude,
-                    Timestamp = voucher.Timestamp,
-                    GenerationRequestId = genRequest.Id,
-                    Spent = false
-                };
-                _random.NextBytes(v.Secret);
+                for(int c = 0; c < voucher.Count; ++c) {
+                    var v = new Voucher {
+                        AimCode = voucher.Aim,
+                        Latitude = voucher.Latitude,
+                        Longitude = voucher.Longitude,
+                        Timestamp = voucher.Timestamp,
+                        GenerationRequestId = genRequest.Id,
+                        Spent = false
+                    };
+                    _random.NextBytes(v.Secret);
 
-                Data.Vouchers.Add(v);
+                    Data.Vouchers.Add(v);
+                }
             }
             Data.SaveChanges();
 

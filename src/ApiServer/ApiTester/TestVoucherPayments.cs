@@ -192,6 +192,38 @@ namespace ApiTester {
         }
 
         [Test]
+        public void CreateAndRedeemMultipleVouchers() {
+            var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "1",
+                    Latitude = 12.34,
+                    Longitude = 23.45,
+                    Timestamp = DateTime.UtcNow
+                },
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "1",
+                    Latitude = 23.45,
+                    Longitude = 34.56,
+                    Timestamp = DateTime.UtcNow,
+                    Count = 2
+                }
+            };
+            var otcGen = CreateVouchers("1234", voucherInfos);
+            var response = RedeemVouchers(otcGen, "1234");
+
+            Assert.AreEqual(3, response.Vouchers.Length);
+            Assert.AreEqual(1, response.SourceId);
+            Assert.AreEqual("Sample source 1", response.SourceName);
+
+            Assert.AreEqual(voucherInfos[0].Latitude, response.Vouchers[0].Latitude);
+            Assert.AreEqual(voucherInfos[0].Longitude, response.Vouchers[0].Longitude);
+            Assert.AreEqual(voucherInfos[1].Latitude, response.Vouchers[1].Latitude);
+            Assert.AreEqual(voucherInfos[1].Longitude, response.Vouchers[1].Longitude);
+            Assert.AreEqual(voucherInfos[1].Latitude, response.Vouchers[2].Latitude);
+            Assert.AreEqual(voucherInfos[1].Longitude, response.Vouchers[2].Longitude);
+        }
+
+        [Test]
         public void CreateVouchersAndProcessSimplePayment() {
             var voucherInfos = CreateRandomVoucherRequests(5);
             var otcGen = CreateVouchers("1234", voucherInfos);
