@@ -89,15 +89,12 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw new ArgumentException("Acknowledgment URL cannot be void", nameof(ackUrl));
             }
 
-            var pin = Crypto.Generator.GeneratePassword(4);
-
             Logger.LogInformation("Creating payment for {0} vouchers with filter: {1}", amount, JsonConvert.SerializeObject(filter));
 
             var testPos = Database.GetPosById(1);
 
-            var otcPay = Database.CreatePaymentRequest(new PaymentRegisterPayload.Content {
+            (var otcPay, var pin) = Database.CreatePaymentRequest(new PaymentRegisterPayload.Content {
                 Amount = amount,
-                Password = pin,
                 Nonce = Guid.NewGuid().ToString("N"),
                 SimpleFilter = filter,
                 PocketAckUrl = ackUrl,

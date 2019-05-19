@@ -25,9 +25,14 @@ namespace WomPlatform.Web.Api.Models {
             public string Nonce { get; set; }
 
             /// <summary>
-            /// Voucher redemption OTC.
+            /// Payment processing OTC.
             /// </summary>
             public Guid Otc { get; set; }
+
+            /// <summary>
+            /// Payment processing password.
+            /// </summary>
+            public string Password { get; set; }
 
         }
 

@@ -48,10 +48,13 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
                 return this.PayloadVerificationFailure("Verification of nonce in payload failed");
             }
-            // TODO: check password requisites
+            if(!CheckPasswordValidity(payloadContent.Password)) {
+                Logger.LogError(LoggingEvents.PaymentCreation, "Password '{0}' unacceptable", payloadContent.Password);
+                return this.PasswordUnacceptableFailure();
+            }
 
             try {
-                var otc = Database.CreatePaymentRequest(payloadContent);
+                (var otc, var password) = Database.CreatePaymentRequest(payloadContent);
 
                 Logger.LogInformation(LoggingEvents.PaymentCreation, "Payment request successfully created with code {0} for POS {1}", otc, payload.PosId);
 
@@ -59,7 +62,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Payload = Crypto.Encrypt(new PaymentRegisterResponse.Content {
                         RegistryUrl = "https://wom.social",
                         Nonce = payloadContent.Nonce,
-                        Otc = otc
+                        Otc = otc,
+                        Password = password
                     }, posPublicKey)
                 });
             }
