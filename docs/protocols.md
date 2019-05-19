@@ -37,7 +37,8 @@ The JSON object `Payload` has the following structure:
             "Aim": "1",
             "Latitude": 12.34,
             "Longitude": 12.34,
-            "Timestamp": "timestamp in ISO 8601 format"
+            "Timestamp": "timestamp in ISO 8601 format",
+            "Count": 1
         }
     ]
 }
@@ -53,6 +54,7 @@ The JSON object `Payload` has the following structure:
 | `Latitude` | numeric | |
 | `Longitude` | numeric | |
 | `Timestamp` | string | Time and date, UTC, ISO&nbsp;8601 format. |
+| `Count` | numeric | Optional. Indicates how many times the voucher template will be repeated. Defaults to `1`. |
 
 ### Result
 
