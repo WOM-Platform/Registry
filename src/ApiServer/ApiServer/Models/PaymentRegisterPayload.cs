@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace WomPlatform.Web.Api.Models {
 
@@ -61,6 +63,13 @@ namespace WomPlatform.Web.Api.Models {
             /// Optional URL for the acknowledgment to the POS.
             /// </summary>
             public string PosAckUrl { get; set; }
+
+            /// <summary>
+            /// Optional flag for persistent payments.
+            /// </summary>
+            [DefaultValue(false)]
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+            public bool Persistent { get; set; } = false;
 
         }
 

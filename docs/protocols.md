@@ -221,7 +221,8 @@ The JSON object `Payload` has the following structure:
         "MaxAge": 14
     },
     "PocketAckUrl": "pocket://confirmation-url",
-    "PosAckUrl": "https://merchant.com/confirmation"
+    "PosAckUrl": "https://merchant.com/confirmation",
+    "Persistent": false
 }
 ```
 
@@ -237,6 +238,7 @@ The JSON object `Payload` has the following structure:
 | `MaxAge` | integer | Maximum age of vouchers, in days. |
 | `PocketAckUrl` | string | Required. Confirmation URL that will be invoked by *Pocket* on payment success. |
 | `PosAckUrl` | string | Optional. URL invoked via HTTP request by the *Registry* on payment success. |
+| `Persistent` | boolean | Optional (defaults to `false`). Set to `true` in order to create persistent payments that can be performed multiple times. |
 
 ### Result
 
@@ -351,7 +353,8 @@ Contents of the decrypted JSON object have the following structure:
             "RightBottom": [ 50.0, -160.0 ]
         },
         "MaxAge": 14
-    }
+    },
+    "Persistent": false
 }
 ```
 
@@ -363,6 +366,7 @@ Contents of the decrypted JSON object have the following structure:
 | `Aim` | string | Code identifying a *common good* aim within the platform. |
 | `Bounds` | object | Couple of coordinates identifying a square geographical region. |
 | `MaxAge` | integer | Maximum age of vouchers, in days. |
+| `Persistent` | boolean | Whether the payment instance is persistent or not. |
 
 
 ## Payment processing

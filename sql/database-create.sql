@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `Wom`.`PaymentRequests` (
   `URLAckPOS` VARCHAR(2048) NULL DEFAULT NULL,
   `CreatedAt` DATETIME NOT NULL,
   `Verified` BIT(1) NOT NULL DEFAULT b'0',
-  `PerformedAt` DATETIME DEFAULT NULL,
+  `Persistent` BIT(1) NOT NULL DEFAULT b'0',
   `Void` BIT(1) NOT NULL DEFAULT b'0',
   `POSID` INT UNSIGNED NOT NULL,
   `Nonce` VARBINARY(32) NOT NULL,
@@ -148,6 +148,25 @@ CREATE TABLE IF NOT EXISTS `Wom`.`PaymentRequests` (
   CONSTRAINT `fk_PaymentRequest_POS`
     FOREIGN KEY `POSID_idx` (`POSID`)
     REFERENCES `Wom`.`POS` (`ID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `Wom`.`PaymentConfirmations`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Wom`.`PaymentConfirmations` (
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `PaymentRequestID` INT UNSIGNED NOT NULL,
+  `PerformedAt` DATETIME NOT NULL,
+
+  PRIMARY KEY (`ID`),
+  INDEX `PaymentID_idx` (`PaymentRequestID` ASC),
+  CONSTRAINT `fk_PaymentConfirmation_Request`
+    FOREIGN KEY `PaymentID_idx` (`PaymentRequestID`)
+    REFERENCES `Wom`.`PaymentRequests` (`ID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT
 )

@@ -32,7 +32,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public bool Verified { get; set; }
 
-        public DateTime? PerformedAt { get; set; }
+        public bool Persistent { get; set; }
 
         public bool Void { get; set; }
 

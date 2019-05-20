@@ -112,7 +112,7 @@ namespace ApiTester {
             return voucherInfos.ToArray();
         }
 
-        private Guid CreatePayment(string password, int amount, string pocketAckUrl, SimpleFilter filter = null) {
+        private Guid CreatePayment(string password, int amount, string pocketAckUrl, SimpleFilter filter = null, bool persistent = false) {
             var nonce = Guid.NewGuid().ToString("N");
             var request = CreateJsonRequest("payment/register", new PaymentRegisterPayload {
                 PosId = 1,
@@ -124,7 +124,8 @@ namespace ApiTester {
                     Amount = amount,
                     PosAckUrl = string.Format("https://example.org/pos/test/{0:N}", nonce),
                     PocketAckUrl = pocketAckUrl,
-                    SimpleFilter = filter
+                    SimpleFilter = filter,
+                    Persistent = persistent
                 }, _keyRegistry)
             });
 
@@ -241,13 +242,53 @@ namespace ApiTester {
             Assert.AreEqual(1, payInfo.PosId);
             Assert.AreEqual("Sample POS 1", payInfo.PosName);
             Assert.IsNull(payInfo.SimpleFilter);
+            Assert.AreEqual(false, payInfo.Persistent);
 
-            var payResponse = ProcessPayment(payOtc, "2345", (from v in response.Vouchers
-                                            select new PaymentConfirmPayload.VoucherInfo {
-                                                Id = v.Id,
-                                                Secret = v.Secret
-                                            }).ToArray());
+            var paymentVouchers = (from v in response.Vouchers
+                                   select new PaymentConfirmPayload.VoucherInfo {
+                                       Id = v.Id,
+                                       Secret = v.Secret
+                                   }).ToArray();
 
+            var payResponse = ProcessPayment(payOtc, "2345", paymentVouchers);
+
+            Assert.AreEqual(ackUrl, payResponse.AckUrl);
+
+            Assert.Throws<InvalidOperationException>(() => {
+                ProcessPayment(payOtc, "2345", paymentVouchers);
+            });
+        }
+
+        [Test]
+        public void CreateVouchersAndProcessMultiplePayment() {
+            var voucherInfos = CreateRandomVoucherRequests(2);
+            var otcGen = CreateVouchers("1234", voucherInfos);
+            var response = RedeemVouchers(otcGen, "1234");
+
+            Assert.AreEqual(2, response.Vouchers.Length);
+            Assert.AreEqual(1, response.SourceId);
+
+            var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
+
+            var payOtc = CreatePayment("2345", 1, ackUrl, null, true);
+
+            var payInfo = GetPaymentInfo(payOtc, "2345");
+            Assert.AreEqual(1, payInfo.Amount);
+            Assert.AreEqual(1, payInfo.PosId);
+            Assert.AreEqual("Sample POS 1", payInfo.PosName);
+            Assert.IsNull(payInfo.SimpleFilter);
+            Assert.AreEqual(true, payInfo.Persistent);
+
+            var paymentVouchers = (from v in response.Vouchers
+                                   select new PaymentConfirmPayload.VoucherInfo {
+                                       Id = v.Id,
+                                       Secret = v.Secret
+                                   });
+
+            var payResponse = ProcessPayment(payOtc, "2345", paymentVouchers.Take(1).ToArray());
+            Assert.AreEqual(ackUrl, payResponse.AckUrl);
+
+            payResponse = ProcessPayment(payOtc, "2345", paymentVouchers.Skip(1).ToArray());
             Assert.AreEqual(ackUrl, payResponse.AckUrl);
         }
 
@@ -277,7 +318,7 @@ namespace ApiTester {
         public void FailedPaymentWrongAim() {
             var otcGen = CreateVouchers("1234",
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "1/1",
+                    Aim = "11",
                     Latitude = 12,
                     Longitude = 12,
                     Timestamp = DateTime.UtcNow
@@ -292,8 +333,8 @@ namespace ApiTester {
             var response = RedeemVouchers(otcGen, "1234");
 
             Assert.AreEqual(2, response.Vouchers.Length);
-            Assert.IsTrue(response.Vouchers[0].Aim.EndsWith("/1/1"));
-            Assert.IsTrue(response.Vouchers[1].Aim.EndsWith("/2"));
+            Assert.AreEqual("11", response.Vouchers[0].Aim);
+            Assert.AreEqual("2", response.Vouchers[1].Aim);
 
             var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
 
@@ -322,19 +363,19 @@ namespace ApiTester {
         public void PaymentGeoBounds() {
             var otcGen = CreateVouchers("1234",
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "1/1",
+                    Aim = "11",
                     Latitude = 10,
                     Longitude = 10,
                     Timestamp = DateTime.UtcNow
                 },
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "1/1",
+                    Aim = "11",
                     Latitude = 20,
                     Longitude = 20,
                     Timestamp = DateTime.UtcNow
                 },
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "1/1",
+                    Aim = "11",
                     Latitude = -60,
                     Longitude = -60,
                     Timestamp = DateTime.UtcNow

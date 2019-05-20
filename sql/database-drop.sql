@@ -17,6 +17,7 @@ DROP TABLE `VoucherPiattaforma`.`Contacts`;
 DROP TABLE `VoucherPiattaforma`.`Sources`;
 DROP TABLE `VoucherPiattaforma`.`POS`;
 DROP TABLE `VoucherPiattaforma`.`PaymentRequests`;
+DROP TABLE `VoucherPiattaforma`.`PaymentConfirmations`;
 DROP TABLE `VoucherPiattaforma`.`GenerationRequests`;
 DROP TABLE `VoucherPiattaforma`.`Vouchers`;
 

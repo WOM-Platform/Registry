@@ -230,7 +230,7 @@ namespace WomPlatform.Web.Api {
                 UrlAckPos = creationParameters.PosAckUrl,
                 CreatedAt = DateTime.UtcNow,
                 Verified = false,
-                PerformedAt = null,
+                Persistent = creationParameters.Persistent,
                 Void = false,
                 PosId = creationParameters.PosId,
                 Nonce = creationParameters.Nonce.FromBase64(),
@@ -278,20 +278,31 @@ namespace WomPlatform.Web.Api {
             if (request == null) {
                 throw new ArgumentException("OTC code not valid");
             }
+
+            var confirmationCount = (from c in Data.PaymentConfirmations
+                                     where c.PaymentRequestId == request.Id
+                                     select c)
+                                     .Count();
+
             if (!request.Verified) {
                 throw new ArgumentException("OTC code not verified");
             }
-            if (request.PerformedAt.HasValue) {
-                throw new InvalidOperationException("Payment already confirmed");
+            if (!request.Persistent && confirmationCount > 0) {
+                throw new InvalidOperationException("Payment already performed");
             }
             if (request.Void) {
                 throw new InvalidOperationException("Payment has been voided");
             }
             if (!request.Password.Equals(password, StringComparison.Ordinal)) {
-                request.Void = true;
-                Data.SaveChanges();
+                if(request.Persistent) {
+                    throw new ArgumentException("Password does not match");
+                }
+                else {
+                    request.Void = true;
+                    Data.SaveChanges();
 
-                throw new ArgumentException("Password does not match, payment has been voided");
+                    throw new ArgumentException("Password does not match, payment has been voided");
+                }
             }
 
             Filter f = null;
@@ -361,7 +372,10 @@ namespace WomPlatform.Web.Api {
             foreach(var v in voucherMap.Values) {
                 v.Spent = true;
             }
-            payment.Void = true;
+            Data.PaymentConfirmations.Add(new PaymentConfirmations {
+                PaymentRequestId = payment.Id,
+                PerformedAt = DateTime.UtcNow
+            });
             Data.SaveChanges();
 
             return payment;

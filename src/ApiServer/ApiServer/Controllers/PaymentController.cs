@@ -124,7 +124,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Amount = payment.Amount,
                     PosId = payment.Pos.Id,
                     PosName = payment.Pos.Name,
-                    SimpleFilter = filter?.Simple
+                    SimpleFilter = filter?.Simple,
+                    Persistent = payment.Persistent
                 };
 
                 return Ok(new PaymentInfoResponse {

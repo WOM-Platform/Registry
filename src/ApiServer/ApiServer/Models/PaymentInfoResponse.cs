@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace WomPlatform.Web.Api.Models {
 
@@ -36,6 +38,11 @@ namespace WomPlatform.Web.Api.Models {
             /// Simple filter conditions that vouchers must satisfy. May be null.
             /// </summary>
             public SimpleFilter SimpleFilter { get; set; }
+
+            /// <summary>
+            /// Gets whether the payment is persistent.
+            /// </summary>
+            public bool Persistent { get; set; }
 
         }
 

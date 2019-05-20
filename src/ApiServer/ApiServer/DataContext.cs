@@ -47,6 +47,7 @@ namespace WomPlatform.Web.Api {
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<GenerationRequest> GenerationRequests { get; set; }
         public DbSet<PaymentRequest> PaymentRequests { get; set; }
+        public DbSet<PaymentConfirmations> PaymentConfirmations { get; set; }
         public DbSet<POS> POS { get; set; }
         public DbSet<Source> Sources { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
