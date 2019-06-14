@@ -57,8 +57,8 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets a POS by its primary ID or null if not found.
         /// </summary>
-        public POS GetPosById(long posId) {
-            return (from p in Data.POS
+        public Pos GetPosById(long posId) {
+            return (from p in Data.Pos
                     where p.Id == posId
                     select p).SingleOrDefault();
         }

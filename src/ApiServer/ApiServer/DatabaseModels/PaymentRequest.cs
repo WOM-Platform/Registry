@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
         public long PosId { get; set; }
 
         [ForeignKey(nameof(PosId))]
-        public POS Pos { get; set; }
+        public Pos Pos { get; set; }
 
         public byte[] Nonce { get; set; }
 

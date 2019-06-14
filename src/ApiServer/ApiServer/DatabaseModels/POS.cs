@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace WomPlatform.Web.Api.DatabaseModels {
 
     [Table("POS")]
-    public class POS {
+    public class Pos {
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
