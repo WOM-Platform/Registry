@@ -210,6 +210,68 @@ CREATE TABLE IF NOT EXISTS `Wom`.`Vouchers` (
 ENGINE = InnoDB;
 
 
+-- -----------------------------------------------------
+-- Table `Wom`.`Users`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Wom`.`Users` (
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `Username` VARCHAR(128) NOT NULL COLLATE latin1_general_ci,
+  `PasswordSchema` CHAR(10) NOT NULL,
+  `PasswordHash` VARBINARY(128) NOT NULL,
+
+  PRIMARY KEY (`ID`)
+)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `Wom`.`UserSourceMap`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Wom`.`UserSourceMap` (
+  `UserID` INT UNSIGNED NOT NULL,
+  `SourceID` INT UNSIGNED NOT NULL,
+  
+  PRIMARY KEY (`UserID`, `SourceID`),
+  INDEX `UserID_idx` (`UserID`),
+  CONSTRAINT `fk_UserSourceMap_User`
+    FOREIGN KEY `UserID_idx` (`UserID`)
+    REFERENCES `Wom`.`Users` (`ID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT,
+  INDEX `SourceID_idx` (`SourceID`),
+  CONSTRAINT `fk_UserSourceMap_Source`
+    FOREIGN KEY `SourceID_idx` (`SourceID`)
+    REFERENCES `Wom`.`Sources` (`ID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `Wom`.`UserPOSMap`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Wom`.`UserPOSMap` (
+  `UserID` INT UNSIGNED NOT NULL,
+  `POSID` INT UNSIGNED NOT NULL,
+  
+  PRIMARY KEY (`UserID`, `POSID`),
+  INDEX `UserID_idx` (`UserID`),
+  CONSTRAINT `fk_UserPOSMap_User`
+    FOREIGN KEY `UserID_idx` (`UserID`)
+    REFERENCES `Wom`.`Users` (`ID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT,
+  INDEX `POSID_idx` (`POSID`),
+  CONSTRAINT `fk_UserPOSMap_POS`
+    FOREIGN KEY `POSID_idx` (`POSID`)
+    REFERENCES `Wom`.`POS` (`ID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+)
+ENGINE = InnoDB;
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

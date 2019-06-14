@@ -26,6 +26,11 @@ namespace WomPlatform.Web.Api {
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             modelBuilder.Entity<AimTitle>()
                 .HasKey(nameof(AimTitle.Code), nameof(AimTitle.LanguageCode));
+            
+            modelBuilder.Entity<UserPos>()
+                .HasKey(nameof(UserPos.UserId), nameof(UserPos.PosId));
+            modelBuilder.Entity<UserSource>()
+                .HasKey(nameof(UserSource.UserId), nameof(UserSource.SourceId));
 
             // Fix boolean type conversion
             foreach(var entityType in modelBuilder.Model.GetEntityTypes()) {
