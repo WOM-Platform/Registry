@@ -16,7 +16,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
         public int Order { get; set; }
 
         [InverseProperty(nameof(AimTitle.Aim))]
-        public List<AimTitle> Titles { get; set; }
+        public ICollection<AimTitle> Titles { get; set; } = new List<AimTitle>();
 
     }
 }

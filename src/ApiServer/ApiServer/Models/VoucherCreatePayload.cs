@@ -52,7 +52,7 @@ namespace WomPlatform.Web.Api.Models {
         }
 
         /// <summary>
-        /// Encapsulates information about a single voucher.
+        /// Encapsulates information about voucher instances to generate.
         /// </summary>
         public class VoucherInfo {
 
