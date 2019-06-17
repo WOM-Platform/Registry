@@ -40,6 +40,13 @@ namespace WomPlatform.Web.Api {
                 o.UseMySQL(connectionString);
             });
 
+            services.AddAuthentication(opt => {
+                opt.DefaultAuthenticateScheme = BasicAuthenticationSchemeOptions.DefaultScheme;
+                opt.DefaultChallengeScheme = BasicAuthenticationSchemeOptions.DefaultScheme;
+            }).AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.DefaultScheme, opt => {
+                // Noop
+            });
+
             // Add services to dependency registry
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
@@ -52,6 +59,7 @@ namespace WomPlatform.Web.Api {
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseAuthentication();
             app.UseMvc();
         }
     }

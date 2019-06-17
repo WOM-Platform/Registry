@@ -382,6 +382,30 @@ namespace WomPlatform.Web.Api {
         }
 
         /// <summary>
+        /// Retrieves user information for a logged in user, verifying credentials.
+        /// </summary>
+        public User GetUserByLogin(string username, string password) {
+            var user = (from u in Data.Users
+                        where u.Username == username
+                        select u).SingleOrDefault();
+            if(user == null) {
+                return null;
+            }
+
+            if(!user.PasswordSchema.Equals("bcrypt", StringComparison.InvariantCultureIgnoreCase)) {
+                Logger.LogWarning("User #{0} does use unsupported password schema {1}", user.Id, user.PasswordSchema);
+                return null;
+            }
+
+            if(!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash)) {
+                return null;
+            }
+
+            Logger.LogInformation("Credentials verified for user {0}", user.Username);
+            return user;
+        }
+
+        /// <summary>
         /// Retrieves sources mapped to an existing user.
         /// </summary>
         public IEnumerable<Source> GetSourcesByUser(User user) {
