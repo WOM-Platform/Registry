@@ -14,6 +14,7 @@ namespace WomPlatform.Web.Api.Controllers {
     [Produces("application/json")]
     [Route("api/v1/auth")]
     [Authorize]
+    [XForwardedProto("https")]
     public class AuthController : BaseRegistryController {
 
         public AuthController(

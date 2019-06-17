@@ -25,7 +25,7 @@ services:
     - "traefik.protocol=http"
     - "traefik.port=8779"
     - "traefik.frontend.rule=Host:wom.social;PathPrefix:/api"
-    - "traefik.frontend.entryPoints=http"
+    - "traefik.frontend.entryPoints=http,https"
 
   database:
     image: mysql:5.7
