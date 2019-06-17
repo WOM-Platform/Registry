@@ -56,6 +56,9 @@ namespace WomPlatform.Web.Api {
         public DbSet<Pos> Pos { get; set; }
         public DbSet<Source> Sources { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserPos> UserPosMap { get; set; }
+        public DbSet<UserSource> UserSourceMap { get; set; }
 
     }
 

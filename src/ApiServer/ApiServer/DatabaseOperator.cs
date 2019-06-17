@@ -381,6 +381,24 @@ namespace WomPlatform.Web.Api {
             return payment;
         }
 
+        /// <summary>
+        /// Retrieves sources mapped to an existing user.
+        /// </summary>
+        public IEnumerable<Source> GetSourcesByUser(User user) {
+            return from m in Data.UserSourceMap
+                   where m.UserId == user.Id
+                   select m.Source;
+        }
+
+        /// <summary>
+        /// Retrieves POS mapped to an existing user.
+        /// </summary>
+        public IEnumerable<Pos> GetPosByUser(User user) {
+            return from m in Data.UserPosMap
+                   where m.UserId == user.Id
+                   select m.Pos;
+        }
+
     }
 
 }

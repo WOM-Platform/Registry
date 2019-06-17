@@ -18,10 +18,6 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public string PasswordHash { get; set; }
 
-        public ICollection<UserPos> PosMap { get; set; } = new List<UserPos>();
-
-        public ICollection<UserSource> SourcesMap { get; set; } = new List<UserSource>();
-
     }
 
 }
