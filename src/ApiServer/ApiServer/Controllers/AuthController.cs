@@ -47,10 +47,11 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new {
                 Sources = from s in Database.GetSourcesByUser(user)
                           select new {
-                              Id = s.Id,
-                              Name = s.Name,
-                              Url = s.Url,
-                              PublicKey = s.PublicKey
+                              s.Id,
+                              s.Name,
+                              s.Url,
+                              s.PublicKey,
+                              s.PrivateKey
                           }
             });
         }
@@ -68,10 +69,11 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new {
                 POS = from s in Database.GetPosByUser(user)
                           select new {
-                              Id = s.Id,
-                              Name = s.Name,
-                              Url = s.Url,
-                              PublicKey = s.PublicKey
+                              s.Id,
+                              s.Name,
+                              s.Url,
+                              s.PublicKey,
+                              s.PrivateKey
                           }
             });
         }
