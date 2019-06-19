@@ -49,7 +49,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Wom`.`Contacts` (
   `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `Email` VARCHAR(1024) NOT NULL COLLATE latin1_general_ci,
+  `Email` VARCHAR(320) NOT NULL COLLATE latin1_general_ci,
   `Name` VARCHAR(256) NOT NULL,
   `Surname` VARCHAR(256) NOT NULL,
 
