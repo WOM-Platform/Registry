@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Text.Encodings.Web;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 
 namespace WomPlatform.Web.Api {
@@ -46,6 +48,20 @@ namespace WomPlatform.Web.Api {
             //new ClaimsIdentity()
             var t = new AuthenticationTicket(new ClaimsPrincipal(new WomUserIdentity(userProfile)), BasicAuthenticationSchemeOptions.DefaultScheme);
             return Task.FromResult(AuthenticateResult.Success(t));
+        }
+
+        protected override Task HandleChallengeAsync(AuthenticationProperties properties) {
+            if(!Request.Headers.ContainsKey(HeaderNames.Authorization)) {
+                Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                Response.Headers.Add(HeaderNames.WWWAuthenticate,
+                    new StringValues("Basic realm=\"WOM\"")
+                );
+            }
+            else {
+                Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            }
+
+            return Task.CompletedTask;
         }
 
     }
