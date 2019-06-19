@@ -30,7 +30,7 @@ namespace WomPlatform.Web.Api {
             DateTimeZoneHandling = DateTimeZoneHandling.Utc,
             DateParseHandling = DateParseHandling.DateTime,
             Formatting = Formatting.None,
-            NullValueHandling = NullValueHandling.Include
+            NullValueHandling = NullValueHandling.Ignore
         };
 
         /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 
 namespace WomPlatform.Web.Api {
 
@@ -23,6 +25,14 @@ namespace WomPlatform.Web.Api {
                 .AddMvcOptions(opts => {
                     opts.AllowEmptyInputInBodyModelBinding = true;
                     opts.InputFormatters.Add(new PermissiveInputFormatter());
+                })
+                .AddJsonOptions(opts => {
+                    opts.SerializerSettings.Culture = CultureInfo.InvariantCulture;
+                    opts.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+                    opts.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+                    opts.SerializerSettings.DateParseHandling = DateParseHandling.DateTime;
+                    opts.SerializerSettings.Formatting = Formatting.None;
+                    opts.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 });
 
             services.AddDbContext<DataContext>(o => {
