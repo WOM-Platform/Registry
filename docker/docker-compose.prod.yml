@@ -1,9 +1,26 @@
 # Production-specific config
 version: '3'
 
+volumes:
+  wom_registry_database_prod:
+    external: true
+
 services:
   api:
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Production
+    volumes:
+    - ../keys:/testkeys:ro
     restart: unless-stopped
+    labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=web"
+    - "traefik.protocol=http"
+    - "traefik.port=8779"
+    - "traefik.frontend.rule=Host:wom.social;PathPrefix:/api"
+    - "traefik.frontend.entryPoints=http,https"
 
   database:
+    volumes:
+    - wom_registry_database_prod:/var/lib/mysql:rw
     restart: unless-stopped

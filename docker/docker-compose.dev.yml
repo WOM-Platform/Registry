@@ -1,13 +1,28 @@
 # Development-specific config
 version: '3'
 
+volumes:
+  wom_registry_database_dev:
+    external: true
+
 services:
   api:
-    build:
-      dockerfile: Dockerfile.dev
+    #build:
+      #dockerfile: Dockerfile.dev
     environment:
     - ASPNETCORE_ENVIRONMENT=Development
     volumes:
     - ../testkeys:/testkeys:ro
-    ports:
-    - "8080:22"
+    #ports:
+    #- "8080:22"
+    labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=web"
+    - "traefik.protocol=http"
+    - "traefik.port=8779"
+    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefix:/api"
+    - "traefik.frontend.entryPoints=http,https"
+
+  database:
+    volumes:
+    - wom_registry_database_dev:/var/lib/mysql:rw

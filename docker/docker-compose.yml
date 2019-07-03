@@ -1,7 +1,4 @@
 version: '3'
-volumes:
-  wom_registry_database:
-    external: true
 
 networks:
   web:
@@ -19,20 +16,11 @@ services:
     env_file: config.env
     expose:
       - "8779"
-    labels:
-    - "traefik.enable=true"
-    - "traefik.docker.network=web"
-    - "traefik.protocol=http"
-    - "traefik.port=8779"
-    - "traefik.frontend.rule=Host:wom.social;PathPrefix:/api"
-    - "traefik.frontend.entryPoints=http,https"
 
   database:
     image: mysql:5.7
     networks:
     - backend
-    volumes:
-    - wom_registry_database:/var/lib/mysql:rw
     env_file: config.env
 
   database-client:
