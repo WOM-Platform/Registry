@@ -1,26 +1,24 @@
-# Production-specific config
+# Config override for deployment
 version: '3'
 
 volumes:
-  wom_registry_database_prod:
+  wom_registry_database:
     external: true
 
 services:
   api:
     environment:
-    - ASPNETCORE_ENVIRONMENT=Production
+    - ASPNETCORE_ENVIRONMENT=Development
     volumes:
-    - ../keys:/testkeys:ro
-    restart: unless-stopped
+    - ../testkeys:/testkeys:ro
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
     - "traefik.protocol=http"
     - "traefik.port=8779"
-    - "traefik.frontend.rule=Host:wom.social;PathPrefix:/api"
+    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefix:/api"
     - "traefik.frontend.entryPoints=http,https"
 
   database:
     volumes:
-    - wom_registry_database_prod:/var/lib/mysql:rw
-    restart: unless-stopped
+    - wom_registry_database:/var/lib/mysql:rw

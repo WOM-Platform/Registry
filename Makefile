@@ -1,7 +1,6 @@
 SHELL := /bin/bash
 
-ENV ?= dev
-DC := docker-compose -f docker/docker-compose.yml -f docker/docker-compose.${ENV}.yml --project-name wom
+DC := docker-compose -f docker/docker-compose.yml -f docker/docker-compose.custom.yml
 DC_RUN := ${DC} run --rm
 
 include docker/config.env
@@ -13,7 +12,7 @@ confirmation:
 
 .PHONY: cmd
 cmd:
-	@echo 'Docker-Compose command for ${ENV} environment:'
+	@echo 'Docker-Compose command:'
 	@echo '${DC}'
 
 .PHONY: create_volumes drop_volumes
