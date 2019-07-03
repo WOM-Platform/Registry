@@ -7,7 +7,7 @@ networks:
 
 services:
   api:
-    build: ../src/ApiServer
+    build: ./src/ApiServer
     depends_on:
     - database
     networks:
@@ -24,7 +24,7 @@ services:
     env_file: config.env
 
   database-client:
-    build: ../src/MysqlClient
+    build: ./src/MysqlClient
     depends_on:
     - database
     networks:

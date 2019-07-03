@@ -1,9 +1,9 @@
 SHELL := /bin/bash
 
-DC := docker-compose -f docker/docker-compose.yml -f docker/docker-compose.custom.yml
+DC := docker-compose -f docker-compose.yml -f docker-compose.custom.yml
 DC_RUN := ${DC} run --rm
 
-include docker/config.env
+include config.env
 export
 
 .PHONY: confirmation
