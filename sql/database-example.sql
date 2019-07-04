@@ -10,28 +10,49 @@ USE `Wom` ;
 
 INSERT INTO `Wom`.`Contacts` (`Email`, `Name`, `Surname`) VALUES ('example@example.org', 'Sample', 'Sample');
 
-INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`, `Order`) VALUES ('1', 'aim-1', 3);
-INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`, `Order`) VALUES ('2', 'aim-2', 10);
-INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`, `Order`) VALUES ('11', 'aim-1-1', 0);
-INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`, `Order`) VALUES ('21', 'aim-2-1', 17);
-INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`, `Order`) VALUES ('22', 'aim-2-2', 2);
-INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`, `Order`) VALUES ('211', 'aim-2-1-1', 1);
-INSERT INTO `Wom`.`Aims` (`Code`, `IconFile`, `Order`) VALUES ('3', 'aim-3', 1);
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('N', 1);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('N', 'en', 'Natural environment');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('N', 'it', 'Ambiente naturale');
 
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('1', 'en', 'Aim 1 English');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('1', 'it', 'Aim 1 Italiano');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('2', 'en', 'Aim 2 English');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('2', 'it', 'Aim 2 Italiano');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('11', 'en', 'Aim 1-1 English');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('11', 'it', 'Aim 1-1 Italiano');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('21', 'en', 'Aim 2-1 English');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('21', 'it', 'Aim 2-1 Italiano');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('22', 'en', 'Aim 2-2 English');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('22', 'it', 'Aim 2-2 Italiano');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('211', 'en', 'Aim 2-1-1 English');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('211', 'it', 'Aim 2-1-1 Italiano');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('3', 'en', 'Aim 3 English');
-INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('3', 'it', 'Aim 3 Italiano');
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('U', 2);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('U', 'en', 'Urban environment');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('U', 'it', 'Ambiente urbano');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('C', 3);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('C', 'en', 'Culture');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('C', 'it', 'Cultura');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('E', 4);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('E', 'en', 'Education');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('E', 'it', 'Istruzione');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('H', 5);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('H', 'en', 'Health and wellbeing');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('H', 'it', 'Salute e benessere');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('S', 6);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('S', 'en', 'Safety');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('S', 'it', 'Sicurezza');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('I', 7);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('I', 'en', 'Infrastructure and services');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('I', 'it', 'Infrastruttura e servizi');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('IM', 12);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('IM', 'en', 'Infrastructure monitoring');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('IM', 'it', 'Monitoraggio infrastrutturale');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('T', 8);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('T', 'en', 'Cultural heritage');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('T', 'it', 'Patrimonio culturale');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('X', 9);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('X', 'en', 'Social cohesion');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('X', 'it', 'Coesione sociale');
+
+INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('R', 10);
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('R', 'en', 'Human rights');
+INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('R', 'it', 'Diritti umani');
 
 INSERT INTO `Wom`.`Sources` (`Name`, `PublicKey`, `PrivateKey`, `CreationDate`, `URL`, `ContactID`) VALUES ('Sample source 1', '-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA3ofbz4kneWa3Fv1PaYzu
