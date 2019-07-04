@@ -92,6 +92,14 @@ namespace WomPlatform.Web.Api {
         }
 
         /// <summary>
+        /// Retrieves a flat list of aims.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Aim> GetFlatAims() {
+            return Data.Aims.AsEnumerable();
+        }
+
+        /// <summary>
         /// Gets an aim by its code (exact match).
         /// </summary>
         public Aim GetAimByCode(string aimCode) {

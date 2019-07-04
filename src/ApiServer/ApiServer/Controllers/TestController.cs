@@ -41,7 +41,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("Creating {0} test vouchers", count);
 
             var testSource = Database.GetSourceById(1);
-            var aims = new Aim[] { Database.GetAimByCode("1") };
+            var aims = Database.GetFlatAims().ToList();
 
             Logger.LogTrace("Test source: {0}, aims: {1}", testSource.Name, string.Join(", ", from a in aims select a.Code));
 
