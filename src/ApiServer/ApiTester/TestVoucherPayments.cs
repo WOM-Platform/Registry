@@ -14,7 +14,7 @@ namespace ApiTester {
 
         protected RestClient Client {
             get {
-                return new RestClient($"http://wom.social/api/v1");
+                return new RestClient($"http://dev.wom.social/api/v1");
             }
         }
 
@@ -101,7 +101,7 @@ namespace ApiTester {
             var voucherInfos = new List<VoucherCreatePayload.VoucherInfo>();
             for (int i = 0; i < count; ++i) {
                 voucherInfos.Add(new VoucherCreatePayload.VoucherInfo {
-                    Aim = aimCode ?? "1",
+                    Aim = aimCode ?? "X",
                     Latitude = Random.NextBetween(5, 40),
                     Longitude = Random.NextBetween(5, 50),
                     Timestamp = now
@@ -196,13 +196,13 @@ namespace ApiTester {
         public void CreateAndRedeemMultipleVouchers() {
             var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "1",
+                    Aim = "IM",
                     Latitude = 12.34,
                     Longitude = 23.45,
                     Timestamp = DateTime.UtcNow
                 },
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "1",
+                    Aim = "IM",
                     Latitude = 23.45,
                     Longitude = 34.56,
                     Timestamp = DateTime.UtcNow,
@@ -318,13 +318,13 @@ namespace ApiTester {
         public void FailedPaymentWrongAim() {
             var otcGen = CreateVouchers("1234",
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "11",
+                    Aim = "S",
                     Latitude = 12,
                     Longitude = 12,
                     Timestamp = DateTime.UtcNow
                 },
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "2",
+                    Aim = "IM",
                     Latitude = 12,
                     Longitude = 12,
                     Timestamp = DateTime.UtcNow
@@ -333,8 +333,8 @@ namespace ApiTester {
             var response = RedeemVouchers(otcGen, "1234");
 
             Assert.AreEqual(2, response.Vouchers.Length);
-            Assert.AreEqual("11", response.Vouchers[0].Aim);
-            Assert.AreEqual("2", response.Vouchers[1].Aim);
+            Assert.AreEqual("S", response.Vouchers[0].Aim);
+            Assert.AreEqual("IM", response.Vouchers[1].Aim);
 
             var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
 
@@ -363,19 +363,19 @@ namespace ApiTester {
         public void PaymentGeoBounds() {
             var otcGen = CreateVouchers("1234",
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "11",
+                    Aim = "N",
                     Latitude = 10,
                     Longitude = 10,
                     Timestamp = DateTime.UtcNow
                 },
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "11",
+                    Aim = "N",
                     Latitude = 20,
                     Longitude = 20,
                     Timestamp = DateTime.UtcNow
                 },
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "11",
+                    Aim = "N",
                     Latitude = -60,
                     Longitude = -60,
                     Timestamp = DateTime.UtcNow
