@@ -15,15 +15,6 @@ cmd:
 	@echo 'Docker-Compose command:'
 	@echo '${DC}'
 
-.PHONY: create_volumes drop_volumes
-create_volumes:
-	docker volume create wom_registry_database
-	@echo 'External volumes created'
-
-drop_volumes: confirmation
-	docker volume rm wom_registry_database
-	@echo 'External volumes dropped'
-
 .PHONY: install install_example
 install:
 	${DC_RUN} database-client mysql -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < sql/database-create.sql
