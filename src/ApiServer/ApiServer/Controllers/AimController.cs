@@ -21,6 +21,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("{*code}")]
+        [ChangeLog("aim-list")]
         public IActionResult Show(string code) {
             var cleanCode = code.Replace("/", string.Empty);
 
