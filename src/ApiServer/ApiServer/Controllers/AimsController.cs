@@ -54,6 +54,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [Produces("application/json")]
         [HttpGet]
+        [ChangeLog("aim-list")]
         public IActionResult List(string format = "hierarchical") {
             var aims = Database.GetAimHierarchy();
 

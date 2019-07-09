@@ -59,6 +59,7 @@ namespace WomPlatform.Web.Api {
         public DbSet<User> Users { get; set; }
         public DbSet<UserPos> UserPosMap { get; set; }
         public DbSet<UserSource> UserSourceMap { get; set; }
+        public DbSet<ChangeLogEntry> ChangeLog { get; set; }
 
     }
 

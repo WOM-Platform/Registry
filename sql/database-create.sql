@@ -274,6 +274,19 @@ CREATE TABLE IF NOT EXISTS `Wom`.`UserPOSMap` (
 ENGINE = InnoDB;
 
 
+-- -----------------------------------------------------
+-- Table `Wom`.`ChangeLog`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Wom`.`ChangeLog` (
+  `ID` VARCHAR(64) NOT NULL COLLATE latin1_general_ci,
+  `Timestamp` DATETIME NOT NULL,
+  `Note` TINYTEXT DEFAULT NULL,
+
+  PRIMARY KEY (`ID`, `Timestamp`)
+)
+ENGINE = InnoDB;
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
