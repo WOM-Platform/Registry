@@ -59,6 +59,16 @@ namespace WomPlatform.Web.Api {
 
         public AsymmetricKeyParameter RegistryPublicKey { get; }
 
+        public static string ConvertToString(AsymmetricKeyParameter keyParameter) {
+            using(var stringWriter = new StringWriter()) {
+                var writer = new PemWriter(stringWriter);
+                writer.WriteObject(keyParameter);
+                stringWriter.Flush();
+
+                return stringWriter.GetStringBuilder().ToString();
+            }
+        }
+
     }
 
 }
