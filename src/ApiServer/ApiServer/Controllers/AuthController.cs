@@ -11,9 +11,7 @@ using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Produces("application/json")]
     [Route("api/v1/auth")]
-    [Authorize]
     [XForwardedProto("https")]
     public class AuthController : BaseRegistryController {
 
@@ -36,6 +34,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // GET api/v1/auth/sources
         [HttpGet("sources")]
+        [Produces("application/json")]
+        [Authorize]
         public ActionResult Sources() {
             Logger.LogInformation("Listing user's sources");
 
@@ -50,7 +50,6 @@ namespace WomPlatform.Web.Api.Controllers {
                               s.Id,
                               s.Name,
                               s.Url,
-                              s.PublicKey,
                               s.PrivateKey
                           }
             });
@@ -58,6 +57,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // GET api/v1/auth/pos
         [HttpGet("pos")]
+        [Produces("application/json")]
+        [Authorize]
         public ActionResult Pos() {
             Logger.LogInformation("Listing user's POS");
 
@@ -72,7 +73,6 @@ namespace WomPlatform.Web.Api.Controllers {
                               s.Id,
                               s.Name,
                               s.Url,
-                              s.PublicKey,
                               s.PrivateKey
                           }
             });
