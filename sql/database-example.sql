@@ -6,7 +6,7 @@
 -- -----------------------------------------------------
 -- Schema Wom
 -- -----------------------------------------------------
-USE `Wom` ;
+USE `Wom`;
 
 INSERT INTO `Wom`.`Contacts` (`Email`, `Name`, `Surname`) VALUES ('example@example.org', 'Sample', 'Sample');
 

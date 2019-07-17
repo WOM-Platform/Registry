@@ -26,6 +26,11 @@ install_example:
 mysql: up
 	${DC_RUN} database-client mysql -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE}
 
+.PHONY: mysqlcmd
+mysqlcmd: up
+	@echo 'MySQL client command:'
+	@echo '${DC_RUN} database-client mysql -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE}'
+
 .PHONY: dump
 dump:
 	${DC_RUN} database-client mysqldump -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} > dump.sql

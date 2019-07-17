@@ -4,3 +4,5 @@
 \.vs/
 *.csproj.user
 keys/*
+dump.sql
+**/output.sql
