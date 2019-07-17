@@ -31,7 +31,7 @@ namespace WomPlatform.Web.Api {
             var logger = logFactory.CreateLogger<ChangeLogAttribute>();
 
             var lastEntry = (from l in db.Data.ChangeLog
-                             where l.Id == _changeLogCode
+                             where l.Code == _changeLogCode
                              orderby l.Timestamp descending
                              select l).FirstOrDefault();
             if(lastEntry == null) {

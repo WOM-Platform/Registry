@@ -198,5 +198,5 @@ INSERT INTO `Wom`.`UserSourceMap` (`UserID`, `SourceID`) VALUES
 INSERT INTO `Wom`.`UserPOSMap` (`UserID`, `POSID`) VALUES
 (1, 1);
 
-INSERT INTO `Wom`.`ChangeLog` (`ID`, `Timestamp`, `Note`) VALUES
+INSERT INTO `Wom`.`ChangeLog` (`Code`, `Timestamp`, `Note`) VALUES
 ('aim-list', '2019-07-04', 'First draft of aims.');
