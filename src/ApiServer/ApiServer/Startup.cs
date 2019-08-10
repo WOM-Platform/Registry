@@ -69,6 +69,8 @@ namespace WomPlatform.Web.Api {
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseStaticFiles("/payment");
+            app.UseStaticFiles("/vouchers");
             app.UseAuthentication();
             app.UseMvc();
         }

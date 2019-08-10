@@ -1,0 +1,20 @@
+﻿@using WomPlatform.Web.Api.ViewModel
+@model LandingPageViewModel
+@{
+    Layout = "LandingPage";
+    ViewData["Title"] = "Payment";
+}
+
+    <div class="row">
+        <div class="twelve columns">
+            <p class="centered">
+                <a class="button button-primary" href="wom://pay/@Model.Otc.ToString("N")" title="Perform payment using WOM Pocket">
+                    Perform Payment
+                </a>
+            </p>
+
+            <p>
+                Tap the button above to perform the payment through your <b>WOM&nbsp;Pocket</b> app.
+            </p>
+        </div>
+    </div>

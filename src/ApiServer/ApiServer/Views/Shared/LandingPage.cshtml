@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>Worth One Minute | @ViewData["Title"]</title>
+
+    <meta name="description" content="WOM is general-purpose rewarding platform based on a voucher exchange system." />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css" />
+
+    <link rel="stylesheet" href="skeleton-2.0.4/normalize.css" />
+    <link rel="stylesheet" href="skeleton-2.0.4/skeleton.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="three columns">&nbsp;</div>
+                <div class="six columns centered">
+                    <img src="wom-logo.png" alt="WOM logo" class="u-full-width" />
+                </div>
+                <div class="three columns">&nbsp;</div>
+            </div>
+
+            <div class="row">
+                <div class="twelve columns">
+                    <h1 class="centered">Worth One Minute</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section>
+        <div class="container">
+            @RenderBody()
+
+            <div class="row">
+                <div class="twelve columns">
+                    <h3>Install apps</h3>
+                    <p>If you haven’t installed the WOM&nbsp;Pocket app yet, follow these links to download them for free and start receiving and paying using WOM vouchers.</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="six columns badge">
+                    <a href="">
+                        <img src="badge_google_play.png" alt="Install from Google Play" class="u-full-width" />
+                    </a>
+                </div>
+                <div class="six columns badge">
+                    <a href="">
+                        <img src="badge_app_store.png" alt="Install from App Store" class="u-full-width" />
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="twelve columns">
+                    <p>WOM&nbsp;Platform&nbsp;&mdash;&nbsp;2019</p>
+                    <p><a href="https://wom.social">Privacy policy</a> &mdash; <a href="https://wom.social">More information</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
