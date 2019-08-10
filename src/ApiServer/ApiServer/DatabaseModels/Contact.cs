@@ -13,6 +13,8 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public string Email { get; set; }
 
+        public string FiscalCode { get; set; }
+
         public string Name { get; set; }
 
         public string Surname { get; set; }

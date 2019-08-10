@@ -50,10 +50,13 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `Wom`.`Contacts` (
   `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Email` VARCHAR(320) NOT NULL COLLATE latin1_general_ci,
+  `FiscalCode` VARCHAR(64) DEFAULT NULL COLLATE latin1_general_ci,
   `Name` VARCHAR(256) NOT NULL,
   `Surname` VARCHAR(256) NOT NULL,
 
-  PRIMARY KEY (`ID`)
+  PRIMARY KEY (`ID`),
+  INDEX `Email_idx` (`Email`),
+  UNIQUE INDEX `FiscalCode` (`FiscalCode`)
 )
 ENGINE = InnoDB;
 
@@ -220,8 +223,15 @@ CREATE TABLE IF NOT EXISTS `Wom`.`Users` (
   `Username` VARCHAR(128) NOT NULL COLLATE latin1_general_ci,
   `PasswordSchema` CHAR(10) NOT NULL,
   `PasswordHash` VARBINARY(128) NOT NULL,
+  `ContactID` INT UNSIGNED NOT NULL,
 
-  PRIMARY KEY (`ID`)
+  PRIMARY KEY (`ID`),
+  INDEX `fk_User_Contact_idx` (`ContactID` ASC),
+  CONSTRAINT `fk_User_Contact`
+    FOREIGN KEY `fk_User_Contact_idx` (`ContactID`)
+    REFERENCES `Wom`.`Contacts` (`ID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
 )
 ENGINE = InnoDB;
 

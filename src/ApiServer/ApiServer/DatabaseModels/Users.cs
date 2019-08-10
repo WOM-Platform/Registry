@@ -18,6 +18,11 @@ namespace WomPlatform.Web.Api.DatabaseModels {
 
         public string PasswordHash { get; set; }
 
+        public long ContactId { get; set; }
+
+        [ForeignKey(nameof(ContactId))]
+        public Contact Contact { get; set; }
+
     }
 
 }
