@@ -37,7 +37,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces("application/json")]
         [Authorize]
         public ActionResult Sources() {
-            Logger.LogInformation("Listing user's sources");
+            Logger.LogDebug("Retrieving user sources");
 
             var user = GetUserProfile();
             if(user == null) {
@@ -60,7 +60,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces("application/json")]
         [Authorize]
         public ActionResult Pos() {
-            Logger.LogInformation("Listing user's POS");
+            Logger.LogDebug("Retrieving user POS");
 
             var user = GetUserProfile();
             if(user == null) {
