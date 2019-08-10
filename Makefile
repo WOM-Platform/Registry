@@ -36,6 +36,14 @@ dump:
 	${DC_RUN} database-client mysqldump -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} > dump.sql
 	@echo 'Database exported to dump.sql.'
 
+.PHONY: import-db
+import-db: confirmation
+	test -f dump.sql
+	@echo 'Replacing database with contents from file dump.sql...'
+	${DC_RUN} database-client mysqldump -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} > previous_dump.sql
+	${DC_RUN} database-client mysql -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < dump.sql
+	@echo 'Database replaced. Previous contents in previous_dump.sql.'
+
 .PHONY: up
 up:
 	${DC} up -d
