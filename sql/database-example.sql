@@ -189,8 +189,8 @@ qtevlOT1ujRzB0CKx4HneuBkO+aZzxWxEBk3LgGdEREi9CDqFTWGVy90/EQ=
 -----END RSA PRIVATE KEY-----
 ', '2019-02-08', 'http://example.org');
 
-INSERT INTO `Wom`.`Users` (`Username`, `PasswordSchema`, `PasswordHash`) VALUES
-('Test', 'bcrypt', '$2y$12$vpzvi.7CC2hI3aH.4GxjKeD7PTjfD7GRsdRjpvHgmc3cCkU1tKOxe');
+INSERT INTO `Wom`.`Users` (`Username`, `PasswordSchema`, `PasswordHash`, `ContactID`) VALUES
+('Test', 'bcrypt', '$2y$12$vpzvi.7CC2hI3aH.4GxjKeD7PTjfD7GRsdRjpvHgmc3cCkU1tKOxe', 1);
 
 INSERT INTO `Wom`.`UserSourceMap` (`UserID`, `SourceID`) VALUES
 (1, 1);

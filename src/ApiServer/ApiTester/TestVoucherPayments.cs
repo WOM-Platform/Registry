@@ -196,13 +196,13 @@ namespace ApiTester {
         public void CreateAndRedeemMultipleVouchers() {
             var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "IM",
+                    Aim = "I",
                     Latitude = 12.34,
                     Longitude = 23.45,
                     Timestamp = DateTime.UtcNow
                 },
                 new VoucherCreatePayload.VoucherInfo {
-                    Aim = "IM",
+                    Aim = "I",
                     Latitude = 23.45,
                     Longitude = 34.56,
                     Timestamp = DateTime.UtcNow,

@@ -50,7 +50,7 @@ namespace WomPlatform.Web.Api {
             return (from s in Data.Sources
                     where s.Id == sourceId
                     select s)
-                    .Include(nameof(Source.Contact))
+                    .Include(s => s.Contact)
                     .SingleOrDefault();
         }
 
