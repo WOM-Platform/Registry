@@ -48,9 +48,9 @@ echo "', CURDATE(), '$posurlvar');" >> output.sql
 
 echo "SET @pos_id = LAST_INSERT_ID();" >> output.sql
 
-printf "INSERT INTO \`Wom\`.\`Users\` (\`Username\`, \`PasswordSchema\`, \`PasswordHash\`) VALUES ('$usernamevar', 'bcrypt', '" >> output.sql
+printf "INSERT INTO \`Wom\`.\`Users\` (\`Username\`, \`PasswordSchema\`, \`PasswordHash\`, \`ContactID\`) VALUES ('$usernamevar', 'bcrypt', '" >> output.sql
 htpasswd -bnBC 12 "" $passwordvar | tr -d ':\n' >> output.sql
-echo "');" >> output.sql
+echo "', @contact_id);" >> output.sql
 
 echo "SET @user_id = LAST_INSERT_ID();" >> output.sql
 
