@@ -44,9 +44,14 @@ import-db: confirmation
 	${DC_RUN} database-client mysql -h database -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < dump.sql
 	@echo 'Database replaced. Previous contents in previous_dump.sql.'
 
+.PHONY: phpmyadmin
+phpmyadmin:
+	@echo 'Running phpMyAdmin, terminate with CTRL+C...'
+	${DC} up database-manager
+
 .PHONY: up
 up:
-	${DC} up -d
+	${DC} up -d api
 	${DC} ps
 	@echo
 	@echo 'WOM registry service is now up'
@@ -64,7 +69,7 @@ rs:
 rebuild:
 	${DC} rm -sf api
 	${DC} build api
-	${DC} up -d
+	${DC} up -d api
 
 .PHONY: stop
 stop:

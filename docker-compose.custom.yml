@@ -16,9 +16,20 @@ services:
     - "traefik.docker.network=web"
     - "traefik.protocol=http"
     - "traefik.port=8779"
-    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefix:/api"
+    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefix:/api,/payment,/vouchers"
     - "traefik.frontend.entryPoints=http,https"
 
   database:
     volumes:
     - wom_registry_database:/var/lib/mysql:rw
+
+  database-manager:
+    environment:
+    - "PMA_ABSOLUTE_URI=https://dev.wom.social/phpmyadmin/"
+    labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=web"
+    - "traefik.protocol=http"
+    - "traefik.port=80"
+    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefixStrip:/phpmyadmin"
+    - "traefik.frontend.entryPoints=https"

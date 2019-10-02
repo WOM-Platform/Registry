@@ -15,7 +15,7 @@ services:
     - backend
     env_file: config.env
     expose:
-      - "8779"
+    - "8779"
 
   database:
     image: mysql:5.7
@@ -30,3 +30,18 @@ services:
     networks:
     - backend
     env_file: config.env
+
+  database-manager:
+    image: phpmyadmin/phpmyadmin:latest
+    depends_on:
+    - database
+    networks:
+    - web
+    - backend
+    env_file: config.env
+    environment:
+    - "PMA_HOST=database"
+    expose:
+    - "80"
+    stdin_open: true
+    tty: true
