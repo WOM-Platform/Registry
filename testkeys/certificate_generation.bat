@@ -5,4 +5,4 @@ REM Generate RSA private key (4096 bits)
 openssl genrsa -out pos1.pem 4096
 
 REM Generate RSA public key from private
-openssl rsa -in pos1.pem -pubout -out pos1.pem
+openssl rsa -in pos1.pem -pubout -out pos1.pub
