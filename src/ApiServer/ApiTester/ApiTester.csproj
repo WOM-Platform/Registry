@@ -29,6 +29,9 @@
     <None Include="..\..\..\testkeys\source1.pem" Link="source1.pem">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\..\..\testkeys\source2.pem" Link="source2.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

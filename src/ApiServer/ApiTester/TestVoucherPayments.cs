@@ -42,13 +42,14 @@ namespace ApiTester {
             return JsonConvert.DeserializeObject<T>(response.Content);
         }
 
-        AsymmetricKeyParameter _keyPos, _keyInstrument, _keyRegistry;
+        AsymmetricKeyParameter _keyPos, _keyInstrument1, _keyInstrument2, _keyRegistry;
         byte[] _keySession;
 
         [SetUp]
         public void Setup() {
             _keyPos = CryptoHelper.LoadKeyFromPem<AsymmetricCipherKeyPair>("pos1.pem").Private;
-            _keyInstrument = CryptoHelper.LoadKeyFromPem<AsymmetricCipherKeyPair>("source1.pem").Private;
+            _keyInstrument1 = CryptoHelper.LoadKeyFromPem<AsymmetricCipherKeyPair>("source1.pem").Private;
+            _keyInstrument2 = CryptoHelper.LoadKeyFromPem<AsymmetricCipherKeyPair>("source2.pem").Private;
             _keyRegistry = CryptoHelper.LoadKeyFromPem<AsymmetricCipherKeyPair>("registry.pem").Public;
 
             var rnd = new Random();
@@ -57,21 +58,26 @@ namespace ApiTester {
             _keySession = sessionKey;
         }
 
-        private Guid CreateVouchers(string password, params VoucherCreatePayload.VoucherInfo[] vouchers) {
-            var nonce = Guid.NewGuid().ToString("N");
+        private Guid CreateVouchers(int sourceId, AsymmetricKeyParameter sourceKey,
+            string password, VoucherCreatePayload.VoucherInfo[] vouchers,
+            Guid? nonce = null) {
+            if(!nonce.HasValue) {
+                nonce = Guid.NewGuid();
+            }
+
             var request = CreateJsonRequest("voucher/create", new VoucherCreatePayload {
-                SourceId = 1,
-                Nonce = nonce,
+                SourceId = sourceId,
+                Nonce = nonce.Value.ToString("N"),
                 Payload = Crypto.Encrypt(new VoucherCreatePayload.Content {
-                    SourceId = 1,
-                    Nonce = nonce,
+                    SourceId = sourceId,
+                    Nonce = nonce.Value.ToString("N"),
                     Password = password,
                     Vouchers = vouchers
                 }, _keyRegistry)
             });
 
             var response = PerformRequest<VoucherCreateResponse>(request);
-            var responseContent = Crypto.Decrypt<VoucherCreateResponse.Content>(response.Payload, _keyInstrument);
+            var responseContent = Crypto.Decrypt<VoucherCreateResponse.Content>(response.Payload, sourceKey);
 
             request = CreateJsonRequest("voucher/verify", new VoucherVerifyPayload {
                 Payload = Crypto.Encrypt(new VoucherVerifyPayload.Content {
@@ -173,7 +179,7 @@ namespace ApiTester {
         [Test]
         public void CreateAndRedeemRandomVouchers() {
             var voucherInfos = CreateRandomVoucherRequests(Random.Next(5) + 5);
-            var otcGen = CreateVouchers("1234", voucherInfos);
+            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
             var response = RedeemVouchers(otcGen, "1234");
 
             Assert.AreEqual(voucherInfos.Length, response.Vouchers.Length);
@@ -193,6 +199,20 @@ namespace ApiTester {
         }
 
         [Test]
+        public void CreateVouchersMultipleSources() {
+            var n = Guid.NewGuid();
+            var voucherInfos = CreateRandomVoucherRequests(Random.Next(5) + 5);
+
+            var otcGen1 = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos, n);
+            Console.WriteLine("OTC: {0}", otcGen1);
+
+            var otcGen2 = CreateVouchers(2, _keyInstrument2, "2345", voucherInfos, n);
+            Console.WriteLine("OTC: {0}", otcGen2);
+
+            Assert.AreNotEqual(otcGen1, otcGen2);
+        }
+
+        [Test]
         public void CreateAndRedeemMultipleVouchers() {
             var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
                 new VoucherCreatePayload.VoucherInfo {
@@ -209,7 +229,7 @@ namespace ApiTester {
                     Count = 2
                 }
             };
-            var otcGen = CreateVouchers("1234", voucherInfos);
+            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
             var response = RedeemVouchers(otcGen, "1234");
 
             Assert.AreEqual(3, response.Vouchers.Length);
@@ -227,7 +247,7 @@ namespace ApiTester {
         [Test]
         public void CreateVouchersAndProcessSimplePayment() {
             var voucherInfos = CreateRandomVoucherRequests(5);
-            var otcGen = CreateVouchers("1234", voucherInfos);
+            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
             var response = RedeemVouchers(otcGen, "1234");
 
             Assert.AreEqual(5, response.Vouchers.Length);
@@ -262,7 +282,7 @@ namespace ApiTester {
         [Test]
         public void CreateVouchersAndProcessMultiplePayment() {
             var voucherInfos = CreateRandomVoucherRequests(2);
-            var otcGen = CreateVouchers("1234", voucherInfos);
+            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
             var response = RedeemVouchers(otcGen, "1234");
 
             Assert.AreEqual(2, response.Vouchers.Length);
@@ -295,7 +315,7 @@ namespace ApiTester {
         [Test]
         public void FailedPaymentInsufficientVouchers() {
             var voucherInfos = CreateRandomVoucherRequests(1);
-            var otcGen = CreateVouchers("1234", voucherInfos);
+            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
             var response = RedeemVouchers(otcGen, "1234");
 
             Assert.AreEqual(1, response.Vouchers.Length);
@@ -316,18 +336,20 @@ namespace ApiTester {
 
         [Test]
         public void FailedPaymentWrongAim() {
-            var otcGen = CreateVouchers("1234",
-                new VoucherCreatePayload.VoucherInfo {
-                    Aim = "S",
-                    Latitude = 12,
-                    Longitude = 12,
-                    Timestamp = DateTime.UtcNow
-                },
-                new VoucherCreatePayload.VoucherInfo {
-                    Aim = "IM",
-                    Latitude = 12,
-                    Longitude = 12,
-                    Timestamp = DateTime.UtcNow
+            var otcGen = CreateVouchers(1, _keyInstrument1, "1234",
+                new VoucherCreatePayload.VoucherInfo[] {
+                    new VoucherCreatePayload.VoucherInfo {
+                        Aim = "S",
+                        Latitude = 12,
+                        Longitude = 12,
+                        Timestamp = DateTime.UtcNow
+                    },
+                    new VoucherCreatePayload.VoucherInfo {
+                        Aim = "IM",
+                        Latitude = 12,
+                        Longitude = 12,
+                        Timestamp = DateTime.UtcNow
+                    }
                 }
             );
             var response = RedeemVouchers(otcGen, "1234");
@@ -361,24 +383,26 @@ namespace ApiTester {
 
         [Test]
         public void PaymentGeoBounds() {
-            var otcGen = CreateVouchers("1234",
-                new VoucherCreatePayload.VoucherInfo {
-                    Aim = "N",
-                    Latitude = 10,
-                    Longitude = 10,
-                    Timestamp = DateTime.UtcNow
-                },
-                new VoucherCreatePayload.VoucherInfo {
-                    Aim = "N",
-                    Latitude = 20,
-                    Longitude = 20,
-                    Timestamp = DateTime.UtcNow
-                },
-                new VoucherCreatePayload.VoucherInfo {
-                    Aim = "N",
-                    Latitude = -60,
-                    Longitude = -60,
-                    Timestamp = DateTime.UtcNow
+            var otcGen = CreateVouchers(1, _keyInstrument1, "1234",
+                new VoucherCreatePayload.VoucherInfo[] {
+                    new VoucherCreatePayload.VoucherInfo {
+                        Aim = "N",
+                        Latitude = 10,
+                        Longitude = 10,
+                        Timestamp = DateTime.UtcNow
+                    },
+                    new VoucherCreatePayload.VoucherInfo {
+                        Aim = "N",
+                        Latitude = 20,
+                        Longitude = 20,
+                        Timestamp = DateTime.UtcNow
+                    },
+                    new VoucherCreatePayload.VoucherInfo {
+                        Aim = "N",
+                        Latitude = -60,
+                        Longitude = -60,
+                        Timestamp = DateTime.UtcNow
+                    }
                 }
             );
             var response = RedeemVouchers(otcGen, "1234");
