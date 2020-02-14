@@ -63,7 +63,7 @@ namespace WomPlatform.Web.Api {
                     options.Cookie = new CookieBuilder {
                         Domain = "wom.social",
                         IsEssential = true,
-                        Name = "WOM Login",
+                        Name = "WomLogin",
                         SecurePolicy = CookieSecurePolicy.Always,
                         SameSite = SameSiteMode.None,
                         HttpOnly = true
