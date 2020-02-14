@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.ViewModel;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("user/{action:slugify}")]
+    [Route("user/[action]")]
     public class UserController : Controller {
 
         private readonly MongoDatabase _mongo;
@@ -28,6 +30,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [TempData]
         public bool PreviousLoginFailed { get; set; } = false;
 
+        [ActionName("login")]
         public IActionResult Login(
             [FromQuery] string @return
         ) {
@@ -38,6 +41,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost]
+        [ActionName("perform-login")]
         public async Task<IActionResult> PerformLogin(
             [FromForm] string username,
             [FromForm] string password,
@@ -85,10 +89,76 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        [HttpGet]
+        [ActionName("register")]
         public IActionResult Register() {
-            return Content("Register");
+            if(HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null) {
+                return RedirectToAction(nameof(HomeController.Index), "Home");
+            }
+
+            return View("Register");
         }
 
+        [HttpPost]
+        [ActionName("register")]
+        public async Task<IActionResult> PerformRegister(
+            [FromForm] UserRegisterModel user
+        ) {
+            if(!ModelState.IsValid) {
+                return View("Register");
+            }
+
+            try {
+                await _mongo.CreateUser(new User {
+                    Username = user.Username,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.Password),
+                    Emails = new string[] {
+                    user.Email
+                },
+                    FiscalCode = user.FiscalCode,
+                    Name = user.Name,
+                    Surname = user.Surname,
+                    VerificationToken = new Random().GenerateReadableCode(8)
+                });
+            }
+            catch(Exception ex) {
+                _logger.LogError(ex, "Failed to create user");
+                ModelState.AddModelError("Internal", "Failed to create user");
+                return View("Register");
+            }
+
+            return RedirectToAction(nameof(WaitForVerification));
+        }
+
+        [HttpGet]
+        [ActionName("wait-for-verification")]
+        public IActionResult WaitForVerification(
+        ) {
+            return View("Wait");
+        }
+
+        [HttpGet("{userId}/{token}")]
+        public async Task<IActionResult> Verify(
+            [FromRoute] string userId,
+            [FromRoute] string token
+        ) {
+            var user = await _mongo.GetUserById(userId);
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(user.VerificationToken != token) {
+                return NotFound();
+            }
+
+            user.VerificationToken = null;
+            await _mongo.ReplaceUser(user);
+
+            return View("Verified");
+        }
+
+        [HttpGet]
+        [ActionName("logout")]
         public async Task<IActionResult> Logout() {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 

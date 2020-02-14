@@ -51,9 +51,23 @@ namespace WomPlatform.Web.Api {
             }
         }
 
+        public Task<User> GetUserById(string id) {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, id);
+            return UserCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
         public Task<User> GetUserByUsername(string username) {
             var filter = Builders<User>.Filter.Eq(u => u.Username, username);
             return UserCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public Task CreateUser(User user) {
+            return UserCollection.InsertOneAsync(user);
+        }
+
+        public Task ReplaceUser(User user) {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+            return UserCollection.ReplaceOneAsync(filter, user);
         }
 
     }

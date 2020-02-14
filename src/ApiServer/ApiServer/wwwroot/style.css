@@ -30,6 +30,10 @@ html b {
     margin-bottom: 2rem;
 }
 
+.validation-summary-valid {
+    display: none;
+}
+
 nav.navbar .navbar-brand img {
     height: 30px;
     width: auto;
@@ -59,7 +63,7 @@ nav.navbar .navbar-brand img {
 footer {
     padding-bottom: 2em;
     padding-top: 2em;
-    margin-top: 1em;
+    margin-top: 3em;
     background-color: #e0e5ef;
 }
 
