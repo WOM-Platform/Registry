@@ -5,13 +5,11 @@ using System.Threading.Tasks;
 
 namespace WomPlatform.Web.Api.ViewModel {
 
-    public class LoginViewModel {
+    public class LoginStatusViewModel {
 
-        public bool PreviousLoginFailed { get; set; } = false;
+        public bool IsLoggedIn { get; set; }
 
         public string Username { get; set; }
-
-        public string ReturnUrl { get; set; }
 
     }
 

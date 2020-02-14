@@ -85,6 +85,7 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<KeyManager>();
             services.AddSingleton<CryptoProvider>();
             services.AddScoped<DatabaseOperator>();
+            services.AddSingleton<MongoDatabase>();
         }
 
         private readonly string[] SupportedCultures = new string[] {
@@ -97,8 +98,6 @@ namespace WomPlatform.Web.Api {
                 app.UseDeveloperExceptionPage();
             }
 
-            //app.UseStaticFiles("/payment");
-            //app.UseStaticFiles("/vouchers");
             app.UseStaticFiles();
 
             app.UseRequestLocalization(o => {

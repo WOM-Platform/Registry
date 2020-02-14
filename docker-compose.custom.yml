@@ -2,7 +2,9 @@
 version: '3'
 
 volumes:
-  wom_registry_database:
+  wom_registry_database_dev:
+    external: true
+  wom_registry_mongodb_dev:
     external: true
 
 services:
@@ -21,7 +23,8 @@ services:
 
   database:
     volumes:
-    - wom_registry_database:/var/lib/mysql:rw
+    - wom_registry_database_dev:/var/lib/mysql:rw
+    restart: "no"
 
   database-manager:
     environment:
@@ -33,3 +36,9 @@ services:
     - "traefik.port=80"
     - "traefik.frontend.rule=Host:dev.wom.social;PathPrefixStrip:/phpmyadmin"
     - "traefik.frontend.entryPoints=https"
+    restart: "no"
+
+  mongo:
+    volumes:
+    - wom_registry_mongodb_dev:/data/db:rw
+    restart: "no"

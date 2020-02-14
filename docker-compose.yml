@@ -10,6 +10,7 @@ services:
     build: ./src/ApiServer
     depends_on:
     - database
+    - mongo
     networks:
     - web
     - backend
@@ -18,7 +19,7 @@ services:
     - "8779"
 
   database:
-    image: mysql:5.7
+    image: mysql:5.7.29
     networks:
     - backend
     env_file: config.env
@@ -45,3 +46,13 @@ services:
     - "80"
     stdin_open: true
     tty: true
+
+  mongo:
+    image: mongo:4.2.3
+    networks:
+    - backend
+    expose:
+    - "27017"
+    ports:
+    - "8123:27017"
+    env_file: config.env

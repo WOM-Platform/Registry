@@ -45,15 +45,11 @@
             </div>
         </nav>
 
+        @if (IsSectionDefined("header")) {
         <header>
-            <div class="container">
-                <div class="row">
-                    <div class="col-12">
-                        <img src="~/wom-logo.png" alt="WOM logo" class="img-fluid" />
-                    </div>
-                </div>
-            </div>
+            @RenderSection("header")
         </header>
+        }
 
         <section>
             @RenderBody()

@@ -18,6 +18,18 @@ html b {
     background-color: #e0e5ef;
 }
 
+.big-form {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 30px;
+    background: #ffffff;
+    box-shadow: 36px 36px 88px #e6e6e6, -36px -36px 88px #ffffff;
+    padding: 30px;
+}
+.big-form h1 {
+    margin-bottom: 2rem;
+}
+
 nav.navbar .navbar-brand img {
     height: 30px;
     width: auto;

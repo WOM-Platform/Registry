@@ -6,20 +6,20 @@ namespace WomPlatform.Web.Api.ViewComponents {
 
     public class NavBarLogin : ViewComponent {
 
-        private LoginViewModel GetLoggedInUser() {
+        private LoginStatusViewModel GetLoggedInUser() {
             if(HttpContext.User == null) {
-                return new LoginViewModel {
+                return new LoginStatusViewModel {
                     IsLoggedIn = false
                 };
             }
 
             if(!HttpContext.User.Identity.IsAuthenticated) {
-                return new LoginViewModel {
+                return new LoginStatusViewModel {
                     IsLoggedIn = false
                 };
             }
 
-            return new LoginViewModel {
+            return new LoginStatusViewModel {
                 IsLoggedIn = true,
                 Username = HttpContext.User.Identity.Name
             };
