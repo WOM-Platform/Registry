@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +21,9 @@ namespace WomPlatform.Web.Api {
         }
 
         public IConfiguration Configuration { get; }
+
+        public const string UserLoginCookieScheme = "UserLoginCookieScheme";
+        public const string UserLoginPolicy = "UserLoginPolicy";
 
         public void ConfigureServices(IServiceCollection services) {
             services.AddRouting(options => {
@@ -47,11 +51,33 @@ namespace WomPlatform.Web.Api {
                 o.UseMySQL(connectionString);
             });
 
-            services.AddAuthentication(opt => {
-                opt.DefaultAuthenticateScheme = BasicAuthenticationSchemeOptions.DefaultScheme;
-                opt.DefaultChallengeScheme = BasicAuthenticationSchemeOptions.DefaultScheme;
-            }).AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.DefaultScheme, opt => {
-                // Noop
+            services.AddAuthentication()
+                .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.DefaultScheme, opt => {
+                    // Noop
+                })
+                .AddCookie(UserLoginCookieScheme, options => {
+                    options.LoginPath = "/user/login";
+                    options.LogoutPath = "/user/logout";
+                    options.ReturnUrlParameter = "return";
+                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+                    options.Cookie = new CookieBuilder {
+                        Domain = "wom.social",
+                        IsEssential = true,
+                        Name = "WOM Login",
+                        SecurePolicy = CookieSecurePolicy.Always,
+                        SameSite = SameSiteMode.None,
+                        HttpOnly = true
+                    };
+                })
+            ;
+            services.AddAuthorization(options => {
+                options.AddPolicy(
+                    UserLoginPolicy,
+                    new AuthorizationPolicyBuilder()
+                        .RequireAuthenticatedUser()
+                        .AddAuthenticationSchemes(UserLoginCookieScheme)
+                        .Build()
+                );
             });
 
             // Add services to dependency registry

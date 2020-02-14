@@ -1,0 +1,16 @@
+﻿@model LoginViewModel
+
+<ul class="navbar-nav">
+    @if (Model.IsLoggedIn) {
+    <li class="nav-item">
+        <a class="nav-link" href="#">User @Model.Username</a>
+    </li>
+    } else {
+    <li class="nav-item">
+        <a class="nav-link" href="@Url.Action(nameof(UserController.Login), "User")">Login</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="@Url.Action(nameof(UserController.Register), "User")">Register</a>
+    </li>
+    }
+</ul>
