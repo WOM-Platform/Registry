@@ -17,14 +17,18 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("payment/{otc}")]
-        public IActionResult ShowPaymentLandingPage(Guid otc) {
+        public IActionResult ShowPaymentLandingPage(
+            [FromRoute] Guid otc
+        ) {
             return View("Payment", new LandingPageViewModel {
                 Otc = otc
             });
         }
 
         [HttpGet("vouchers/{otc}")]
-        public IActionResult ShowGenerationLandingPage(Guid otc) {
+        public IActionResult ShowGenerationLandingPage(
+            [FromRoute] Guid otc
+        ) {
             return View("Generation", new LandingPageViewModel {
                 Otc = otc
             });

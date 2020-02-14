@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
-using System.Security.Principal;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -44,8 +41,6 @@ namespace WomPlatform.Web.Api {
                 return Task.FromResult(AuthenticateResult.Fail("Invalid username or password"));
             }
 
-            //var claim = new ClaimsPrincipal(new WomUserIdentity(userProfile));
-            //new ClaimsIdentity()
             var t = new AuthenticationTicket(new ClaimsPrincipal(new WomUserIdentity(userProfile)), BasicAuthenticationSchemeOptions.DefaultScheme);
             return Task.FromResult(AuthenticateResult.Success(t));
         }

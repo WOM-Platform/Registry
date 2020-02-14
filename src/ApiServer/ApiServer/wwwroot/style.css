@@ -1,17 +1,26 @@
 html b {
     font-weight: 600;
 }
-body {
+.main-container {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
 }
-body > section {
+.main-container > section {
     flex-grow: 1;
 }
 
 .centered {
     text-align: center;
+}
+
+.bg-subtle {
+    background-color: #e0e5ef;
+}
+
+nav.navbar .navbar-brand img {
+    height: 30px;
+    width: auto;
 }
 
 .language-switcher {
@@ -35,15 +44,11 @@ body > section {
     font-weight: 600;
 }
 
-p.lead {
-    font-size: 1.2em;
-}
-
 footer {
     padding-bottom: 2em;
     padding-top: 2em;
     margin-top: 1em;
-    background-color: hsla(222, 100%, 97%, 1);
+    background-color: #e0e5ef;
 }
 
 .badge {

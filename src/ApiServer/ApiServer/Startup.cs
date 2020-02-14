@@ -3,10 +3,12 @@ using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 
 namespace WomPlatform.Web.Api {
@@ -20,19 +22,14 @@ namespace WomPlatform.Web.Api {
         public IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services) {
-            services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+            services.AddRouting(options => {
+                options.ConstraintMap["slugify"] = typeof(SlugifyParameterTransformer);
+            });
+
+            services.AddControllersWithViews()
                 .AddMvcOptions(opts => {
                     opts.AllowEmptyInputInBodyModelBinding = true;
                     opts.InputFormatters.Add(new PermissiveInputFormatter());
-                })
-                .AddJsonOptions(opts => {
-                    opts.SerializerSettings.Culture = CultureInfo.InvariantCulture;
-                    opts.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
-                    opts.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
-                    opts.SerializerSettings.DateParseHandling = DateParseHandling.DateTime;
-                    opts.SerializerSettings.Formatting = Formatting.None;
-                    opts.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 });
 
             services.AddDbContext<DataContext>(o => {
@@ -64,15 +61,33 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<DatabaseOperator>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
+        private readonly string[] SupportedCultures = new string[] {
+            "en-US",
+            "it-IT"
+        };
+
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
             if (env.IsDevelopment()) {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseStaticFiles("/payment");
-            app.UseStaticFiles("/vouchers");
+            //app.UseStaticFiles("/payment");
+            //app.UseStaticFiles("/vouchers");
+            app.UseStaticFiles();
+
+            app.UseRequestLocalization(o => {
+                o.AddSupportedCultures(SupportedCultures);
+                o.AddSupportedUICultures(SupportedCultures);
+                o.DefaultRequestCulture = new RequestCulture(SupportedCultures[0]);
+            });
+
+            app.UseRouting();
+
             app.UseAuthentication();
-            app.UseMvc();
+
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
+            });
         }
     }
 }
