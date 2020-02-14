@@ -1,5 +1,7 @@
 using System;
 using System.Globalization;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -22,7 +24,7 @@ namespace WomPlatform.Web.Api {
 
         public IConfiguration Configuration { get; }
 
-        public const string UserLoginCookieScheme = "UserLoginCookieScheme";
+        //public const string UserLoginCookieScheme = "UserLoginCookieScheme";
         public const string UserLoginPolicy = "UserLoginPolicy";
 
         public void ConfigureServices(IServiceCollection services) {
@@ -51,17 +53,16 @@ namespace WomPlatform.Web.Api {
                 o.UseMySQL(connectionString);
             });
 
-            services.AddAuthentication()
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.DefaultScheme, opt => {
                     // Noop
                 })
-                .AddCookie(UserLoginCookieScheme, options => {
+                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => {
                     options.LoginPath = "/user/login";
                     options.LogoutPath = "/user/logout";
                     options.ReturnUrlParameter = "return";
                     options.ExpireTimeSpan = TimeSpan.FromDays(30);
                     options.Cookie = new CookieBuilder {
-                        Domain = "wom.social",
                         IsEssential = true,
                         Name = "WomLogin",
                         SecurePolicy = CookieSecurePolicy.Always,
@@ -75,7 +76,8 @@ namespace WomPlatform.Web.Api {
                     UserLoginPolicy,
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .AddAuthenticationSchemes(UserLoginCookieScheme)
+                        .RequireClaim(ClaimTypes.NameIdentifier)
+                        .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme)
                         .Build()
                 );
             });
@@ -109,6 +111,7 @@ namespace WomPlatform.Web.Api {
             app.UseRouting();
 
             app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllers();

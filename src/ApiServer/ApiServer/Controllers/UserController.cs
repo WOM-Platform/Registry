@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Web.Api.ViewModel;
@@ -61,13 +62,14 @@ namespace WomPlatform.Web.Api.Controllers {
 
             _logger.LogInformation("User {0} logged in", username);
 
-            // Login and there's that
             await HttpContext.SignInAsync(
-                Startup.UserLoginCookieScheme,
+                CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(
                     new ClaimsIdentity(new Claim[] {
-                        new Claim(ClaimTypes.NameIdentifier, username)
-                    }, Startup.UserLoginCookieScheme)
+                        new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
+                        new Claim(ClaimTypes.NameIdentifier, username),
+                        new Claim(ClaimTypes.GivenName, user.Name)
+                    }, CookieAuthenticationDefaults.AuthenticationScheme)
                 ),
                 new AuthenticationProperties {
                     AllowRefresh = true,
@@ -88,7 +90,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public async Task<IActionResult> Logout() {
-            await HttpContext.SignOutAsync(Startup.UserLoginCookieScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             return RedirectToAction(nameof(HomeController.Index), "Home");
         }

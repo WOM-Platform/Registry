@@ -1,10 +1,20 @@
 ﻿using System.Linq;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using WomPlatform.Web.Api.ViewModel;
 
 namespace WomPlatform.Web.Api.ViewComponents {
 
     public class NavBarLogin : ViewComponent {
+
+        private readonly ILogger<NavBarLogin> _logger;
+
+        public NavBarLogin(
+            ILogger<NavBarLogin> logger
+        ) {
+            _logger = logger;
+        }
 
         private LoginStatusViewModel GetLoggedInUser() {
             if(HttpContext.User == null) {
@@ -13,7 +23,9 @@ namespace WomPlatform.Web.Api.ViewComponents {
                 };
             }
 
-            if(!HttpContext.User.Identity.IsAuthenticated) {
+            var claimNameId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+            var claimName = HttpContext.User.FindFirst(ClaimTypes.Name);
+            if(claimNameId == null) {
                 return new LoginStatusViewModel {
                     IsLoggedIn = false
                 };
@@ -21,7 +33,8 @@ namespace WomPlatform.Web.Api.ViewComponents {
 
             return new LoginStatusViewModel {
                 IsLoggedIn = true,
-                Username = HttpContext.User.Identity.Name
+                UserIdentifier = claimNameId.Value,
+                FullName = claimName.Value
             };
         }
 

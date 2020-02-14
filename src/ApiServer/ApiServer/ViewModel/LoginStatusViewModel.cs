@@ -9,7 +9,9 @@ namespace WomPlatform.Web.Api.ViewModel {
 
         public bool IsLoggedIn { get; set; }
 
-        public string Username { get; set; }
+        public string UserIdentifier { get; set; }
+
+        public string FullName { get; set; }
 
     }
 
