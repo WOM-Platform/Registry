@@ -41,7 +41,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> PerformLogin(
+        public async Task<IActionResult> LoginPerform(
             [FromForm] string email,
             [FromForm] string password,
             [FromForm] string @return
@@ -61,6 +61,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 return RedirectToAction(nameof(Login), new {
                     @return
                 });
+            }
+
+            if(user.VerificationToken != null) {
+                _logger.LogInformation("User {0} logging in but not verified");
+                return RedirectToAction(nameof(UserController.WaitForVerification), "User");
             }
 
             _logger.LogInformation("User {0} logged in", email);
@@ -171,6 +176,11 @@ namespace WomPlatform.Web.Api.Controllers {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             return RedirectToAction(nameof(HomeController.Index), "Home");
+        }
+
+        [HttpGet("profile")]
+        public IActionResult Profile() {
+            return Content("Profile");
         }
 
     }

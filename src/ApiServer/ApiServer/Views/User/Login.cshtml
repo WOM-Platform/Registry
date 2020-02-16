@@ -8,7 +8,7 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6">
-            <form method="post" action="@Url.Action(nameof(UserController.PerformLogin), "User")" class="big-form">
+            <form method="post" action="@Url.Action(nameof(UserController.LoginPerform), "User")" class="big-form">
                 <h1>Login to the WOM&nbsp;Platform</h1>
 
                 @if(Model.PreviousLoginFailed) {

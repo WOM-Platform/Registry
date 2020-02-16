@@ -7,8 +7,8 @@
             <span class="fas"></span>&nbsp;@Model.FullName
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarUserDropdown">
-            <a class="dropdown-item" href="#"><span class="fas"></span>&nbsp;Dashboard</a>
-            <a class="dropdown-item" href="#"><span class="fas"></span>&nbsp;Profile</a>
+            <a class="dropdown-item" href="@Url.Action(nameof(DashboardController.Index), "Dashboard")"><span class="fas"></span>&nbsp;Dashboard</a>
+            <a class="dropdown-item" href="@Url.Action(nameof(UserController.Profile), "User")"><span class="fas"></span>&nbsp;Profile</a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="@Url.Action(nameof(UserController.Logout), "User")"><span class="fas"></span>&nbsp;Logout</a>
         </div>
