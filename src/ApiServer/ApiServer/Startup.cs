@@ -24,7 +24,6 @@ namespace WomPlatform.Web.Api {
 
         public IConfiguration Configuration { get; }
 
-        //public const string UserLoginCookieScheme = "UserLoginCookieScheme";
         public const string UserLoginPolicy = "UserLoginPolicy";
 
         public void ConfigureServices(IServiceCollection services) {
@@ -88,6 +87,7 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<CryptoProvider>();
             services.AddScoped<DatabaseOperator>();
             services.AddSingleton<MongoDatabase>();
+            services.AddMailComposer();
         }
 
         private readonly string[] SupportedCultures = new string[] {

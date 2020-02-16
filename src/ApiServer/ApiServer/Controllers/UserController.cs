@@ -17,13 +17,16 @@ namespace WomPlatform.Web.Api.Controllers {
     public class UserController : Controller {
 
         private readonly MongoDatabase _mongo;
+        private readonly MailComposer _composer;
         private readonly ILogger<UserController> _logger;
 
         public UserController(
             MongoDatabase mongo,
+            MailComposer composer,
             ILogger<UserController> logger
         ) {
             _mongo = mongo;
+            _composer = composer;
             _logger = logger;
         }
 
@@ -46,7 +49,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromForm] string password,
             [FromForm] string @return
         ) {
-            _logger.LogDebug("Login attempt by user {0}", email);
+            _logger.LogDebug("Login attempt by email {0}", email);
 
             var user = await _mongo.GetUserByEmail(email);
             if(user == null) {
@@ -135,6 +138,8 @@ namespace WomPlatform.Web.Api.Controllers {
                         docUser.Id
                     }
                 });
+
+                _composer.SendVerificationMail(docUser);
             }
             catch(Exception ex) {
                 _logger.LogError(ex, "Failed to register");
