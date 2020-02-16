@@ -25,15 +25,19 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public MerchantActivityType PrimaryActivityType { get; set; }
 
         [BsonElement("address")]
+        [BsonIgnoreIfNull]
         public string Address { get; set; }
 
         [BsonElement("zipCode")]
+        [BsonIgnoreIfNull]
         public string ZipCode { get; set; }
 
         [BsonElement("city")]
+        [BsonIgnoreIfNull]
         public string City { get; set; }
 
         [BsonElement("nation")]
+        [BsonIgnoreIfNull]
         public string Nation { get; set; }
 
         [BsonElement("description")]

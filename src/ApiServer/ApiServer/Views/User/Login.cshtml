@@ -29,7 +29,8 @@
                 <input type="hidden" name="return" value="@Model.ReturnUrl" />
 
                 <button type="submit" class="btn btn-primary">Login</button>
-                <button type="button" class="btn btn-link">Forgot password?</button>
+                <a class="btn btn-link" href="#">Forgot password?</a>
+                <a class="btn btn-link" href="@Url.Action(nameof(UserController.RegisterMerchant), "User")">Register</a>
             </form>
         </div>
     </div>

@@ -67,27 +67,12 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             if(user.VerificationToken != null) {
-                _logger.LogInformation("User {0} logging in but not verified");
+                _logger.LogInformation("User {0} logging in but not verified", user.Id);
                 return RedirectToAction(nameof(UserController.WaitForVerification), "User");
             }
 
-            _logger.LogInformation("User {0} logged in", email);
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(
-                    new ClaimsIdentity(new Claim[] {
-                        new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
-                        new Claim(ClaimTypes.NameIdentifier, user.Id),
-                        new Claim(ClaimTypes.GivenName, user.Name),
-                        new Claim(ClaimTypes.Email, user.Email)
-                    }, CookieAuthenticationDefaults.AuthenticationScheme)
-                ),
-                new AuthenticationProperties {
-                    AllowRefresh = true,
-                    IsPersistent = true
-                }
-            );
+            _logger.LogInformation("User {0} logged in", user.Id);
+            await InternalLogin(user);
 
             if(@return != null) {
                 return LocalRedirect(@return);
@@ -107,7 +92,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("register-merchant")]
-        public async Task<IActionResult> PerformRegisterMerchant(
+        public async Task<IActionResult> RegisterMerchantPerform(
             [FromForm] UserRegisterMerchantModel input
         ) {
             if(!ModelState.IsValid) {
@@ -170,10 +155,32 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
+            return View("Verification", new LoginVerificationViewModel {
+                UserId = userId,
+                Token = token
+            });
+        }
+
+        [HttpPost("verify/{userId}/{token}")]
+        public async Task<IActionResult> VerifyPerform(
+            [FromRoute] string userId,
+            [FromRoute] string token
+        ) {
+            var user = await _mongo.GetUserById(userId);
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(user.VerificationToken != token) {
+                return NotFound();
+            }
+
             user.VerificationToken = null;
             await _mongo.ReplaceUser(user);
 
-            return View("Verified");
+            await InternalLogin(user);
+
+            return RedirectToAction(nameof(DashboardController.Index), "Dashboard");
         }
 
         [HttpGet("logout")]
@@ -186,6 +193,24 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("profile")]
         public IActionResult Profile() {
             return Content("Profile");
+        }
+
+        private Task InternalLogin(User userProfile) {
+            return HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(
+                    new ClaimsIdentity(new Claim[] {
+                        new Claim(ClaimTypes.Name, $"{userProfile.Name} {userProfile.Surname}"),
+                        new Claim(ClaimTypes.NameIdentifier, userProfile.Id),
+                        new Claim(ClaimTypes.GivenName, userProfile.Name),
+                        new Claim(ClaimTypes.Email, userProfile.Email)
+                    }, CookieAuthenticationDefaults.AuthenticationScheme)
+                ),
+                new AuthenticationProperties {
+                    AllowRefresh = true,
+                    IsPersistent = true
+                }
+            );
         }
 
     }

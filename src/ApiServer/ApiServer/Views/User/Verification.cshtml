@@ -1,0 +1,23 @@
+﻿@using WomPlatform.Web.Api.ViewModel
+@model LoginVerificationViewModel
+@{
+    Layout = "Main";
+    ViewData["Title"] = "Verify e-mail";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <form method="post" action="@Url.Action(nameof(UserController.VerifyPerform), "User")" class="big-form">
+                <h1>Register to the WOM&nbsp;Platform</h1>
+
+                <input type="hidden" name="userId" value="@Model.UserId" />
+                <input type="hidden" name="token" value="@Model.Token" />
+
+                <p>Click on the button below in order to verify your e-mail address.</p>
+
+                <button type="submit" class="btn btn-primary">Verify and login</button>
+            </form>
+        </div>
+    </div>
+</div>
