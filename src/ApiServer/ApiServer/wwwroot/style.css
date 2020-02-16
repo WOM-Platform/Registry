@@ -34,6 +34,13 @@ html b {
     display: none;
 }
 
+.form-subgroup {
+    border: solid 2px #e0e5ef;
+    padding: 1em 1em 1.5em 1em;
+    margin: 2em 0 3em 0;
+    border-radius: 15px;
+}
+
 nav.navbar .navbar-brand img {
     height: 30px;
     width: auto;

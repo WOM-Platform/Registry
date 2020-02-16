@@ -14,17 +14,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
 
-        [BsonElement("username")]
-        public string Username { get; set; }
+        [BsonElement("email")]
+        public string Email { get; set; }
 
         [BsonElement("passwordHash")]
         public string PasswordHash { get; set; }
-
-        [BsonElement("emails")]
-        public string[] Emails { get; set; }
-
-        [BsonElement("fiscalCode")]
-        public string FiscalCode { get; set; }
 
         [BsonElement("name")]
         public string Name { get; set; }

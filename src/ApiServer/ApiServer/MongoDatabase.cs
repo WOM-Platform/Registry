@@ -56,8 +56,8 @@ namespace WomPlatform.Web.Api {
             return UserCollection.Find(filter).SingleOrDefaultAsync();
         }
 
-        public Task<User> GetUserByUsername(string username) {
-            var filter = Builders<User>.Filter.Eq(u => u.Username, username);
+        public Task<User> GetUserByEmail(string email) {
+            var filter = Builders<User>.Filter.Eq(u => u.Email, email);
             return UserCollection.Find(filter).SingleOrDefaultAsync();
         }
 
@@ -68,6 +68,16 @@ namespace WomPlatform.Web.Api {
         public Task ReplaceUser(User user) {
             var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
             return UserCollection.ReplaceOneAsync(filter, user);
+        }
+
+        private IMongoCollection<Merchant> MerchantCollection {
+            get {
+                return MainDatabase.GetCollection<Merchant>("Merchants");
+            }
+        }
+
+        public Task CreateMerchant(Merchant merchant) {
+            return MerchantCollection.InsertOneAsync(merchant);
         }
 
     }

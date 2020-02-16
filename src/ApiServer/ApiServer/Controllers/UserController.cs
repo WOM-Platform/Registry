@@ -13,7 +13,7 @@ using WomPlatform.Web.Api.ViewModel;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("user/[action]")]
+    [Route("user")]
     public class UserController : Controller {
 
         private readonly MongoDatabase _mongo;
@@ -30,7 +30,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [TempData]
         public bool PreviousLoginFailed { get; set; } = false;
 
-        [ActionName("login")]
+        [HttpGet("login")]
         public IActionResult Login(
             [FromQuery] string @return
         ) {
@@ -40,16 +40,15 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-        [HttpPost]
-        [ActionName("perform-login")]
+        [HttpPost("login")]
         public async Task<IActionResult> PerformLogin(
-            [FromForm] string username,
+            [FromForm] string email,
             [FromForm] string password,
             [FromForm] string @return
         ) {
-            _logger.LogDebug("Login attempt by user {0}", username);
+            _logger.LogDebug("Login attempt by user {0}", email);
 
-            var user = await _mongo.GetUserByUsername(username);
+            var user = await _mongo.GetUserByEmail(email);
             if(user == null) {
                 PreviousLoginFailed = true;
                 return RedirectToAction(nameof(Login), new {
@@ -64,15 +63,16 @@ namespace WomPlatform.Web.Api.Controllers {
                 });
             }
 
-            _logger.LogInformation("User {0} logged in", username);
+            _logger.LogInformation("User {0} logged in", email);
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(
                     new ClaimsIdentity(new Claim[] {
                         new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
-                        new Claim(ClaimTypes.NameIdentifier, username),
-                        new Claim(ClaimTypes.GivenName, user.Name)
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
+                        new Claim(ClaimTypes.GivenName, user.Name),
+                        new Claim(ClaimTypes.Email, user.Email)
                     }, CookieAuthenticationDefaults.AuthenticationScheme)
                 ),
                 new AuthenticationProperties {
@@ -89,55 +89,64 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        [HttpGet]
-        [ActionName("register")]
-        public IActionResult Register() {
+        [HttpGet("register-merchant")]
+        public IActionResult RegisterMerchant() {
             if(HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null) {
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
 
-            return View("Register");
+            return View("MerchantRegister");
         }
 
-        [HttpPost]
-        [ActionName("register")]
-        public async Task<IActionResult> PerformRegister(
-            [FromForm] UserRegisterModel user
+        [HttpPost("register-merchant")]
+        public async Task<IActionResult> PerformRegisterMerchant(
+            [FromForm] UserRegisterMerchantModel input
         ) {
             if(!ModelState.IsValid) {
-                return View("Register");
+                return View("MerchantRegister");
             }
 
             try {
-                await _mongo.CreateUser(new User {
-                    Username = user.Username,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.Password),
-                    Emails = new string[] {
-                    user.Email
-                },
-                    FiscalCode = user.FiscalCode,
-                    Name = user.Name,
-                    Surname = user.Surname,
+                var docUser = new User {
+                    Email = input.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
+                    Name = input.Name,
+                    Surname = input.Surname,
                     VerificationToken = new Random().GenerateReadableCode(8)
+                };
+                await _mongo.CreateUser(docUser);
+
+                await _mongo.CreateMerchant(new Merchant {
+                    Name = input.MerchantTitle,
+                    FiscalCode = input.MerchantFiscalCode,
+                    PrimaryActivityType = input.MerchantActivityType,
+                    Address = input.MerchantAddress,
+                    ZipCode = input.MerchantZipCode,
+                    City = input.MerchantCity,
+                    Nation = input.MerchantNation,
+                    Description = input.MerchantDescription,
+                    WebsiteUrl = input.MerchantWebsite,
+                    AdministratorUserIds = new string[] {
+                        docUser.Id
+                    }
                 });
             }
             catch(Exception ex) {
-                _logger.LogError(ex, "Failed to create user");
-                ModelState.AddModelError("Internal", "Failed to create user");
-                return View("Register");
+                _logger.LogError(ex, "Failed to register");
+                ModelState.AddModelError("Internal", "Failed to register, try again later");
+                return View("MerchantRegister");
             }
 
             return RedirectToAction(nameof(WaitForVerification));
         }
 
-        [HttpGet]
-        [ActionName("wait-for-verification")]
+        [HttpGet("verify")]
         public IActionResult WaitForVerification(
         ) {
             return View("Wait");
         }
 
-        [HttpGet("{userId}/{token}")]
+        [HttpGet("verify/{userId}/{token}")]
         public async Task<IActionResult> Verify(
             [FromRoute] string userId,
             [FromRoute] string token
@@ -157,8 +166,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return View("Verified");
         }
 
-        [HttpGet]
-        [ActionName("logout")]
+        [HttpGet("logout")]
         public async Task<IActionResult> Logout() {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
