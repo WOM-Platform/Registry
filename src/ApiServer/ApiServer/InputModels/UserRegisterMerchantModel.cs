@@ -59,6 +59,7 @@ namespace WomPlatform.Web.Api.InputModels {
 
         [Required]
         [Display(Name = "Description", Description = "Description of the company, social aim, and how WOMs would be monetized.")]
+        [StringLength(8000, MinimumLength = 200)]
         [DataType(DataType.MultilineText)]
         public string MerchantDescription { get; set; }
 
