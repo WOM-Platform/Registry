@@ -15,13 +15,8 @@
     </li>
     } else {
     <li class="nav-item">
-        <a class="nav-link" href="@Url.Action(nameof(UserController.Login), "User")">
-            <span class="fas"></span>&nbsp;Login
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="@Url.Action(nameof(UserController.Register), "User")">
-            <span class="fas"></span>&nbsp;Register
+        <a class="nav-link" href="@Url.Action(nameof(UserController.RegisterMerchant), "User")">
+            <span class="fas"></span>&nbsp;Access to Merchant Dashboard
         </a>
     </li>
     }
