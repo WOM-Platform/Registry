@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
@@ -190,9 +191,28 @@ namespace WomPlatform.Web.Api.Controllers {
             return RedirectToAction(nameof(HomeController.Index), "Home");
         }
 
+        [Authorize(Startup.UserLoginPolicy)]
         [HttpGet("profile")]
-        public IActionResult Profile() {
-            return Content("Profile");
+        public async Task<IActionResult> Profile() {
+            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _mongo.GetUserById(userId);
+
+            return View("Profile", new UserProfileModel {
+                Email = user.Email,
+                Name = user.Name,
+                Surname = user.Surname
+            });
+        }
+
+        [Authorize(Startup.UserLoginPolicy)]
+        [HttpPost("profile")]
+        public async Task<IActionResult> UpdateProfile(
+            [FromForm] UserProfileModel user
+        ) {
+            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _mongo.UpdateUser(userId, name: user.Name, surname: user.Surname);
+
+            return RedirectToAction(nameof(Profile));
         }
 
         private Task InternalLogin(User userProfile) {

@@ -70,6 +70,21 @@ namespace WomPlatform.Web.Api {
             return UserCollection.ReplaceOneAsync(filter, user);
         }
 
+        public Task UpdateUser(string userId,
+            string name = null,
+            string surname = null,
+            string email = null
+        ) {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+
+            var chain = Builders<User>.Update.Chain();
+            if(name != null) chain.Set(u => u.Name, name);
+            if(surname != null) chain.Set(u => u.Surname, surname);
+            if(email != null) chain.Set(u => u.Email, email);
+
+            return UserCollection.UpdateOneAsync(filter, chain.End());
+        }
+
         private IMongoCollection<Merchant> MerchantCollection {
             get {
                 return MainDatabase.GetCollection<Merchant>("Merchants");
