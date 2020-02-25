@@ -57,8 +57,8 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        public IActionResult List(string format = "hierarchical") {
-            var aims = Database.GetAimHierarchy();
+        public async Task<IActionResult> List(string format = "hierarchical") {
+            var aims = await Database.GetAimHierarchy();
 
             var obj = format.Equals("flat", StringComparison.InvariantCultureIgnoreCase) ?
                 AimsToFlatList(aims) :

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -23,10 +21,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpGet("{*code}")]
         [ChangeLog("aim-list")]
-        public IActionResult Show(string code) {
+        public async Task<IActionResult> Show(string code) {
             var cleanCode = code.Replace("/", string.Empty);
 
-            var aim = Database.GetAimByCode(cleanCode);
+            var aim = await Database.GetAimByCode(cleanCode);
             if(aim == null) {
                 return NotFound();
             }

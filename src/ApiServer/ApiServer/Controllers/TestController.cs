@@ -31,7 +31,9 @@ namespace WomPlatform.Web.Api.Controllers {
         protected IWebHostEnvironment Hosting { get; }
 
         [HttpPost("create-vouchers/{count=10}")]
-        public ActionResult CreateVouchers([FromRoute]int count) {
+        public async Task<ActionResult> CreateVouchers(
+            [FromRoute] int count
+        ) {
             if(!Hosting.IsDevelopment()) {
                 return Unauthorized();
             }
@@ -42,7 +44,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Creating {0} test vouchers", count);
 
-            var testSource = Database.GetSourceById(1);
+            var testSource = await Database.GetSourceById(1);
             var aims = Database.GetFlatAims().ToList();
 
             Logger.LogTrace("Test source: {0}, aims: {1}", testSource.Name, string.Join(", ", from a in aims select a.Code));
@@ -60,7 +62,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 now = now.Subtract(TimeSpan.FromMinutes(5));
             }
 
-            (var result, var password) = Database.CreateVoucherGeneration(new VoucherCreatePayload.Content {
+            (var result, var password) = await Database.CreateVoucherGeneration(new VoucherCreatePayload.Content {
                 SourceId = testSource.Id.ToId(),
                 Nonce = Guid.NewGuid().ToString("N"),
                 Vouchers = voucherInfos.ToArray()
@@ -79,7 +81,11 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("create-payment")]
-        public ActionResult CreatePayment(string ackUrl, int amount = 10, [FromBody] SimpleFilter filter = null) {
+        public ActionResult CreatePayment(
+            string ackUrl,
+            int amount = 10,
+            [FromBody] SimpleFilter filter = null
+        ) {
             if (!Hosting.IsDevelopment()) {
                 return Unauthorized();
             }

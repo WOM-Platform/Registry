@@ -26,12 +26,14 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST api/v1/voucher/create
         [HttpPost("create")]
-        public ActionResult Create([FromBody]VoucherCreatePayload payload) {
+        public async Task<ActionResult> Create(
+            [FromBody] VoucherCreatePayload payload
+        ) {
             Logger.LogDebug(LoggingEvents.VoucherCreation, "Received voucher creation from Source ID {0} with nonce {1}",
                 payload.SourceId, payload.Nonce
             );
 
-            var source = Database.GetSourceById(payload.SourceId);
+            var source = await Database.GetSourceById(payload.SourceId.ToLong());
             if(source == null) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
                 return this.SourceNotFound();
@@ -58,7 +60,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password) = Database.CreateVoucherGeneration(payloadContent);
+                (var otc, var password) = await Database.CreateVoucherGeneration(payloadContent);
 
                 Logger.LogInformation(LoggingEvents.VoucherCreation, "Voucher generation successfully requested with code {0} for source {1}", otc, payload.SourceId);
 

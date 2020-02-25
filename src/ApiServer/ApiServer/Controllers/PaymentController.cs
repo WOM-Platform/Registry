@@ -23,7 +23,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST /api/v1/payment/register
         [HttpPost("register")]
-        public ActionResult Register([FromBody]PaymentRegisterPayload payload) {
+        public ActionResult Register(
+            [FromBody] PaymentRegisterPayload payload
+        ) {
             Logger.LogInformation(LoggingEvents.PaymentCreation, "Received payment creation request from POS ID {0} with nonce {1}",
                 payload.PosId, payload.Nonce
             );

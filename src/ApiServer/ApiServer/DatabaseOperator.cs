@@ -47,12 +47,12 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets a source by its primary ID or null if not found.
         /// </summary>
-        public Source GetSourceById(long sourceId) {
+        public Task<Source> GetSourceById(long sourceId) {
             return (from s in Data.Sources
                     where s.Id == sourceId
                     select s)
                     .Include(s => s.Contact)
-                    .SingleOrDefault();
+                    .SingleOrDefaultAsync();
         }
 
         /// <summary>
@@ -67,13 +67,13 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Get full aims hierarchy.
         /// </summary>
-        public IDictionary<char, IndexedNodeOf<char, Aim>> GetAimHierarchy() {
+        public async Task<IDictionary<char, IndexedNodeOf<char, Aim>>> GetAimHierarchy() {
 #pragma warning disable EF1000 // Possible SQL injection vulnerability
             var tableName = Data.Model.FindEntityType(typeof(Aim)).Relational().TableName;
             var sql = $"SELECT * From {tableName} ORDER BY CHAR_LENGTH(`{nameof(Aim.Code)}`) ASC, `{nameof(Aim.Order)}` ASC";
-            var flatAims = Data.Aims.FromSql(sql)
+            var flatAims = await Data.Aims.FromSql(sql)
                 .AsNoTracking()
-                .ToList();
+                .ToListAsync();
 #pragma warning restore EF1000 // Possible SQL injection vulnerability
 
             var aimTitles = Data.AimTitles.ToLookup(at => at.Code);
@@ -103,12 +103,12 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Gets an aim by its code (exact match).
         /// </summary>
-        public Aim GetAimByCode(string aimCode) {
+        public Task<Aim> GetAimByCode(string aimCode) {
             return (from a in Data.Aims
                     where a.Code == aimCode
                     select a)
                     .Include(nameof(Aim.Titles))
-                    .SingleOrDefault();
+                    .SingleOrDefaultAsync();
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Creates a new voucher generation instance.
         /// </summary>
-        public (Guid Otc, string Password) CreateVoucherGeneration(VoucherCreatePayload.Content creationParameters) {
+        public async Task<(Guid Otc, string Password)> CreateVoucherGeneration(VoucherCreatePayload.Content creationParameters) {
             // TODO: validate whether source is allowed to generate vouchers (check aims)
 
             var otc = Guid.NewGuid();
@@ -139,12 +139,12 @@ namespace WomPlatform.Web.Api {
                 Verified = false,
                 PerformedAt = null,
                 Void = false,
-                SourceId = creationParameters.SourceId,
+                SourceId = creationParameters.SourceId.ToLong(),
                 Nonce = creationParameters.Nonce.FromBase64(),
                 Password = password
             };
             Data.GenerationRequests.Add(genRequest);
-            Data.SaveChanges();
+            await Data.SaveChangesAsync();
 
             foreach (var voucher in creationParameters.Vouchers) {
                 for(int c = 0; c < voucher.Count; ++c) {
@@ -161,7 +161,7 @@ namespace WomPlatform.Web.Api {
                     Data.Vouchers.Add(v);
                 }
             }
-            Data.SaveChanges();
+            await Data.SaveChangesAsync();
 
             return (otc, password);
         }

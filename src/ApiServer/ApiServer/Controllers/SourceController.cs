@@ -19,8 +19,8 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("{sourceId}")]
-        public IActionResult Show(int sourceId) {
-            var s = Database.GetSourceById(sourceId);
+        public async Task<IActionResult> Show(int sourceId) {
+            var s = await Database.GetSourceById(sourceId);
             if(s == null) {
                 return NotFound();
             }
