@@ -43,9 +43,6 @@ namespace WomPlatform.Web.Api {
                     setup.SerializerSettings.DateParseHandling = cs.DateParseHandling;
                     setup.SerializerSettings.Formatting = cs.Formatting;
                     setup.SerializerSettings.NullValueHandling = cs.NullValueHandling;
-                    foreach(var c in cs.Converters) {
-                        setup.SerializerSettings.Converters.Add(c);
-                    }
                 });
 
             services.AddDbContext<DataContext>(o => {
