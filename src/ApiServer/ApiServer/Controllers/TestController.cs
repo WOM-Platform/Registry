@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using WomPlatform.Web.Api.DatabaseModels;
-using WomPlatform.Web.Api.Models;
+using WomPlatform.Connector;
+using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -20,13 +22,13 @@ namespace WomPlatform.Web.Api.Controllers {
             CryptoProvider crypto,
             KeyManager keyManager,
             DatabaseOperator database,
-            IHostingEnvironment hosting,
+            IWebHostEnvironment hosting,
             ILogger<TestController> logger
         ) : base(configuration, crypto, keyManager, database, logger) {
             Hosting = hosting;
         }
 
-        protected IHostingEnvironment Hosting { get; }
+        protected IWebHostEnvironment Hosting { get; }
 
         [HttpPost("create-vouchers/{count=10}")]
         public ActionResult CreateVouchers([FromRoute]int count) {
@@ -59,7 +61,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             (var result, var password) = Database.CreateVoucherGeneration(new VoucherCreatePayload.Content {
-                SourceId = testSource.Id,
+                SourceId = testSource.Id.ToId(),
                 Nonce = Guid.NewGuid().ToString("N"),
                 Vouchers = voucherInfos.ToArray()
             });
@@ -98,7 +100,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Nonce = Guid.NewGuid().ToString("N"),
                 SimpleFilter = filter,
                 PocketAckUrl = ackUrl,
-                PosId = testPos.Id
+                PosId = testPos.Id.ToId()
             });
 
             Logger.LogDebug("New payment request created with code {0}", otcPay);

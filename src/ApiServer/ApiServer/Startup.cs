@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -7,12 +6,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
+using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api {
 
@@ -35,6 +33,19 @@ namespace WomPlatform.Web.Api {
                 .AddMvcOptions(opts => {
                     opts.AllowEmptyInputInBodyModelBinding = true;
                     opts.InputFormatters.Add(new PermissiveInputFormatter());
+                })
+                .AddNewtonsoftJson(setup => {
+                    var cs = Client.JsonSettings;
+                    setup.SerializerSettings.ContractResolver = cs.ContractResolver;
+                    setup.SerializerSettings.Culture = cs.Culture;
+                    setup.SerializerSettings.DateFormatHandling = cs.DateFormatHandling;
+                    setup.SerializerSettings.DateTimeZoneHandling = cs.DateTimeZoneHandling;
+                    setup.SerializerSettings.DateParseHandling = cs.DateParseHandling;
+                    setup.SerializerSettings.Formatting = cs.Formatting;
+                    setup.SerializerSettings.NullValueHandling = cs.NullValueHandling;
+                    foreach(var c in cs.Converters) {
+                        setup.SerializerSettings.Converters.Add(c);
+                    }
                 });
 
             services.AddDbContext<DataContext>(o => {
@@ -84,7 +95,7 @@ namespace WomPlatform.Web.Api {
             // Add services to dependency registry
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
-            services.AddSingleton<CryptoProvider>();
+            services.AddTransient<CryptoProvider>();
             services.AddScoped<DatabaseOperator>();
             services.AddSingleton<MongoDatabase>();
             services.AddMailComposer();
@@ -117,5 +128,7 @@ namespace WomPlatform.Web.Api {
                 endpoints.MapControllers();
             });
         }
+
     }
+
 }

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Net.Http.Headers;
-using WomPlatform.Web.Api.DatabaseModels;
+using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 

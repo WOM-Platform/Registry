@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
-using WomPlatform.Web.Api.Models;
+using WomPlatform.Connector;
+using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -126,11 +127,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogInformation("Successfully redeemed vouchers by source {0}", source.Id);
 
                 var content = new VoucherRedeemResponse.Content {
-                    SourceId = source.Id,
+                    SourceId = source.Id.ToId(),
                     SourceName = source.Name,
                     Vouchers = (from v in vouchers
                                 select new VoucherRedeemResponse.VoucherInfo {
-                                    Id = v.Id,
+                                    Id = v.Id.ToId(),
                                     Secret = Convert.ToBase64String(v.Secret),
                                     Aim = v.AimCode,
                                     Latitude = v.Latitude,

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto;
+using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseModels;
-using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 

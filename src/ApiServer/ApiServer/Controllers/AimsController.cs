@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseModels;
 
 namespace WomPlatform.Web.Api.Controllers {

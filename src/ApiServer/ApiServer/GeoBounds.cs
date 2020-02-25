@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api {
 
@@ -33,7 +34,7 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Create a geo bounds instance from data model bounds.
         /// </summary>
-        public static GeoBounds ToGeo(this Models.Bounds modelBounds) => new GeoBounds {
+        public static GeoBounds ToGeo(this Bounds modelBounds) => new GeoBounds {
             LeftTop = modelBounds.LeftTop.ToCoords(),
             RightBottom = modelBounds.RightBottom.ToCoords()
         };
@@ -41,7 +42,7 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Check whether data model bounds contain a geographical point.
         /// </summary>
-        public static bool Contains(this Models.Bounds modelBounds, double latitude, double longitude) {
+        public static bool Contains(this Bounds modelBounds, double latitude, double longitude) {
             return modelBounds.ToGeo().Contains(new GeoCoords {
                 Latitude = latitude,
                 Longitude = longitude

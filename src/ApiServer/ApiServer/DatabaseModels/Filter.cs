@@ -1,4 +1,4 @@
-using System;
+using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.DatabaseModels {
 
@@ -10,7 +10,7 @@ namespace WomPlatform.Web.Api.DatabaseModels {
     /// </remarks>
     public class Filter {
 
-        public Models.SimpleFilter Simple { get; set; }
+        public SimpleFilter Simple { get; set; }
 
         // TODO: add complex filter models
 

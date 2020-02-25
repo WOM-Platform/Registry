@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.DatabaseModels;
-using WomPlatform.Web.Api.Models;
 
 namespace WomPlatform.Web.Api {
 
@@ -240,7 +241,7 @@ namespace WomPlatform.Web.Api {
                 Verified = false,
                 Persistent = creationParameters.Persistent,
                 Void = false,
-                PosId = creationParameters.PosId,
+                PosId = creationParameters.PosId.ToLong(),
                 Nonce = creationParameters.Nonce.FromBase64(),
                 Password = password
             };
@@ -330,19 +331,19 @@ namespace WomPlatform.Web.Api {
             }
 
             // Fetch non-spent vouchers from DB
-            var voucherIds = request.Vouchers.Select(v => v.Id).ToArray();
+            var voucherIds = request.Vouchers.Select(v => v.Id.ToLong()).ToArray();
             var voucherMap = (from v in Data.Vouchers
                               where voucherIds.Contains(v.Id)
                               where !v.Spent
                               select v).ToDictionary(v => v.Id);
 
             bool CheckVoucher(PaymentConfirmPayload.VoucherInfo vi) {
-                if (!voucherMap.ContainsKey(vi.Id)) {
+                if (!voucherMap.ContainsKey(vi.Id.ToLong())) {
                     // Voucher not found or already spent
                     Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} not found or already spent", vi.Id);
                     return false;
                 }
-                var voucher = voucherMap[vi.Id];
+                var voucher = voucherMap[vi.Id.ToLong()];
 
                 if(!vi.Secret.FromBase64().SequenceEqual(voucher.Secret)) {
                     // Secret does not match

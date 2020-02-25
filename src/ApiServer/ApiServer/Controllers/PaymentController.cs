@@ -2,9 +2,9 @@ using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
-using WomPlatform.Web.Api.Models;
+using WomPlatform.Connector;
+using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -28,7 +28,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.PosId, payload.Nonce
             );
 
-            var pos = Database.GetPosById(payload.PosId);
+            var pos = Database.GetPosById(payload.PosId.ToLong());
             if (pos == null) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
                 return this.PosNotFound();
@@ -122,7 +122,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 var content = new PaymentInfoResponse.Content {
                     Amount = payment.Amount,
-                    PosId = payment.Pos.Id,
+                    PosId = payment.Pos.Id.ToId(),
                     PosName = payment.Pos.Name,
                     SimpleFilter = filter?.Simple,
                     Persistent = payment.Persistent
