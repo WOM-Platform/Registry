@@ -1,49 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Org.BouncyCastle.Crypto;
-using RestSharp;
+using WomPlatform.Connector;
+using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api;
-using WomPlatform.Web.Api.Models;
 
 namespace ApiTester {
 
     public class TestVoucherPayments {
 
-        protected RestClient Client {
-            get {
-                return new RestClient($"http://dev.wom.social/api/v1");
-            }
-        }
-
-        protected CryptoProvider Crypto { get; } = new CryptoProvider(new ConsoleLogger<CryptoProvider>());
-
-        protected Random Random { get; } = new Random();
-
-        protected RestRequest CreateJsonRequest(string urlPath, object jsonBody) {
-            var request = new RestRequest(urlPath, Method.POST) {
-                RequestFormat = DataFormat.Json
-            };
-            request.AddHeader("Accept", "application/json");
-            if (jsonBody != null) {
-                request.AddJsonBody(jsonBody);
-            }
-            return request;
-        }
-
-        protected T PerformRequest<T>(RestRequest request) {
-            var response = Client.Execute(request);
-            if (response.StatusCode != System.Net.HttpStatusCode.OK) {
-                throw new InvalidOperationException(string.Format("API status code {0}", response.StatusCode));
-            }
-
-            return JsonConvert.DeserializeObject<T>(response.Content);
-        }
-
         AsymmetricKeyParameter _keyPos, _keyInstrument1, _keyInstrument2, _keyRegistry;
         byte[] _keySession;
+
+        Client _womClient;
+
+        Random _rnd;
 
         [SetUp]
         public void Setup() {
@@ -52,13 +26,15 @@ namespace ApiTester {
             _keyInstrument2 = CryptoHelper.LoadKeyFromPem<AsymmetricCipherKeyPair>("source2.pem").Private;
             _keyRegistry = CryptoHelper.LoadKeyFromPem<AsymmetricCipherKeyPair>("registry.pem").Public;
 
-            var rnd = new Random();
+            _rnd = new Random();
             byte[] sessionKey = new byte[256 / 8];
-            rnd.NextBytes(sessionKey);
+            _rnd.NextBytes(sessionKey);
             _keySession = sessionKey;
+
+            _womClient = new Client("dev.wom.social", new ConsoleLoggerFactory(), _keyRegistry);
         }
 
-        private Guid CreateVouchers(int sourceId, AsymmetricKeyParameter sourceKey,
+        /*private Guid CreateVouchers(int sourceId, AsymmetricKeyParameter sourceKey,
             string password, VoucherCreatePayload.VoucherInfo[] vouchers,
             Guid? nonce = null) {
             if(!nonce.HasValue) {
@@ -87,9 +63,9 @@ namespace ApiTester {
             PerformRequest<VoucherCreateResponse>(request);
 
             return responseContent.Otc;
-        }
+        }*/
 
-        private VoucherRedeemResponse.Content RedeemVouchers(Guid otc, string password) {
+        /*private VoucherRedeemResponse.Content RedeemVouchers(Guid otc, string password) {
             var request = CreateJsonRequest("voucher/redeem", new VoucherRedeemPayload {
                 Payload = Crypto.Encrypt(new VoucherRedeemPayload.Content {
                     Otc = otc,
@@ -100,7 +76,7 @@ namespace ApiTester {
 
             var response = PerformRequest<VoucherRedeemResponse>(request);
             return Crypto.Decrypt<VoucherRedeemResponse.Content>(response.Payload, _keySession);
-        }
+        }*/
 
         private VoucherCreatePayload.VoucherInfo[] CreateRandomVoucherRequests(int count, string aimCode = null) {
             var now = DateTime.UtcNow;
@@ -108,8 +84,8 @@ namespace ApiTester {
             for (int i = 0; i < count; ++i) {
                 voucherInfos.Add(new VoucherCreatePayload.VoucherInfo {
                     Aim = aimCode ?? "X",
-                    Latitude = Random.NextBetween(5, 40),
-                    Longitude = Random.NextBetween(5, 50),
+                    Latitude = _rnd.NextBetween(5, 40),
+                    Longitude = _rnd.NextBetween(5, 50),
                     Timestamp = now
                 });
 
@@ -118,7 +94,7 @@ namespace ApiTester {
             return voucherInfos.ToArray();
         }
 
-        private Guid CreatePayment(string password, int amount, string pocketAckUrl, SimpleFilter filter = null, bool persistent = false) {
+        /*private Guid CreatePayment(string password, int amount, string pocketAckUrl, SimpleFilter filter = null, bool persistent = false) {
             var nonce = Guid.NewGuid().ToString("N");
             var request = CreateJsonRequest("payment/register", new PaymentRegisterPayload {
                 PosId = 1,
@@ -147,9 +123,9 @@ namespace ApiTester {
             PerformRequest<VoucherCreateResponse>(request);
 
             return responseContent.Otc;
-        }
+        }*/
 
-        private PaymentConfirmResponse.Content ProcessPayment(Guid otc, string password, params PaymentConfirmPayload.VoucherInfo[] vouchers) {
+        /*private PaymentConfirmResponse.Content ProcessPayment(Guid otc, string password, params PaymentConfirmPayload.VoucherInfo[] vouchers) {
             var request = CreateJsonRequest("payment/confirm", new PaymentConfirmPayload {
                 Payload = Crypto.Encrypt(new PaymentConfirmPayload.Content {
                     Otc = otc,
@@ -161,9 +137,9 @@ namespace ApiTester {
 
             var response = PerformRequest<PaymentConfirmResponse>(request);
             return Crypto.Decrypt<PaymentConfirmResponse.Content>(response.Payload, _keySession);
-        }
+        }*/
 
-        private PaymentInfoResponse.Content GetPaymentInfo(Guid otc, string password) {
+        /*private PaymentInfoResponse.Content GetPaymentInfo(Guid otc, string password) {
             var request = CreateJsonRequest("payment/info", new PaymentInfoPayload {
                 Payload = Crypto.Encrypt(new PaymentInfoPayload.Content {
                     Otc = otc,
@@ -174,112 +150,110 @@ namespace ApiTester {
 
             var response = PerformRequest<PaymentInfoResponse>(request);
             return Crypto.Decrypt<PaymentInfoResponse.Content>(response.Payload, _keySession);
-        }
+        }*/
 
         [Test]
-        public void CreateAndRedeemRandomVouchers() {
-            var voucherInfos = CreateRandomVoucherRequests(Random.Next(5) + 5);
-            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
-            var response = RedeemVouchers(otcGen, "1234");
+        public async Task CreateAndRedeemRandomVouchers() {
+            var instrument = _womClient.CreateInstrument(1, _keyInstrument1);
+            (var reqOtc, var reqPwd) = await instrument.RequestVouchers(CreateRandomVoucherRequests(10, "E"));
 
-            Assert.AreEqual(voucherInfos.Length, response.Vouchers.Length);
-            Console.WriteLine("Redeemed vouchers {0}", string.Join(", ", from v in response.Vouchers select v.Id));
+            var pocket = _womClient.CreatePocket();
+            await pocket.CollectVouchers(reqOtc, reqPwd);
 
-            Assert.AreEqual(1, response.SourceId);
-            Assert.AreEqual("Sample source 1", response.SourceName);
-
-            var zip = (from v in voucherInfos orderby v.Timestamp select v)
-                .Zip(from v in response.Vouchers orderby v.Timestamp select v, (a, b) => (a, b));
-            foreach((var a, var b) in zip) {
-                Assert.IsTrue(b.Aim.EndsWith(a.Aim));
-                Assert.AreEqual(a.Latitude, b.Latitude);
-                Assert.AreEqual(a.Longitude, b.Longitude);
-                Assert.AreEqual(a.Timestamp.ToSecondPrecision(), b.Timestamp);
+            Assert.AreEqual(10, pocket.VoucherCount);
+            foreach(var v in pocket.Vouchers) {
+                Assert.AreEqual("E", v.Aim);
             }
         }
 
         [Test]
-        public void CreateVouchersMultipleSources() {
-            var n = Guid.NewGuid();
-            var voucherInfos = CreateRandomVoucherRequests(Random.Next(5) + 5);
+        public async Task CreateVouchersMultipleSources() {
+            var voucherSpec = CreateRandomVoucherRequests(_rnd.Next(5) + 5);
 
-            var otcGen1 = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos, n);
-            Console.WriteLine("OTC: {0}", otcGen1);
+            var instr1 = _womClient.CreateInstrument(1, _keyInstrument1);
+            (var otc1, var pwd1) = await instr1.RequestVouchers(voucherSpec);
 
-            var otcGen2 = CreateVouchers(2, _keyInstrument2, "2345", voucherInfos, n);
-            Console.WriteLine("OTC: {0}", otcGen2);
+            var instr2 = _womClient.CreateInstrument(2, _keyInstrument2);
+            (var otc2, var pwd2) = await instr1.RequestVouchers(voucherSpec);
 
-            Assert.AreNotEqual(otcGen1, otcGen2);
+            Assert.AreNotEqual(otc1, otc2);
         }
 
         [Test]
-        public void CreateAndRedeemMultipleVouchers() {
+        public async Task CreateAndRedeemMultipleVouchers() {
+            var now = DateTime.UtcNow;
+
             var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
                 new VoucherCreatePayload.VoucherInfo {
                     Aim = "I",
                     Latitude = 12.34,
                     Longitude = 23.45,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = now
                 },
                 new VoucherCreatePayload.VoucherInfo {
                     Aim = "I",
                     Latitude = 23.45,
                     Longitude = 34.56,
-                    Timestamp = DateTime.UtcNow,
+                    Timestamp = now,
                     Count = 2
                 }
             };
-            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
-            var response = RedeemVouchers(otcGen, "1234");
 
-            Assert.AreEqual(3, response.Vouchers.Length);
-            Assert.AreEqual(1, response.SourceId);
-            Assert.AreEqual("Sample source 1", response.SourceName);
+            var instr = _womClient.CreateInstrument(2, _keyInstrument2);
+            (var otc, var pwd) = await instr.RequestVouchers(voucherInfos);
 
-            Assert.AreEqual(voucherInfos[0].Latitude, response.Vouchers[0].Latitude);
-            Assert.AreEqual(voucherInfos[0].Longitude, response.Vouchers[0].Longitude);
-            Assert.AreEqual(voucherInfos[1].Latitude, response.Vouchers[1].Latitude);
-            Assert.AreEqual(voucherInfos[1].Longitude, response.Vouchers[1].Longitude);
-            Assert.AreEqual(voucherInfos[1].Latitude, response.Vouchers[2].Latitude);
-            Assert.AreEqual(voucherInfos[1].Longitude, response.Vouchers[2].Longitude);
+            var pocket = _womClient.CreatePocket();
+            await pocket.CollectVouchers(otc, pwd);
+
+            Assert.AreEqual(3, pocket.VoucherCount);
+            foreach(var v in pocket.Vouchers) {
+                Assert.AreEqual("I", v.Aim);
+                Assert.AreEqual(now.ToSecondPrecision(), v.Timestamp.ToSecondPrecision());
+            }
+            
+
+            Assert.AreEqual(voucherInfos[0].Latitude, pocket.Vouchers[0].Latitude);
+            Assert.AreEqual(voucherInfos[0].Longitude, pocket.Vouchers[0].Longitude);
+            Assert.AreEqual(voucherInfos[1].Latitude, pocket.Vouchers[1].Latitude);
+            Assert.AreEqual(voucherInfos[1].Longitude, pocket.Vouchers[1].Longitude);
+            Assert.AreEqual(voucherInfos[1].Latitude, pocket.Vouchers[2].Latitude);
+            Assert.AreEqual(voucherInfos[1].Longitude, pocket.Vouchers[2].Longitude);
         }
 
         [Test]
-        public void CreateVouchersAndProcessSimplePayment() {
-            var voucherInfos = CreateRandomVoucherRequests(5);
-            var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
-            var response = RedeemVouchers(otcGen, "1234");
+        public async Task CreateVouchersAndProcessSimplePayment() {
+            var voucherInfos = CreateRandomVoucherRequests(5, "E");
 
-            Assert.AreEqual(5, response.Vouchers.Length);
-            Assert.AreEqual(1, response.SourceId);
+            var instr = _womClient.CreateInstrument(2, _keyInstrument2);
+            (var otcGen, var pwdGen) = await instr.RequestVouchers(voucherInfos, password: "987");
+            Assert.AreEqual("987", pwdGen);
+
+            var pocket = _womClient.CreatePocket();
+            await pocket.CollectVouchers(otcGen, pwdGen);
+            Assert.AreEqual(5, pocket.VoucherCount);
 
             var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
+            var pos = _womClient.CreatePos(1, _keyPos);
+            (var otcPay1, var pwdPay1) = await pos.RequestPayment(5, ackUrl);
 
-            var payOtc = CreatePayment("2345", 5, ackUrl);
+            // TODO: test get info on payment
 
-            var payInfo = GetPaymentInfo(payOtc, "2345");
-            Assert.AreEqual(5, payInfo.Amount);
-            Assert.AreEqual(1, payInfo.PosId);
-            Assert.AreEqual("Sample POS 1", payInfo.PosName);
-            Assert.IsNull(payInfo.SimpleFilter);
-            Assert.AreEqual(false, payInfo.Persistent);
+            var respUrl = await pocket.PayWithRandomVouchers(otcPay1, pwdPay1);
+            Assert.AreEqual(ackUrl, respUrl);
 
-            var paymentVouchers = (from v in response.Vouchers
-                                   select new PaymentConfirmPayload.VoucherInfo {
-                                       Id = v.Id,
-                                       Secret = v.Secret
-                                   }).ToArray();
+            // Try repeated payment
+            Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await pocket.PayWithRandomVouchers(otcPay1, pwdPay1);
+            });
 
-            var payResponse = ProcessPayment(payOtc, "2345", paymentVouchers);
-
-            Assert.AreEqual(ackUrl, payResponse.AckUrl);
-
-            Assert.Throws<InvalidOperationException>(() => {
-                ProcessPayment(payOtc, "2345", paymentVouchers);
+            // Try second payment without vouchers
+            (var otcPay2, var pwdPay2) = await pos.RequestPayment(5, ackUrl);
+            Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await pocket.PayWithRandomVouchers(otcPay2, pwdPay2);
             });
         }
 
-        [Test]
+        /*[Test]
         public void CreateVouchersAndProcessMultiplePayment() {
             var voucherInfos = CreateRandomVoucherRequests(2);
             var otcGen = CreateVouchers(1, _keyInstrument1, "1234", voucherInfos);
@@ -440,7 +414,7 @@ namespace ApiTester {
                     }
                 );
             });
-        }
+        }*/
 
     }
 

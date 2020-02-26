@@ -1,13 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
 
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\ApiServer\ApiServer\CryptoProvider.cs" Link="CryptoProvider.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\LoggingEvents.cs" Link="LoggingEvents.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\RandomExtensions.cs" Link="RandomExtensions.cs" />
     <Compile Include="..\..\ApiServer\ApiServer\StringExtensions.cs" Link="StringExtensions.cs" />
@@ -35,13 +34,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="nunit" Version="3.11.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.12.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.8.5" />
-    <PackageReference Include="RestSharp" Version="106.6.7" />
+    <PackageReference Include="nunit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.6" />
+    <PackageReference Include="RestSharp" Version="106.10.1" />
+    <PackageReference Include="WomPlatform.Connector" Version="2.0.2" />
   </ItemGroup>
 
 </Project>
