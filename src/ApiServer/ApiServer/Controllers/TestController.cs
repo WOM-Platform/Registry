@@ -81,7 +81,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("create-payment")]
-        public ActionResult CreatePayment(
+        public async Task<IActionResult> CreatePayment(
             string ackUrl,
             int amount = 10,
             [FromBody] SimpleFilter filter = null
@@ -101,7 +101,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var testPos = Database.GetPosById(1);
 
-            (var otcPay, var pin) = Database.CreatePaymentRequest(new PaymentRegisterPayload.Content {
+            (var otcPay, var pin) = await Database.CreatePaymentRequest(new PaymentRegisterPayload.Content {
                 Amount = amount,
                 Nonce = Guid.NewGuid().ToString("N"),
                 SimpleFilter = filter,

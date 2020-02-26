@@ -1,0 +1,21 @@
+﻿@{
+    Layout = "Demo";
+    ViewData["Title"] = "Pocket Demo";
+}
+
+    <div class="row">
+        <div class="twelve columns">
+            <h1>Demo Payment</h1>
+
+            <p>Lorem ipsum yadda yadda.</p>
+            <p>Lorem ipsum yadda yadda.</p>
+            <p>Lorem ipsum yadda yadda.</p>
+
+            <form method="post" action="@Url.Action(nameof(DemoController.RequestPayment), "Demo")">
+                <button type="submit" class="button button-primary">
+                    Proceed to payment
+                </button>
+            </form>
+
+        </div>
+    </div>

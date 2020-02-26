@@ -1,0 +1,26 @@
+﻿@model DemoLinkViewModel
+@{
+    Layout = "Demo";
+    ViewData["Title"] = "Pocket Demo";
+}
+
+    <div class="row">
+        <div class="twelve columns">
+            <h1>Demo Voucher Transfer</h1>
+
+            <p>
+                @Model.OtcUrl
+            </p>
+
+            <p>
+                @Model.Password
+            </p>
+
+            <p class="centered">
+                <a class="button button-primary" href="wom://transfer/@Model.Otc.ToString("N")" title="Redeem vouchers using WOM Pocket">
+                    Redeem Vouchers
+                </a>
+            </p>
+
+        </div>
+    </div>

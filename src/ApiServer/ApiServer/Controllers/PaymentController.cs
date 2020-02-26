@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -23,7 +24,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST /api/v1/payment/register
         [HttpPost("register")]
-        public ActionResult Register(
+        public async Task<IActionResult> Register(
             [FromBody] PaymentRegisterPayload payload
         ) {
             Logger.LogInformation(LoggingEvents.PaymentCreation, "Received payment creation request from POS ID {0} with nonce {1}",
@@ -56,7 +57,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password) = Database.CreatePaymentRequest(payloadContent);
+                (var otc, var password) = await Database.CreatePaymentRequest(payloadContent);
 
                 Logger.LogInformation(LoggingEvents.PaymentCreation, "Payment request successfully created with code {0} for POS {1}", otc, payload.PosId);
 
