@@ -356,6 +356,11 @@ namespace WomPlatform.Web.Api {
                     Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} does not match aim filter '{1}'", vi.Id, filter.Simple.Aim);
                     return false;
                 }
+                if(filter?.Simple == null && voucher.AimCode.StartsWith("0")) {
+                    // Voucher matches "demo aim" when without filter
+                    Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} matches 0 demo aim filter", vi.Id);
+                    return false;
+                }
 
                 if(filter?.Simple?.Bounds != null && !filter.Simple.Bounds.Contains(voucher.Latitude, voucher.Longitude)) {
                     // Voucher not contained in geographical bounds

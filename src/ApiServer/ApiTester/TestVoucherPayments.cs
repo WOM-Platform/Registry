@@ -253,6 +253,32 @@ namespace ApiTester {
             });
         }
 
+        [Test]
+        public async Task CreateAndUseDemoVouchers() {
+            var voucherInfos = CreateRandomVoucherRequests(5, "0");
+
+            var instr = _womClient.CreateInstrument(1, _keyInstrument1);
+            (var otcGen, var pwdGen) = await instr.RequestVouchers(voucherInfos);
+
+            var pocket = _womClient.CreatePocket();
+            await pocket.CollectVouchers(otcGen, pwdGen);
+            Assert.AreEqual(5, pocket.VoucherCount);
+
+            var pos = _womClient.CreatePos(1, _keyPos);
+
+            (var otcFail, var pwdFail) = await pos.RequestPayment(3, "http://example.org");
+            Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await pocket.PayWithRandomVouchers(otcFail, pwdFail);
+            });
+
+            (var otcDemo, var pwdDemo) = await pos.RequestPayment(3, "http://example.org", filter: new SimpleFilter {
+                Aim = "0"
+            });
+            var respUrl = await pocket.PayWithRandomVouchers(otcDemo, pwdDemo);
+            Assert.AreEqual(respUrl, "http://example.org");
+            Assert.AreEqual(2, pocket.VoucherCount);
+        }
+
         /*[Test]
         public void CreateVouchersAndProcessMultiplePayment() {
             var voucherInfos = CreateRandomVoucherRequests(2);

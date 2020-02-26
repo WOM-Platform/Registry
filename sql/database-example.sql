@@ -54,6 +54,10 @@ INSERT INTO `Wom`.`Aims` (`Code`, `Order`) VALUES ('R', 10);
 INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('R', 'en', 'Human rights');
 INSERT INTO `Wom`.`AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('R', 'it', 'Diritti umani');
 
+INSERT INTO `Aims` (`Code`, `IconFile`, `Order`) VALUES ('0', NULL, '99999'); 
+INSERT INTO `AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('0', 'en', 'Demo'); 
+INSERT INTO `AimTitles` (`Code`, `LanguageCode`, `Title`) VALUES ('0', 'it', 'Demo'); 
+
 INSERT INTO `Wom`.`Sources` (`Name`, `PublicKey`, `PrivateKey`, `CreationDate`, `URL`, `ContactID`) VALUES ('Sample source 1', '-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA3ofbz4kneWa3Fv1PaYzu
 acxNKC+Fokz9eHNMi6O5GK9GepY5O5aS++fhFGJ15HpwHHFv7hipSKFocTJ7+Fob
