@@ -108,6 +108,16 @@ namespace WomPlatform.Web.Api {
                 app.UseDeveloperExceptionPage();
             }
 
+            // Fix incoming base path for hosting behind proxy
+            string basePath = Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH");
+            if(!string.IsNullOrWhiteSpace(basePath)) {
+                app.UsePathBase(new PathString(basePath));
+                app.Use(async (context, next) => {
+                    context.Request.PathBase = basePath;
+                    await next.Invoke();
+                });
+            }
+
             app.UseStaticFiles();
 
             app.UseRequestLocalization(o => {
