@@ -66,13 +66,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 SourceId = testSource.Id.ToId(),
                 Nonce = Guid.NewGuid().ToString("N"),
                 Vouchers = voucherInfos.ToArray()
-            });
+            }, isPreVerified: true);
 
             Logger.LogDebug("New voucher generation request created with code {0}", result);
-
-            Database.VerifyGenerationRequest(result);
-
-            Logger.LogDebug("Voucher generation request verified");
 
             return Ok(new {
                 OtcGen = UrlGenerator.GenerateRedeemUrl(result),
@@ -107,13 +103,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 SimpleFilter = filter,
                 PocketAckUrl = ackUrl,
                 PosId = testPos.Id.ToId()
-            });
+            }, isPreVerified: true);
 
             Logger.LogDebug("New payment request created with code {0}", otcPay);
-
-            Database.VerifyPaymentRequest(otcPay);
-
-            Logger.LogDebug("Payment request verified");
 
             return Ok(new {
                 OtcPay = UrlGenerator.GeneratePaymentUrl(otcPay),
