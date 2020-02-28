@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.ViewModel;
@@ -120,7 +121,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Nation = input.MerchantNation,
                     Description = input.MerchantDescription,
                     WebsiteUrl = input.MerchantWebsite,
-                    AdministratorUserIds = new string[] {
+                    AdministratorUserIds = new ObjectId[] {
                         docUser.Id
                     }
                 });
@@ -147,7 +148,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] string userId,
             [FromRoute] string token
         ) {
-            var user = await _mongo.GetUserById(userId);
+            var user = await _mongo.GetUserById(new ObjectId(userId));
             if(user == null) {
                 return NotFound();
             }
@@ -167,7 +168,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] string userId,
             [FromRoute] string token
         ) {
-            var user = await _mongo.GetUserById(userId);
+            var user = await _mongo.GetUserById(new ObjectId(userId));
             if(user == null) {
                 return NotFound();
             }
@@ -195,7 +196,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("profile")]
         public async Task<IActionResult> Profile() {
             var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _mongo.GetUserById(userId);
+            var user = await _mongo.GetUserById(new ObjectId(userId));
 
             return View("Profile", new UserProfileModel {
                 Email = user.Email,
@@ -210,7 +211,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromForm] UserProfileModel user
         ) {
             var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _mongo.UpdateUser(userId, name: user.Name, surname: user.Surname);
+            await _mongo.UpdateUser(new ObjectId(userId), name: user.Name, surname: user.Surname);
 
             return RedirectToAction(nameof(Profile));
         }
@@ -221,7 +222,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 new ClaimsPrincipal(
                     new ClaimsIdentity(new Claim[] {
                         new Claim(ClaimTypes.Name, $"{userProfile.Name} {userProfile.Surname}"),
-                        new Claim(ClaimTypes.NameIdentifier, userProfile.Id),
+                        new Claim(ClaimTypes.NameIdentifier, userProfile.Id.ToString()),
                         new Claim(ClaimTypes.GivenName, userProfile.Name),
                         new Claim(ClaimTypes.Email, userProfile.Email)
                     }, CookieAuthenticationDefaults.AuthenticationScheme)

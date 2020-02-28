@@ -15,11 +15,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public AimsController(
             IConfiguration configuration,
+            MongoDatabase mongo,
             DatabaseOperator database,
             KeyManager keyManager,
             CryptoProvider crypto,
             ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, database, logger) {
+        : base(configuration, crypto, keyManager, mongo, database, logger) {
         }
 
         private object AimToNodeObject(IndexedNodeOf<char, Aim> aim) {

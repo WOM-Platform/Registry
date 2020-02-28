@@ -16,12 +16,14 @@ namespace WomPlatform.Web.Api.Controllers {
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
+            MongoDatabase mongo,
             DatabaseOperator database,
             ILogger<BaseRegistryController> logger
         ) {
             Configuration = configuration;
             Crypto = crypto;
             KeyManager = keyManager;
+            Mongo = mongo;
             Database = database;
             Logger = logger;
         }
@@ -31,6 +33,8 @@ namespace WomPlatform.Web.Api.Controllers {
         protected CryptoProvider Crypto { get; }
 
         protected KeyManager KeyManager { get; }
+
+        protected MongoDatabase Mongo { get; }
 
         protected DatabaseOperator Database { get; }
 

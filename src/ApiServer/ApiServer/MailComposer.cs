@@ -52,7 +52,7 @@ namespace WomPlatform.Web.Api {
             var sb = new StringBuilder();
             sb.AppendFormat("Welcome to the WOM Platform, {0}!\n\n", user.Name);
             sb.Append("Please verify your e-mail address by clicking on the following link:\n");
-            sb.Append(GetVerificatonLink(user.Id, user.VerificationToken));
+            sb.Append(GetVerificatonLink(user.Id.ToString(), user.VerificationToken));
             sb.Append("\n\n❤ The WOM Platform");
 
             SendMessage(user.Email,

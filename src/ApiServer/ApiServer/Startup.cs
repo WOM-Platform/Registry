@@ -22,6 +22,7 @@ namespace WomPlatform.Web.Api {
 
         public IConfiguration Configuration { get; }
 
+        public const string ApiLoginPolicy = "APILoginPolicy";
         public const string UserLoginPolicy = "UserLoginPolicy";
 
         public void ConfigureServices(IServiceCollection services) {
@@ -85,6 +86,13 @@ namespace WomPlatform.Web.Api {
                         .RequireAuthenticatedUser()
                         .RequireClaim(ClaimTypes.NameIdentifier)
                         .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme)
+                        .Build()
+                );
+                options.AddPolicy(
+                    ApiLoginPolicy,
+                    new AuthorizationPolicyBuilder()
+                        .RequireAuthenticatedUser()
+                        .AddAuthenticationSchemes(BasicAuthenticationSchemeOptions.DefaultScheme)
                         .Build()
                 );
             });

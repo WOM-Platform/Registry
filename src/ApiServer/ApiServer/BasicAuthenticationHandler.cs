@@ -13,17 +13,22 @@ namespace WomPlatform.Web.Api {
 
     public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticationSchemeOptions> {
 
-        protected DatabaseOperator Database { get; private set; }
+        private readonly MongoDatabase _mongo;
 
-        public BasicAuthenticationHandler(DatabaseOperator database, IOptionsMonitor<BasicAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
-            : base(options, logger, encoder, clock) {
-
-            Database = database;
+        public BasicAuthenticationHandler(
+            MongoDatabase mongo,
+            IOptionsMonitor<BasicAuthenticationSchemeOptions> options,
+            ILoggerFactory logger,
+            UrlEncoder encoder,
+            ISystemClock clock)
+            : base(options, logger, encoder, clock)
+        {
+            _mongo = mongo;
         }
 
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync() {
+        protected override async Task<AuthenticateResult> HandleAuthenticateAsync() {
             if(!Request.Headers.TryGetValue(HeaderNames.Authorization, out var authorizationHeader)) {
-                return Task.FromResult(AuthenticateResult.Fail("Authorization header not set or not readable"));
+                return AuthenticateResult.Fail("Authorization header not set or not readable");
             }
 
             Logger.LogDebug("Authorization header: {0}", authorizationHeader);
@@ -31,18 +36,27 @@ namespace WomPlatform.Web.Api {
             var authContent = Convert.FromBase64String(authorizationHeader[0].Substring(6));
             var authFields = System.Text.Encoding.ASCII.GetString(authContent).Split(':', StringSplitOptions.None);
             if(authFields.Length != 2) {
-                return Task.FromResult(AuthenticateResult.Fail("Authorization header invalid"));
+                return AuthenticateResult.Fail("Authorization header invalid");
             }
 
-            var username = authFields[0];
+            var email = authFields[0];
             var password = authFields[1];
-            var userProfile = Database.GetUserByLogin(username, password);
+
+            var userProfile = await _mongo.GetUserByEmail(email);
             if(userProfile == null) {
-                return Task.FromResult(AuthenticateResult.Fail("Invalid username or password"));
+                return AuthenticateResult.Fail("Invalid username or password");
+            }
+            if(!BCrypt.Net.BCrypt.Verify(password, userProfile.PasswordHash)) {
+                return AuthenticateResult.Fail("Invalid username or password");
             }
 
-            var t = new AuthenticationTicket(new ClaimsPrincipal(new WomUserIdentity(userProfile)), BasicAuthenticationSchemeOptions.DefaultScheme);
-            return Task.FromResult(AuthenticateResult.Success(t));
+            var identity = new WomUserIdentity(userProfile);
+
+            var ticket = new AuthenticationTicket(
+                new ClaimsPrincipal(identity),
+                BasicAuthenticationSchemeOptions.DefaultScheme
+            );
+            return AuthenticateResult.Success(ticket);
         }
 
         protected override Task HandleChallengeAsync(AuthenticationProperties properties) {

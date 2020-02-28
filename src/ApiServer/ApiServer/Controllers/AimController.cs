@@ -12,11 +12,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public AimController(
             IConfiguration configuration,
+            MongoDatabase mongo,
             DatabaseOperator database,
             KeyManager keyManager,
             CryptoProvider crypto,
             ILogger<AimController> logger)
-        : base(configuration, crypto, keyManager, database, logger) {
+        : base(configuration, crypto, keyManager, mongo, database, logger) {
         }
 
         [HttpGet("{*code}")]

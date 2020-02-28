@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
@@ -51,7 +52,7 @@ namespace WomPlatform.Web.Api {
             }
         }
 
-        public Task<User> GetUserById(string id) {
+        public Task<User> GetUserById(ObjectId id) {
             var filter = Builders<User>.Filter.Eq(u => u.Id, id);
             return UserCollection.Find(filter).SingleOrDefaultAsync();
         }
@@ -70,7 +71,7 @@ namespace WomPlatform.Web.Api {
             return UserCollection.ReplaceOneAsync(filter, user);
         }
 
-        public Task UpdateUser(string userId,
+        public Task UpdateUser(ObjectId userId,
             string name = null,
             string surname = null,
             string email = null
@@ -93,6 +94,29 @@ namespace WomPlatform.Web.Api {
 
         public Task CreateMerchant(Merchant merchant) {
             return MerchantCollection.InsertOneAsync(merchant);
+        }
+
+        private IMongoCollection<Pos> PosCollection {
+            get {
+                return MainDatabase.GetCollection<Pos>("Pos");
+            }
+        }
+
+        public Task<Pos> GetPosById(ObjectId id) {
+            var filter = Builders<Pos>.Filter.Eq(u => u.Id, id);
+            return PosCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public async Task<IList<Pos>> GetPosByUser(ObjectId userId) {
+            _logger.LogTrace("Seeking POS for user {0}", userId);
+            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorUserIds, userId);
+            var merchants = await MerchantCollection.Find(merchFilter)
+                .ToListAsync();
+            var merchantIds = from m in merchants select m.Id;
+            _logger.LogTrace("Got {0} merchant IDs: {1}", merchants.Count, string.Join(", ", merchantIds));
+
+            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, merchantIds);
+            return await PosCollection.Find(posFilter).ToListAsync();
         }
 
     }

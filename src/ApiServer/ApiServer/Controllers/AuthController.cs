@@ -1,27 +1,28 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
-using WomPlatform.Web.Api.DatabaseModels;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("api/v1/auth")]
-    [XForwardedProto("https")]
     public class AuthController : BaseRegistryController {
 
         public AuthController(
             IConfiguration configuration,
+            MongoDatabase mongo,
             DatabaseOperator database,
             KeyManager keyManager,
             CryptoProvider crypto,
             ILogger<AuthController> logger)
-        : base(configuration, crypto, keyManager, database, logger) {
+        : base(configuration, crypto, keyManager, mongo, database, logger) {
         }
 
-        private User GetUserProfile() {
+        private User GetApiLoginUser() {
             if(User == null)
                 return null;
             if(!(User.Identity is WomUserIdentity))
@@ -30,13 +31,14 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         // GET api/v1/auth/sources
-        [HttpGet("sources")]
+        /*[HttpGet("sources")]
         [Produces("application/json")]
-        [Authorize]
+        [Authorize(Startup.ApiLoginPolicy)]
+        [XForwardedProto("https")]
         public ActionResult Sources() {
             Logger.LogDebug("Retrieving user sources");
 
-            var user = GetUserProfile();
+            var user = GetApiLoginUser();
             if(user == null) {
                 return Forbid();
             }
@@ -50,28 +52,32 @@ namespace WomPlatform.Web.Api.Controllers {
                               s.PrivateKey
                           }
             });
-        }
+        }*/
 
         // GET api/v1/auth/pos
         [HttpGet("pos")]
         [Produces("application/json")]
-        [Authorize]
-        public ActionResult Pos() {
+        [Authorize(Startup.ApiLoginPolicy)]
+        [XForwardedProto("https")]
+        public async Task<IActionResult> Pos() {
             Logger.LogDebug("Retrieving user POS");
 
-            var user = GetUserProfile();
+            var user = GetApiLoginUser();
             if(user == null) {
                 return Forbid();
             }
 
+            var pos = await Mongo.GetPosByUser(user.Id);
+            Logger.LogInformation("User {0} has {1} POS entries", user.Id, pos.Count);
+
             return Ok(new {
-                POS = from s in Database.GetPosByUser(user)
-                          select new {
-                              s.Id,
-                              s.Name,
-                              s.Url,
-                              s.PrivateKey
-                          }
+                POS = from p in pos
+                      select new {
+                          id = p.Id,
+                          name = p.Name,
+                          url = p.Url,
+                          privateKey = p.PrivateKey
+                      }
             });
         }
 

@@ -141,3 +141,17 @@ XxHJ7lCy4BXDcqUPB2FyMXPkXfpC996Odbg7vsUS5AzlBNhhC9OxnZEHqljlWXuF
 gowmdqQAqyoOFjSmYD8DGrjBGPOu4fdcW2IvsY+OpMOgHhgwjX1mTMSm9dl6
 -----END RSA PRIVATE KEY-----
 ', 'https://wom.social');
+
+/* Remove POS reference */
+ALTER TABLE Wom.PaymentRequests DROP FOREIGN KEY fk_PaymentRequest_POS;
+ALTER TABLE `PaymentRequests` ADD `NewPosId` VARCHAR(24) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL AFTER `POSID`; 
+UPDATE PaymentRequests SET NewPosId = '' + POSID;
+
+ALTER TABLE `PaymentRequests` DROP INDEX `POSID_idx`;
+ALTER TABLE `PaymentRequests` DROP INDEX `Nonce_idx`;
+ALTER TABLE `PaymentRequests` DROP `POSID`;
+ALTER TABLE `PaymentRequests` CHANGE `NewPosId` `PosId` VARCHAR(24) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL;
+ALTER TABLE `Wom`.`PaymentRequests`
+    ADD UNIQUE `Nonce_idx` (`PosId`, `Nonce`)
+      ADD KEY `POSID_idx` (`PosId`)
+;

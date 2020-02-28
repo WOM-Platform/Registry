@@ -10,9 +10,8 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
     public class Merchant {
 
-        [BsonId(IdGenerator = typeof(StringObjectIdGenerator))]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        [BsonId(IdGenerator = typeof(ObjectIdGenerator))]
+        public ObjectId Id { get; set; }
 
         [BsonElement("name")]
         public string Name { get; set; }
@@ -46,13 +45,8 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("website")]
         public string WebsiteUrl { get; set; }
 
-        [BsonElement("isApproved")]
-        [BsonDefaultValue(false)]
-        [BsonIgnoreIfDefault]
-        public bool Approved { get; set; } = false;
-
         [BsonElement("adminUserIds")]
-        public string[] AdministratorUserIds { get; set; }
+        public ObjectId[] AdministratorUserIds { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }

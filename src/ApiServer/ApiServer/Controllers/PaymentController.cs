@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using Org.BouncyCastle.Crypto;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
@@ -15,11 +16,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public PaymentController(
             IConfiguration configuration,
+            MongoDatabase mongo,
             DatabaseOperator database,
             KeyManager keyManager,
             CryptoProvider crypto,
             ILogger<PaymentController> logger)
-        : base(configuration, crypto, keyManager, database, logger) {
+        : base(configuration, crypto, keyManager, mongo, database, logger) {
         }
 
         // POST /api/v1/payment/register
@@ -31,7 +33,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.PosId, payload.Nonce
             );
 
-            var pos = Database.GetPosById(payload.PosId.ToLong());
+            var pos = await Mongo.GetPosById(new ObjectId(payload.PosId));
             if (pos == null) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
                 return this.PosNotFound();
@@ -104,7 +106,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST /api/v1/payment/info
         [HttpPost("info")]
-        public ActionResult GetInformation([FromBody]PaymentInfoPayload payload) {
+        public async Task<ActionResult> GetInformation([FromBody]PaymentInfoPayload payload) {
             Logger.LogDebug("Received payment information request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentInfoPayload.Content>(payload.Payload, LoggingEvents.PaymentInformationAccess);
@@ -119,14 +121,16 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var payment, var filter) = Database.GetPaymentRequestInfo(payloadContent.Otc, payloadContent.Password);
+                (var payment, var filter) = await Database.GetPaymentRequestInfo(payloadContent.Otc, payloadContent.Password);
 
                 Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.OtcPay, payment.PosId, payment.Amount);
 
+                var pos = await Mongo.GetPosById(new ObjectId(payment.PosId));
+
                 var content = new PaymentInfoResponse.Content {
                     Amount = payment.Amount,
-                    PosId = payment.Pos.Id.ToId(),
-                    PosName = payment.Pos.Name,
+                    PosId = payment.PosId,
+                    PosName = pos?.Name ?? "Unknown POS",
                     SimpleFilter = filter?.Simple,
                     Persistent = payment.Persistent
                 };
@@ -151,7 +155,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST /api/v1/payment/confirm
         [HttpPost("confirm")]
-        public ActionResult Confirm([FromBody]PaymentConfirmPayload payload) {
+        public async Task<ActionResult> Confirm([FromBody]PaymentConfirmPayload payload) {
             Logger.LogDebug("Received payment confirmation request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentConfirmPayload.Content>(payload.Payload, LoggingEvents.PaymentProcessing);
@@ -166,7 +170,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var payment = Database.ProcessPayment(payloadContent);
+                var payment = await Database.ProcessPayment(payloadContent);
 
                 Logger.LogInformation("Successfully processed payment {0}", payment.OtcPay);
 

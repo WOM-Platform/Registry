@@ -16,11 +16,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public VoucherController(
             IConfiguration configuration,
+            MongoDatabase mongo,
             DatabaseOperator database,
             KeyManager keyManager,
             CryptoProvider crypto,
             ILogger<VoucherController> logger)
-        : base(configuration, crypto, keyManager, database, logger)
+        : base(configuration, crypto, keyManager, mongo, database, logger)
         {
         }
 

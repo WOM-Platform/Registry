@@ -247,7 +247,7 @@ namespace WomPlatform.Web.Api {
                 Verified = isPreVerified,
                 Persistent = creationParameters.Persistent,
                 Void = false,
-                PosId = creationParameters.PosId.ToLong(),
+                PosId = creationParameters.PosId,
                 Nonce = creationParameters.Nonce.FromBase64(),
                 Password = password
             };
@@ -283,21 +283,20 @@ namespace WomPlatform.Web.Api {
             }
         }
 
-        public (PaymentRequest payment, Filter filter) GetPaymentRequestInfo(Guid otcPay, string password) {
-            var request = (from g in Data.PaymentRequests
-                           where g.OtcPay == otcPay
-                           select g)
-                           .Include(nameof(PaymentRequest.Pos))
-                           .SingleOrDefault();
+        public async Task<(PaymentRequest payment, Filter filter)> GetPaymentRequestInfo(Guid otcPay, string password) {
+            var request = await (from g in Data.PaymentRequests
+                                 where g.OtcPay == otcPay
+                                 select g)
+                                 .SingleOrDefaultAsync();
 
             if (request == null) {
                 throw new ArgumentException("OTC code not valid");
             }
 
-            var confirmationCount = (from c in Data.PaymentConfirmations
-                                     where c.PaymentRequestId == request.Id
-                                     select c)
-                                     .Count();
+            var confirmationCount = await (from c in Data.PaymentConfirmations
+                                           where c.PaymentRequestId == request.Id
+                                           select c)
+                                          .CountAsync();
 
             if (!request.Verified) {
                 throw new ArgumentException("OTC code not verified");
@@ -328,8 +327,8 @@ namespace WomPlatform.Web.Api {
             return (request, f);
         }
 
-        public PaymentRequest ProcessPayment(PaymentConfirmPayload.Content request) {
-            (var payment, var filter) = GetPaymentRequestInfo(request.Otc, request.Password);
+        public async Task<PaymentRequest> ProcessPayment(PaymentConfirmPayload.Content request) {
+            (var payment, var filter) = await GetPaymentRequestInfo(request.Otc, request.Password);
 
             if(request.Vouchers.Length != payment.Amount) {
                 Logger.LogInformation(LoggingEvents.DatabaseOperation, "{0} vouchers given instead of {1}", request.Vouchers.Length, payment.Amount);
@@ -396,7 +395,7 @@ namespace WomPlatform.Web.Api {
                 PaymentRequestId = payment.Id,
                 PerformedAt = DateTime.UtcNow
             });
-            Data.SaveChanges();
+            await Data.SaveChangesAsync();
 
             return payment;
         }

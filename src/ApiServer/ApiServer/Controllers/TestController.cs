@@ -21,10 +21,11 @@ namespace WomPlatform.Web.Api.Controllers {
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
+            MongoDatabase mongo,
             DatabaseOperator database,
             IWebHostEnvironment hosting,
             ILogger<TestController> logger
-        ) : base(configuration, crypto, keyManager, database, logger) {
+        ) : base(configuration, crypto, keyManager, mongo, database, logger) {
             Hosting = hosting;
         }
 

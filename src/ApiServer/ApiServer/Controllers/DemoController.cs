@@ -85,7 +85,7 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             var confSection = _configuration.GetSection("Demo");
             var amount = Convert.ToInt32(confSection["AmountOfVouchers"]);
-            var posId = Convert.ToInt32(confSection["PosId"]);
+            var posId = confSection["PosId"];
 
             string completionUrl = _linkGenerator.GetUriByAction(
                 nameof(DemoController.RequestPayment),
