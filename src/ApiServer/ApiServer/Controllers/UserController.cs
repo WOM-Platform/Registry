@@ -187,7 +187,10 @@ namespace WomPlatform.Web.Api.Controllers {
             user.VerificationToken = null;
             await _mongo.ReplaceUser(user);
 
-            await InternalLogin(user);
+            var activeMerchant = (await _mongo.GetMerchantsByUser(user.Id)).FirstOrDefault();
+            _logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
+
+            await InternalLogin(user, activeMerchant);
 
             return RedirectToAction(nameof(HomeController.Index), "Home");
         }
@@ -223,7 +226,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return RedirectToAction(nameof(Profile));
         }
 
-        private Task InternalLogin(User userProfile, Merchant activeMerchant = null) {
+        private Task InternalLogin(User userProfile, Merchant activeMerchant) {
             var claims = new List<Claim> {
                 new Claim(ClaimTypes.Name, $"{userProfile.Name} {userProfile.Surname}"),
                 new Claim(ClaimTypes.NameIdentifier, userProfile.Id.ToString()),
