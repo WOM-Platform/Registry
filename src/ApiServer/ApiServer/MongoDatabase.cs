@@ -96,6 +96,16 @@ namespace WomPlatform.Web.Api {
             return MerchantCollection.InsertOneAsync(merchant);
         }
 
+        public Task<Merchant> GetMerchantById(ObjectId id) {
+            var filter = Builders<Merchant>.Filter.Eq(m => m.Id, id);
+            return MerchantCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public Task<List<Merchant>> GetMerchantsByUser(ObjectId userId) {
+            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorUserIds, userId);
+            return MerchantCollection.Find(merchFilter).ToListAsync();
+        }
+
         private IMongoCollection<Pos> PosCollection {
             get {
                 return MainDatabase.GetCollection<Pos>("Pos");
@@ -107,16 +117,17 @@ namespace WomPlatform.Web.Api {
             return PosCollection.Find(filter).SingleOrDefaultAsync();
         }
 
-        public async Task<IList<Pos>> GetPosByUser(ObjectId userId) {
-            _logger.LogTrace("Seeking POS for user {0}", userId);
-            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorUserIds, userId);
-            var merchants = await MerchantCollection.Find(merchFilter)
-                .ToListAsync();
-            var merchantIds = from m in merchants select m.Id;
-            _logger.LogTrace("Got {0} merchant IDs: {1}", merchants.Count, string.Join(", ", merchantIds));
+        public async Task<List<Pos>> GetPosByUser(ObjectId userId) {
+            var merchantIds = from m in await GetMerchantsByUser(userId)
+                              select m.Id;
 
             var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, merchantIds);
             return await PosCollection.Find(posFilter).ToListAsync();
+        }
+
+        public Task<List<Pos>> GetPosByMerchant(ObjectId merchantId) {
+            var posFilter = Builders<Pos>.Filter.Eq(p => p.MerchantId, merchantId);
+            return PosCollection.Find(posFilter).ToListAsync();
         }
 
     }

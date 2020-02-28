@@ -1,0 +1,42 @@
+﻿@model DashboardMerchantRegisterPosModel
+@{
+    Layout = "Main";
+    ViewData["Title"] = "Add new POS";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <form method="post" action="@Url.Action(nameof(DashboardMerchantController.AddNewPostPerform), "DashboardMerchant")" class="big-form">
+                <h1><span class="fas"></span>&nbsp;Register new POS</h1>
+
+                <p>
+                    This form allows you to register a new <b>POS</b> to your Merchant account. A POS is required to create payments and accepts WOMs.
+                </p>
+
+                @Html.ValidationSummary("Validation errors:", new { @class = "text-danger" })
+
+                <div class="form-group">
+                    <label asp-for="Name" class="control-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                    <p>This name will be shown to users when confirming a payment.</p>
+                </div>
+
+                <div class="form-group">
+                    
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Url" class="control-label"></label>
+                    <input asp-for="Url" class="form-control" />
+                    <span asp-validation-for="Url" class="text-danger"></span>
+                    <p>Optional. Will be shown to users when confirming a payment and should identify your points of service.</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Register POS</button>
+                <a class="btn btn-link" href="@Url.Action(nameof(DashboardMerchantController.Index), "DashboardMerchant")">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

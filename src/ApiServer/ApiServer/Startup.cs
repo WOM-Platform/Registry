@@ -85,6 +85,7 @@ namespace WomPlatform.Web.Api {
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
                         .RequireClaim(ClaimTypes.NameIdentifier)
+                        .RequireClaim(Startup.ActiveMerchantClaimType) // This fixes login to active merchants, will be removed later on
                         .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme)
                         .Build()
                 );

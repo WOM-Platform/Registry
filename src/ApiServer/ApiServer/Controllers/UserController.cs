@@ -74,7 +74,11 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             _logger.LogInformation("User {0} logged in", user.Id);
-            await InternalLogin(user);
+
+            var activeMerchant = (await _mongo.GetMerchantsByUser(user.Id)).FirstOrDefault();
+            _logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
+
+            await InternalLogin(user, activeMerchant);
 
             if(@return != null) {
                 return LocalRedirect(@return);
@@ -216,16 +220,21 @@ namespace WomPlatform.Web.Api.Controllers {
             return RedirectToAction(nameof(Profile));
         }
 
-        private Task InternalLogin(User userProfile) {
+        private Task InternalLogin(User userProfile, Merchant activeMerchant = null) {
+            var claims = new List<Claim> {
+                new Claim(ClaimTypes.Name, $"{userProfile.Name} {userProfile.Surname}"),
+                new Claim(ClaimTypes.NameIdentifier, userProfile.Id.ToString()),
+                new Claim(ClaimTypes.GivenName, userProfile.Name),
+                new Claim(ClaimTypes.Email, userProfile.Email)
+            };
+            if(activeMerchant != null) {
+                claims.Add(new Claim(Startup.ActiveMerchantClaimType, activeMerchant.Id.ToString()));
+            }
+
             return HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(
-                    new ClaimsIdentity(new Claim[] {
-                        new Claim(ClaimTypes.Name, $"{userProfile.Name} {userProfile.Surname}"),
-                        new Claim(ClaimTypes.NameIdentifier, userProfile.Id.ToString()),
-                        new Claim(ClaimTypes.GivenName, userProfile.Name),
-                        new Claim(ClaimTypes.Email, userProfile.Email)
-                    }, CookieAuthenticationDefaults.AuthenticationScheme)
+                    new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)
                 ),
                 new AuthenticationProperties {
                     AllowRefresh = true,
