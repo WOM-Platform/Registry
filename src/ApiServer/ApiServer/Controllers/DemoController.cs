@@ -31,24 +31,28 @@ namespace WomPlatform.Web.Api.Controllers {
             _logger = logger;
         }
 
-        [HttpGet("pos")]
-        public IActionResult ShowPosDemo() {
-            return View("Pos");
+        [HttpGet("redeem")]
+        public IActionResult ShowPocketDemo() {
+            return View("Pocket");
         }
 
-        [HttpPost("pos-request")]
-        public async Task<IActionResult> RequestPayment() {
+        [HttpPost("redeem")]
+        public async Task<IActionResult> RequestVoucher() {
             var confSection = _configuration.GetSection("Demo");
             var amount = Convert.ToInt32(confSection["AmountOfVouchers"]);
-            var posId = Convert.ToInt32(confSection["PosId"]);
+            var sourceId = Convert.ToInt32(confSection["SourceId"]);
 
-            (var otc, var pwd) = await _database.CreatePaymentRequest(new Connector.Models.PaymentRegisterPayload.Content {
+            (var otc, var pwd) = await _database.CreateVoucherGeneration(new Connector.Models.VoucherCreatePayload.Content {
                 Nonce = Guid.NewGuid().ToString("N"),
-                PosId = posId,
-                Amount = 1,
-                PocketAckUrl = "https://example.org",
-                SimpleFilter = new SimpleFilter {
-                    Aim = "0"
+                SourceId = sourceId,
+                Vouchers = new VoucherCreatePayload.VoucherInfo[] {
+                    new VoucherCreatePayload.VoucherInfo {
+                        Aim = "0",
+                        Count = amount,
+                        Timestamp = DateTime.UtcNow,
+                        Latitude = 43.726,
+                        Longitude = 12.636
+                    }
                 }
             }, isPreVerified: true);
 
@@ -69,33 +73,43 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-        [HttpGet("pocket")]
-        public IActionResult ShowPocketDemo() {
-            return View("Pocket");
+        [HttpGet("pay")]
+        public IActionResult ShowPosDemo() {
+            return View("Pos");
         }
 
-        [HttpPost("pocket-request")]
-        public async Task<IActionResult> RequestVoucher() {
+        [HttpPost("pay")]
+        public async Task<IActionResult> RequestPayment(
+            [FromForm] string demoDiscount,
+            [FromForm] int demoAmount
+        ) {
             var confSection = _configuration.GetSection("Demo");
             var amount = Convert.ToInt32(confSection["AmountOfVouchers"]);
-            var sourceId = Convert.ToInt32(confSection["SourceId"]);
+            var posId = Convert.ToInt32(confSection["PosId"]);
 
-            (var otc, var pwd) = await _database.CreateVoucherGeneration(new Connector.Models.VoucherCreatePayload.Content {
+            string completionUrl = _linkGenerator.GetUriByAction(
+                nameof(DemoController.RequestPayment),
+                "Demo",
+                new {
+                    item = demoDiscount,
+                    amount = demoAmount
+                },
+                "https",
+                new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
+            );
+
+            (var otc, var pwd) = await _database.CreatePaymentRequest(new Connector.Models.PaymentRegisterPayload.Content {
                 Nonce = Guid.NewGuid().ToString("N"),
-                SourceId = sourceId,
-                Vouchers = new VoucherCreatePayload.VoucherInfo[] {
-                    new VoucherCreatePayload.VoucherInfo {
-                        Aim = "0",
-                        Count = amount,
-                        Timestamp = DateTime.UtcNow,
-                        Latitude = 43.726,
-                        Longitude = 12.636
-                    }
+                PosId = posId,
+                Amount = 1,
+                PocketAckUrl = completionUrl,
+                SimpleFilter = new SimpleFilter {
+                    Aim = "0"
                 }
-            });
+            }, isPreVerified: true);
 
             string redemptionUrl = _linkGenerator.GetUriByAction(
-                nameof(LandingPageController.ShowGenerationLandingPage),
+                nameof(LandingPageController.ShowPaymentLandingPage),
                 "LandingPage",
                 new {
                     otc = otc
@@ -104,11 +118,22 @@ namespace WomPlatform.Web.Api.Controllers {
                 new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
             );
 
-            return View("PocketShow", new DemoLinkViewModel {
+            return View("PosShow", new DemoLinkViewModel {
                 Otc = otc,
                 OtcUrl = redemptionUrl,
                 Password = pwd
             });
+        }
+
+        [HttpGet("pay-complete")]
+        public IActionResult ShowDiscount(
+            [FromQuery] string item,
+            [FromQuery] int amount
+        ) {
+            ViewData["Item"] = item;
+            ViewData["Amount"] = amount;
+
+            return View("PosComplete");
         }
 
     }

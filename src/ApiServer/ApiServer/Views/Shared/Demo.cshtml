@@ -1,56 +1,48 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="utf-8">
 
-    <title>Worth One Minute | @ViewData["Title"]</title>
+    <title>@ViewData.ToTitle("Title")</title>
 
     <meta name="description" content="WOM is general-purpose rewarding platform based on a voucher exchange system." />
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css" />
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css" crossorigin="anonymous" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/solid.min.css" rel="stylesheet" crossorigin="anonymous" />
 
-    <link rel="stylesheet" href="~/skeleton-2.0.4/normalize.css" />
-    <link rel="stylesheet" href="~/skeleton-2.0.4/skeleton.css" />
+    <link rel="stylesheet" href="~/bootstrap.min.css" />
     <link rel="stylesheet" href="~/style.css" />
 </head>
 
 <body>
-    <header>
-        <div class="container">
-            <div class="row">
-                <div class="three columns">&nbsp;</div>
-                <div class="six columns centered">
-                    <img src="~/wom-logo.png" alt="WOM logo" class="u-full-width" />
-                </div>
-                <div class="three columns">&nbsp;</div>
-            </div>
+    <div class="main-container">
+        @if (IsSectionDefined("header")) {
+        <header>
+            @RenderSection("header")
+        </header>
+        }
 
-            <div class="row">
-                <div class="twelve columns">
-                    <h1 class="centered">Worth One Minute</h1>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <section>
-        <div class="container">
+        <section>
             @RenderBody()
-        </div>
-    </section>
+        </section>
 
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="twelve columns">
-                    <p>WOM&nbsp;Platform&nbsp;&mdash;&nbsp;2020</p>
-                    <p><a href="https://wom.social">Privacy policy</a> &mdash; <a href="https://wom.social">More information</a></p>
+        <footer>
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <p>WOM&nbsp;Platform&nbsp;&mdash;&nbsp;@DateTime.UtcNow.Year</p>
+                        <p><a href="https://wom.social">Privacy policy</a></p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </footer>
+        </footer>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
 </body>
 </html>

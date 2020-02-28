@@ -1,26 +1,42 @@
 ﻿@model DemoLinkViewModel
 @{
     Layout = "Demo";
-    ViewData["Title"] = "Pocket Demo";
+    ViewData["Title"] = "Demo Payment";
 }
 
-    <div class="row">
-        <div class="twelve columns">
-            <h1>Demo Payment</h1>
+@section header {
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <img src="~/wom-logo.png" alt="WOM logo" class="img-fluid" />
+        </div>
+    </div>
+</div>
+}
 
-            <p>
-                @Model.OtcUrl
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <h1 class="display-3">Payment</h1>
+
+            <p class="lead">
+                Payment requested! Pay now yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda.
             </p>
 
-            <p>
-                @Model.Password
+            <p class="text-center qrcode">
+                <img src="@Url.Action(nameof(RenderController.QrCode), "Render", new { url = Model.OtcUrl })" alt="Code" class="img-fluid" />
+
+                <h3>@Model.Password</h3>
             </p>
 
-            <p class="centered">
-                <a class="button button-primary" href="wom://transfer/@Model.Otc.ToString("N")" title="Redeem vouchers using WOM Pocket">
+            <p>If you're on a mobile device, tap the button below to automatically proceed to payment.</p>
+
+            <p class="text-center">
+                <a class="btn btn-primary" href="wom://pay/@Model.Otc.ToString("N")" title="Perform payment using WOM Pocket">
                     Perform payment
                 </a>
             </p>
 
         </div>
     </div>
+</div>

@@ -1,21 +1,62 @@
 ﻿@{
     Layout = "Demo";
-    ViewData["Title"] = "Pocket Demo";
+    ViewData["Title"] = "Demo Payment";
 }
 
-    <div class="row">
-        <div class="twelve columns">
-            <h1>Demo Payment</h1>
+@section header {
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <img src="~/wom-logo.png" alt="WOM logo" class="img-fluid" />
+        </div>
+    </div>
+</div>
+}
 
-            <p>Lorem ipsum yadda yadda.</p>
-            <p>Lorem ipsum yadda yadda.</p>
-            <p>Lorem ipsum yadda yadda.</p>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <h1 class="display-3">Payment</h1>
 
-            <form method="post" action="@Url.Action(nameof(DemoController.RequestPayment), "Demo")">
-                <button type="submit" class="button button-primary">
-                    Proceed to payment
+            <p class="lead">
+                Introduction to payment. Yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda.
+            </p>
+
+            <h2>Something</h2>
+
+            <p>Lorem ipsum yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda.</p>
+
+            <h2>Something else</h2>
+
+            <p>Lorem ipsum yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda.</p>
+
+            <form method="post" action="@Url.Action(nameof(DemoController.RequestPayment), "Demo")" class="text-center">
+                <div class="row">
+                    <div class="col">
+                        <label for="demoDiscount">Discounted item</label>
+                        <select name="demoDiscount" class="custom-select custom-select-lg mb-3">
+                            <option value="coffee" selected>Espresso coffee</option>
+                            <option value="book">Book</option>
+                            <option value="bike">Renting a bike</option>
+                            <option value="course">Language course</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <label for="demoAmount">Discount amount</label>
+                        <select name="demoAmount" class="custom-select custom-select-lg mb-3">
+                            <option value="5" selected>5%</option>
+                            <option value="10">10%</option>
+                            <option value="20">20%</option>
+                            <option value="30">30%!</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Request discount
                 </button>
             </form>
 
         </div>
     </div>
+</div>

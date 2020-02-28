@@ -77,7 +77,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("verify")]
-        public ActionResult Verify([FromBody]PaymentVerifyPayload payload) {
+        public async Task<ActionResult> Verify([FromBody]PaymentVerifyPayload payload) {
             Logger.LogDebug(LoggingEvents.PaymentVerification, "Received verification request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentVerifyPayload.Content>(payload.Payload, LoggingEvents.PaymentVerification);
@@ -86,7 +86,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                Database.VerifyPaymentRequest(payloadContent.Otc);
+                await Database.VerifyPaymentRequest(payloadContent.Otc);
 
                 Logger.LogInformation(LoggingEvents.PaymentVerification, "Payment creation {0} verified", payloadContent.Otc);
 
