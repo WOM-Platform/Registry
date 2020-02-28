@@ -1,18 +1,18 @@
 ﻿@model MerchantDashboardHomeViewModel
 @{
     Layout = "Main";
-    ViewData["Title"] = "Merchant dashboard";
+    ViewData["Title"] = "Dashboard merchant";
 }
 
 <div class="container">
     <div class="row justify-content-center mt-5">
         <div class="col-12 col-md-10 col-lg-8">
-            <h1><span class="fas"></span>&nbsp;Merchant dashboard</h1>
+            <h1><span class="fas"></span>&nbsp;Dashboard merchant</h1>
 
-            <p class="lead">Welcome, @Model.UserFullname.</p>
-            <p>This dashboard allows you to manage the WOM&nbsp;Platform profile of merchant “<b>@Model.MerchantName</b>”.</p>
+            <p class="lead">Benvenuto/a, @Model.UserFullname.</p>
+            <p>Questa dashboard ti permette di gestire il tuo profilo da <i>merchant</i> come “<b>@Model.MerchantName</b>” sulla Piattaforma&nbsp;WOM.</p>
 
-            <h2>Active Points of Service</h2>
+            <h2>Point of Service attivi</h2>
 
             @if (Model.Pos.Any()) {
             <div class="list-group mt-4 mb-4">
@@ -24,17 +24,17 @@
             </div>
             } else {
             <p class="text-muted">
-                No active POS yet.
+                Nessun POS attivo al momento.
             </p>
             }
 
             <p>
-                <a href="@Url.Action(nameof(DashboardMerchantController.AddNewPost), "DashboardMerchant")" class="btn btn-primary">
-                    <span class="fas"></span>&nbsp;Add new POS
+                <a href="#" class="btn btn-secondary">
+                    <span class="fas"></span>&nbsp;Aggiungi nuovo POS
                 </a>
             </p>
 
-            <h3>Accept payments</h3>
+            <h3>Ricevi pagamenti</h3>
 
             @if (Model.Pos.Any()) {
             <p>
@@ -55,7 +55,7 @@
             </div>
             } else {
             <p>
-                Please <a href="@Url.Action(nameof(DashboardMerchantController.AddNewPost), "DashboardMerchant")">create a new POS</a> in order to start accepting payments.
+                Devi <a href="#">creare un nuovo POS</a> per ricevere pagamenti. (Funzione in corso di implementazione.)
             </p>
             }
         </div>

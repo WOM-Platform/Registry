@@ -10,62 +10,63 @@ namespace WomPlatform.Web.Api.InputModels {
 
         [Required]
         [EmailAddress]
-        [Display(Name = "E-mail address")]
+        [Display(Name = "Indirizzo e-mail")]
         public string Email { get; set; }
 
         [Required]
         [DataType(DataType.Password)]
+        [Display(Name = "Password")]
         public string Password { get; set; }
 
         [Required]
         [StringLength(128, MinimumLength = 3)]
-        [Display(Name = "First name")]
+        [Display(Name = "Nome")]
         public string Name { get; set; }
 
         [Required]
         [StringLength(128, MinimumLength = 3)]
-        [Display(Name = "Surname")]
+        [Display(Name = "Cognome")]
         public string Surname { get; set; }
 
         [Required]
         [StringLength(256, MinimumLength = 5)]
-        [Display(Name = "Merchant Name")]
+        [Display(Name = "Nome del Merchant")]
         public string MerchantTitle { get; set; }
 
         [Required]
-        [Display(Name = "Fiscal code")]
+        [Display(Name = "Codice fiscale")]
         [StringLength(16, MinimumLength = 16)]
         public string MerchantFiscalCode { get; set; }
 
-        [Display(Name = "Address")]
+        [Display(Name = "Indirizzo")]
         public string MerchantAddress { get; set; }
 
-        [Display(Name = "ZIP")]
+        [Display(Name = "CAP")]
         public string MerchantZipCode { get; set; }
 
-        [Display(Name = "City")]
+        [Display(Name = "Città")]
         public string MerchantCity { get; set; }
 
-        [Display(Name = "Nation")]
+        [Display(Name = "Paese")]
         public string MerchantNation { get; set; }
 
         [Required]
-        [Display(Name = "Primary activity")]
+        [Display(Name = "Attività primaria")]
         public MerchantActivityType MerchantActivityType { get; set; }
 
-        [Display(Name = "Web site")]
+        [Display(Name = "Sito Web")]
         [Url]
         public string MerchantWebsite { get; set; }
 
         [Required]
-        [Display(Name = "Description", Description = "Description of the company, social aim, and how WOMs would be monetized.")]
+        [Display(Name = "Descrizione")]
         [StringLength(8000, MinimumLength = 10)]
         [DataType(DataType.MultilineText)]
         public string MerchantDescription { get; set; }
 
         [Required]
         [Checked]
-        [Display(Name = "Accept terms and conditions")]
+        [Display(Name = "Accetta termini e condizioni")]
         public bool Accept { get; set; }
 
     }

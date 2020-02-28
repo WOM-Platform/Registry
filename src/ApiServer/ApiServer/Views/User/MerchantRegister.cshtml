@@ -8,16 +8,16 @@
     <div class="row justify-content-center">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6">
             <form method="post" action="@Url.Action(nameof(UserController.RegisterMerchantPerform), "User")" class="big-form">
-                <h1>Register to the WOM&nbsp;Platform</h1>
+                <h1>Registrati alla Piattaforma&nbsp;WOM</h1>
 
                 <p>
-                    This form allows you to register to the <b>WOM&nbsp;Platform</b> as a <b>Merchant</b>.
-                    <a href="@Url.Action(nameof(UserController.Login), "User")">Already registered?</a>
+                    Questo modulo ti permetterà di registrarti alla <b>Piattaforma&nbsp;WOM</b> come <b>Merchant</b>.
+                    <a href="@Url.Action(nameof(UserController.Login), "User")">Sei già registrato/a?</a>
                 </p>
 
-                @Html.ValidationSummary("Validation errors:", new { @class = "text-danger" })
+                @Html.ValidationSummary("Errori:", new { @class = "text-danger" })
 
-                <h2>Representative</h2>
+                <h2>Rappresentante legale</h2>
 
                 <div class="form-group">
                     <label asp-for="Email" class="control-label"></label>
@@ -370,7 +370,7 @@
                         <textarea class="form-control" asp-for="MerchantDescription" rows="5"></textarea>
                     <span asp-validation-for="MerchantWebsite" class="text-danger"></span>
                     <p>
-                        Short description of the company, its social aim, and how WOMs will be monetized.
+                        Breve descrizione del merchant, degli obiettivi sociali e delle modalità con cui verranno monetizzati i WOM.
                     </p>
                 </div>
 
@@ -380,8 +380,8 @@
                     <span asp-validation-for="Accept" class="text-danger"></span>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Register</button>
-                <a class="btn btn-link" href="@Url.Action(nameof(UserController.Login), "User")">Already registered?</a>
+                <button type="submit" class="btn btn-primary">Registra</button>
+                <a class="btn btn-link" href="@Url.Action(nameof(UserController.Login), "User")">Già registrato/a?</a>
             </form>
         </div>
     </div>

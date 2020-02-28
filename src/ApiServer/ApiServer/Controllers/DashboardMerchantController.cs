@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
+using Org.BouncyCastle.Security;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.ViewModel;
@@ -52,7 +54,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("add-pos")]
-        public IActionResult AddNewPost() {
+        public IActionResult AddNewPos() {
             return View("AddPos");
         }
 
@@ -66,7 +68,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var merchantId = new ObjectId(User.FindFirst(Startup.ActiveMerchantClaimType).Value);
 
-            _mongo.CreatePos(new Pos {
+            
+
+            await _mongo.CreatePos(new Pos {
                 MerchantId = merchantId,
                 Name = input.Name,
                 Position = GeoJson.Point(GeoJson.Geographic(input.Longitude, input.Latitude)),
@@ -76,6 +80,13 @@ namespace WomPlatform.Web.Api.Controllers {
             });
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private void GenerateRsaPair() {
+            using(var provider = new RSACryptoServiceProvider(4096)) {
+                var rsaParams = provider.ExportParameters(true);
+                var pair = DotNetUtilities.GetRsaKeyPair(rsaParams);
+            }
         }
 
     }
