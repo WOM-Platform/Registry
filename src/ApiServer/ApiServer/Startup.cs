@@ -26,9 +26,9 @@ namespace WomPlatform.Web.Api {
         public const string UserLoginPolicy = "UserLoginPolicy";
 
         public void ConfigureServices(IServiceCollection services) {
-            services.AddRouting(options => {
-                options.ConstraintMap["slugify"] = typeof(SlugifyParameterTransformer);
             });
+
+            services.AddRouting();
 
             services.AddControllersWithViews()
                 .AddMvcOptions(opts => {
