@@ -105,13 +105,16 @@ namespace WomPlatform.Web.Api.Controllers {
                 return View("MerchantRegister");
             }
 
+            var verificationToken = new Random().GenerateReadableCode(8);
+            _logger.LogDebug("Registering new user for {0} with verification token {1}", input.Email, verificationToken);
+
             try {
                 var docUser = new User {
                     Email = input.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
                     Name = input.Name,
                     Surname = input.Surname,
-                    VerificationToken = new Random().GenerateReadableCode(8)
+                    VerificationToken = verificationToken
                 };
                 await _mongo.CreateUser(docUser);
 
@@ -186,7 +189,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             await InternalLogin(user);
 
-            return RedirectToAction(nameof(DashboardController.Index), "Dashboard");
+            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
 
         [HttpGet("logout")]

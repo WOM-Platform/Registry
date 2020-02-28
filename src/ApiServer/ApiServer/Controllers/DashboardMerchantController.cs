@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MongoDB.Driver.GeoJsonObjectModel;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.ViewModel;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -49,13 +52,30 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("add-pos")]
-        public async Task<IActionResult> AddNewPost() {
+        public IActionResult AddNewPost() {
             return View("AddPos");
         }
 
         [HttpPost("add-pos")]
-        public async Task<IActionResult> AddNewPostPerform() {
-            return Content("Yoyoyoyoyoy");
+        public async Task<IActionResult> AddNewPostPerform(
+            [FromForm] DashboardMerchantRegisterPosModel input
+        ) {
+            if(!ModelState.IsValid) {
+                return View("AddPos");
+            }
+
+            var merchantId = new ObjectId(User.FindFirst(Startup.ActiveMerchantClaimType).Value);
+
+            _mongo.CreatePos(new Pos {
+                MerchantId = merchantId,
+                Name = input.Name,
+                Position = GeoJson.Point(GeoJson.Geographic(input.Longitude, input.Latitude)),
+                PrivateKey = "",
+                PublicKey = "",
+                Url = input.Url
+            });
+
+            return RedirectToAction(nameof(Index));
         }
 
     }

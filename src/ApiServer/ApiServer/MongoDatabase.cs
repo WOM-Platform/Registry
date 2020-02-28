@@ -112,6 +112,10 @@ namespace WomPlatform.Web.Api {
             }
         }
 
+        public Task CreatePos(Pos pos) {
+            return PosCollection.InsertOneAsync(pos);
+        }
+
         public Task<Pos> GetPosById(ObjectId id) {
             var filter = Builders<Pos>.Filter.Eq(u => u.Id, id);
             return PosCollection.Find(filter).SingleOrDefaultAsync();

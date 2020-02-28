@@ -24,7 +24,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public string PrivateKey { get; set; }
 
         [BsonElement("position")]
-        public GeoJson2DCoordinates Position { get; set; }
+        public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
 
         [BsonElement("url")]
         [BsonIgnoreIfNull]
