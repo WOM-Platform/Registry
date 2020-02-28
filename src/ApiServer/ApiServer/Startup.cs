@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,11 @@ namespace WomPlatform.Web.Api {
         public const string ApiLoginPolicy = "APILoginPolicy";
         public const string UserLoginPolicy = "UserLoginPolicy";
 
+        public const string ActiveMerchantClaimType = "ActiveMerchantClaim";
+
         public void ConfigureServices(IServiceCollection services) {
+            services.Configure<KestrelServerOptions>(options => {
+                options.AllowSynchronousIO = true;
             });
 
             services.AddRouting();
