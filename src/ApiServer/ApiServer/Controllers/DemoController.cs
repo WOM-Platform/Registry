@@ -88,7 +88,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var posId = confSection["PosId"];
 
             string completionUrl = _linkGenerator.GetUriByAction(
-                nameof(DemoController.RequestPayment),
+                nameof(DemoController.ShowDiscount),
                 "Demo",
                 new {
                     item = demoDiscount,
