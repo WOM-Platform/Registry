@@ -49,6 +49,19 @@ phpmyadmin:
 	@echo 'Running phpMyAdmin, terminate with CTRL+C...'
 	${DC} up database-manager
 
+.PHONY: mondodump mongoimport
+mongodump:
+	@echo 'Dumping MongoDB to /data/...'
+	${DC} up -d mongo
+	docker exec $(shell ${DC} ps -q mongo) mongodump --uri "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo" --archive --gzip > mongo.zip
+
+mongoimport: confirmation
+	test -f mongo.zip
+	@echo 'Replacing database with contents from file mongo.zip...'
+	${DC} up -d mongo
+	cat mongo.zip | docker exec --interactive $(shell ${DC} ps -q mongo) mongorestore --uri "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo" --archive --gzip --drop --preserveUUID
+	@echo 'Import completed.'
+
 .PHONY: up
 up:
 	${DC} up -d api
