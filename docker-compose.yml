@@ -53,6 +53,4 @@ services:
     - backend
     expose:
     - "27017"
-    ports:
-    - "8123:27017"
     env_file: config.env

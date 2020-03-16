@@ -18,13 +18,12 @@ services:
     - "traefik.docker.network=web"
     - "traefik.protocol=http"
     - "traefik.port=8779"
-    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefix:/api,/payment,/vouchers"
+    - "traefik.frontend.rule=Host:dev.wom.social"
     - "traefik.frontend.entryPoints=http,https"
 
   database:
     volumes:
     - wom_registry_database_dev:/var/lib/mysql:rw
-    restart: "no"
 
   database-manager:
     environment:
@@ -36,9 +35,9 @@ services:
     - "traefik.port=80"
     - "traefik.frontend.rule=Host:dev.wom.social;PathPrefixStrip:/phpmyadmin"
     - "traefik.frontend.entryPoints=https"
-    restart: "no"
 
   mongo:
     volumes:
     - wom_registry_mongodb_dev:/data/db:rw
-    restart: "no"
+    ports:
+    - "8123:27017"
