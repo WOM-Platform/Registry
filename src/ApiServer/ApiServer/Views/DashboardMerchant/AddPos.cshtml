@@ -6,7 +6,7 @@
 
 @section head {
 
-    <script type="text/javascript" src="//maps.googleapis.com/maps/api/js?key=AIzaSyB6SfawoSknLOX84o9Ot-2sTyTogkjUSSQ"></script>
+    <script type="text/javascript" src="//maps.googleapis.com/maps/api/js?key=@(Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "")"></script>
 
 }
 
