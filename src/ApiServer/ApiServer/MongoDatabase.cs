@@ -53,10 +53,10 @@ namespace WomPlatform.Web.Api {
         }
 
         public Task<List<Aim>> GetAims() {
-            var filter = Builders<Aim>.Filter.Empty;
+            var filter = Builders<Aim>.Filter.Ne(a => a.Hidden, true);
             return AimCollection.Find(filter)
                 .SortBy(a => a.Order)
-                .SortBy(a => a.Code)
+                .ThenBy(a => a.Code)
                 .ToListAsync();
         }
 

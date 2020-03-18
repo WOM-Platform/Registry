@@ -21,6 +21,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfDefault]
         public int Order { get; set; } = 0;
 
+        [BsonElement("hidden")]
+        [BsonDefaultValue(false)]
+        [BsonIgnoreIfDefault]
+        public bool Hidden { get; set; } = false;
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 

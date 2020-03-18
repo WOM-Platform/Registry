@@ -25,30 +25,15 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Show(string code) {
             var cleanCode = code.Replace("/", string.Empty);
 
-            var aim = await Database.GetAimByCode(cleanCode);
+            var aim = await Mongo.GetAimByCode(cleanCode);
             if(aim == null) {
                 return NotFound();
             }
-            var subaims = Database.GetSubAims(aim);
 
-            if(Request.HasAcceptHeader("text/html")) {
-                return Content("Aim in HTML");
-            }
-            else {
-                return Ok(new {
-                    aim.Code,
-                    aim.IconFile,
-                    Titles = (from t in aim.Titles
-                              select new {
-                                  t.LanguageCode,
-                                  t.Title
-                              }).ToList(),
-                    SubAims = (from sa in subaims
-                               select new {
-                                   sa.Code
-                               }).ToList()
-                });
-            }
+            return Ok(new {
+                aim.Code,
+                aim.Titles
+            });
         }
 
     }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,12 @@ namespace WomPlatform.Web.Api.Controllers {
         [ChangeLog("aim-list")]
         public async Task<IActionResult> List() {
             var aims = await Mongo.GetAims();
-            return Ok(aims);
+            return Ok(from a in aims
+                      select new {
+                          a.Code,
+                          a.Titles,
+                          a.Order
+                      });
         }
 
     }
