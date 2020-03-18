@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using System;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
 
@@ -24,6 +25,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("verificationToken")]
         [BsonIgnoreIfNull]
         public string VerificationToken { get; set; }
+
+        [BsonElement("registeredOn")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonIgnoreIfNull]
+        public DateTime? RegisteredOn { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }

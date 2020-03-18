@@ -45,6 +45,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("website")]
         public string WebsiteUrl { get; set; }
 
+        [BsonElement("createdOn")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonIgnoreIfNull]
+        public DateTime? CreatedOn { get; set; }
+
         [BsonElement("adminUserIds")]
         public ObjectId[] AdministratorUserIds { get; set; }
 

@@ -114,7 +114,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
                     Name = input.Name,
                     Surname = input.Surname,
-                    VerificationToken = verificationToken
+                    VerificationToken = verificationToken,
+                    RegisteredOn = DateTime.UtcNow
                 };
                 await _mongo.CreateUser(docUser);
 
@@ -128,6 +129,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Nation = input.MerchantNation,
                     Description = input.MerchantDescription,
                     WebsiteUrl = input.MerchantWebsite,
+                    CreatedOn = DateTime.UtcNow,
                     AdministratorUserIds = new ObjectId[] {
                         docUser.Id
                     }
