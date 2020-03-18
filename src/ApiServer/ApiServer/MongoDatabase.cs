@@ -46,6 +46,25 @@ namespace WomPlatform.Web.Api {
             }
         }
 
+        private IMongoCollection<Aim> AimCollection {
+            get {
+                return MainDatabase.GetCollection<Aim>("Aims");
+            }
+        }
+
+        public Task<List<Aim>> GetAims() {
+            var filter = Builders<Aim>.Filter.Empty;
+            return AimCollection.Find(filter)
+                .SortBy(a => a.Order)
+                .SortBy(a => a.Code)
+                .ToListAsync();
+        }
+
+        public Task<Aim> GetAimByCode(string code) {
+            var filter = Builders<Aim>.Filter.Eq(a => a.Code, code);
+            return AimCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
         private IMongoCollection<User> UserCollection {
             get {
                 return MainDatabase.GetCollection<User>("Users");
