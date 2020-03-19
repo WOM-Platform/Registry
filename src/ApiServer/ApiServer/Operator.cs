@@ -173,7 +173,7 @@ namespace WomPlatform.Web.Api {
             if(creationParameters.SimpleFilter != null) {
                 payRequest.Filter = new Filter {
                     Aims = creationParameters.SimpleFilter.Aim,
-                    Bounds = creationParameters.SimpleFilter.ToGeoJsonBoundingBox(),
+                    Bounds = creationParameters.SimpleFilter.GetBounds(),
                     MaxAge = creationParameters.SimpleFilter.MaxAge
                 };
             }
@@ -198,40 +198,8 @@ namespace WomPlatform.Web.Api {
         }
 
         /// <summary>
-        /// Extract voucher instances and count from payment voucher info list.
+        /// Verifies single vouchers, checks filter satisfaction, and reduces count.
         /// </summary>
-        /*private IDictionary<ObjectId, int> ExtractVoucherCounts(
-            IEnumerable<PaymentConfirmPayload.VoucherInfo> vouchers
-        ) {
-            var map = new Dictionary<ObjectId, int>();
-            foreach(var v in vouchers) {
-                var id = v.Id.ToString();
-                if(!id.Contains('/')) {
-                    // This is an old voucher, ignore it here
-                    continue;
-                }
-
-                var baseId = new ObjectId(id.Substring(0, id.IndexOf('/')));
-                var count = map.ContainsKey(baseId) ? map[baseId] + 1 : 1;
-                map[baseId] = count;
-            }
-
-            return map;
-        }*/
-
-        /*private bool UpdateAndVerify(Voucher v, IDictionary<ObjectId, int> consumptionPerId) {
-            return true;
-        }*/
-
-        private bool VerifyVoucherSecret(PaymentConfirmPayload.VoucherInfo vi, IDictionary<ObjectId, Voucher> voucherMap) {
-            var objId = new ObjectId(vi.Id.GetBaseId());
-            if(!voucherMap.ContainsKey(objId)) {
-                Logger.LogError(LoggingEvents.DatabaseOperation, "Looking for voucher {0} in Mongo vouchers, not found", vi.Id);
-                return false;
-            }
-            return voucherMap[objId].Secret.Equals(vi.Secret, StringComparison.InvariantCulture);
-        }
-
         private bool UpdateAndVerifyVouchers(
             PaymentConfirmPayload.VoucherInfo vi,
             IDictionary<ObjectId, Voucher> voucherMap,
@@ -260,7 +228,11 @@ namespace WomPlatform.Web.Api {
                 Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} does not match aim filter '{1}'", vi.Id, filter.Aims);
                 return false;
             }
-            // TODO: geo filter
+            if(filter?.Bounds != null && !filter.Bounds.Contains(voucher.Position.Coordinates)) {
+                // Voucher not contained in geographical bounds
+                Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} is outside geographical bounds", vi.Id);
+                return false;
+            }
             if(filter?.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromSeconds(filter.MaxAge.Value)) {
                 // Voucher too old
                 Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} is older than {1} days (age {2})", vi.Id, filter.MaxAge.Value, DateTime.UtcNow.Subtract(voucher.Timestamp));

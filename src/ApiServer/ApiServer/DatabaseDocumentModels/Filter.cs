@@ -16,7 +16,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("bounds")]
         [BsonIgnoreIfNull]
-        public GeoJsonBoundingBox<GeoJson2DGeographicCoordinates> Bounds { get; set; } = null;
+        public Bounds Bounds { get; set; } = null;
 
         [BsonElement("maxAge")]
         [BsonIgnoreIfNull]
