@@ -12,12 +12,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public AimsController(
             IConfiguration configuration,
-            MongoDatabase mongo,
-            DatabaseOperator database,
-            KeyManager keyManager,
             CryptoProvider crypto,
+            KeyManager keyManager,
+            MongoDatabase mongo,
+            Operator @operator,
             ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, mongo, database, logger) {
+        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
         [Produces("application/json")]

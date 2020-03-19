@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using Org.BouncyCastle.Crypto;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
@@ -16,13 +18,13 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public VoucherController(
             IConfiguration configuration,
-            MongoDatabase mongo,
-            DatabaseOperator database,
-            KeyManager keyManager,
             CryptoProvider crypto,
-            ILogger<VoucherController> logger)
-        : base(configuration, crypto, keyManager, mongo, database, logger)
-        {
+            KeyManager keyManager,
+            MongoDatabase mongo,
+            Operator @operator,
+            ILogger<BaseRegistryController> logger
+        ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+
         }
 
         // POST api/v1/voucher/create
@@ -34,7 +36,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.SourceId, payload.Nonce
             );
 
-            var source = await Database.GetSourceById(payload.SourceId.ToLong());
+            var source = await Mongo.GetSourceById(new ObjectId(payload.SourceId.Id));
             if(source == null) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
                 return this.SourceNotFound();
@@ -61,13 +63,13 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password) = await Database.CreateVoucherGeneration(payloadContent);
+                (var otc, var password) = await Operator.CreateGenerationRequest(source, payloadContent);
 
                 Logger.LogInformation(LoggingEvents.VoucherCreation, "Voucher generation successfully requested with code {0} for source {1}", otc, payload.SourceId);
 
                 return Ok(new VoucherCreateResponse {
                     Payload = Crypto.Encrypt(new VoucherCreateResponse.Content {
-                        RegistryUrl = "https://wom.social",
+                        RegistryUrl = $"https://{SelfHostDomain}",
                         Nonce = payloadContent.Nonce,
                         Otc = otc,
                         Password = password
@@ -81,7 +83,9 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("verify")]
-        public ActionResult Verify([FromBody]VoucherVerifyPayload payload) {
+        public async Task<IActionResult> Verify(
+            [FromBody] VoucherVerifyPayload payload
+        ) {
             Logger.LogDebug(LoggingEvents.VoucherVerification, "Received voucher generation verification request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherVerifyPayload.Content>(payload.Payload, LoggingEvents.VoucherVerification);
@@ -90,7 +94,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                Database.VerifyGenerationRequest(payloadContent.Otc);
+                await Operator.VerifyGenerationRequest(payloadContent.Otc);
 
                 Logger.LogInformation(LoggingEvents.VoucherVerification, "Voucher generation {0} verified", payloadContent.Otc);
 
@@ -106,9 +110,30 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        /// <summary>
+        /// Converts aggregate internal vouchers into "inflated" vouchers to be used through the v1 API.
+        /// </summary>
+        private IEnumerable<VoucherRedeemResponse.VoucherInfo> InflateVouchers(DatabaseDocumentModels.Voucher voucherDoc) {
+            var baseId = voucherDoc.Id.ToString();
+            var ret = new List<VoucherRedeemResponse.VoucherInfo>(voucherDoc.Count);
+            for(int i = 0; i < voucherDoc.Count; ++i) {
+                ret.Add(new VoucherRedeemResponse.VoucherInfo {
+                    Id = string.Format("{0}/{1}", baseId, i+1),
+                    Aim = voucherDoc.AimCode,
+                    Latitude = voucherDoc.Position.Coordinates.Latitude,
+                    Longitude = voucherDoc.Position.Coordinates.Longitude,
+                    Timestamp = voucherDoc.Timestamp,
+                    Secret = voucherDoc.Secret
+                });
+            }
+            return ret;
+        }
+
         // POST api/v1/voucher/redeem
         [HttpPost("redeem")]
-        public ActionResult Redeem([FromBody]VoucherRedeemPayload payload) {
+        public async Task<IActionResult> Redeem(
+            [FromBody] VoucherRedeemPayload payload
+        ) {
             Logger.LogDebug("Received voucher redemption request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherRedeemPayload.Content>(payload.Payload, LoggingEvents.VoucherRedemption);
@@ -125,22 +150,15 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 Logger.LogDebug(LoggingEvents.VoucherRedemption, "Redeeming vouchers for request {0}", payloadContent.Otc);
 
-                var (source, vouchers) = Database.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
+                var (source, vouchers) = await Operator.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
 
                 Logger.LogInformation("Successfully redeemed vouchers by source {0}", source.Id);
 
+                var inflatedVouchers = vouchers.SelectMany(v => InflateVouchers(v));
                 var content = new VoucherRedeemResponse.Content {
-                    SourceId = source.Id.ToId(),
+                    SourceId = new Identifier(source.Id.ToString()),
                     SourceName = source.Name,
-                    Vouchers = (from v in vouchers
-                                select new VoucherRedeemResponse.VoucherInfo {
-                                    Id = v.Id.ToId(),
-                                    Secret = Convert.ToBase64String(v.Secret),
-                                    Aim = v.AimCode,
-                                    Latitude = v.Latitude,
-                                    Longitude = v.Longitude,
-                                    Timestamp = v.Timestamp
-                                }).ToArray()
+                    Vouchers = inflatedVouchers.ToArray()
                 };
 
                 return Ok(new VoucherRedeemResponse {

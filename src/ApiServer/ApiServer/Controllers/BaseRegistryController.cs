@@ -12,20 +12,24 @@ namespace WomPlatform.Web.Api.Controllers {
     /// </summary>
     public class BaseRegistryController : Controller {
 
+        protected readonly string SelfHostDomain;
+
         public BaseRegistryController(
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             MongoDatabase mongo,
-            DatabaseOperator database,
+            Operator @operator,
             ILogger<BaseRegistryController> logger
         ) {
             Configuration = configuration;
             Crypto = crypto;
             KeyManager = keyManager;
             Mongo = mongo;
-            Database = database;
+            Operator = @operator;
             Logger = logger;
+
+            SelfHostDomain = Environment.GetEnvironmentVariable("SELF_HOST");
         }
 
         protected IConfiguration Configuration { get; }
@@ -36,7 +40,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         protected MongoDatabase Mongo { get; }
 
-        protected DatabaseOperator Database { get; }
+        protected Operator Operator { get; }
 
         protected ILogger<BaseRegistryController> Logger { get; }
 

@@ -16,12 +16,13 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public PaymentController(
             IConfiguration configuration,
-            MongoDatabase mongo,
-            DatabaseOperator database,
-            KeyManager keyManager,
             CryptoProvider crypto,
-            ILogger<PaymentController> logger)
-        : base(configuration, crypto, keyManager, mongo, database, logger) {
+            KeyManager keyManager,
+            MongoDatabase mongo,
+            Operator @operator,
+            ILogger<AimsController> logger)
+        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+
         }
 
         // POST /api/v1/payment/register
@@ -59,13 +60,13 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password) = await Database.CreatePaymentRequest(payloadContent);
+                (var otc, var password) = await Operator.CreatePaymentRequest(pos, payloadContent);
 
                 Logger.LogInformation(LoggingEvents.PaymentCreation, "Payment request successfully created with code {0} for POS {1}", otc, payload.PosId);
 
                 return Ok(new PaymentRegisterResponse {
                     Payload = Crypto.Encrypt(new PaymentRegisterResponse.Content {
-                        RegistryUrl = "https://wom.social",
+                        RegistryUrl = $"https://{SelfHostDomain}",
                         Nonce = payloadContent.Nonce,
                         Otc = otc,
                         Password = password
@@ -79,7 +80,9 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("verify")]
-        public async Task<ActionResult> Verify([FromBody]PaymentVerifyPayload payload) {
+        public async Task<IActionResult> Verify(
+            [FromBody] PaymentVerifyPayload payload
+        ) {
             Logger.LogDebug(LoggingEvents.PaymentVerification, "Received verification request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentVerifyPayload.Content>(payload.Payload, LoggingEvents.PaymentVerification);
@@ -88,7 +91,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                await Database.VerifyPaymentRequest(payloadContent.Otc);
+                await Operator.VerifyPaymentRequest(payloadContent.Otc);
 
                 Logger.LogInformation(LoggingEvents.PaymentVerification, "Payment creation {0} verified", payloadContent.Otc);
 
@@ -106,7 +109,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST /api/v1/payment/info
         [HttpPost("info")]
-        public async Task<ActionResult> GetInformation([FromBody]PaymentInfoPayload payload) {
+        public async Task<IActionResult> GetInformation(
+            [FromBody] PaymentInfoPayload payload
+        ) {
             Logger.LogDebug("Received payment information request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentInfoPayload.Content>(payload.Payload, LoggingEvents.PaymentInformationAccess);
@@ -121,18 +126,17 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var payment, var filter) = await Database.GetPaymentRequestInfo(payloadContent.Otc, payloadContent.Password);
+                var payment = await Mongo.GetPaymentRequestByOtc(payloadContent.Otc);
+                var pos = await Mongo.GetPosById(payment.PosId);
 
-                Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.OtcPay, payment.PosId, payment.Amount);
-
-                var pos = await Mongo.GetPosById(new ObjectId(payment.PosId));
+                Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.Otc, pos.Id, payment.Amount);
 
                 var content = new PaymentInfoResponse.Content {
                     Amount = payment.Amount,
-                    PosId = payment.PosId,
-                    PosName = pos?.Name ?? "Unknown POS",
-                    SimpleFilter = filter?.Simple,
-                    Persistent = payment.Persistent
+                    PosId = pos.Id.ToString(),
+                    PosName = pos.Name ?? "Unknown",
+                    SimpleFilter = payment.Filter.ToSimpleFilter(),
+                    Persistent = payment.IsPersistent
                 };
 
                 return Ok(new PaymentInfoResponse {
@@ -155,7 +159,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
         // POST /api/v1/payment/confirm
         [HttpPost("confirm")]
-        public async Task<ActionResult> Confirm([FromBody]PaymentConfirmPayload payload) {
+        public async Task<IActionResult> Confirm(
+            [FromBody] PaymentConfirmPayload payload
+        ) {
             Logger.LogDebug("Received payment confirmation request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentConfirmPayload.Content>(payload.Payload, LoggingEvents.PaymentProcessing);
@@ -170,13 +176,13 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var payment = await Database.ProcessPayment(payloadContent);
+                var payment = await Operator.ProcessPayment(payloadContent);
 
-                Logger.LogInformation("Successfully processed payment {0}", payment.OtcPay);
+                Logger.LogInformation("Successfully processed payment {0}", payment.Otc);
 
                 return Ok(new PaymentConfirmResponse {
                     Payload = Crypto.Encrypt(new PaymentConfirmResponse.Content {
-                        AckUrl = payment.UrlAckPocket
+                        AckUrl = payment.AckUrlPocket
                     }, ks)
                 });
             }

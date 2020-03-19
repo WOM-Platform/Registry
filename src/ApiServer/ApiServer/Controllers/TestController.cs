@@ -22,14 +22,14 @@ namespace WomPlatform.Web.Api.Controllers {
             CryptoProvider crypto,
             KeyManager keyManager,
             MongoDatabase mongo,
-            DatabaseOperator database,
-            IWebHostEnvironment hosting,
-            ILogger<TestController> logger
-        ) : base(configuration, crypto, keyManager, mongo, database, logger) {
-            Hosting = hosting;
+            Operator @operator,
+            ILogger<AimsController> logger)
+        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
         protected IWebHostEnvironment Hosting { get; }
+
+        /*
 
         [HttpPost("create-vouchers/{count=10}")]
         public async Task<ActionResult> CreateVouchers(
@@ -113,6 +113,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 Pin = pin
             });
         }
+
+        */
 
     }
 

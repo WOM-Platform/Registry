@@ -107,7 +107,8 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
             services.AddTransient<CryptoProvider>();
-            services.AddScoped<DatabaseOperator>();
+            services.AddScoped<DatabaseOperator>(); // To be removed
+            services.AddScoped<Operator>();
             services.AddSingleton<MongoDatabase>();
             services.AddMailComposer();
         }

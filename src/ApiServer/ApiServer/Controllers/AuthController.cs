@@ -14,12 +14,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public AuthController(
             IConfiguration configuration,
-            MongoDatabase mongo,
-            DatabaseOperator database,
-            KeyManager keyManager,
             CryptoProvider crypto,
-            ILogger<AuthController> logger)
-        : base(configuration, crypto, keyManager, mongo, database, logger) {
+            KeyManager keyManager,
+            MongoDatabase mongo,
+            Operator @operator,
+            ILogger<AimsController> logger)
+        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
         private User GetApiLoginUser() {
@@ -31,11 +31,11 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         // GET api/v1/auth/sources
-        /*[HttpGet("sources")]
+        [HttpGet("sources")]
         [Produces("application/json")]
         [Authorize(Startup.ApiLoginPolicy)]
         [XForwardedProto("https")]
-        public ActionResult Sources() {
+        public async Task<ActionResult> Sources() {
             Logger.LogDebug("Retrieving user sources");
 
             var user = GetApiLoginUser();
@@ -43,16 +43,19 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
+            var sources = await Mongo.GetSourcesByUser(user.Id);
+            Logger.LogInformation("User {0} has {1} source entries", user.Id, sources.Count);
+
             return Ok(new {
-                Sources = from s in Database.GetSourcesByUser(user)
+                Sources = from s in sources
                           select new {
-                              s.Id,
-                              s.Name,
-                              s.Url,
-                              s.PrivateKey
+                              id = s.Id,
+                              name = s.Name,
+                              url = s.Url,
+                              privateKey = s.PrivateKey
                           }
             });
-        }*/
+        }
 
         // GET api/v1/auth/pos
         [HttpGet("pos")]

@@ -65,6 +65,110 @@ namespace WomPlatform.Web.Api {
             return AimCollection.Find(filter).SingleOrDefaultAsync();
         }
 
+        private IMongoCollection<GenerationRequest> GenerationCollection {
+            get {
+                return MainDatabase.GetCollection<GenerationRequest>("GenerationRequests");
+            }
+        }
+
+        public Task AddGenerationRequest(GenerationRequest request) {
+            return GenerationCollection.InsertOneAsync(request);
+        }
+
+        public Task<GenerationRequest> GetGenerationRequestByOtc(Guid otc) {
+            var filter = Builders<GenerationRequest>.Filter.Eq(r => r.Otc, otc);
+            return GenerationCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public Task UpdateGenerationRequest(GenerationRequest request) {
+            var filter = Builders<GenerationRequest>.Filter.Eq(r => r.Otc, request.Otc);
+            return GenerationCollection.ReplaceOneAsync(filter, request);
+        }
+
+        private IMongoCollection<Merchant> MerchantCollection {
+            get {
+                return MainDatabase.GetCollection<Merchant>("Merchants");
+            }
+        }
+
+        public Task CreateMerchant(Merchant merchant) {
+            return MerchantCollection.InsertOneAsync(merchant);
+        }
+
+        public Task<Merchant> GetMerchantById(ObjectId id) {
+            var filter = Builders<Merchant>.Filter.Eq(m => m.Id, id);
+            return MerchantCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public Task<List<Merchant>> GetMerchantsByUser(ObjectId userId) {
+            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorUserIds, userId);
+            return MerchantCollection.Find(merchFilter).ToListAsync();
+        }
+
+        private IMongoCollection<PaymentRequest> PaymentCollection {
+            get {
+                return MainDatabase.GetCollection<PaymentRequest>("PaymentRequests");
+            }
+        }
+
+        public Task<PaymentRequest> GetPaymentRequestByOtc(Guid otcPay) {
+            var filter = Builders<PaymentRequest>.Filter.Eq(p => p.Otc, otcPay);
+            return PaymentCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public Task UpdatePaymentRequest(PaymentRequest request) {
+            var filter = Builders<PaymentRequest>.Filter.Eq(r => r.Otc, request.Otc);
+            return PaymentCollection.ReplaceOneAsync(filter, request);
+        }
+
+        public Task AddPaymentRequest(PaymentRequest paymentRequest) {
+            return PaymentCollection.InsertOneAsync(paymentRequest);
+        }
+
+        private IMongoCollection<Pos> PosCollection {
+            get {
+                return MainDatabase.GetCollection<Pos>("Pos");
+            }
+        }
+
+        public Task CreatePos(Pos pos) {
+            return PosCollection.InsertOneAsync(pos);
+        }
+
+        public Task<Pos> GetPosById(ObjectId id) {
+            var filter = Builders<Pos>.Filter.Eq(u => u.Id, id);
+            return PosCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public async Task<List<Pos>> GetPosByUser(ObjectId userId) {
+            var merchantIds = from m in await GetMerchantsByUser(userId)
+                              select m.Id;
+
+            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, merchantIds);
+            return await PosCollection.Find(posFilter).ToListAsync();
+        }
+
+        public Task<List<Pos>> GetPosByMerchant(ObjectId merchantId) {
+            var posFilter = Builders<Pos>.Filter.Eq(p => p.MerchantId, merchantId);
+            return PosCollection.Find(posFilter).ToListAsync();
+        }
+
+        private IMongoCollection<Source> SourceCollection {
+            get {
+                return MainDatabase.GetCollection<Source>("Sources");
+            }
+        }
+
+        public Task<Source> GetSourceById(ObjectId id) {
+            var filter = Builders<Source>.Filter.Eq(u => u.Id, id);
+            return SourceCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public Task<List<Source>> GetSourcesByUser(ObjectId userId) {
+            var filter = Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, userId);
+            return SourceCollection.Find(filter).ToListAsync();
+        }
+
         private IMongoCollection<User> UserCollection {
             get {
                 return MainDatabase.GetCollection<User>("Users");
@@ -105,52 +209,31 @@ namespace WomPlatform.Web.Api {
             return UserCollection.UpdateOneAsync(filter, chain.End());
         }
 
-        private IMongoCollection<Merchant> MerchantCollection {
+        private IMongoCollection<Voucher> VoucherCollection {
             get {
-                return MainDatabase.GetCollection<Merchant>("Merchants");
+                return MainDatabase.GetCollection<Voucher>("Vouchers");
             }
         }
 
-        public Task CreateMerchant(Merchant merchant) {
-            return MerchantCollection.InsertOneAsync(merchant);
+        public Task AddVouchers(IEnumerable<Voucher> vouchers) {
+            return VoucherCollection.InsertManyAsync(vouchers);
         }
 
-        public Task<Merchant> GetMerchantById(ObjectId id) {
-            var filter = Builders<Merchant>.Filter.Eq(m => m.Id, id);
-            return MerchantCollection.Find(filter).SingleOrDefaultAsync();
+        public Task ReplaceVouchers(IEnumerable<Voucher> vouchers) {
+            var replaces = from v in vouchers
+                           let filter = Builders<Voucher>.Filter.Eq(vf => vf.Id, v.Id)
+                           select new ReplaceOneModel<Voucher>(filter, v);
+            return VoucherCollection.BulkWriteAsync(replaces);
         }
 
-        public Task<List<Merchant>> GetMerchantsByUser(ObjectId userId) {
-            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorUserIds, userId);
-            return MerchantCollection.Find(merchFilter).ToListAsync();
+        public Task<List<Voucher>> GetVouchersByGenerationRequest(Guid otcGen) {
+            var filter = Builders<Voucher>.Filter.Eq(v => v.GenerationRequestId, otcGen);
+            return VoucherCollection.Find(filter).ToListAsync();
         }
 
-        private IMongoCollection<Pos> PosCollection {
-            get {
-                return MainDatabase.GetCollection<Pos>("Pos");
-            }
-        }
-
-        public Task CreatePos(Pos pos) {
-            return PosCollection.InsertOneAsync(pos);
-        }
-
-        public Task<Pos> GetPosById(ObjectId id) {
-            var filter = Builders<Pos>.Filter.Eq(u => u.Id, id);
-            return PosCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        public async Task<List<Pos>> GetPosByUser(ObjectId userId) {
-            var merchantIds = from m in await GetMerchantsByUser(userId)
-                              select m.Id;
-
-            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, merchantIds);
-            return await PosCollection.Find(posFilter).ToListAsync();
-        }
-
-        public Task<List<Pos>> GetPosByMerchant(ObjectId merchantId) {
-            var posFilter = Builders<Pos>.Filter.Eq(p => p.MerchantId, merchantId);
-            return PosCollection.Find(posFilter).ToListAsync();
+        public Task<List<Voucher>> GetVouchersWithIds(IEnumerable<ObjectId> ids) {
+            var filter = Builders<Voucher>.Filter.In(v => v.Id, ids);
+            return VoucherCollection.Find(filter).ToListAsync();
         }
 
     }
