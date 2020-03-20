@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.ViewModel;
@@ -16,18 +17,21 @@ namespace WomPlatform.Web.Api.Controllers {
 
         private readonly IConfiguration _configuration;
         private readonly LinkGenerator _linkGenerator;
-        private readonly DatabaseOperator _database;
+        private readonly MongoDatabase _mongo;
+        private readonly Operator _operator;
         private readonly ILogger<DemoController> _logger;
 
         public DemoController(
             IConfiguration configuration,
             LinkGenerator linkGenerator,
-            DatabaseOperator database,
+            MongoDatabase mongo,
+            Operator @operator,
             ILogger<DemoController> logger
         ) {
             _configuration = configuration;
             _linkGenerator = linkGenerator;
-            _database = database;
+            _mongo = mongo;
+            _operator = @operator;
             _logger = logger;
         }
 
@@ -40,9 +44,10 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> RequestVoucher() {
             var confSection = _configuration.GetSection("Demo");
             var amount = Convert.ToInt32(confSection["AmountOfVouchers"]);
-            var sourceId = Convert.ToInt32(confSection["SourceId"]);
+            var sourceId = confSection["SourceId"];
 
-            (var otc, var pwd) = await _database.CreateVoucherGeneration(new Connector.Models.VoucherCreatePayload.Content {
+            var source = await _mongo.GetSourceById(new ObjectId(sourceId));
+            (var otc, var pwd) = await _operator.CreateGenerationRequest(source, new VoucherCreatePayload.Content {
                 Nonce = Guid.NewGuid().ToString("N"),
                 SourceId = sourceId,
                 Vouchers = new VoucherCreatePayload.VoucherInfo[] {
@@ -98,7 +103,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
             );
 
-            (var otc, var pwd) = await _database.CreatePaymentRequest(new Connector.Models.PaymentRegisterPayload.Content {
+            var pos = await _mongo.GetPosById(new ObjectId(posId));
+            (var otc, var pwd) = await _operator.CreatePaymentRequest(pos, new PaymentRegisterPayload.Content {
                 Nonce = Guid.NewGuid().ToString("N"),
                 PosId = posId,
                 Amount = 1,
