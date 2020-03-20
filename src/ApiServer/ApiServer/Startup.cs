@@ -1,5 +1,6 @@
 using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -11,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
 using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api {
@@ -118,14 +121,46 @@ namespace WomPlatform.Web.Api {
             "it-IT"
         };
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+        public void Configure(
+            IApplicationBuilder app,
+            IWebHostEnvironment env,
+            MongoDatabase mongo,
+            ILogger<Startup> logger
+        ) {
             if (env.IsDevelopment()) {
+                logger.LogInformation("Setup in development mode");
+
                 app.UseDeveloperExceptionPage();
+
+                // Refresh development setup
+                var devSection = Configuration.GetSection("DevelopmentSetup");
+
+                var devSourceSection = devSection.GetSection("Source");
+                var devSourceId = devSourceSection["Id"];
+                mongo.UpsertSourceSync(new DatabaseDocumentModels.Source {
+                    Id = new MongoDB.Bson.ObjectId(devSourceId),
+                    Name = "Development source",
+                    PrivateKey = System.IO.File.ReadAllText(devSourceSection["KeyPathBase"] + ".pem"),
+                    PublicKey = System.IO.File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub")
+                });
+                logger.LogDebug("Configured development source #{0}", devSourceId);
+
+                var devPosSection = devSection.GetSection("Pos");
+                var devPosId = devPosSection["Id"];
+                mongo.UpsertPosSync(new DatabaseDocumentModels.Pos {
+                    Id = new MongoDB.Bson.ObjectId(devPosId),
+                    Name = "Development POS",
+                    PrivateKey = System.IO.File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
+                    PublicKey = System.IO.File.ReadAllText(devPosSection["KeyPathBase"] + ".pub")
+                });
+                logger.LogDebug("Configured development POS #{0}", devPosId);
             }
 
             // Fix incoming base path for hosting behind proxy
             string basePath = Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH");
             if(!string.IsNullOrWhiteSpace(basePath)) {
+                logger.LogInformation("Configuring server to run under base path '{0}'", basePath);
+
                 app.UsePathBase(new PathString(basePath));
                 app.Use(async (context, next) => {
                     context.Request.PathBase = basePath;

@@ -153,6 +153,16 @@ namespace WomPlatform.Web.Api {
             return PosCollection.Find(posFilter).ToListAsync();
         }
 
+        /// <summary>
+        /// Upserts a POS synchronously.
+        /// </summary>
+        public void UpsertPosSync(Pos pos) {
+            var filter = Builders<Pos>.Filter.Eq(p => p.Id, pos.Id);
+            PosCollection.ReplaceOne(filter, pos, new ReplaceOptions {
+                IsUpsert = true
+            });
+        }
+
         private IMongoCollection<Source> SourceCollection {
             get {
                 return MainDatabase.GetCollection<Source>("Sources");
@@ -167,6 +177,16 @@ namespace WomPlatform.Web.Api {
         public Task<List<Source>> GetSourcesByUser(ObjectId userId) {
             var filter = Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, userId);
             return SourceCollection.Find(filter).ToListAsync();
+        }
+
+        /// <summary>
+        /// Upserts a source synchronously.
+        /// </summary>
+        public void UpsertSourceSync(Source source) {
+            var filter = Builders<Source>.Filter.Eq(s => s.Id, source.Id);
+            SourceCollection.ReplaceOne(filter, source, new ReplaceOptions {
+                IsUpsert = true
+            });
         }
 
         private IMongoCollection<User> UserCollection {
