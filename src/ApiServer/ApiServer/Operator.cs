@@ -17,7 +17,7 @@ namespace WomPlatform.Web.Api {
     public class Operator {
 
         private readonly MongoDatabase Mongo;
-        //private readonly DataContext Database;
+        private readonly DataContext Database;
         private readonly IConfiguration Configuration;
         private readonly ILogger<Operator> Logger;
 
@@ -28,12 +28,12 @@ namespace WomPlatform.Web.Api {
 
         public Operator(
             MongoDatabase mongo,
-            //DataContext database,
+            DataContext database,
             IConfiguration configuration,
             ILogger<Operator> logger
         ) {
             Mongo = mongo;
-            //Database = database;
+            Database = database;
             Configuration = configuration;
             Logger = logger;
 
@@ -207,41 +207,41 @@ namespace WomPlatform.Web.Api {
         ) {
             var objId = new ObjectId(vi.Id.GetBaseId());
             if(!voucherMap.ContainsKey(objId)) {
-                Logger.LogError(LoggingEvents.DatabaseOperation, "Looking for voucher {0} in Mongo vouchers, not found", vi.Id);
+                Logger.LogError(LoggingEvents.Operations, "Looking for voucher {0} in Mongo vouchers, not found", vi.Id);
                 return false;
             }
 
             var voucher = voucherMap[objId];
             if(!voucher.Secret.Equals(vi.Secret, StringComparison.InvariantCulture)) {
-                Logger.LogInformation(LoggingEvents.DatabaseOperation, "Secret for voucher {0} does not match", vi.Id);
+                Logger.LogInformation(LoggingEvents.Operations, "Secret for voucher {0} does not match", vi.Id);
                 return false;
             }
 
             // Match filter
             if(filter?.Aims == null && voucher.AimCode.StartsWith("0")) {
                 // No aim filter, but voucher is a "demo" voucher
-                Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} matches 0 demo aim filter", vi.Id);
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} matches 0 demo aim filter", vi.Id);
                 return false;
             }
             if(filter?.Aims != null && !voucher.AimCode.StartsWith(filter.Aims)) {
                 // Voucher does not match aim filter
-                Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} does not match aim filter '{1}'", vi.Id, filter.Aims);
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} does not match aim filter '{1}'", vi.Id, filter.Aims);
                 return false;
             }
             if(filter?.Bounds != null && !filter.Bounds.Contains(voucher.Position.Coordinates)) {
                 // Voucher not contained in geographical bounds
-                Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} is outside geographical bounds", vi.Id);
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} is outside geographical bounds", vi.Id);
                 return false;
             }
             if(filter?.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromSeconds(filter.MaxAge.Value)) {
                 // Voucher too old
-                Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} is older than {1} days (age {2})", vi.Id, filter.MaxAge.Value, DateTime.UtcNow.Subtract(voucher.Timestamp));
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} is older than {1} days (age {2})", vi.Id, filter.MaxAge.Value, DateTime.UtcNow.Subtract(voucher.Timestamp));
                 return false;
             }
 
             // Update voucher count for update
             if(voucher.Count <= 0) {
-                Logger.LogInformation(LoggingEvents.DatabaseOperation, "Voucher {0} already spent", vi.Id);
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} already spent", vi.Id);
                 return false;
             }
             voucher.Count -= 1;
@@ -249,38 +249,80 @@ namespace WomPlatform.Web.Api {
             return true;
         }
 
+        private async Task<int> ProcessPaymentNewVouchers(IEnumerable<PaymentConfirmPayload.VoucherInfo> v, Filter filter) {
+            // Extract distinct base IDs
+            var newVoucherIds = v.Select(v => v.Id.GetBaseId()).Distinct().Select(s => new ObjectId(s));
+
+            // Retrieve distinct voucher instances from Mongo
+            var mongoVouchers = (await Mongo.GetVouchersWithIds(newVoucherIds)).ToDictionary(v => v.Id);
+            if(newVoucherIds.Count() != mongoVouchers.Count) {
+                // One or more distinct IDs did not load
+                Logger.LogError(LoggingEvents.Operations, "One or more vouchers does not exist ({0} expected, {1} found in DB)", newVoucherIds.Count(), mongoVouchers.Count);
+                throw new ArgumentException("One or more voucher(s) not found");
+            }
+
+            if(!v.All(v => UpdateAndVerifyVouchers(v, mongoVouchers, filter))) {
+                Logger.LogError(LoggingEvents.Operations, "One or more vouchers did not satisfy constraints");
+                throw new ArgumentException("Invalid voucher(s)");
+            }
+
+            await Mongo.ReplaceVouchers(mongoVouchers.Values);
+
+            return v.Count();
+        }
+
+        private async Task<int> ProcessPaymentOldVouchers(IEnumerable<PaymentConfirmPayload.VoucherInfo> vi, Filter filter) {
+            var voucherIds = vi.Select(v => v.Id.ToLong()).ToArray();
+            var vouchers = (from v in Database.Vouchers
+                            where voucherIds.Contains(v.Id)
+                            where !v.Spent
+                            select v);
+            var voucherMap = vouchers.ToDictionary(v => v.Id);
+
+            var validCount = vi.Count(vi => {
+                var suppliedId = vi.Id.ToLong();
+                if(!voucherMap.ContainsKey(suppliedId)) {
+                    Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} spent or not existing", vi.Id);
+                    return false;
+                }
+
+                var expectedSecret = voucherMap[suppliedId].Secret.ToBase64();
+                if(!vi.Secret.Equals(expectedSecret, StringComparison.InvariantCulture)) {
+                    Logger.LogInformation(LoggingEvents.Operations, "Secret of voucher {0} not valid (is '{1}', expedted '{2}')", vi.Id, vi.Secret, expectedSecret);
+                    return false;
+                }
+
+                // We trust client-side validation for old vouchers 🤞
+
+                return true;
+            });
+
+            foreach(var v in vouchers) {
+                v.Spent = true;
+            }
+            await Database.SaveChangesAsync();
+
+            return validCount;
+        }
+
         public async Task<PaymentRequest> ProcessPayment(PaymentConfirmPayload.Content request) {
             var payment = await Mongo.GetPaymentRequestByOtc(request.Otc);
 
             if(request.Vouchers.Length != payment.Amount) {
-                Logger.LogInformation(LoggingEvents.DatabaseOperation, "{0} vouchers given instead of {1}", request.Vouchers.Length, payment.Amount);
+                Logger.LogInformation(LoggingEvents.Operations, "{0} vouchers given instead of {1}", request.Vouchers.Length, payment.Amount);
                 throw new ArgumentException("Wrong number of vouchers");
             }
 
-            // Process old vouchers (TODO)
-            var oldVouchers = request.Vouchers.Where(v => !v.Id.ToString().Contains('/'));
-            if(oldVouchers.Count() > 0) {
-                Logger.LogError(LoggingEvents.DatabaseOperation, "Old voucher payments not supported yet");
-                throw new InvalidOperationException("Old voucher payments not supported");
+            int oldCount = await ProcessPaymentOldVouchers(request.Vouchers.Where(v => !v.Id.ToString().Contains('/')), payment.Filter);
+            int newCount = await ProcessPaymentNewVouchers(request.Vouchers.Where(v => v.Id.Id.Contains('/')), payment.Filter);
+            Logger.LogDebug("Old vouchers spent {0}, new vouchers spent {1}", oldCount, newCount);
+            if(oldCount + newCount < payment.Amount) {
+                Logger.LogInformation(LoggingEvents.Operations, "Found {0} valid vouchers, less than requested ({1})", newCount + oldCount, payment.Amount);
+                throw new ArgumentException("Insufficient number of valid vouchers");
             }
 
-            // Process new vouchers
-            var newVouchers = request.Vouchers.Where(v => v.Id.Id.Contains('/'));
-            var newVoucherIds = newVouchers.Select(v => v.Id.GetBaseId()).Distinct().Select(s => new ObjectId(s));
-            var mongoVouchers = (await Mongo.GetVouchersWithIds(newVoucherIds)).ToDictionary(v => v.Id);
-            if(newVoucherIds.Count() != mongoVouchers.Count) {
-                Logger.LogError(LoggingEvents.DatabaseOperation, "One or more vouchers does not exist ({0} expected, {1} found in DB)", newVoucherIds.Count(), mongoVouchers.Count);
-                throw new ArgumentException("One or more voucher(s) not found");
-            }
-            if(!newVouchers.All(v => UpdateAndVerifyVouchers(v, mongoVouchers, payment.Filter))) {
-                Logger.LogError(LoggingEvents.DatabaseOperation, "One or more vouchers did not satisfy constraints");
-                throw new ArgumentException("Invalid voucher(s)");
-            }
-            await Mongo.ReplaceVouchers(mongoVouchers.Values);
+            Logger.LogDebug(LoggingEvents.Operations, "Payment confirmed, vouchers updated");
 
-            Logger.LogDebug(LoggingEvents.DatabaseOperation, "Payment confirmed, vouchers updated");
-
-            // Update payment
             if(payment.Confirmations == null) {
                 payment.Confirmations = new List<PaymentConfirmation>();
             }
@@ -289,7 +331,7 @@ namespace WomPlatform.Web.Api {
             });
             await Mongo.UpdatePaymentRequest(payment);
 
-            Logger.LogDebug(LoggingEvents.DatabaseOperation, "Payment confirmation stored");
+            Logger.LogDebug(LoggingEvents.Operations, "Payment confirmation stored");
 
             return payment;
         }
