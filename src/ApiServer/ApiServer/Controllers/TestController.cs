@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using Newtonsoft.Json;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
@@ -15,9 +16,13 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Produces("application/json")]
     [Route("api/debug")]
+    [XForwardedProto("https")]
     public class TestController : BaseRegistryController {
 
+        private readonly ObjectId _testSourceId, _testPosId;
+
         public TestController(
+            IWebHostEnvironment webHostEnvironment,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
@@ -25,14 +30,21 @@ namespace WomPlatform.Web.Api.Controllers {
             Operator @operator,
             ILogger<AimsController> logger)
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+            Hosting = webHostEnvironment;
+
+            var devSection = configuration.GetSection("DevelopmentSetup");
+
+            var devSourceSection = devSection.GetSection("Source");
+            _testSourceId = new ObjectId(devSourceSection["Id"]);
+
+            var devPosSection = devSection.GetSection("Pos");
+            _testPosId = new ObjectId(devPosSection["Id"]);
         }
 
         protected IWebHostEnvironment Hosting { get; }
 
-        /*
-
         [HttpPost("create-vouchers/{count=10}")]
-        public async Task<ActionResult> CreateVouchers(
+        public async Task<IActionResult> CreateVouchers(
             [FromRoute] int count
         ) {
             if(!Hosting.IsDevelopment()) {
@@ -45,35 +57,34 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Creating {0} test vouchers", count);
 
-            var testSource = await Database.GetSourceById(1);
-            var aims = Database.GetFlatAims().ToList();
+            var testSource = await Mongo.GetSourceById(_testSourceId);
+            var rnd = new Random();
+            var aim = (await Mongo.GetAims()).OrderBy(a => rnd.NextDouble()).First();
 
-            Logger.LogTrace("Test source: {0}, aims: {1}", testSource.Name, string.Join(", ", from a in aims select a.Code));
+            Logger.LogTrace("Test source: {0}, random aim '{1}'", testSource.Name, aim.Code);
 
             var now = DateTime.UtcNow;
-            var voucherInfos = new List<VoucherCreatePayload.VoucherInfo>();
-            for(int i = 0; i < count; ++i) {
-                voucherInfos.Add(new VoucherCreatePayload.VoucherInfo {
-                    Aim = Crypto.Generator.Pick(aims).Code,
-                    Latitude = Crypto.Generator.NextBetween(5, 40),
-                    Longitude = Crypto.Generator.NextBetween(5, 50),
-                    Timestamp = now
-                });
+            var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = aim.Code,
+                    Latitude = rnd.NextBetween(5, 40),
+                    Longitude = rnd.NextBetween(5, 50),
+                    Timestamp = DateTime.UtcNow,
+                    Count = count
+                }
+            };
 
-                now = now.Subtract(TimeSpan.FromMinutes(5));
-            }
-
-            (var result, var password) = await Database.CreateVoucherGeneration(new VoucherCreatePayload.Content {
-                SourceId = testSource.Id.ToId(),
+            (var otcGen, var pwd) = await Operator.CreateGenerationRequest(testSource, new VoucherCreatePayload.Content {
                 Nonce = Guid.NewGuid().ToString("N"),
-                Vouchers = voucherInfos.ToArray()
+                SourceId = testSource.Id.ToString(),
+                Vouchers = voucherInfos
             }, isPreVerified: true);
 
-            Logger.LogDebug("New voucher generation request created with code {0}", result);
+            Logger.LogDebug("New voucher generation request created with code {0}", otcGen);
 
             return Ok(new {
-                OtcGen = UrlGenerator.GenerateRedeemUrl(result),
-                Pin = password
+                OtcGen = UrlGenerator.GenerateRedeemUrl(otcGen),
+                Pin = pwd
             });
         }
 
@@ -94,27 +105,27 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw new ArgumentException("Acknowledgment URL cannot be void", nameof(ackUrl));
             }
 
-            Logger.LogInformation("Creating payment for {0} vouchers with filter: {1}", amount, JsonConvert.SerializeObject(filter));
+            Logger.LogInformation("Creating payment for {0} vouchers", amount);
 
-            var testPos = Database.GetPosById(1);
+            var testPos = await Mongo.GetPosById(_testPosId);
 
-            (var otcPay, var pin) = await Database.CreatePaymentRequest(new PaymentRegisterPayload.Content {
+            Logger.LogTrace("Test POS: {0}", testPos.Id);
+
+            (var otcPay, var pwd) = await Operator.CreatePaymentRequest(testPos, new PaymentRegisterPayload.Content {
                 Amount = amount,
                 Nonce = Guid.NewGuid().ToString("N"),
                 SimpleFilter = filter,
-                PocketAckUrl = ackUrl,
-                PosId = testPos.Id.ToId()
+                PosId = testPos.Id.ToString(),
+                PocketAckUrl = ackUrl
             }, isPreVerified: true);
 
             Logger.LogDebug("New payment request created with code {0}", otcPay);
 
             return Ok(new {
                 OtcPay = UrlGenerator.GeneratePaymentUrl(otcPay),
-                Pin = pin
+                Pin = pwd
             });
         }
-
-        */
 
     }
 
