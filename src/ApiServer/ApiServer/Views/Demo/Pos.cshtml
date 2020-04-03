@@ -16,19 +16,23 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6">
-            <h1 class="display-3">Payment</h1>
+            <h1 class="display-4">Payment</h1>
 
             <p class="lead">
-                Introduction to payment. Yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda.
+                Ready to perform your first WOM&nbsp;payment? Follow this demo and spend your sample WOM&nbsp;voucher.
             </p>
 
-            <h2>Something</h2>
+            <p>
+                WOM&nbsp;vouchers can be spent with a variety of third-parties that want to reward socially-valuable efforts by citizens like you.
+                Different third-parties may accept WOM&nbsp;vouchers in exchange for discounts, gifts, or other incentives.
+            </p>
 
-            <p>Lorem ipsum yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda.</p>
+            <h2>Ready?</h2>
 
-            <h2>Something else</h2>
-
-            <p>Lorem ipsum yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda yadda.</p>
+            <p>
+                Have you installed the <b>WOM&nbsp;Pocket</b> app and have you <a href="@Url.Action(nameof(DemoController.RequestVoucher), "Demo")">redeemed your first sample voucher</a>?
+                Then you’re all set to perform your first WOM&nbsp;payment. Fill-in the form, click on the button below, and then scan the QR&nbsp;Code that will be shown.
+            </p>
 
             <form method="post" action="@Url.Action(nameof(DemoController.RequestPayment), "Demo")" class="text-center">
                 <div class="row">
