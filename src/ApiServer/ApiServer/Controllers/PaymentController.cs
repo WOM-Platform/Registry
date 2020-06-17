@@ -30,6 +30,10 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Register(
             [FromBody] PaymentRegisterPayload payload
         ) {
+            if(payload == null || payload.Nonce == null) {
+                return BadRequest();
+            }
+
             Logger.LogInformation(LoggingEvents.PaymentCreation, "Received payment creation request from POS ID {0} with nonce {1}",
                 payload.PosId, payload.Nonce
             );
@@ -83,6 +87,10 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Verify(
             [FromBody] PaymentVerifyPayload payload
         ) {
+            if(payload == null) {
+                return BadRequest();
+            }
+
             Logger.LogDebug(LoggingEvents.PaymentVerification, "Received verification request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentVerifyPayload.Content>(payload.Payload, LoggingEvents.PaymentVerification);
@@ -112,6 +120,10 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> GetInformation(
             [FromBody] PaymentInfoPayload payload
         ) {
+            if(payload == null) {
+                return BadRequest();
+            }
+
             Logger.LogDebug("Received payment information request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentInfoPayload.Content>(payload.Payload, LoggingEvents.PaymentInformationAccess);
@@ -162,6 +174,10 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Confirm(
             [FromBody] PaymentConfirmPayload payload
         ) {
+            if(payload == null) {
+                return BadRequest();
+            }
+
             Logger.LogDebug("Received payment confirmation request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentConfirmPayload.Content>(payload.Payload, LoggingEvents.PaymentProcessing);

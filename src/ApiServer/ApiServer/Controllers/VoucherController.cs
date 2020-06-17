@@ -32,11 +32,20 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<ActionResult> Create(
             [FromBody] VoucherCreatePayload payload
         ) {
+            if(payload == null || payload.Nonce == null) {
+                return BadRequest();
+            }
+
             Logger.LogDebug(LoggingEvents.VoucherCreation, "Received voucher creation from Source ID {0} with nonce {1}",
                 payload.SourceId, payload.Nonce
             );
 
-            var source = await Mongo.GetSourceById(new ObjectId(payload.SourceId.Id));
+            if(!ObjectId.TryParse(payload.SourceId.Id, out var sourceId)) {
+                Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} is not valid", payload.SourceId);
+                return this.ProblemParameter("Source ID is not valid");
+            }
+
+            var source = await Mongo.GetSourceById(sourceId);
             if(source == null) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
                 return this.SourceNotFound();
@@ -86,6 +95,10 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Verify(
             [FromBody] VoucherVerifyPayload payload
         ) {
+            if(payload == null) {
+                return BadRequest();
+            }
+
             Logger.LogDebug(LoggingEvents.VoucherVerification, "Received voucher generation verification request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherVerifyPayload.Content>(payload.Payload, LoggingEvents.VoucherVerification);
@@ -134,6 +147,10 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Redeem(
             [FromBody] VoucherRedeemPayload payload
         ) {
+            if(payload == null) {
+                return BadRequest();
+            }
+
             Logger.LogDebug("Received voucher redemption request");
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherRedeemPayload.Content>(payload.Payload, LoggingEvents.VoucherRedemption);
