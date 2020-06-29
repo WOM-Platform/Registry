@@ -126,11 +126,11 @@ namespace WomPlatform.Web.Api.Controllers {
                     Address = input.MerchantAddress,
                     ZipCode = input.MerchantZipCode,
                     City = input.MerchantCity,
-                    Nation = input.MerchantNation,
+                    Country = input.MerchantNation,
                     Description = input.MerchantDescription,
                     WebsiteUrl = input.MerchantWebsite,
                     CreatedOn = DateTime.UtcNow,
-                    AdministratorUserIds = new ObjectId[] {
+                    AdministratorIds = new ObjectId[] {
                         docUser.Id
                     }
                 });

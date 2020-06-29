@@ -35,9 +35,9 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public string City { get; set; }
 
-        [BsonElement("nation")]
+        [BsonElement("country")]
         [BsonIgnoreIfNull]
-        public string Nation { get; set; }
+        public string Country { get; set; }
 
         [BsonElement("description")]
         public string Description { get; set; }
@@ -51,7 +51,8 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public DateTime? CreatedOn { get; set; }
 
         [BsonElement("adminUserIds")]
-        public ObjectId[] AdministratorUserIds { get; set; }
+        [BsonIgnoreIfNull]
+        public ObjectId[] AdministratorIds { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
