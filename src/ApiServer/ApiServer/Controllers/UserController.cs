@@ -75,7 +75,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             _logger.LogInformation("User {0} logged in", user.Id);
 
-            var activeMerchant = (await _mongo.GetMerchantsByUser(user.Id)).FirstOrDefault();
+            var activeMerchant = (await _mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
             _logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
 
             await InternalLogin(user, activeMerchant);
@@ -189,7 +189,7 @@ namespace WomPlatform.Web.Api.Controllers {
             user.VerificationToken = null;
             await _mongo.ReplaceUser(user);
 
-            var activeMerchant = (await _mongo.GetMerchantsByUser(user.Id)).FirstOrDefault();
+            var activeMerchant = (await _mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
             _logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
 
             await InternalLogin(user, activeMerchant);

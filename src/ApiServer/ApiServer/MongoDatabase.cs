@@ -100,8 +100,22 @@ namespace WomPlatform.Web.Api {
             return MerchantCollection.Find(filter).SingleOrDefaultAsync();
         }
 
-        public Task<List<Merchant>> GetMerchantsByUser(ObjectId userId) {
-            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorUserIds, userId);
+        /// <summary>
+        /// Gets a list of merchants that the user controls as an administrator.
+        /// </summary>
+        public Task<List<Merchant>> GetMerchantsWithAdminControl(ObjectId userId) {
+            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorIds, userId);
+            return MerchantCollection.Find(merchFilter).ToListAsync();
+        }
+
+        /// <summary>
+        /// Gets a list of merchants that the user controls as a POS user.
+        /// </summary>
+        public Task<List<Merchant>> GetMerchantsWithPosControl(ObjectId userId) {
+            var merchFilter = Builders<Merchant>.Filter.Or(
+                Builders<Merchant>.Filter.AnyEq(m => m.AdministratorIds, userId),
+                Builders<Merchant>.Filter.AnyEq(m => m.PosUserIds, userId)
+            );
             return MerchantCollection.Find(merchFilter).ToListAsync();
         }
 
@@ -140,12 +154,34 @@ namespace WomPlatform.Web.Api {
             return PosCollection.Find(filter).SingleOrDefaultAsync();
         }
 
+        /// <summary>
+        /// Gets list of POS that the user controls.
+        /// </summary>
         public async Task<List<Pos>> GetPosByUser(ObjectId userId) {
-            var merchantIds = from m in await GetMerchantsByUser(userId)
+            var merchantIds = from m in await GetMerchantsWithPosControl(userId)
                               select m.Id;
 
             var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, merchantIds);
             return await PosCollection.Find(posFilter).ToListAsync();
+        }
+
+        /// <summary>
+        /// Gets list of Merchants and POS that the user controls.
+        /// </summary>
+        public async Task<List<(Merchant, List<Pos>)>> GetMerchantsAndPosByUser(ObjectId userId) {
+            // Get all merchants with control
+            var merchants = (await GetMerchantsWithPosControl(userId)).ToDictionary(m => m.Id);
+
+            // Get all matching POS
+            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants.Values select m.Id);
+            var pos = await PosCollection.Find(posFilter).ToListAsync();
+
+            // Build nested list
+            var ret = new List<(Merchant, List<Pos>)>(merchants.Count);
+            foreach(var g in pos.GroupBy(pos => pos.MerchantId)) {
+                ret.Add((merchants[g.Key], g.ToList()));
+            }
+            return ret;
         }
 
         public Task<List<Pos>> GetPosByMerchant(ObjectId merchantId) {

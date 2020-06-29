@@ -86,6 +86,49 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
+        // POST /api/v2/auth/merchant
+        [HttpPost("merchant")]
+        [Produces("application/json")]
+        [Authorize(Startup.ApiLoginPolicy)]
+        [XForwardedProto("https")]
+        [ApiVersion("2.0")]
+        public async Task<IActionResult> PosLoginV2() {
+            Logger.LogDebug("POS login V2");
+
+            var user = GetApiLoginUser();
+            if(user == null) {
+                return Forbid();
+            }
+
+            var data = await Mongo.GetMerchantsAndPosByUser(user.Id);
+            Logger.LogInformation("User {0} controls POS for {1} merchants", user.Id, data.Count);
+
+            return Ok(new {
+                user.Name,
+                user.Surname,
+                user.Email,
+                Merchants = from m in data
+                            select new {
+                                m.Item1.Id,
+                                m.Item1.Name,
+                                m.Item1.FiscalCode,
+                                m.Item1.Address,
+                                m.Item1.ZipCode,
+                                m.Item1.City,
+                                m.Item1.Country,
+                                Url = m.Item1.WebsiteUrl,
+                                Pos = from p in m.Item2
+                                      select new {
+                                          p.Id,
+                                          p.Name,
+                                          p.PrivateKey,
+                                          p.PublicKey
+                                      }
+                            }
+            }
+            );
+        }
+
         [HttpGet("key")]
         [Produces("text/plain")]
         public ActionResult GetPublicKey() {

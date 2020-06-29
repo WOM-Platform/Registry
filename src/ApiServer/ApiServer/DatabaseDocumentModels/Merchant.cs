@@ -54,6 +54,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public ObjectId[] AdministratorIds { get; set; }
 
+        [BsonElement("posUserIds")]
+        [BsonIgnoreIfNull]
+        public ObjectId[] PosUserIds { get; set; }
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 
