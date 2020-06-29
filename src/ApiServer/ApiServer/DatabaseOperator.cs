@@ -69,9 +69,9 @@ namespace WomPlatform.Web.Api {
         /// </summary>
         public async Task<IDictionary<char, IndexedNodeOf<char, Aim>>> GetAimHierarchy() {
 #pragma warning disable EF1000 // Possible SQL injection vulnerability
-            var tableName = Data.Model.FindEntityType(typeof(Aim)).Relational().TableName;
+            var tableName = Data.Model.FindEntityType(typeof(Aim)).GetTableName();
             var sql = $"SELECT * From {tableName} ORDER BY CHAR_LENGTH(`{nameof(Aim.Code)}`) ASC, `{nameof(Aim.Order)}` ASC";
-            var flatAims = await Data.Aims.FromSql(sql)
+            var flatAims = await Data.Aims.FromSqlRaw(sql)
                 .AsNoTracking()
                 .ToListAsync();
 #pragma warning restore EF1000 // Possible SQL injection vulnerability
