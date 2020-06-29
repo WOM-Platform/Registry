@@ -9,7 +9,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("api/v1/auth")]
+    [Route("api/v{version:apiVersion}/auth")]
     public class AuthController : BaseRegistryController {
 
         public AuthController(
@@ -30,13 +30,14 @@ namespace WomPlatform.Web.Api.Controllers {
             return ((WomUserIdentity)User.Identity).WomUser;
         }
 
-        // GET api/v1/auth/sources
+        // GET /api/v1/auth/sources
         [HttpGet("sources")]
         [Produces("application/json")]
         [Authorize(Startup.ApiLoginPolicy)]
         [XForwardedProto("https")]
-        public async Task<ActionResult> Sources() {
-            Logger.LogDebug("Retrieving user sources");
+        [ApiVersion("1.0")]
+        public async Task<ActionResult> SourceLoginV1() {
+            Logger.LogDebug("Source login V1");
 
             var user = GetApiLoginUser();
             if(user == null) {
@@ -57,13 +58,14 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-        // GET api/v1/auth/pos
+        // GET /api/v1/auth/pos
         [HttpGet("pos")]
         [Produces("application/json")]
         [Authorize(Startup.ApiLoginPolicy)]
         [XForwardedProto("https")]
-        public async Task<IActionResult> Pos() {
-            Logger.LogDebug("Retrieving user POS");
+        [ApiVersion("1.0")]
+        public async Task<IActionResult> PosLoginV1() {
+            Logger.LogDebug("POS login V1");
 
             var user = GetApiLoginUser();
             if(user == null) {

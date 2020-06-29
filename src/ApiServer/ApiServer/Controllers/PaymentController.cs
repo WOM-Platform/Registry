@@ -11,7 +11,7 @@ using WomPlatform.Connector.Models;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Produces("application/json")]
-    [Route("api/v1/payment")]
+    [Route("api/v{version:apiVersion}/payment")]
     public class PaymentController : BaseRegistryController {
 
         public PaymentController(

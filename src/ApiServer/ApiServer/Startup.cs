@@ -38,6 +38,8 @@ namespace WomPlatform.Web.Api {
 
             services.AddRouting();
 
+            services.AddApiVersioning();
+
             services.AddControllersWithViews()
                 .AddMvcOptions(opts => {
                     opts.AllowEmptyInputInBodyModelBinding = true;
