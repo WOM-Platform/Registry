@@ -165,6 +165,14 @@ namespace WomPlatform.Web.Api {
             return await PosCollection.Find(posFilter).ToListAsync();
         }
 
+        public Task<List<Pos>> GetPosWithPosition() {
+            var filter = Builders<Pos>.Filter.And(
+                Builders<Pos>.Filter.Exists(pos => pos.Position, true),
+                Builders<Pos>.Filter.Ne(pos => pos.Position, null)
+            );
+            return PosCollection.Find(filter).ToListAsync();
+        }
+
         /// <summary>
         /// Gets list of Merchants and POS that the user controls.
         /// </summary>

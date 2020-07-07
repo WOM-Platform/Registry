@@ -30,7 +30,7 @@ namespace WomPlatform.Web.Api.InputModels {
 
         [Required]
         [StringLength(256, MinimumLength = 5)]
-        [Display(Name = "Nome del Merchant")]
+        [Display(Name = "Ragione sociale del Merchant")]
         public string MerchantTitle { get; set; }
 
         [Required]

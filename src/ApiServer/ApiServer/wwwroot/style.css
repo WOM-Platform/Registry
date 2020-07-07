@@ -87,3 +87,7 @@ footer {
     max-width: 50%;
     height: auto;
 }
+
+.badge img.off {
+    opacity: 0.5;
+}

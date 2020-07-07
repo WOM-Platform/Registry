@@ -1,0 +1,87 @@
+﻿@model PosMapViewModel
+@{
+    Layout = "Main";
+    ViewData["Title"] = "WOM POS app";
+}
+
+@section head {
+
+    <script type="text/javascript" src="//maps.googleapis.com/maps/api/js?key=@(Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "")"></script>
+
+}
+
+@section footerScripts {
+
+    <script type="text/javascript">
+var map;
+var marker = false;
+
+function initMap() {
+    map = new google.maps.Map(
+        document.getElementById('posListMap'),
+        {
+            zoom: 3,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        }
+    );
+
+    var points = [
+        @Html.Raw(string.Join(", ", from p in Model.Pos
+            where p.Position != null
+            let coord = p.Position.Coordinates
+            select string.Format("{{ title: '{2}', coords: {{ lat: {1}, lng: {0} }} }}", coord.Latitude, coord.Longitude, p.Name.Replace("'", "\\'"))))
+    ];
+
+    var bounds = new google.maps.LatLngBounds();
+    for (i = 0; i < points.length; ++i) {
+        new google.maps.Marker({
+            position: points[i].coords,
+            title: points[i].title,
+            map: map
+        });
+        bounds.extend(points[i].coords);
+    }
+    map.fitBounds(bounds);
+}
+
+google.maps.event.addDomListener(window, 'load', initMap);
+    </script>
+
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <h1>WOM Point of Service</h1>
+
+            <p>
+                <img src="~/wom-logo.png" alt="WOM diAry logo" class="img-fluid" />
+            </p>
+
+            <p>Lorem ipsum.</p>
+
+            <h2>Mappa dei POS</h2>
+
+            <div id="posListMap" style="width: 100%; height: 480px; margin: 0;">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h2>Installa l’app</h2>
+        </div>
+
+        <div class="col-6 badge">
+            <a href="https://play.google.com/store/apps/details?id=social.wom.pos" title="Download WOM POS from Google Play">
+                <img src="~/badge_google_play.png" alt="Google Play" />
+            </a>
+        </div>
+        <div class="col-6 badge">
+            <a href="" title="Download WOM diAry from the App Store">
+                <img src="~/badge_app_store.png" alt="Apple App Store" class="off" />
+            </a>
+        </div>
+    </div>
+</div>
