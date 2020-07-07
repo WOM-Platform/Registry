@@ -29,7 +29,7 @@ function initMap() {
         @Html.Raw(string.Join(", ", from p in Model.Pos
             where p.Position != null
             let coord = p.Position.Coordinates
-            select string.Format("{{ title: '{2}', coords: {{ lat: {1}, lng: {0} }} }}", coord.Latitude, coord.Longitude, p.Name.Replace("'", "\\'"))))
+            select string.Format(CultureInfo.InvariantCulture, "{{ title: '{2}', coords: {{ lat: {1}, lng: {0} }} }}", coord.Latitude, coord.Longitude, p.Name.Replace("'", "\\'"))))
     ];
 
     var bounds = new google.maps.LatLngBounds();
