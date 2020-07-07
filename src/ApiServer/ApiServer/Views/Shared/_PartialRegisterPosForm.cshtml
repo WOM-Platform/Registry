@@ -1,0 +1,36 @@
+﻿@model UserRegisterPosModel
+
+<div class="form-group">
+    <label asp-for="PosName" class="control-label"></label>
+    <input asp-for="PosName" class="form-control" />
+    <span asp-validation-for="PosName" class="text-danger"></span>
+    <p>Nome del POS, che verrà mostrato agli utenti al momento del pagamento.</p>
+</div>
+
+<div class="form-group">
+    <div id="posMap" style="width: 100%; height: 400px; margin: 0;">
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="form-group">
+            <label asp-for="PosLatitude" class="control-label"></label>
+            <input id="mapLat" asp-for="PosLatitude" class="form-control" readonly />
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label asp-for="PosLongitude" class="control-label"></label>
+            <input id="mapLng" asp-for="PosLongitude" class="form-control" readonly />
+        </div>
+    </div>
+</div>
+
+<div class="form-group">
+    <label asp-for="PosUrl" class="control-label"></label>
+    <input asp-for="PosUrl" class="form-control" />
+    <span asp-validation-for="PosUrl" class="text-danger"></span>
+    <p><i>Opzionale.</i> Verrà mostrato agli utenti al momento della conferma del pagamento e dovrebbe identificare univocamente il POS.</p>
+</div>

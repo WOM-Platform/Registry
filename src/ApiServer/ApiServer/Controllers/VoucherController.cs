@@ -51,7 +51,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.SourceNotFound();
             }
 
-            var sourcePublicKey = KeyManager.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
+            var sourcePublicKey = CryptoHelper.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherCreatePayload.Content>(payload.Payload, LoggingEvents.VoucherCreation);
             if(decryptResult != null) {

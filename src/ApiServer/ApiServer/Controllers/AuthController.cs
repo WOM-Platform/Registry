@@ -132,7 +132,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("key")]
         [Produces("text/plain")]
         public ActionResult GetPublicKey() {
-            return Ok(KeyManager.ConvertToString(KeyManager.RegistryPublicKey));
+            return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }
 
     }

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.ViewModel;
@@ -99,40 +100,54 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpPost("register-merchant")]
         public async Task<IActionResult> RegisterMerchantPerform(
-            [FromForm] UserRegisterMerchantModel input
+            [FromForm] UserRegisterMerchantModel inputMerchant,
+            [FromForm] UserRegisterPosModel inputPos
         ) {
             if(!ModelState.IsValid) {
                 return View("MerchantRegister");
             }
 
             var verificationToken = new Random().GenerateReadableCode(8);
-            _logger.LogDebug("Registering new user for {0} with verification token {1}", input.Email, verificationToken);
+            _logger.LogDebug("Registering new user for {0} with verification token {1}", inputMerchant.Email, verificationToken);
 
             try {
                 var docUser = new User {
-                    Email = input.Email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
-                    Name = input.Name,
-                    Surname = input.Surname,
+                    Email = inputMerchant.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(inputMerchant.Password),
+                    Name = inputMerchant.Name,
+                    Surname = inputMerchant.Surname,
                     VerificationToken = verificationToken,
                     RegisteredOn = DateTime.UtcNow
                 };
                 await _mongo.CreateUser(docUser);
 
-                await _mongo.CreateMerchant(new Merchant {
-                    Name = input.MerchantTitle,
-                    FiscalCode = input.MerchantFiscalCode,
-                    PrimaryActivityType = input.MerchantActivityType,
-                    Address = input.MerchantAddress,
-                    ZipCode = input.MerchantZipCode,
-                    City = input.MerchantCity,
-                    Country = input.MerchantNation,
-                    Description = input.MerchantDescription,
-                    WebsiteUrl = input.MerchantWebsite,
+                var docMerchant = new Merchant {
+                    Name = inputMerchant.MerchantTitle,
+                    FiscalCode = inputMerchant.MerchantFiscalCode,
+                    PrimaryActivityType = inputMerchant.MerchantActivityType,
+                    Address = inputMerchant.MerchantAddress,
+                    ZipCode = inputMerchant.MerchantZipCode,
+                    City = inputMerchant.MerchantCity,
+                    Country = inputMerchant.MerchantNation,
+                    Description = inputMerchant.MerchantDescription,
+                    WebsiteUrl = inputMerchant.MerchantWebsite,
                     CreatedOn = DateTime.UtcNow,
                     AdministratorIds = new ObjectId[] {
                         docUser.Id
                     }
+                };
+                await _mongo.CreateMerchant(docMerchant);
+
+                var posKeys = CryptoHelper.CreateKeyPair();
+                await _mongo.CreatePos(new Pos {
+                    MerchantId = docMerchant.Id,
+                    Name = inputPos.PosName,
+                    Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(
+                        inputPos.PosLongitude, inputPos.PosLatitude
+                    )),
+                    PrivateKey = posKeys.Private.ToPemString(),
+                    PublicKey = posKeys.Public.ToPemString(),
+                    Url = inputPos.PosUrl
                 });
 
                 _composer.SendVerificationMail(docUser);

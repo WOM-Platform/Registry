@@ -4,6 +4,18 @@
     ViewData["Title"] = "Register";
 }
 
+@section head {
+
+    <script type="text/javascript" src="//maps.googleapis.com/maps/api/js?key=@(Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "")"></script>
+
+}
+
+@section footerScripts {
+
+    <script type="text/javascript" src="~/js/pos-map.js"></script>
+
+}
+
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6">
@@ -373,6 +385,16 @@
                         Breve descrizione del merchant, degli obiettivi sociali e delle modalità con cui verranno monetizzati i WOM.
                     </p>
                 </div>
+
+                <hr />
+
+                <h2>Il tuo primo Point of Service</h2>
+
+                <p>Compila questa sezione del modulo per creare un <b>Point of Service</b>&nbsp;(POS) collegato al tuo account da Merchant, in modo da poter accettare pagamenti da subito.</p>
+
+                <partial name="_PartialRegisterPosForm" />
+
+                <hr />
 
                 <div class="form-group form-check">
                     <input asp-for="Accept" class="form-check-input" />

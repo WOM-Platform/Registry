@@ -39,7 +39,6 @@ namespace WomPlatform.Web.Api.Controllers {
             _logger.LogDebug("Active merchant: {0}", merchantId);
 
             var merchant = await _mongo.GetMerchantById(merchantId);
-
             var posList = await _mongo.GetPosByMerchant(merchantId);
 
             return View("Home", new MerchantDashboardHomeViewModel {
