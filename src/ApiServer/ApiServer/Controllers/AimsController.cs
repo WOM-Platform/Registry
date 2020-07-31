@@ -24,6 +24,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
+        [ApiVersion("1.0")]
         public async Task<IActionResult> List() {
             var aims = await Mongo.GetAims();
             return Ok(from a in aims
@@ -32,6 +33,24 @@ namespace WomPlatform.Web.Api.Controllers {
                           a.Titles,
                           a.Order
                       });
+        }
+
+        [Produces("application/json")]
+        [HttpGet]
+        [HttpHead]
+        [ChangeLog("aim-list")]
+        [ApiVersion("2.0")]
+        public async Task<IActionResult> ListV2() {
+            var aims = await Mongo.GetAims();
+            var aimList = from a in aims
+                          select new {
+                              a.Code,
+                              a.Titles,
+                              a.Order
+                          };
+            return Ok(new {
+                Aims = aimList
+            });
         }
 
     }
