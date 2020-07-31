@@ -9,6 +9,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    [ApiController]
     [Route("api/v{version:apiVersion}/auth")]
     public class AuthController : BaseRegistryController {
 

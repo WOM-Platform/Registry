@@ -12,6 +12,7 @@ using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    [ApiController]
     [Produces("application/json")]
     [Route("api/v{version:apiVersion}/voucher")]
     public class VoucherController : BaseRegistryController {

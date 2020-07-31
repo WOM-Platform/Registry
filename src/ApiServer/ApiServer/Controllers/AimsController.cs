@@ -7,7 +7,8 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("api/v{version:apiVersion}/aims")]
+    [ApiController]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class AimsController : BaseRegistryController {
 
         public AimsController(
@@ -24,7 +25,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        [ApiVersion("1.0")]
+        [ApiVersion("1")]
         public async Task<IActionResult> List() {
             var aims = await Mongo.GetAims();
             return Ok(from a in aims
@@ -39,7 +40,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        [ApiVersion("2.0")]
+        [ApiVersion("2")]
         public async Task<IActionResult> ListV2() {
             var aims = await Mongo.GetAims();
             var aimList = from a in aims
