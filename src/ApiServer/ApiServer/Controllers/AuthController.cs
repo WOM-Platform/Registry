@@ -132,6 +132,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpGet("key")]
         [Produces("text/plain")]
+        [ApiVersion("1.0")]
+        [ApiVersion("2.0")]
         public IActionResult GetPublicKey() {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }
