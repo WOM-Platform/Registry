@@ -36,7 +36,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize(Startup.ApiLoginPolicy)]
         [XForwardedProto("https")]
         [ApiVersion("1.0")]
-        public async Task<ActionResult> SourceLoginV1() {
+        public async Task<IActionResult> SourceLoginV1() {
             Logger.LogDebug("Source login V1");
 
             var user = GetApiLoginUser();
@@ -131,7 +131,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpGet("key")]
         [Produces("text/plain")]
-        public ActionResult GetPublicKey() {
+        public IActionResult GetPublicKey() {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }
 
