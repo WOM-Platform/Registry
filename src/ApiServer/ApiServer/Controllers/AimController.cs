@@ -7,6 +7,7 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    [ApiController]
     [Route("api/v{version:apiVersion}/aim")]
     public class AimController : BaseRegistryController {
 

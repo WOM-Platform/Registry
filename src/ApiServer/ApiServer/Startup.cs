@@ -1,6 +1,5 @@
 using System;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -13,7 +12,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto;
 using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api {
@@ -38,7 +36,10 @@ namespace WomPlatform.Web.Api {
 
             services.AddRouting();
 
-            services.AddApiVersioning();
+            services.AddApiVersioning(o => {
+                o.ReportApiVersions = true;
+                o.AssumeDefaultVersionWhenUnspecified = false;
+            });
 
             services.AddControllersWithViews()
                 .AddMvcOptions(opts => {
