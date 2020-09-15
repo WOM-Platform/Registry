@@ -315,7 +315,7 @@ namespace WomPlatform.Web.Api {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not verified, cannot be performed", request.Otc);
                 throw new ArgumentException("OTC code not verified");
             }
-            if(!payment.IsPersistent && payment.Confirmations.Count > 0) {
+            if(!payment.IsPersistent && payment.Confirmations?.Count > 0) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not persistent and already performed");
                 throw new InvalidOperationException("Payment already performed");
             }
