@@ -307,7 +307,22 @@ namespace WomPlatform.Web.Api {
 
         public async Task<PaymentRequest> ProcessPayment(PaymentConfirmPayload.Content request) {
             var payment = await Mongo.GetPaymentRequestByOtc(request.Otc);
-
+            if(payment == null) {
+                Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not found", request.Otc);
+                throw new ArgumentException("OTC code not valid");
+            }
+            if(!payment.Verified) {
+                Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not verified, cannot be performed", request.Otc);
+                throw new ArgumentException("OTC code not verified");
+            }
+            if(!payment.IsPersistent && payment.Confirmations.Count > 0) {
+                Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not persistent and already performed");
+                throw new InvalidOperationException("Payment already performed");
+            }
+            if(!payment.Password.Equals(request.Password, StringComparison.Ordinal)) {
+                Logger.LogInformation(LoggingEvents.Operations, "Payment password does not match");
+                throw new ArgumentException("Password does not match");
+            }
             if(request.Vouchers.Length != payment.Amount) {
                 Logger.LogInformation(LoggingEvents.Operations, "{0} vouchers given instead of {1}", request.Vouchers.Length, payment.Amount);
                 throw new ArgumentException("Wrong number of vouchers");
