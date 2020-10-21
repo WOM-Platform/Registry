@@ -21,7 +21,7 @@ namespace WomPlatform.Web.Api.Controllers {
             KeyManager keyManager,
             MongoDatabase mongo,
             Operator @operator,
-            ILogger<AimsController> logger)
+            ILogger<PaymentController> logger)
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
 
         }
@@ -140,6 +140,11 @@ namespace WomPlatform.Web.Api.Controllers {
 
             try {
                 var payment = await Mongo.GetPaymentRequestByOtc(payloadContent.Otc);
+                if(payment == null) {
+                    Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
+                    return NotFound();
+                }
+
                 var pos = await Mongo.GetPosById(payment.PosId);
 
                 Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.Otc, pos.Id, payment.Amount);
