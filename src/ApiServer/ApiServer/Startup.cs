@@ -121,7 +121,6 @@ namespace WomPlatform.Web.Api {
 
         private readonly string[] SupportedCultures = new string[] {
             "en-US",
-            "it-IT"
         };
 
         public void Configure(

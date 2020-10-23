@@ -9,11 +9,11 @@
     <div class="row justify-content-center">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6">
             <form method="post" action="@Url.Action(nameof(UserController.LoginPerform), "User")" class="big-form">
-                <h1>Login alla Piattaforma&nbsp;WOM</h1>
+                <h1>Login to the WOM&nbsp;Platform</h1>
 
                 @if(Model.PreviousLoginFailed) {
                 <div class="alert alert-danger" role="alert">
-                    Email o password non corretti.
+                    Email or password not correct.
                 </div>
                 }
 
@@ -29,8 +29,8 @@
                 <input type="hidden" name="return" value="@Model.ReturnUrl" />
 
                 <button type="submit" class="btn btn-primary">Login</button>
-                <a class="btn btn-link" href="#">Password dimenticata?</a>
-                <a class="btn btn-link" href="@Url.Action(nameof(UserController.RegisterMerchant), "User")">Registrati</a>
+                <!--<a class="btn btn-link" href="#">Password dimenticata?</a>-->
+                <a class="btn btn-link" href="@Url.Action(nameof(UserController.RegisterMerchant), "User")">Sign up</a>
             </form>
         </div>
     </div>

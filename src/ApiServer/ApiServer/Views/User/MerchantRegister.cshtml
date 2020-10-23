@@ -20,16 +20,16 @@
     <div class="row justify-content-center">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6">
             <form method="post" action="@Url.Action(nameof(UserController.RegisterMerchantPerform), "User")" class="big-form">
-                <h1>Registrati alla Piattaforma&nbsp;WOM</h1>
+                <h1>Sign up to the WOM&nbsp;Platform</h1>
 
                 <p>
-                    Questo modulo ti permetterà di registrarti alla <b>Piattaforma&nbsp;WOM</b> come <b>Merchant</b>.
-                    <a href="@Url.Action(nameof(UserController.Login), "User")">Sei già registrato/a?</a>
+                    Fill in the form below to sign up to the <b>WOM&nbsp;Platform</b> as a <i>Merchant</i>, in order to start receiving payments.
+                    <a href="@Url.Action(nameof(UserController.Login), "User")">Already registered?</a>
                 </p>
 
-                @Html.ValidationSummary("Errori:", new { @class = "text-danger" })
+                @Html.ValidationSummary("Errors:", new { @class = "text-danger" })
 
-                <h2>Rappresentante legale</h2>
+                <h2>Legal representative</h2>
 
                 <div class="form-group">
                     <label asp-for="Email" class="control-label"></label>
