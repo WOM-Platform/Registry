@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
@@ -58,8 +59,8 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("add-pos")]
-        public async Task<IActionResult> AddNewPostPerform(
-            [FromForm] DashboardMerchantRegisterPosModel input
+        public async Task<IActionResult> AddNewPosPerform(
+            [FromForm] UserRegisterPosModel input
         ) {
             if(!ModelState.IsValid) {
                 return View("AddPos");
@@ -67,25 +68,17 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var merchantId = new ObjectId(User.FindFirst(Startup.ActiveMerchantClaimType).Value);
 
-            
-
+            var keyPair = CryptoHelper.CreateKeyPair();
             await _mongo.CreatePos(new Pos {
                 MerchantId = merchantId,
-                Name = input.Name,
-                Position = GeoJson.Point(GeoJson.Geographic(input.Longitude, input.Latitude)),
-                PrivateKey = "",
-                PublicKey = "",
-                Url = input.Url
+                Name = input.PosName,
+                Position = GeoJson.Point(GeoJson.Geographic(input.PosLongitude, input.PosLatitude)),
+                PrivateKey = keyPair.Private.ToPemString(),
+                PublicKey = keyPair.Public.ToPemString(),
+                Url = input.PosUrl
             });
 
             return RedirectToAction(nameof(Index));
-        }
-
-        private void GenerateRsaPair() {
-            using(var provider = new RSACryptoServiceProvider(4096)) {
-                var rsaParams = provider.ExportParameters(true);
-                var pair = DotNetUtilities.GetRsaKeyPair(rsaParams);
-            }
         }
 
     }

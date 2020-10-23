@@ -1,4 +1,4 @@
-﻿@model DashboardMerchantRegisterPosModel
+﻿@model UserRegisterPosModel
 @{
     Layout = "Main";
     ViewData["Title"] = "Add new POS";
@@ -12,53 +12,14 @@
 
 @section footerScripts {
 
-    <script type="text/javascript">
-var map;
-var marker = false;
-
-function initMap() {
-    map = new google.maps.Map(
-        document.getElementById('map'),
-        {
-            center: new google.maps.LatLng(52.357971, -6.516758),
-            zoom: 7,
-            mapTypeId: google.maps.MapTypeId.ROADMAP
-        }
-    );
-
-    google.maps.event.addListener(map, 'click', function(event) {                
-        var clickedLocation = event.latLng;
-        if(marker === false){
-            marker = new google.maps.Marker({
-                position: clickedLocation,
-                map: map,
-                draggable: true
-            });
-            google.maps.event.addListener(marker, 'dragend', function(event){
-                markerLocation();
-            });
-        } else {
-            marker.setPosition(clickedLocation);
-        }
-        markerLocation();
-    });
-}
-        
-function markerLocation(){
-    var currentLocation = marker.getPosition();
-    document.getElementById('mapLat').value = currentLocation.lat();
-    document.getElementById('mapLng').value = currentLocation.lng();
-}
-
-google.maps.event.addDomListener(window, 'load', initMap);
-    </script>
+    <script type="text/javascript" src="~/js/pos-map.js"></script>
 
 }
 
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6">
-            <form method="post" action="@Url.Action(nameof(DashboardMerchantController.AddNewPostPerform), "DashboardMerchant")" class="big-form">
+            <form method="post" action="@Url.Action(nameof(DashboardMerchantController.AddNewPosPerform), "DashboardMerchant")" class="big-form">
                 <h1><span class="fas"></span>&nbsp;Register new POS</h1>
 
                 <p>
@@ -67,42 +28,9 @@ google.maps.event.addDomListener(window, 'load', initMap);
 
                 @Html.ValidationSummary("Validation errors:", new { @class = "text-danger" })
 
-                <div class="form-group">
-                    <label asp-for="Name" class="control-label"></label>
-                    <input asp-for="Name" class="form-control" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
-                    <p>This name will be shown to users when confirming a payment.</p>
-                </div>
+                <partial name="_PartialRegisterPosForm" />
 
-                <div class="form-group">
-                    <div id="map" style="width: 100%; height: 400px; margin: 0;">
-
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col">
-                        <div class="form-group">
-                            <label asp-for="Latitude" class="control-label"></label>
-                            <input id="mapLat" asp-for="Latitude" class="form-control" readonly />
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="form-group">
-                            <label asp-for="Longitude" class="control-label"></label>
-                            <input id="mapLng" asp-for="Longitude" class="form-control" readonly />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="Url" class="control-label"></label>
-                    <input asp-for="Url" class="form-control" />
-                    <span asp-validation-for="Url" class="text-danger"></span>
-                    <p>Optional. Will be shown to users when confirming a payment and should identify your points of service.</p>
-                </div>
-
-                <button type="submit" class="btn btn-primary">Register POS</button>
+                <button type="submit" class="btn btn-primary">Register</button>
                 <a class="btn btn-link" href="@Url.Action(nameof(DashboardMerchantController.Index), "DashboardMerchant")">Cancel</a>
             </form>
         </div>
