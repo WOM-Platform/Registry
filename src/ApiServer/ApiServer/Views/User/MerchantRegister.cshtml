@@ -78,6 +78,11 @@
 
                 <div class="row form-subgroup">
                     <div class="col-12">
+                        <p class="description">
+                            <i>Optional.</i>
+                            Main address of your business.
+                        </p>
+
                         <div class="form-group">
                             <label asp-for="MerchantAddress" class="control-label"></label>
                             <input asp-for="MerchantAddress" class="form-control" />
@@ -358,7 +363,7 @@
 <option value="Yemen">Yemen</option>
 <option value="Zambia">Zambia</option>
 <option value="Zimbabwe">Zimbabwe</option>
-                        </select> 
+                        </select>
                     </div>
                 </div>
 
@@ -375,6 +380,10 @@
                     <label asp-for="MerchantWebsite" class="control-label"></label>
                     <input asp-for="MerchantWebsite" class="form-control" />
                     <span asp-validation-for="MerchantWebsite" class="text-danger"></span>
+                    <p class="description">
+                        <i>Optional.</i>
+                        Web site of your business.
+                    </p>
                 </div>
 
                 <div class="form-group">
