@@ -38,12 +38,16 @@ namespace WomPlatform.Web.Api.Controllers {
         [TempData]
         public bool PreviousLoginFailed { get; set; } = false;
 
+        [TempData]
+        public bool HasResetPassword { get; set; } = false;
+
         [HttpGet("login")]
         public IActionResult Login(
             [FromQuery] string @return
         ) {
             return View("Login", new LoginViewModel {
                 PreviousLoginFailed = PreviousLoginFailed,
+                HasResetPassword = HasResetPassword,
                 ReturnUrl = @return
             });
         }
@@ -220,6 +224,83 @@ namespace WomPlatform.Web.Api.Controllers {
             await InternalLogin(user, activeMerchant);
 
             return RedirectToAction(nameof(HomeController.Index), "Home");
+        }
+
+        /// <summary>
+        /// Requests a password reset for unlogged users.
+        /// </summary>
+        [HttpGet("password-reset")]
+        public IActionResult ResetPassword() {
+            if(HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null) {
+                return RedirectToAction(nameof(HomeController.Index), "Home");
+            }
+
+            return View("Forgot");
+        }
+
+        [HttpPost("password-reset")]
+        public async Task<IActionResult> ResetPasswordPerform(string email) {
+            var user = await Mongo.GetUserByEmail(email);
+            if(user != null) {
+                user.PasswordResetToken = new Random().GenerateReadableCode(8);
+                await Mongo.ReplaceUser(user);
+
+                _composer.SendPasswordResetMail(user);
+            }
+
+            return View("ForgotConfirm");
+        }
+
+        [HttpGet("password-reset/{userId}/{token}")]
+        public async Task<IActionResult> ResetPasswordToken(
+            [FromRoute] string userId,
+            [FromRoute] string token
+        ) {
+            var user = await Mongo.GetUserById(new ObjectId(userId));
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(user.PasswordResetToken != token) {
+                return NotFound();
+            }
+
+            return View("ForgotToken", new LoginPasswordResetViewModel {
+                UserId = userId,
+                Token = token
+            });
+        }
+
+        [HttpPost("password-reset/{userId}/{token}")]
+        public async Task<IActionResult> ResetPasswordTokenPerform(
+            [FromRoute] string userId,
+            [FromRoute] string token,
+            [FromForm] string password
+        ) {
+            if(string.IsNullOrWhiteSpace(password) || password.Length < 6) {
+                ModelState.AddModelError("password", "Password too short");
+
+                return View("ForgotToken", new LoginPasswordResetViewModel {
+                    UserId = userId,
+                    Token = token
+                });
+            }
+
+            var user = await Mongo.GetUserById(new ObjectId(userId));
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(user.PasswordResetToken != token) {
+                return NotFound();
+            }
+
+            user.PasswordResetToken = null;
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            await Mongo.ReplaceUser(user);
+
+            HasResetPassword = true;
+            return RedirectToAction(nameof(Login));
         }
 
         [HttpGet("logout")]

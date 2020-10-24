@@ -74,6 +74,37 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public void SendPasswordResetMail(User user) {
+            if(user.Email == null) {
+                _logger.LogError("Cannot send email to user #{0}, no email given", user.Id);
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendFormat("Hello {0}!\n\n", user.Name);
+            sb.Append("A password reset link was requested for your account. Please click on the following link to set a new password:\n");
+            sb.Append(GetVerificatonLink(user.Id.ToString(), user.PasswordResetToken));
+            sb.Append("\n\nIf you didn’t request a password reset, please ignore this e-mail.\n\n❤ The WOM Platform");
+
+            SendMessage(user.Email,
+                $"WOM Platform password reset",
+                sb.ToString()
+            );
+        }
+
+        private string GetPasswordResetLink(string id, string token) {
+            return _linkGenerator.GetUriByAction(
+                nameof(Controllers.UserController.ResetPasswordToken),
+                "User",
+                new {
+                    userId = id,
+                    token = token
+                },
+                "https",
+                new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
+            );
+        }
+
         private void SendMessage(string recipientAddress, string subject, string contents) {
             var msg = new MailMessage {
                 From = _mailFrom,
