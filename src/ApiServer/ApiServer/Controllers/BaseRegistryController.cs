@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using MongoDB.Driver.GeoJsonObjectModel;
 using Newtonsoft.Json;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -71,6 +76,33 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Creates and stores a new POS instance.
+        /// </summary>
+        protected async Task<Pos> CreatePos(
+            ObjectId merchantId,
+            string posName,
+            string url,
+            double lat,
+            double lng
+        ) {
+            var posKeys = CryptoHelper.CreateKeyPair();
+            var pos = new Pos {
+                MerchantId = merchantId,
+                Name = posName,
+                Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(
+                    lng, lat
+                )),
+                PrivateKey = posKeys.Private.ToPemString(),
+                PublicKey = posKeys.Public.ToPemString(),
+                Url = url
+            };
+
+            await Mongo.CreatePos(pos);
+
+            return pos;
         }
 
     }

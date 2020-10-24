@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
+using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.ViewModel;
@@ -17,20 +19,20 @@ using WomPlatform.Web.Api.ViewModel;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("user")]
-    public class UserController : Controller {
+    public class UserController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
         private readonly MailComposer _composer;
-        private readonly ILogger<UserController> _logger;
 
         public UserController(
+            IConfiguration configuration,
+            CryptoProvider crypto,
+            KeyManager keyManager,
             MongoDatabase mongo,
-            MailComposer composer,
-            ILogger<UserController> logger
-        ) {
-            _mongo = mongo;
+            Operator @operator,
+            ILogger<UserController> logger,
+            MailComposer composer
+        ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
             _composer = composer;
-            _logger = logger;
         }
 
         [TempData]
@@ -52,9 +54,9 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromForm] string password,
             [FromForm] string @return
         ) {
-            _logger.LogDebug("Login attempt by email {0}", email);
+            Logger.LogDebug("Login attempt by email {0}", email);
 
-            var user = await _mongo.GetUserByEmail(email);
+            var user = await Mongo.GetUserByEmail(email);
             if(user == null) {
                 PreviousLoginFailed = true;
                 return RedirectToAction(nameof(Login), new {
@@ -70,14 +72,14 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             if(user.VerificationToken != null) {
-                _logger.LogInformation("User {0} logging in but not verified", user.Id);
+                Logger.LogInformation("User {0} logging in but not verified", user.Id);
                 return RedirectToAction(nameof(UserController.WaitForVerification), "User");
             }
 
-            _logger.LogInformation("User {0} logged in", user.Id);
+            Logger.LogInformation("User {0} logged in", user.Id);
 
-            var activeMerchant = (await _mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
-            _logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
+            var activeMerchant = (await Mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
+            Logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
 
             await InternalLogin(user, activeMerchant);
 
@@ -101,14 +103,14 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("register-merchant")]
         public async Task<IActionResult> RegisterMerchantPerform(
             [FromForm] UserRegisterMerchantModel inputMerchant,
-            [FromForm] UserRegisterPosModel inputPos
+            [FromForm] UserRegisterPosModelOptional inputPos
         ) {
             if(!ModelState.IsValid) {
                 return View("MerchantRegister");
             }
 
             var verificationToken = new Random().GenerateReadableCode(8);
-            _logger.LogDebug("Registering new user for {0} with verification token {1}", inputMerchant.Email, verificationToken);
+            Logger.LogDebug("Registering new user for {0} with verification token {1}", inputMerchant.Email, verificationToken);
 
             try {
                 var docUser = new User {
@@ -119,7 +121,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     VerificationToken = verificationToken,
                     RegisteredOn = DateTime.UtcNow
                 };
-                await _mongo.CreateUser(docUser);
+                await Mongo.CreateUser(docUser);
 
                 var docMerchant = new Merchant {
                     Name = inputMerchant.MerchantTitle,
@@ -136,24 +138,20 @@ namespace WomPlatform.Web.Api.Controllers {
                         docUser.Id
                     }
                 };
-                await _mongo.CreateMerchant(docMerchant);
+                await Mongo.CreateMerchant(docMerchant);
 
-                var posKeys = CryptoHelper.CreateKeyPair();
-                await _mongo.CreatePos(new Pos {
-                    MerchantId = docMerchant.Id,
-                    Name = inputPos.PosName,
-                    Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(
-                        inputPos.PosLongitude, inputPos.PosLatitude
-                    )),
-                    PrivateKey = posKeys.Private.ToPemString(),
-                    PublicKey = posKeys.Public.ToPemString(),
-                    Url = inputPos.PosUrl
-                });
+                if(inputPos.IsSet()) {
+                    Logger.LogInformation("POS model is valid, creating new POS");
+                    await CreatePos(docMerchant.Id, inputPos.PosName, inputPos.PosUrl, inputPos.PosLatitude.Value, inputPos.PosLongitude.Value);
+                }
+                else {
+                    Logger.LogDebug("POS model not valid, ignoring");
+                }
 
                 _composer.SendVerificationMail(docUser);
             }
             catch(Exception ex) {
-                _logger.LogError(ex, "Failed to register");
+                Logger.LogError(ex, "Failed to register");
                 ModelState.AddModelError("Internal", "Failed to register, try again later");
                 return View("MerchantRegister");
             }
@@ -172,7 +170,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] string userId,
             [FromRoute] string token
         ) {
-            var user = await _mongo.GetUserById(new ObjectId(userId));
+            var user = await Mongo.GetUserById(new ObjectId(userId));
             if(user == null) {
                 return NotFound();
             }
@@ -192,7 +190,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] string userId,
             [FromRoute] string token
         ) {
-            var user = await _mongo.GetUserById(new ObjectId(userId));
+            var user = await Mongo.GetUserById(new ObjectId(userId));
             if(user == null) {
                 return NotFound();
             }
@@ -202,10 +200,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             user.VerificationToken = null;
-            await _mongo.ReplaceUser(user);
+            await Mongo.ReplaceUser(user);
 
-            var activeMerchant = (await _mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
-            _logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
+            var activeMerchant = (await Mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
+            Logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
 
             await InternalLogin(user, activeMerchant);
 
@@ -223,7 +221,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("profile")]
         public async Task<IActionResult> Profile() {
             var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _mongo.GetUserById(new ObjectId(userId));
+            var user = await Mongo.GetUserById(new ObjectId(userId));
 
             return View("Profile", new UserProfileModel {
                 Email = user.Email,
@@ -238,7 +236,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromForm] UserProfileModel user
         ) {
             var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _mongo.UpdateUser(new ObjectId(userId), name: user.Name, surname: user.Surname);
+            await Mongo.UpdateUser(new ObjectId(userId), name: user.Name, surname: user.Surname);
 
             return RedirectToAction(nameof(Profile));
         }
