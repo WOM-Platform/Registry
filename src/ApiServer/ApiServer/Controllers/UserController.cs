@@ -109,6 +109,18 @@ namespace WomPlatform.Web.Api.Controllers {
                 return View("MerchantRegister");
             }
 
+            var existingUser = await Mongo.GetUserByEmail(inputMerchant.Email);
+            if(existingUser != null) {
+                ModelState.AddModelError(nameof(inputMerchant.Email), "Email already registered");
+                return View("MerchantRegister");
+            }
+
+            var existingMerchant = await Mongo.GetMerchantByFiscalCode(inputMerchant.MerchantFiscalCode);
+            if(existingMerchant != null) {
+                ModelState.AddModelError(nameof(inputMerchant.MerchantFiscalCode), "Fiscal code already registered");
+                return View("MerchantRegister");
+            }
+
             var verificationToken = new Random().GenerateReadableCode(8);
             Logger.LogDebug("Registering new user for {0} with verification token {1}", inputMerchant.Email, verificationToken);
 

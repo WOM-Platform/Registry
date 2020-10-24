@@ -100,6 +100,11 @@ namespace WomPlatform.Web.Api {
             return MerchantCollection.Find(filter).SingleOrDefaultAsync();
         }
 
+        public Task<Merchant> GetMerchantByFiscalCode(string fiscalCode) {
+            var filter = Builders<Merchant>.Filter.Eq(m => m.FiscalCode, fiscalCode);
+            return MerchantCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
         /// <summary>
         /// Gets a list of merchants that the user controls as an administrator.
         /// </summary>
