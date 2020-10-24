@@ -65,7 +65,7 @@ namespace WomPlatform.Web.Api.InputModels {
         [DataType(DataType.MultilineText)]
         public string MerchantDescription { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "You must accept in order to sign up")]
         [Checked]
         [Display(Name = "Accept terms and conditions")]
         public bool Accept { get; set; }

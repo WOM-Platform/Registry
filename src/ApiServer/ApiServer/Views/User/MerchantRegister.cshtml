@@ -381,16 +381,22 @@
                     <label asp-for="MerchantDescription" class="control-label"></label>
                         <textarea class="form-control" asp-for="MerchantDescription" rows="5"></textarea>
                     <span asp-validation-for="MerchantWebsite" class="text-danger"></span>
-                    <p>
-                        Breve descrizione del merchant, degli obiettivi sociali e delle modalità con cui verranno monetizzati i WOM.
+                    <p class="description">
+                        Short description of your business and how you intend to monetize WOM&nbsp;Vouchers (goods or services).
                     </p>
                 </div>
 
                 <hr />
 
-                <h2>Il tuo primo Point of Service</h2>
+                <h2>Your first Point of Service</h2>
 
-                <p>Compila questa sezione del modulo per creare un <b>Point of Service</b>&nbsp;(POS) collegato al tuo account da Merchant, in modo da poter accettare pagamenti da subito.</p>
+                <p>
+                    Fill out this part of the form in order to creare a <b>Point of Service</b>&nbsp;(POS) instance for your Merchant account. You will be able to receive WOM&nbsp;payments straight away using your POS.
+                </p>
+
+                <p>
+                    You will be able to create additional Points of Service after sign up.
+                </p>
 
                 <partial name="_PartialRegisterPosForm" />
 
@@ -402,8 +408,8 @@
                     <span asp-validation-for="Accept" class="text-danger"></span>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Registra</button>
-                <a class="btn btn-link" href="@Url.Action(nameof(UserController.Login), "User")">Già registrato/a?</a>
+                <button type="submit" class="btn btn-primary">Sign up</button>
+                <a class="btn btn-link" href="@Url.Action(nameof(UserController.Login), "User")">Already registered?</a>
             </form>
         </div>
     </div>
