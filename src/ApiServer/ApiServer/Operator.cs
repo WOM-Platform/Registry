@@ -139,7 +139,7 @@ namespace WomPlatform.Web.Api {
                 request.Attempts -= 1;
                 await Mongo.UpdateGenerationRequest(request);
 
-                throw new ArgumentException("Password does not match, request has been voided");
+                throw new ArgumentException("Password does not match");
             }
 
             request.PerformedAt = DateTime.UtcNow;
