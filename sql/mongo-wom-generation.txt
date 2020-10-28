@@ -1,0 +1,21 @@
+db.getCollection('GenerationRequests').aggregate([
+    { $match: { "sourceId": ObjectId("5e737f1d9036edb02d61ef32")} },
+    { $lookup: {
+        from: "Vouchers",
+        localField: "_id",
+        foreignField: "generationRequestId",
+        as: "vouchers"
+    } },
+    { $project: {
+        createdAt: 1,
+        voucher: { $arrayElemAt: [ "$vouchers", 0 ] }
+    } },
+    { $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        requests: { $sum: 1 },
+        vouchers: { $sum: "$voucher.count" }
+    } },
+    { $sort: {
+        _id: 1
+    } }
+])
