@@ -42,7 +42,10 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] Guid otc
         ) {
             var generation = await Mongo.GetGenerationRequestByOtc(otc);
-            if(generation == null || generation.PerformedAt.HasValue || generation.Void) {
+            if(generation == null ||
+                generation.PerformedAt.HasValue ||
+                generation.Void ||
+                generation.Attempts <= 0) {
                 return View("NotFound");
             }
             else {

@@ -35,6 +35,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfDefault]
         public bool Void { get; set; } = false;
 
+        [BsonElement("attempts")]
+        [BsonDefaultValue(1)] // Older requests without numbered attempts default to one attempt
+        [BsonIgnoreIfDefault]
+        public int Attempts { get; set; }
+
         [BsonElement("sourceId")]
         public ObjectId SourceId { get; set; }
 
