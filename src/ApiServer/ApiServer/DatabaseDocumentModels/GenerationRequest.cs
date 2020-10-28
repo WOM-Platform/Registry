@@ -13,6 +13,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("amount")]
         public int Amount { get; set; }
 
+        [BsonElement("totalVoucherCount")]
+        [BsonIgnoreIfNull]
+        public int? TotalVoucherCount { get; set; }
+
         [BsonElement("createdAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime CreatedAt { get; set; }

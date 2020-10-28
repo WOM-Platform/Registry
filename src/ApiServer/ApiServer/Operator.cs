@@ -68,6 +68,7 @@ namespace WomPlatform.Web.Api {
             var genRequest = new GenerationRequest {
                 Otc = otc,
                 Amount = creationParameters.Vouchers.Length,
+                TotalVoucherCount = (from v in creationParameters.Vouchers select v.Count).Sum(),
                 CreatedAt = DateTime.UtcNow,
                 Verified = isPreVerified,
                 SourceId = source.Id,
@@ -85,6 +86,7 @@ namespace WomPlatform.Web.Api {
                                Position = GeoJson.Point(GeoJson.Geographic(v.Longitude, v.Latitude)),
                                Timestamp = v.Timestamp,
                                Count = v.Count,
+                               InitialCount = v.Count,
                                GenerationRequestId = otc
                            };
             await Mongo.AddVouchers(vouchers);
