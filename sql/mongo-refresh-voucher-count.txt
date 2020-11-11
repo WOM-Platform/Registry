@@ -1,0 +1,8 @@
+# Refreshes voucher count, assigning initialCount if not set
+
+db.getCollection('Vouchers').find({}).forEach((item) => {
+    if(!item.initialCount) {
+        var count = (item.count) ? item.count : 1;
+        db.Vouchers.updateOne({_id: item._id}, {$set: { "initialCount": count }});
+    }
+});

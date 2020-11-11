@@ -30,8 +30,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public int Count { get; set; } = 1;
 
         [BsonElement("initialCount")]
-        [BsonIgnoreIfNull]
-        public int? InitialCount { get; set; }
+        public int InitialCount { get; set; }
 
         [BsonElement("generationRequestId")]
         public Guid GenerationRequestId { get; set; }
