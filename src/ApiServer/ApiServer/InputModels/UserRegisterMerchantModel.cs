@@ -36,7 +36,7 @@ namespace WomPlatform.Web.Api.InputModels {
 
         [Required]
         [Display(Name = "Italian fiscal code")]
-        [StringLength(16, MinimumLength = 16)]
+        [StringLength(16, MinimumLength = 11)]
         public string MerchantFiscalCode { get; set; }
 
         [Display(Name = "Address")]
