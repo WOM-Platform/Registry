@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -171,9 +173,11 @@ namespace WomPlatform.Web.Api {
                 });
             }
 
-            app.UseForwardedHeaders(new ForwardedHeadersOptions {
+            var forwardOptions = new ForwardedHeadersOptions {
                 ForwardedHeaders = ForwardedHeaders.XForwardedProto
-            });
+            };
+            forwardOptions.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.20.0.1"), 2));
+            app.UseForwardedHeaders(forwardOptions);
 
             app.UseStaticFiles();
 
