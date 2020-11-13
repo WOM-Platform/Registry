@@ -20,7 +20,9 @@ namespace WomPlatform.Web.Api {
             var request = context.HttpContext.Request;
 
             if(request.Headers.TryGetValue("X-Forwarded-Proto", out var forwardedProtoHeader)) {
-                if(forwardedProtoHeader.Count < 1 || !forwardedProtoHeader[0].Equals(_forwardedProtoScheme, StringComparison.InvariantCultureIgnoreCase)) {
+                if(forwardedProtoHeader.Any(
+                    h => h.Equals(_forwardedProtoScheme, StringComparison.InvariantCultureIgnoreCase)
+                )) {
                     context.Result = new StatusCodeResult(426);
                 }
             }
