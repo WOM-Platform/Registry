@@ -6,10 +6,13 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
+using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.ViewModel;
@@ -18,17 +21,17 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Authorize(Policy = Startup.UserLoginPolicy)]
     [Route("dashboard/merchant")]
-    public class DashboardMerchantController : Controller {
-
-        private readonly MongoDatabase _mongo;
-        private readonly ILogger<DashboardMerchantController> _logger;
+    public class DashboardMerchantController : BaseRegistryController {
 
         public DashboardMerchantController(
+            IConfiguration configuration,
+            CryptoProvider crypto,
+            KeyManager keyManager,
             MongoDatabase mongo,
+            Operator @operator,
             ILogger<DashboardMerchantController> logger
-        ) {
-            _mongo = mongo;
-            _logger = logger;
+        ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+
         }
 
         [HttpGet]
@@ -36,10 +39,10 @@ namespace WomPlatform.Web.Api.Controllers {
             var username = User.FindFirst(ClaimTypes.Name)?.Value ?? "???";
 
             var merchantId = new ObjectId(User.FindFirst(Startup.ActiveMerchantClaimType).Value);
-            _logger.LogDebug("Active merchant: {0}", merchantId);
+            Logger.LogDebug("Active merchant: {0}", merchantId);
 
-            var merchant = await _mongo.GetMerchantById(merchantId);
-            var posList = await _mongo.GetPosByMerchant(merchantId);
+            var merchant = await Mongo.GetMerchantById(merchantId);
+            var posList = await Mongo.GetPosByMerchant(merchantId);
 
             return View("Home", new MerchantDashboardHomeViewModel {
                 UserFullname = username,
@@ -58,8 +61,8 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("add-pos")]
-        public async Task<IActionResult> AddNewPostPerform(
-            [FromForm] DashboardMerchantRegisterPosModel input
+        public async Task<IActionResult> AddNewPosPerform(
+            [FromForm] UserRegisterPosModel input
         ) {
             if(!ModelState.IsValid) {
                 return View("AddPos");
@@ -67,25 +70,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var merchantId = new ObjectId(User.FindFirst(Startup.ActiveMerchantClaimType).Value);
 
-            
-
-            await _mongo.CreatePos(new Pos {
-                MerchantId = merchantId,
-                Name = input.Name,
-                Position = GeoJson.Point(GeoJson.Geographic(input.Longitude, input.Latitude)),
-                PrivateKey = "",
-                PublicKey = "",
-                Url = input.Url
-            });
+            await CreatePos(merchantId, input.PosName, input.PosUrl, input.PosLatitude, input.PosLongitude);
 
             return RedirectToAction(nameof(Index));
-        }
-
-        private void GenerateRsaPair() {
-            using(var provider = new RSACryptoServiceProvider(4096)) {
-                var rsaParams = provider.ExportParameters(true);
-                var pair = DotNetUtilities.GetRsaKeyPair(rsaParams);
-            }
         }
 
     }

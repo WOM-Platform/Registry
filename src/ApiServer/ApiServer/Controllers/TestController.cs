@@ -15,7 +15,7 @@ namespace WomPlatform.Web.Api.Controllers {
     [ApiController]
     [Produces("application/json")]
     [Route("api/debug")]
-    [XForwardedProto("https")]
+    [RequireHttps]
     public class TestController : BaseRegistryController {
 
         private readonly ObjectId _testSourceId, _testPosId;

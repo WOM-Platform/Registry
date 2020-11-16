@@ -31,8 +31,8 @@ function initPosMap() {
 
 function markerLocation(){
     var currentLocation = marker.getPosition();
-    document.getElementById('mapLat').value = currentLocation.lat();
-    document.getElementById('mapLng').value = currentLocation.lng();
+    document.getElementById('mapLat').value = currentLocation.lat().toFixed(5);
+    document.getElementById('mapLng').value = currentLocation.lng().toFixed(5);
 }
 
 google.maps.event.addDomListener(window, 'load', initPosMap);

@@ -1,0 +1,17 @@
+﻿@{
+    Layout = "Main";
+    ViewData["Title"] = "Password reset";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <form method="post" action="@Url.Action(nameof(UserController.UpdateProfile), "User")" class="big-form">
+                <h1>Reset password</h1>
+
+                <p>If your e-mail address was already registered on the platform, we just sent you a reset link.</p>
+                <p>Check your e-mail for the password reset link.&nbsp;<span class="fas"></span></p>
+            </form>
+        </div>
+    </div>
+</div>

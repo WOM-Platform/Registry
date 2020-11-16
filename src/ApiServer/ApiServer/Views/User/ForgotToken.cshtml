@@ -1,0 +1,28 @@
+﻿@model LoginPasswordResetViewModel
+@{
+    Layout = "Main";
+    ViewData["Title"] = "Password reset";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <form method="post" action="@Url.Action(nameof(UserController.ResetPasswordTokenPerform), "User")" class="big-form">
+                <h1>Reset password</h1>
+
+                <input type="hidden" name="userId" value="@Model.UserId" />
+                <input type="hidden" name="token" value="@Model.Token" />
+
+                <p>Please set a new password for your account:</p>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" />
+                    @Html.ValidationMessage("password", new { @class = "text-danger" })
+                </div>
+
+                <button type="submit" class="btn btn-primary">Set new password</button>
+            </form>
+        </div>
+    </div>
+</div>

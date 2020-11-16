@@ -26,6 +26,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public string VerificationToken { get; set; }
 
+        [BsonElement("passwordResetToken")]
+        [BsonIgnoreIfNull]
+        public string PasswordResetToken { get; set; }
+
         [BsonElement("registeredOn")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         [BsonIgnoreIfNull]

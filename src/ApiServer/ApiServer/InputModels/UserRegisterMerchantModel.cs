@@ -10,63 +10,64 @@ namespace WomPlatform.Web.Api.InputModels {
 
         [Required]
         [EmailAddress]
-        [Display(Name = "Indirizzo e-mail")]
+        [Display(Name = "E-mail address")]
         public string Email { get; set; }
 
         [Required]
         [DataType(DataType.Password)]
+        [MinLength(6)]
         [Display(Name = "Password")]
         public string Password { get; set; }
 
         [Required]
         [StringLength(128, MinimumLength = 3)]
-        [Display(Name = "Nome")]
+        [Display(Name = "First name")]
         public string Name { get; set; }
 
         [Required]
         [StringLength(128, MinimumLength = 3)]
-        [Display(Name = "Cognome")]
+        [Display(Name = "Surname")]
         public string Surname { get; set; }
 
         [Required]
-        [StringLength(256, MinimumLength = 5)]
-        [Display(Name = "Ragione sociale del Merchant")]
+        [StringLength(256, MinimumLength = 4)]
+        [Display(Name = "Merchant name")]
         public string MerchantTitle { get; set; }
 
         [Required]
-        [Display(Name = "Codice fiscale")]
-        [StringLength(16, MinimumLength = 16)]
+        [Display(Name = "Italian fiscal code")]
+        [StringLength(16, MinimumLength = 11)]
         public string MerchantFiscalCode { get; set; }
 
-        [Display(Name = "Indirizzo")]
+        [Display(Name = "Address")]
         public string MerchantAddress { get; set; }
 
         [Display(Name = "CAP")]
         public string MerchantZipCode { get; set; }
 
-        [Display(Name = "Città")]
+        [Display(Name = "City")]
         public string MerchantCity { get; set; }
 
-        [Display(Name = "Paese")]
+        [Display(Name = "Country")]
         public string MerchantNation { get; set; }
 
         [Required]
-        [Display(Name = "Attività primaria")]
+        [Display(Name = "Primary business")]
         public MerchantActivityType MerchantActivityType { get; set; }
 
-        [Display(Name = "Sito Web")]
+        [Display(Name = "Web site")]
         [Url]
         public string MerchantWebsite { get; set; }
 
         [Required]
-        [Display(Name = "Descrizione")]
+        [Display(Name = "Description")]
         [StringLength(8000, MinimumLength = 10)]
         [DataType(DataType.MultilineText)]
         public string MerchantDescription { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "You must accept in order to sign up")]
         [Checked]
-        [Display(Name = "Accetta termini e condizioni")]
+        [Display(Name = "Accept terms and conditions")]
         public bool Accept { get; set; }
 
     }

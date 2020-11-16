@@ -29,7 +29,7 @@
 
             <div class="row">
                 <div class="twelve columns">
-                    <h1 class="centered">Worth One Minute</h1>
+                    <h1 class="centered">@(((bool)ViewData["NotFound"]) ? "Not found" : "Worth One Minute")</h1>
                 </div>
             </div>
         </div>
@@ -48,12 +48,12 @@
             <div class="row">
                 <div class="six columns badge">
                     <a href="https://play.google.com/store/apps/details?id=social.wom.pocket" title="Install WOM Pocket from Google Play">
-                        <img src="badge_google_play.png" alt="Install from Google Play" class="u-full-width" />
+                        <img src="~/badge_google_play.png" alt="Install from Google Play" class="u-full-width" />
                     </a>
                 </div>
                 <div class="six columns badge">
                     
-                    <img src="badge_app_store.png" alt="Install from App Store" class="u-full-width" />
+                    <img src="~/badge_app_store.png" alt="Install from App Store" class="u-full-width" />
                     
                 </div>
             </div>

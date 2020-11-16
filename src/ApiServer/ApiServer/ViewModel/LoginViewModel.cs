@@ -9,6 +9,8 @@ namespace WomPlatform.Web.Api.ViewModel {
 
         public bool PreviousLoginFailed { get; set; } = false;
 
+        public bool HasResetPassword { get; set; } = false;
+
         public string Username { get; set; }
 
         public string ReturnUrl { get; set; }

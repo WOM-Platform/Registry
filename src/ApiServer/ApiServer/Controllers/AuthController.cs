@@ -35,7 +35,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("sources")]
         [Produces("application/json")]
         [Authorize(Startup.ApiLoginPolicy)]
-        [XForwardedProto("https")]
+        [RequireHttps]
         [ApiVersion("1.0")]
         public async Task<IActionResult> SourceLoginV1() {
             Logger.LogDebug("Source login V1");
@@ -63,7 +63,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("pos")]
         [Produces("application/json")]
         [Authorize(Startup.ApiLoginPolicy)]
-        [XForwardedProto("https")]
+        [RequireHttps]
         [ApiVersion("1.0")]
         public async Task<IActionResult> PosLoginV1() {
             Logger.LogDebug("POS login V1");
@@ -91,7 +91,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("merchant")]
         [Produces("application/json")]
         [Authorize(Startup.ApiLoginPolicy)]
-        [XForwardedProto("https")]
+        [RequireHttps]
         [ApiVersion("2.0")]
         public async Task<IActionResult> PosLoginV2() {
             Logger.LogDebug("POS login V2");

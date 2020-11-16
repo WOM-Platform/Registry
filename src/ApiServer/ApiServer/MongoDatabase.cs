@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
@@ -97,6 +98,11 @@ namespace WomPlatform.Web.Api {
 
         public Task<Merchant> GetMerchantById(ObjectId id) {
             var filter = Builders<Merchant>.Filter.Eq(m => m.Id, id);
+            return MerchantCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
+        public Task<Merchant> GetMerchantByFiscalCode(string fiscalCode) {
+            var filter = Builders<Merchant>.Filter.Eq(m => m.FiscalCode, fiscalCode);
             return MerchantCollection.Find(filter).SingleOrDefaultAsync();
         }
 
@@ -298,6 +304,44 @@ namespace WomPlatform.Web.Api {
         public Task<List<Voucher>> GetVouchersWithIds(IEnumerable<ObjectId> ids) {
             var filter = Builders<Voucher>.Filter.In(v => v.Id, ids);
             return VoucherCollection.Find(filter).ToListAsync();
+        }
+
+        public class VoucherStats {
+            public long TotalCount;
+            public long AvailableCount;
+            public Dictionary<string, long> IssuedByAim;
+        }
+
+        private class VoucherStatsDoc {
+            [BsonId]
+            public string AimCode;
+            [BsonElement("totalCount")]
+            public long TotalCount;
+            [BsonElement("availableCount")]
+            public long AvailableCount;
+        }
+
+        public async Task<VoucherStats> GetVoucherStats() {
+            PipelineDefinition<Voucher, VoucherStatsDoc> pipeline = new BsonDocument[] {
+                BsonDocument.Parse(@"{ $group: {
+                    _id: ""$aimCode"",
+                    ""totalCount"": { $sum: ""$initialCount"" },
+                    ""availableCount"": { $sum: ""$count"" }
+                    }
+                }")
+            };
+
+            var stats = await VoucherCollection.Aggregate(pipeline).ToListAsync();
+            var ret = new VoucherStats {
+                IssuedByAim = new Dictionary<string, long>()
+            };
+            foreach(var s in stats) {
+                ret.TotalCount += s.TotalCount;
+                ret.AvailableCount += s.AvailableCount;
+                ret.IssuedByAim[s.AimCode] = s.TotalCount;
+            }
+
+            return ret;
         }
 
     }

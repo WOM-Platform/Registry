@@ -4,7 +4,9 @@
     <label asp-for="PosName" class="control-label"></label>
     <input asp-for="PosName" class="form-control" />
     <span asp-validation-for="PosName" class="text-danger"></span>
-    <p>Nome del POS, che verrà mostrato agli utenti al momento del pagamento.</p>
+    <p class="description">
+        POS name, will be shown to users while performing a payment.
+    </p>
 </div>
 
 <div class="form-group">
@@ -32,5 +34,8 @@
     <label asp-for="PosUrl" class="control-label"></label>
     <input asp-for="PosUrl" class="form-control" />
     <span asp-validation-for="PosUrl" class="text-danger"></span>
-    <p><i>Opzionale.</i> Verrà mostrato agli utenti al momento della conferma del pagamento e dovrebbe identificare univocamente il POS.</p>
+    <p class="description">
+        <i>Optional.</i>
+        Will be shown to users when the payment is confirmed. Can be used to show more information about the POS of the Merchant.
+    </p>
 </div>

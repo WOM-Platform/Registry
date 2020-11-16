@@ -18,6 +18,10 @@ html b {
     background-color: #e0e5ef;
 }
 
+.description {
+    font-size: 0.9em;
+}
+
 .big-form {
     margin-top: 4rem;
     margin-bottom: 1.5rem;

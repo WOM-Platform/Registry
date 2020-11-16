@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -121,7 +124,6 @@ namespace WomPlatform.Web.Api {
 
         private readonly string[] SupportedCultures = new string[] {
             "en-US",
-            "it-IT"
         };
 
         public void Configure(
@@ -170,6 +172,12 @@ namespace WomPlatform.Web.Api {
                     await next.Invoke();
                 });
             }
+
+            var forwardOptions = new ForwardedHeadersOptions {
+                ForwardedHeaders = ForwardedHeaders.XForwardedProto
+            };
+            forwardOptions.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.20.0.1"), 2));
+            app.UseForwardedHeaders(forwardOptions);
 
             app.UseStaticFiles();
 

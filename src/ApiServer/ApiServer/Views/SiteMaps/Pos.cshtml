@@ -1,0 +1,76 @@
+﻿@model PosMapViewModel
+@{
+    Layout = "Main";
+    ViewData["Title"] = "Points of Service map";
+}
+
+@section head {
+
+    <script type="text/javascript" src="//maps.googleapis.com/maps/api/js?key=@(Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "")"></script>
+
+}
+
+@section footerScripts {
+
+    <script type="text/javascript">
+var map;
+var marker = false;
+
+function initMap() {
+    map = new google.maps.Map(
+        document.getElementById('posListMap'),
+        {
+            //center: new google.maps.LatLng(9.948, 45.788),
+            zoom: 4,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        }
+    );
+
+    var points = [
+        @Html.Raw(string.Join(", ", from p in Model.Pos
+            where p.Position != null
+            let coord = p.Position.Coordinates
+            select string.Format(CultureInfo.InvariantCulture, "{{ title: '{2}', coords: {{ lat: {1}, lng: {0} }}, url: '{3}' }}", coord.Longitude, coord.Latitude, p.Name.Replace("'", "\\'"), p.Url)))
+    ];
+
+    var bounds = new google.maps.LatLngBounds();
+    for (i = 0; i < points.length; ++i) {
+        const p = points[i];
+        const marker = new google.maps.Marker({
+            position: p.coords,
+            title: p.title,
+            map: map
+        });
+        const infoWindow = new google.maps.InfoWindow({
+            content: 'Point of service: ' + p.title + '<br /><a href="' + p.url + '">Website</a>'
+        })
+        marker.addListener('click', function () {
+            infoWindow.open(map, marker);
+        });
+        bounds.extend(points[i].coords);
+
+        console.log('Bounds: ' + bounds);
+    }
+    map.fitBounds(bounds);
+}
+
+google.maps.event.addDomListener(window, 'load', initMap);
+    </script>
+
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <h1>Points of Service map</h1>
+
+            <p>
+                The map below shows all active POS that are able to accept WOM payments.
+            </p>
+
+            <div id="posListMap" style="width: 100%; height: 500px; margin: 0;">
+
+            </div>
+        </div>
+    </div>
+</div>

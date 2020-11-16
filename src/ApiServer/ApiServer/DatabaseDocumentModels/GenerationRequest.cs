@@ -13,6 +13,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("amount")]
         public int Amount { get; set; }
 
+        [BsonElement("totalVoucherCount")]
+        [BsonIgnoreIfNull]
+        public int? TotalVoucherCount { get; set; }
+
         [BsonElement("createdAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime CreatedAt { get; set; }
@@ -30,6 +34,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonDefaultValue(false)]
         [BsonIgnoreIfDefault]
         public bool Void { get; set; } = false;
+
+        [BsonElement("attempts")]
+        [BsonDefaultValue(1)] // Older requests without numbered attempts default to one attempt
+        [BsonIgnoreIfDefault]
+        public int Attempts { get; set; }
 
         [BsonElement("sourceId")]
         public ObjectId SourceId { get; set; }

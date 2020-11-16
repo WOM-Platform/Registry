@@ -7,12 +7,12 @@
 <div class="container">
     <div class="row justify-content-center mt-5">
         <div class="col-12 col-md-10 col-lg-8">
-            <h1><span class="fas"></span>&nbsp;Dashboard merchant</h1>
+            <h1><span class="fas"></span>&nbsp;Merchant dashboard</h1>
 
-            <p class="lead">Benvenuto/a, @Model.UserFullname.</p>
-            <p>Questa dashboard ti permette di gestire il tuo profilo da <i>merchant</i> come “<b>@Model.MerchantName</b>” sulla Piattaforma&nbsp;WOM.</p>
+            <p class="lead">Welcome, @Model.UserFullname!</p>
+            <p>This dashboard allows you to manage your <i>merchant</i> account “<b>@Model.MerchantName</b>” on the WOM&nbsp;Platform.</p>
 
-            <h2>Point of Service attivi</h2>
+            <h2>Active Points of Service</h2>
 
             @if (Model.Pos.Any()) {
             <div class="list-group mt-4 mb-4">
@@ -24,17 +24,17 @@
             </div>
             } else {
             <p class="text-muted">
-                Nessun POS attivo al momento.
+                No POS active.
             </p>
             }
 
             <p>
-                <a href="#" class="btn btn-secondary">
-                    <span class="fas"></span>&nbsp;Aggiungi nuovo POS
+                <a href="@Url.Action(nameof(DashboardMerchantController.AddNewPos), "DashboardMerchant")" class="btn btn-secondary">
+                    <span class="fas"></span>&nbsp;Add new POS
                 </a>
             </p>
 
-            <h3>Ricevi pagamenti</h3>
+            <h3>Receive payments</h3>
 
             @if (Model.Pos.Any()) {
             <p>
@@ -48,14 +48,14 @@
                     </a>
                 </div>
                 <div class="col-6 badge">
-                    <a href="https://apps.apple.com/it/app/wom-pos/id1468252634" title="Download WOM POS from App Store">
+                    <a href="https://apps.apple.com/it/app/wom-pos/id1468252634" title="Download WOM POS from the App Store">
                         <img src="~/badge_app_store.png" alt="Apple App Store" />
                     </a>
                 </div>
             </div>
             } else {
             <p>
-                Devi <a href="#">creare un nuovo POS</a> per ricevere pagamenti. (Funzione in corso di implementazione.)
+                You must first <a href="@Url.Action(nameof(DashboardMerchantController.AddNewPos), "DashboardMerchant")">add a POS</a> in order to start receiving payments.
             </p>
             }
         </div>

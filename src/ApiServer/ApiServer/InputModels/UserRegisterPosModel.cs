@@ -6,7 +6,7 @@ namespace WomPlatform.Web.Api.InputModels {
 
         [Required]
         [StringLength(128, MinimumLength = 3)]
-        [Display(Name = "Nome")]
+        [Display(Name = "Name")]
         public string PosName { get; set; }
 
         [Url]
@@ -14,11 +14,11 @@ namespace WomPlatform.Web.Api.InputModels {
         public string PosUrl { get; set; }
 
         [Required]
-        [Display(Name = "Latitudine")]
+        [Display(Name = "Latitude")]
         public double PosLatitude { get; set; }
 
         [Required]
-        [Display(Name = "Longitudine")]
+        [Display(Name = "Longitude")]
         public double PosLongitude { get; set; }
 
     }
