@@ -37,6 +37,20 @@ namespace WomPlatform.Web.Api {
                 options.AllowSynchronousIO = true;
             });
 
+            services.AddCors(options => {
+                options.AddDefaultPolicy(builder => {
+                    builder.WithOrigins(
+                            "https://localhost",
+                            "https://*.wom.social",
+                            "https://wom.social"
+                        )
+                        .SetIsOriginAllowedToAllowWildcardSubdomains()
+                        .AllowCredentials()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
             services.AddRouting();
 
             services.AddApiVersioning(o => {
@@ -173,6 +187,7 @@ namespace WomPlatform.Web.Api {
                 });
             }
 
+            // Enable forwarded headers within Docker local networks
             var forwardOptions = new ForwardedHeadersOptions {
                 ForwardedHeaders = ForwardedHeaders.XForwardedProto
             };
@@ -188,6 +203,8 @@ namespace WomPlatform.Web.Api {
             });
 
             app.UseRouting();
+
+            app.UseCors();
 
             app.UseAuthentication();
             app.UseAuthorization();
