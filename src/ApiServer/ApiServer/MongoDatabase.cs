@@ -171,8 +171,12 @@ namespace WomPlatform.Web.Api {
             return await PosCollection.Find(posFilter).ToListAsync();
         }
 
+        /// <summary>
+        /// Get list of POS with position.
+        /// </summary>
         public Task<List<Pos>> GetPosWithPosition() {
             var filter = Builders<Pos>.Filter.And(
+                Builders<Pos>.Filter.Ne(pos => pos.IsDummy, true),
                 Builders<Pos>.Filter.Exists(pos => pos.Position, true),
                 Builders<Pos>.Filter.Ne(pos => pos.Position, null)
             );

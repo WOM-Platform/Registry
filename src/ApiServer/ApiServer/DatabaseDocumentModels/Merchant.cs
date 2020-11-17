@@ -58,6 +58,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public ObjectId[] PosUserIds { get; set; }
 
+        [BsonElement("isDummy")]
+        [BsonDefaultValue(false)]
+        [BsonIgnoreIfDefault]
+        public bool IsDummy { get; set; }
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 
