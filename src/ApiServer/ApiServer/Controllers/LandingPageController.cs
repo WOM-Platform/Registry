@@ -26,6 +26,8 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> ShowPaymentLandingPage(
             [FromRoute] Guid otc
         ) {
+            Logger.LogDebug("Showing landing page for payment request {0}", otc);
+
             var payment = await Mongo.GetPaymentRequestByOtc(otc);
             if(payment == null) {
                 return View("NotFound");
@@ -41,6 +43,8 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> ShowGenerationLandingPage(
             [FromRoute] Guid otc
         ) {
+            Logger.LogDebug("Showing landing page for voucher generation {0}", otc);
+
             var generation = await Mongo.GetGenerationRequestByOtc(otc);
             if(generation == null ||
                 generation.PerformedAt.HasValue ||
