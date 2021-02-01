@@ -1,0 +1,154 @@
+[
+  {
+    "name": "Crypto",
+    "folders": [],
+    "requests": [
+      {
+        "collection": 1,
+        "headers": [
+          {
+            "value": "multipart/form-data",
+            "key": "content-type"
+          }
+        ],
+        "path": "/api/v1/auth/key",
+        "passwordFieldType": "password",
+        "name": "Get Registry public key",
+        "rawInput": false,
+        "bodyParams": [],
+        "url": "https://wom.social",
+        "params": [],
+        "bearerToken": "",
+        "rawParams": "--------------------------5ee79b5c0ef280de\nContent-Disposition: form-data; name=\"osm_id\"\n\n43071923,43204152\n--------------------------5ee79b5c0ef280de\nContent-Disposition: form-data; name=\"k\"\n\nkB21yeR8sLRh\n--------------------------5ee79b5c0ef280de--\n",
+        "httpPassword": "",
+        "requestType": "cURL",
+        "httpUser": "",
+        "method": "GET",
+        "contentType": "",
+        "auth": "None"
+      }
+    ]
+  },
+  {
+    "name": "Aims",
+    "folders": [],
+    "requests": [
+      {
+        "method": "GET",
+        "preRequestScript": "",
+        "url": "https://wom.social",
+        "bearerToken": "",
+        "bodyParams": [],
+        "rawParams": "{}",
+        "httpUser": "",
+        "passwordFieldType": "password",
+        "params": [],
+        "name": "Get list",
+        "auth": "None",
+        "testScript": "// pw.expect('variable').toBe('value');",
+        "collection": 1,
+        "httpPassword": "",
+        "headers": [],
+        "contentType": "",
+        "path": "/api/v1/aims",
+        "rawInput": false,
+        "label": "Get list of aims",
+        "requestType": "cURL"
+      },
+      {
+        "method": "GET",
+        "preRequestScript": "// pw.env.set('variable', 'value');",
+        "url": "https://wom.social",
+        "bearerToken": "",
+        "bodyParams": [],
+        "rawParams": "{}",
+        "httpUser": "",
+        "passwordFieldType": "password",
+        "params": [],
+        "name": "Get single",
+        "auth": "None",
+        "testScript": "// pw.expect('variable').toBe('value');",
+        "collection": 0,
+        "httpPassword": "",
+        "headers": [],
+        "contentType": "",
+        "path": "/api/v1/aim/E",
+        "rawInput": false,
+        "label": "Get single aim",
+        "requestType": "cURL"
+      }
+    ]
+  },
+  {
+    "name": "Authentication",
+    "folders": [],
+    "requests": [
+      {
+        "method": "GET",
+        "preRequestScript": "// pw.env.set('variable', 'value');",
+        "url": "https://wom.social",
+        "bearerToken": "",
+        "bodyParams": [],
+        "rawParams": "",
+        "httpUser": "dummy@example.org",
+        "passwordFieldType": "password",
+        "params": [],
+        "name": "v1 Login as Source",
+        "auth": "Basic Auth",
+        "testScript": "// pw.expect('variable').toBe('value');",
+        "collection": 0,
+        "httpPassword": "NfBTFsXsYpCyJeV1yUcx",
+        "headers": [],
+        "contentType": "",
+        "path": "/api/v1/auth/sources",
+        "rawInput": true,
+        "label": "Auth/Login as POS",
+        "requestType": "cURL"
+      },
+      {
+        "method": "POST",
+        "preRequestScript": "// pw.env.set('variable', 'value');",
+        "url": "https://wom.social",
+        "bearerToken": "",
+        "bodyParams": [],
+        "rawParams": "{}",
+        "httpUser": "dummy@example.org",
+        "passwordFieldType": "password",
+        "params": [],
+        "name": "v2 Login as Merchant",
+        "auth": "Basic Auth",
+        "testScript": "// pw.expect('variable').toBe('value');",
+        "collection": 0,
+        "httpPassword": "NfBTFsXsYpCyJeV1yUcx",
+        "headers": [],
+        "contentType": "application/json",
+        "path": "/api/v2/auth/merchant",
+        "rawInput": false,
+        "label": "Auth/Login as POS",
+        "requestType": "cURL"
+      },
+      {
+        "method": "GET",
+        "preRequestScript": "// pw.env.set('variable', 'value');",
+        "url": "https://wom.social",
+        "bearerToken": "",
+        "bodyParams": [],
+        "rawParams": "{}",
+        "httpUser": "dummy@example.org",
+        "passwordFieldType": "password",
+        "params": [],
+        "name": "v1 Login as POS",
+        "auth": "Basic Auth",
+        "testScript": "// pw.expect('variable').toBe('value');",
+        "collection": 0,
+        "httpPassword": "NfBTFsXsYpCyJeV1yUcx",
+        "headers": [],
+        "contentType": "",
+        "path": "/api/v1/auth/pos",
+        "rawInput": false,
+        "label": "Auth/Login as POS",
+        "requestType": "cURL"
+      }
+    ]
+  }
+]
