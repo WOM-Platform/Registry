@@ -21,6 +21,7 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
+        // GET /api/v1/aims
         [Produces("application/json")]
         [HttpGet]
         [HttpHead]
@@ -36,6 +37,7 @@ namespace WomPlatform.Web.Api.Controllers {
                       });
         }
 
+        // GET /api/v2/aims
         [Produces("application/json")]
         [HttpGet]
         [HttpHead]

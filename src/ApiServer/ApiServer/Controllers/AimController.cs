@@ -21,6 +21,7 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
+        // GET /api/v*/aim/code
         [HttpGet("{*code}")]
         [ChangeLog("aim-list")]
         public async Task<IActionResult> Show(string code) {
