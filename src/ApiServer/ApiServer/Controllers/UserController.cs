@@ -18,7 +18,10 @@ using WomPlatform.Web.Api.ViewModel;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("user")]
+    [ApiController]
+    [Produces("application/json")]
+    [Route("api/v{version:apiVersion}/user")]
+    [RequireHttps]
     public class UserController : BaseRegistryController {
 
         private readonly MailComposer _composer;
@@ -35,6 +38,7 @@ namespace WomPlatform.Web.Api.Controllers {
             _composer = composer;
         }
 
+        /*
         [TempData]
         public bool PreviousLoginFailed { get; set; } = false;
 
@@ -94,7 +98,75 @@ namespace WomPlatform.Web.Api.Controllers {
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
         }
+        */
 
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(
+            string email,
+            string password,
+            string name,
+            string surname
+        ) {
+            var existingUser = await Mongo.GetUserByEmail(email);
+            if(existingUser != null) {
+                return this.ProblemParameter("Supplied email address is already registered");
+            }
+
+            var verificationToken = new Random().GenerateReadableCode(8);
+            Logger.LogDebug("Registering new user for {0} with verification token {1}", email, verificationToken);
+
+            try {
+                var user = new User {
+                    Email = email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                    Name = name,
+                    Surname = surname,
+                    VerificationToken = verificationToken,
+                    RegisteredOn = DateTime.UtcNow
+                };
+                await Mongo.CreateUser(user);
+
+                var domain = Environment.GetEnvironmentVariable("SELF_HOST");
+                var path = Url.Action(nameof(GetInformation), new { id = user.Id.ToString() });
+
+                return Created(
+                    string.Format("http://{0}{1}", domain, path),
+                    new {
+                        user.Id,
+                        user.Email,
+                        user.Name,
+                        user.Surname
+                    }
+                );
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to register new user with email {0}", email);
+                throw;
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetInformation(
+            [FromRoute] string id
+        ) {
+            if(!ObjectId.TryParse(id, out ObjectId objId)) {
+                return NotFound();
+            }
+
+            var existingUser = await Mongo.GetUserById(objId);
+            if(existingUser != null) {
+                return NotFound();
+            }
+
+            return Ok(new {
+                existingUser.Id,
+                existingUser.Email,
+                existingUser.Name,
+                existingUser.Surname
+            });
+        }
+
+        /*
         [HttpGet("register-merchant")]
         public IActionResult RegisterMerchant() {
             if(HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null) {
@@ -356,6 +428,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
             );
         }
+
+        */
 
     }
 

@@ -62,7 +62,9 @@ namespace WomPlatform.Web.Api {
         }
 
         private string GetVerificatonLink(string id, string token) {
-            return _linkGenerator.GetUriByAction(
+            return "";
+
+            /*return _linkGenerator.GetUriByAction(
                 nameof(Controllers.UserController.Verify),
                 "User",
                 new {
@@ -71,7 +73,7 @@ namespace WomPlatform.Web.Api {
                 },
                 "https",
                 new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
-            );
+            );*/
         }
 
         public void SendPasswordResetMail(User user) {
@@ -93,7 +95,8 @@ namespace WomPlatform.Web.Api {
         }
 
         private string GetPasswordResetLink(string id, string token) {
-            return _linkGenerator.GetUriByAction(
+            return "";
+            /*return _linkGenerator.GetUriByAction(
                 nameof(Controllers.UserController.ResetPasswordToken),
                 "User",
                 new {
@@ -102,7 +105,7 @@ namespace WomPlatform.Web.Api {
                 },
                 "https",
                 new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
-            );
+            );*/
         }
 
         private void SendMessage(string recipientAddress, string subject, string contents) {
