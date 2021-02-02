@@ -1,30 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
-using WomPlatform.Web.Api.InputModels;
-using WomPlatform.Web.Api.ViewModel;
 
 namespace WomPlatform.Web.Api.Controllers {
 
     [ApiController]
     [Produces("application/json")]
     [Route("api/v{version:apiVersion}/user")]
+    [ApiVersion("1.0")]
     [RequireHttps]
     public class UserController : BaseRegistryController {
 
         private readonly MailComposer _composer;
+        private readonly LinkGenerator _linkGenerator;
 
         public UserController(
             IConfiguration configuration,
@@ -33,9 +28,11 @@ namespace WomPlatform.Web.Api.Controllers {
             MongoDatabase mongo,
             Operator @operator,
             ILogger<UserController> logger,
-            MailComposer composer
+            MailComposer composer,
+            LinkGenerator linkGenerator
         ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
             _composer = composer;
+            _linkGenerator = linkGenerator;
         }
 
         /*
@@ -102,10 +99,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(
-            string email,
-            string password,
-            string name,
-            string surname
+            [FromForm] string email,
+            [FromForm] string password,
+            [FromForm] string name,
+            [FromForm] string surname
         ) {
             var existingUser = await Mongo.GetUserByEmail(email);
             if(existingUser != null) {
@@ -126,11 +123,17 @@ namespace WomPlatform.Web.Api.Controllers {
                 };
                 await Mongo.CreateUser(user);
 
-                var domain = Environment.GetEnvironmentVariable("SELF_HOST");
-                var path = Url.Action(nameof(GetInformation), new { id = user.Id.ToString() });
-
                 return Created(
-                    string.Format("http://{0}{1}", domain, path),
+                    _linkGenerator.GetUriByAction(
+                        nameof(GetInformation),
+                        "User",
+                        new {
+                            id = user.Id.ToString(),
+                            version = "1.0"
+                        },
+                        "https",
+                        new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
+                    ),
                     new {
                         user.Id,
                         user.Email,
@@ -154,7 +157,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             var existingUser = await Mongo.GetUserById(objId);
-            if(existingUser != null) {
+            if(existingUser == null) {
                 return NotFound();
             }
 
