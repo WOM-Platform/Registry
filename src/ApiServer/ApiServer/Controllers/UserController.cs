@@ -30,6 +30,18 @@ namespace WomPlatform.Web.Api.Controllers {
             _composer = composer;
         }
 
+        private bool CheckPassword(string password) {
+            if(string.IsNullOrWhiteSpace(password)) {
+                return false;
+            }
+
+            if(password.Length < 8) {
+                return false;
+            }
+
+            return true;
+        }
+
         /*
         [TempData]
         public bool PreviousLoginFailed { get; set; } = false;
@@ -104,6 +116,10 @@ namespace WomPlatform.Web.Api.Controllers {
             var existingUser = await Mongo.GetUserByEmail(input.Email);
             if(existingUser != null) {
                 return this.ProblemParameter("Supplied email address is already registered");
+            }
+
+            if(!CheckPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
             }
 
             var verificationToken = new Random().GenerateReadableCode(8);
@@ -208,6 +224,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("{id}/password-reset")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordReset(
             [FromRoute] ObjectId id,
             ExecutePasswordResetInput input
@@ -219,6 +236,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
             if(user.PasswordResetToken != input.Token) {
                 return NotFound();
+            }
+
+            if(!CheckPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
             }
 
             user.PasswordResetToken = null;
