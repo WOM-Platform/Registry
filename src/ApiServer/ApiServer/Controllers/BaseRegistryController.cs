@@ -15,7 +15,9 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Shared common base class for Registry controllers.
     /// </summary>
-    public class BaseRegistryController : Controller {
+    [ApiController]
+    [Produces("application/json")]
+    public class BaseRegistryController : ControllerBase {
 
         protected readonly string SelfHostDomain;
 

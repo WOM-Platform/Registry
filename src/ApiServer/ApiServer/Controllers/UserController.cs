@@ -11,15 +11,12 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
-    [Produces("application/json")]
     [Route("api/v{version:apiVersion}/user")]
     [ApiVersion("1.0")]
     [RequireHttps]
     public class UserController : BaseRegistryController {
 
         private readonly MailComposer _composer;
-        private readonly LinkGenerator _linkGenerator;
 
         public UserController(
             IConfiguration configuration,
@@ -28,11 +25,9 @@ namespace WomPlatform.Web.Api.Controllers {
             MongoDatabase mongo,
             Operator @operator,
             ILogger<UserController> logger,
-            MailComposer composer,
-            LinkGenerator linkGenerator
+            MailComposer composer
         ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
             _composer = composer;
-            _linkGenerator = linkGenerator;
         }
 
         /*
@@ -97,43 +92,40 @@ namespace WomPlatform.Web.Api.Controllers {
         }
         */
 
+        public record RegisterInput(
+            string Email, string Password, string Name, string Surname
+        );
+
         [HttpPost("register")]
-        public async Task<IActionResult> Register(
-            [FromForm] string email,
-            [FromForm] string password,
-            [FromForm] string name,
-            [FromForm] string surname
-        ) {
-            var existingUser = await Mongo.GetUserByEmail(email);
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> Register(RegisterInput input) {
+            var existingUser = await Mongo.GetUserByEmail(input.Email);
             if(existingUser != null) {
                 return this.ProblemParameter("Supplied email address is already registered");
             }
 
             var verificationToken = new Random().GenerateReadableCode(8);
-            Logger.LogDebug("Registering new user for {0} with verification token {1}", email, verificationToken);
+            Logger.LogDebug("Registering new user for {0} with verification token {1}", input.Email, verificationToken);
 
             try {
                 var user = new User {
-                    Email = email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                    Name = name,
-                    Surname = surname,
+                    Email = input.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
+                    Name = input.Name,
+                    Surname = input.Surname,
                     VerificationToken = verificationToken,
                     RegisteredOn = DateTime.UtcNow
                 };
                 await Mongo.CreateUser(user);
 
-                return Created(
-                    _linkGenerator.GetUriByAction(
-                        nameof(GetInformation),
-                        "User",
-                        new {
-                            id = user.Id.ToString(),
-                            version = "1.0"
-                        },
-                        "https",
-                        new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
-                    ),
+                return CreatedAtAction(
+                    nameof(GetInformation),
+                    new {
+                        id = user.Id.ToString(),
+                        version = "1"
+                    },
                     new {
                         user.Id,
                         user.Email,
@@ -143,7 +135,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 );
             }
             catch(Exception ex) {
-                Logger.LogError(ex, "Failed to register new user with email {0}", email);
+                Logger.LogError(ex, "Failed to register new user with email {0}", input.Email);
                 throw;
             }
         }

@@ -24,7 +24,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("vouchers")]
         public async Task<IActionResult> GetVoucherStats() {
             var data = await Mongo.GetVoucherStats();
-            return Json(data);
+            return Ok(data);
         }
 
     }

@@ -58,7 +58,7 @@ namespace WomPlatform.Web.Api {
                 o.AssumeDefaultVersionWhenUnspecified = false;
             });
 
-            services.AddControllersWithViews()
+            services.AddControllers()
                 .AddMvcOptions(opts => {
                     opts.AllowEmptyInputInBodyModelBinding = true;
                     opts.InputFormatters.Add(new PermissiveInputFormatter());

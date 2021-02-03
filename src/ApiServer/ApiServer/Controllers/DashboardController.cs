@@ -18,7 +18,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpGet]
         public IActionResult Index() {
-            return RedirectToAction(nameof(DashboardMerchantController.Index), "DashboardMerchant");
+            return Ok();
         }
 
     }
