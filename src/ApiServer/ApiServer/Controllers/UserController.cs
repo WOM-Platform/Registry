@@ -1,10 +1,15 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
@@ -246,6 +251,64 @@ namespace WomPlatform.Web.Api.Controllers {
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
             await Mongo.ReplaceUser(user);
 
+            return Ok();
+        }
+
+        public record LoginInput(string Email, string Password);
+
+        public record LoginOutput(string Id, string Token, DateTime LoginUntil);
+
+        [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Login(LoginInput input) {
+            var user = await Mongo.GetUserByEmail(input.Email);
+            if(user == null) {
+                // Delay response to throttle
+                await Task.Delay(1050);
+                return NotFound();
+            }
+
+            if(!BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash)) {
+                // Delay response to throttle
+                await Task.Delay(1000);
+                return NotFound();
+            }
+
+            var securityHandler = new JwtSecurityTokenHandler();
+            var jwtKey = Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"));
+            var jwtJti = Guid.NewGuid().ToString("N");
+            var jwtDescriptor = new SecurityTokenDescriptor {
+                Subject = new ClaimsIdentity(new[] {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.GivenName, user.Name),
+                    new Claim(ClaimTypes.Surname, user.Surname),
+                    new Claim(JwtRegisteredClaimNames.Jti, jwtJti)
+                }),
+                Issuer = Startup.GetJwtIssuerName(),
+                IssuedAt = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.AddYears(1),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(jwtKey),
+                    SecurityAlgorithms.HmacSha512Signature
+                )
+            };
+            var token = securityHandler.CreateToken(jwtDescriptor);
+
+            Logger.LogDebug("Login performed for user {0} until {1}", user.Id, token.ValidTo);
+
+            return Ok(new LoginOutput(
+                user.Id.ToString(),
+                securityHandler.WriteToken(token),
+                token.ValidTo
+            ));
+        }
+
+        [HttpPost("logout")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult Logout() {
             return Ok();
         }
 

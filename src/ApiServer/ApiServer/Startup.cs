@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api {
@@ -31,6 +33,8 @@ namespace WomPlatform.Web.Api {
         public const string UserLoginPolicy = "UserLoginPolicy";
 
         public const string ActiveMerchantClaimType = "ActiveMerchantClaim";
+
+        public static string GetJwtIssuerName() => $"WOM Registry at {Environment.GetEnvironmentVariable("SELF_HOST")}";
 
         public void ConfigureServices(IServiceCollection services) {
             services.Configure<KestrelServerOptions>(options => {
@@ -90,41 +94,19 @@ namespace WomPlatform.Web.Api {
                 o.UseMySQL(connectionString);
             });
 
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.DefaultScheme, opt => {
-                    // Noop
-                })
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => {
-                    options.LoginPath = "/user/login";
-                    options.LogoutPath = "/user/logout";
-                    options.ReturnUrlParameter = "return";
-                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-                    options.Cookie = new CookieBuilder {
-                        IsEssential = true,
-                        Name = "WomLogin",
-                        SecurePolicy = CookieSecurePolicy.Always,
-                        SameSite = SameSiteMode.None,
-                        HttpOnly = true
-                    };
-                })
-            ;
-            services.AddAuthorization(options => {
-                options.AddPolicy(
-                    UserLoginPolicy,
-                    new AuthorizationPolicyBuilder()
-                        .RequireAuthenticatedUser()
-                        .RequireClaim(ClaimTypes.NameIdentifier)
-                        .RequireClaim(Startup.ActiveMerchantClaimType) // This fixes login to active merchants, will be removed later on
-                        .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme)
-                        .Build()
-                );
-                options.AddPolicy(
-                    ApiLoginPolicy,
-                    new AuthorizationPolicyBuilder()
-                        .RequireAuthenticatedUser()
-                        .AddAuthenticationSchemes(BasicAuthenticationSchemeOptions.DefaultScheme)
-                        .Build()
-                );
+            services.AddAuthentication(options => {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options => {
+                options.RequireHttpsMetadata = true;
+                options.TokenValidationParameters = new TokenValidationParameters {
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"))),
+                    ValidateIssuer = true,
+                    ValidIssuer = GetJwtIssuerName(),
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
             });
 
             // Add services to dependency registry
