@@ -142,13 +142,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetInformation(
-            [FromRoute] string id
+            [FromRoute] ObjectId id
         ) {
-            if(!ObjectId.TryParse(id, out ObjectId objId)) {
-                return NotFound();
-            }
-
-            var existingUser = await Mongo.GetUserById(objId);
+            var existingUser = await Mongo.GetUserById(id);
             if(existingUser == null) {
                 return NotFound();
             }
@@ -159,6 +155,28 @@ namespace WomPlatform.Web.Api.Controllers {
                 existingUser.Name,
                 existingUser.Surname
             });
+        }
+
+        public record VerifyInput(string Token);
+
+        [HttpPost("{id}/verify")]
+        public async Task<IActionResult> Verify(
+            [FromRoute] ObjectId id,
+            VerifyInput input
+        ) {
+            var user = await Mongo.GetUserById(id);
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(user.VerificationToken != input.Token) {
+                return NotFound();
+            }
+
+            user.VerificationToken = null;
+            await Mongo.ReplaceUser(user);
+
+            return Ok();
         }
 
         /*
@@ -240,57 +258,6 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return RedirectToAction(nameof(WaitForVerification));
-        }
-
-        [HttpGet("verify")]
-        public IActionResult WaitForVerification(
-        ) {
-            return View("Wait");
-        }
-
-        [HttpGet("verify/{userId}/{token}")]
-        public async Task<IActionResult> Verify(
-            [FromRoute] string userId,
-            [FromRoute] string token
-        ) {
-            var user = await Mongo.GetUserById(new ObjectId(userId));
-            if(user == null) {
-                return NotFound();
-            }
-
-            if(user.VerificationToken != token) {
-                return NotFound();
-            }
-
-            return View("Verification", new LoginVerificationViewModel {
-                UserId = userId,
-                Token = token
-            });
-        }
-
-        [HttpPost("verify/{userId}/{token}")]
-        public async Task<IActionResult> VerifyPerform(
-            [FromRoute] string userId,
-            [FromRoute] string token
-        ) {
-            var user = await Mongo.GetUserById(new ObjectId(userId));
-            if(user == null) {
-                return NotFound();
-            }
-
-            if(user.VerificationToken != token) {
-                return NotFound();
-            }
-
-            user.VerificationToken = null;
-            await Mongo.ReplaceUser(user);
-
-            var activeMerchant = (await Mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
-            Logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
-
-            await InternalLogin(user, activeMerchant);
-
-            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
 
         /// <summary>
