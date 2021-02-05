@@ -1,10 +1,9 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
-using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.IdentityModel.Tokens;
 using WomPlatform.Connector;
 
@@ -68,6 +68,15 @@ namespace WomPlatform.Web.Api {
                     setup.SerializerSettings.Formatting = cs.Formatting;
                     setup.SerializerSettings.NullValueHandling = cs.NullValueHandling;
                 });
+
+            services.AddSwaggerGen(options => {
+                options.OperationFilter<ObjectIdOperationFilter>();
+                options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
+                    Url = $"https://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
+                    Description = "WOM development server"
+                });
+                options.IncludeXmlComments(Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, "ApiServer.xml"));
+            });
 
             services.AddDbContext<DataContext>(o => {
                 var dbSection = Configuration.GetSection("Database");
@@ -163,8 +172,15 @@ namespace WomPlatform.Web.Api {
             forwardOptions.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.20.0.1"), 2));
             app.UseForwardedHeaders(forwardOptions);
 
-            app.UseStaticFiles();
+            // Use Swagger for documentation
+            if(env.IsDevelopment()) {
+                app.UseSwagger();
+                app.UseSwaggerUI(conf => {
+                    conf.SwaggerEndpoint("v1/swagger.json", "WOM Registry API");
+                });
+            }
 
+            app.UseStaticFiles();
 
             app.UseRouting();
 
