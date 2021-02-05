@@ -14,6 +14,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Produces("application/json")]
     [Route("v1/voucher")]
+    [OperationsTags("Voucher generation protocol", "Operations")]
     public class VoucherController : BaseRegistryController {
 
         public VoucherController(
@@ -27,7 +28,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
         }
 
-        // POST api/v1/voucher/create
+        /// <summary>
+        /// Registers a new voucher generation request.
+        /// </summary>
+        /// <param name="payload">Voucher generation request payload.</param>
         [HttpPost("create")]
         public async Task<ActionResult> Create(
             [FromBody] VoucherCreatePayload payload
@@ -91,6 +95,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        /// <summary>
+        /// Verifies and activates an existing voucher generation request.
+        /// </summary>
+        /// <param name="payload">Voucher generation verification payload.</param>
         [HttpPost("verify")]
         public async Task<IActionResult> Verify(
             [FromBody] VoucherVerifyPayload payload
@@ -142,7 +150,10 @@ namespace WomPlatform.Web.Api.Controllers {
             return ret;
         }
 
-        // POST api/v1/voucher/redeem
+        /// <summary>
+        /// Confirms a voucher generation request and redeems vouchers.
+        /// </summary>
+        /// <param name="payload">Voucher redemption payload.</param>
         [HttpPost("redeem")]
         public async Task<IActionResult> Redeem(
             [FromBody] VoucherRedeemPayload payload

@@ -15,6 +15,7 @@ namespace WomPlatform.Web.Api.Controllers {
     [Produces("application/json")]
     [Route("debug")]
     [RequireHttps]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class TestController : BaseRegistryController {
 
         private readonly ObjectId _testSourceId, _testPosId;

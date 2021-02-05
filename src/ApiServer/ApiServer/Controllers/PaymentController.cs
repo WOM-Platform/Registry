@@ -12,6 +12,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Produces("application/json")]
     [Route("v1/payment")]
+    [OperationsTags("Payment protocol", "Operations")]
     public class PaymentController : BaseRegistryController {
 
         public PaymentController(
@@ -25,7 +26,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
         }
 
-        // POST /api/v1/payment/register
+        /// <summary>
+        /// Registers a new payment request.
+        /// </summary>
+        /// <param name="payload">Payment request payload.</param>
         [HttpPost("register")]
         public async Task<IActionResult> Register(
             [FromBody] PaymentRegisterPayload payload
@@ -83,6 +87,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        /// <summary>
+        /// Verifies and activates an existing payment request.
+        /// </summary>
+        /// <param name="payload">Payment verification payload.</param>
         [HttpPost("verify")]
         public async Task<IActionResult> Verify(
             [FromBody] PaymentVerifyPayload payload
@@ -115,7 +123,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        // POST /api/v1/payment/info
+        /// <summary>
+        /// Retrieves information about an existing and activated payment request.
+        /// </summary>
+        /// <param name="payload">Payment information request payload.</param>
         [HttpPost("info")]
         public async Task<IActionResult> GetInformation(
             [FromBody] PaymentInfoPayload payload
@@ -174,7 +185,11 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        // POST /api/v1/payment/confirm
+        /// <summary>
+        /// Confirms and executes a payment.
+        /// This voids all vouchers passed in payment and confirms the payment to the originating POS.
+        /// </summary>
+        /// <param name="payload">Payment confirmation payload.</param>
         [HttpPost("confirm")]
         public async Task<IActionResult> Confirm(
             [FromBody] PaymentConfirmPayload payload
@@ -222,4 +237,5 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
     }
+
 }

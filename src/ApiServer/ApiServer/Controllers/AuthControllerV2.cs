@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,7 +8,11 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    /// <summary>
+    /// Methods used to provide authentication and key exchange for clients.
+    /// </summary>
     [Route("v2/auth")]
+    [OperationsTags("Authentication")]
     public class AuthControllerV2 : BaseRegistryController {
 
         public AuthControllerV2(
@@ -30,7 +33,9 @@ namespace WomPlatform.Web.Api.Controllers {
             return ((WomUserIdentity)User.Identity).WomUser;
         }
 
-        // POST /api/v2/auth/merchant
+        /// <summary>
+        /// Retrieves available WOM Merchants for the authenticated user.
+        /// </summary>
         [HttpPost("merchant")]
         [Produces("application/json")]
         [RequireHttps]
@@ -71,6 +76,9 @@ namespace WomPlatform.Web.Api.Controllers {
             );
         }
 
+        /// <summary>
+        /// Retrieves the public key used by the WOM Registry.
+        /// </summary>
         [HttpGet("key")]
         [Produces("text/plain")]
         public IActionResult GetPublicKey() {

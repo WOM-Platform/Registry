@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,7 +8,11 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    /// <summary>
+    /// Methods used to provide authentication and key exchange for clients.
+    /// </summary>
     [Route("v1/auth")]
+    [OperationsTags("Authentication")]
     public class AuthController : BaseRegistryController {
 
         public AuthController(
@@ -30,7 +33,9 @@ namespace WomPlatform.Web.Api.Controllers {
             return ((WomUserIdentity)User.Identity).WomUser;
         }
 
-        // GET /api/v1/auth/sources
+        /// <summary>
+        /// Retrieves available WOM sources for the authenticated user.
+        /// </summary>
         [HttpGet("sources")]
         [Produces("application/json")]
         [RequireHttps]
@@ -56,7 +61,9 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-        // GET /api/v1/auth/pos
+        /// <summary>
+        /// Retrieves available WOM POS instances for the authenticated user.
+        /// </summary>
         [HttpGet("pos")]
         [Produces("application/json")]
         [RequireHttps]
@@ -82,11 +89,11 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-
+        /// <summary>
+        /// Retrieves the public key used by the WOM Registry.
+        /// </summary>
         [HttpGet("key")]
         [Produces("text/plain")]
-        [ApiVersion("1.0")]
-        [ApiVersion("2.0")]
         public IActionResult GetPublicKey() {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }

@@ -1,14 +1,16 @@
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +31,17 @@ namespace WomPlatform.Web.Api {
 
         public IConfiguration Configuration { get; }
 
-        public static string GetJwtIssuerName() => $"WOM Registry at {Environment.GetEnvironmentVariable("SELF_HOST")}";
+        private static string _selfDomain = null;
+        public static string SelfDomain {
+            get {
+                if(_selfDomain == null) {
+                    _selfDomain = Environment.GetEnvironmentVariable("SELF_HOST");
+                }
+                return _selfDomain;
+            }
+        }
+
+        public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
 
         public void ConfigureServices(IServiceCollection services) {
             services.Configure<KestrelServerOptions>(options => {
@@ -38,15 +50,19 @@ namespace WomPlatform.Web.Api {
 
             services.AddCors(options => {
                 options.AddDefaultPolicy(builder => {
-                    builder.WithOrigins(
-                            "https://localhost",
-                            "https://*.wom.social",
-                            "https://wom.social"
-                        )
-                        .SetIsOriginAllowedToAllowWildcardSubdomains()
+                    builder
                         .AllowCredentials()
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowAnyMethod()
+                        .SetIsOriginAllowed(origin => {
+                            var uri = new Uri(origin);
+                            if(uri.Host == "localhost")
+                                return true;
+                            if(uri.Host == SelfDomain)
+                                return true;
+                            return false;
+                        })
+                        .Build();
                 });
             });
 
@@ -70,12 +86,45 @@ namespace WomPlatform.Web.Api {
                 });
 
             services.AddSwaggerGen(options => {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo {
+                    Title = "WOM Registry API",
+                    Contact = new Microsoft.OpenApi.Models.OpenApiContact {
+                        Email = "info@wom.social",
+                        Name = "The WOM Platform",
+                        Url = new Uri("https://wom.social")
+                    },
+                    Version = "v1"
+                });
+
                 options.OperationFilter<ObjectIdOperationFilter>();
+
                 options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
                     Url = $"https://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
-                    Description = "WOM development server"
+                    Description = "WOM development server (HTTPS)"
                 });
+                options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
+                    Url = $"http://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
+                    Description = "WOM development server (HTTP)"
+                });
+
                 options.IncludeXmlComments(Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, "ApiServer.xml"));
+
+                options.TagActionsBy(api => {
+                    var controller = api.ActionDescriptor as ControllerActionDescriptor;
+                    if(controller == null) {
+                        return new[] { string.Empty };
+                    }
+
+                    // Take tag value from OperationsTagsAttribute, if set
+                    var attributes = controller.MethodInfo.GetCustomAttributesData().Concat(controller.ControllerTypeInfo.GetCustomAttributesData());
+                    var attr = controller.ControllerTypeInfo.CustomAttributes.Where(a => a.AttributeType == typeof(OperationsTagsAttribute)).FirstOrDefault();
+                    if(attr != null) {
+                        return ((ReadOnlyCollection<CustomAttributeTypedArgument>)attr.ConstructorArguments[0].Value).Select(a => (string)a.Value).ToArray();
+                    }
+                    else {
+                        return new[] { controller.ControllerName };
+                    }
+                });
             });
 
             services.AddDbContext<DataContext>(o => {
@@ -182,9 +231,9 @@ namespace WomPlatform.Web.Api {
 
             app.UseStaticFiles();
 
-            app.UseRouting();
-
             app.UseCors();
+
+            app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();

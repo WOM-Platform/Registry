@@ -7,7 +7,11 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    /// <summary>
+    /// Provides access to single aims.
+    /// </summary>
     [Route("v1/aim")]
+    [OperationsTags("Aims")]
     public class AimController : BaseRegistryController {
 
         public AimController(
@@ -20,7 +24,10 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
-        // GET /api/v1/aim/code
+        /// <summary>
+        /// Retrieve information about an aim.
+        /// </summary>
+        /// <param name="code">Aim code (ex. 'H').</param>
         [HttpGet("{*code}")]
         [ChangeLog("aim-list")]
         public async Task<IActionResult> Show(string code) {

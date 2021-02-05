@@ -7,7 +7,11 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
+    /// <summary>
+    /// Provides access to a list of aims.
+    /// </summary>
     [Route("v2/aims")]
+    [OperationsTags("Aims")]
     public class AimsControllerV2 : BaseRegistryController {
 
         public AimsControllerV2(
@@ -20,7 +24,9 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
-        // GET /api/v2/aims
+        /// <summary>
+        /// Retrieves a list of all aims recognized by the WOM Platform.
+        /// </summary>
         [Produces("application/json")]
         [HttpGet]
         [HttpHead]

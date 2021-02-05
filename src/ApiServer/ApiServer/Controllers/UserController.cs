@@ -18,6 +18,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/user")]
     [RequireHttps]
+    [OperationsTags("User and session management")]
     public class UserController : BaseRegistryController {
 
         private readonly MailComposer _composer;
@@ -46,10 +47,17 @@ namespace WomPlatform.Web.Api.Controllers {
             return true;
         }
 
+        /// <summary>
+        /// User registration payload.
+        /// </summary>
         public record RegisterInput(
             string Email, string Password, string Name, string Surname
         );
 
+        /// <summary>
+        /// Register a new user to the service.
+        /// </summary>
+        /// <param name="input">User registration payload.</param>
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -81,8 +89,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return CreatedAtAction(
                     nameof(GetInformation),
                     new {
-                        id = user.Id.ToString(),
-                        version = "1"
+                        id = user.Id.ToString()
                     },
                     new {
                         user.Id,
@@ -98,6 +105,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        /// <summary>
+        /// Retrieves information about an existing user.
+        /// </summary>
+        /// <param name="id">User ID.</param>
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -117,8 +128,31 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
+        public record UpdateInformationInput(string Email, string Name, string Surname, string Password);
+
+        /// <summary>
+        /// Updates information about an existing user.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        /// <param name="input">User information payload.</param>
+        [HttpPatch("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> UpdateInformation(
+            [FromRoute] ObjectId id,
+            UpdateInformationInput input
+        ) {
+            return Ok();
+        }
+
         public record VerifyInput(string Token);
 
+        /// <summary>
+        /// Verifies a user account.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        /// <param name="input">User verification payload.</param>
         [HttpPost("{id}/verify")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -143,6 +177,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record RequestPasswordResetInput(string Email);
 
+        /// <summary>
+        /// Requests a password reset for an existing user.
+        /// </summary>
+        /// <param name="input">Password request payload.</param>
         [HttpPost("password-reset")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> RequestPasswordReset(
@@ -163,6 +201,11 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record ExecutePasswordResetInput(string Token, string Password);
 
+        /// <summary>
+        /// Performs a password reset for an existing user.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        /// <param name="input">Password reset payload.</param>
         [HttpPost("{id}/password-reset")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -195,6 +238,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record LoginOutput(string Id, string Token, DateTime LoginUntil);
 
+        /// <summary>
+        /// Logs in as a user and creates a new session token.
+        /// </summary>
+        /// <param name="input">Login payload.</param>
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -242,6 +289,9 @@ namespace WomPlatform.Web.Api.Controllers {
             ));
         }
 
+        /// <summary>
+        /// Logs out the currently logged in user and voids existing sessions.
+        /// </summary>
         [HttpPost("logout")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
