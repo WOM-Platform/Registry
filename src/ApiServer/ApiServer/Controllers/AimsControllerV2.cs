@@ -7,32 +7,38 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("v1/aims")]
-    public class AimsController : BaseRegistryController {
+    [Route("v2/aims")]
+    public class AimsControllerV2 : BaseRegistryController {
 
-        public AimsController(
+        public AimsControllerV2(
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             MongoDatabase mongo,
             Operator @operator,
-            ILogger<AimsController> logger)
+            ILogger<AimsControllerV2> logger)
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
-        // GET /api/v1/aims
+        // GET /api/v2/aims
         [Produces("application/json")]
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        public async Task<IActionResult> List() {
+        /// <summary>
+        /// Get list of all aims.
+        /// </summary>
+        public async Task<IActionResult> ListV2() {
             var aims = await Mongo.GetAims();
-            return Ok(from a in aims
-                      select new {
-                          a.Code,
-                          a.Titles,
-                          a.Order
-                      });
+            var aimList = from a in aims
+                          select new {
+                              a.Code,
+                              a.Titles,
+                              a.Order
+                          };
+            return Ok(new {
+                Aims = aimList
+            });
         }
 
     }

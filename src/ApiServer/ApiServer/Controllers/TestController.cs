@@ -12,9 +12,8 @@ using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
     [Produces("application/json")]
-    [Route("api/debug")]
+    [Route("debug")]
     [RequireHttps]
     public class TestController : BaseRegistryController {
 

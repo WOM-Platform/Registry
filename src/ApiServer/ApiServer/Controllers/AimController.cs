@@ -7,8 +7,7 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
-    [Route("api/v{version:apiVersion}/aim")]
+    [Route("v1/aim")]
     public class AimController : BaseRegistryController {
 
         public AimController(
@@ -21,7 +20,7 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
-        // GET /api/v*/aim/code
+        // GET /api/v1/aim/code
         [HttpGet("{*code}")]
         [ChangeLog("aim-list")]
         public async Task<IActionResult> Show(string code) {

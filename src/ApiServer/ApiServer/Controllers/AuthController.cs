@@ -9,8 +9,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
-    [Route("api/v{version:apiVersion}/auth")]
+    [Route("v1/auth")]
     public class AuthController : BaseRegistryController {
 
         public AuthController(
@@ -34,9 +33,7 @@ namespace WomPlatform.Web.Api.Controllers {
         // GET /api/v1/auth/sources
         [HttpGet("sources")]
         [Produces("application/json")]
-        [Authorize(Startup.ApiLoginPolicy)]
         [RequireHttps]
-        [ApiVersion("1.0")]
         public async Task<IActionResult> SourceLoginV1() {
             Logger.LogDebug("Source login V1");
 
@@ -62,9 +59,7 @@ namespace WomPlatform.Web.Api.Controllers {
         // GET /api/v1/auth/pos
         [HttpGet("pos")]
         [Produces("application/json")]
-        [Authorize(Startup.ApiLoginPolicy)]
         [RequireHttps]
-        [ApiVersion("1.0")]
         public async Task<IActionResult> PosLoginV1() {
             Logger.LogDebug("POS login V1");
 
@@ -87,48 +82,6 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-        // POST /api/v2/auth/merchant
-        [HttpPost("merchant")]
-        [Produces("application/json")]
-        [Authorize(Startup.ApiLoginPolicy)]
-        [RequireHttps]
-        [ApiVersion("2.0")]
-        public async Task<IActionResult> PosLoginV2() {
-            Logger.LogDebug("POS login V2");
-
-            var user = GetApiLoginUser();
-            if(user == null) {
-                return Forbid();
-            }
-
-            var data = await Mongo.GetMerchantsAndPosByUser(user.Id);
-            Logger.LogInformation("User {0} controls POS for {1} merchants", user.Id, data.Count);
-
-            return Ok(new {
-                user.Name,
-                user.Surname,
-                user.Email,
-                Merchants = from m in data
-                            select new {
-                                m.Item1.Id,
-                                m.Item1.Name,
-                                m.Item1.FiscalCode,
-                                m.Item1.Address,
-                                m.Item1.ZipCode,
-                                m.Item1.City,
-                                m.Item1.Country,
-                                Url = m.Item1.WebsiteUrl,
-                                Pos = from p in m.Item2
-                                      select new {
-                                          p.Id,
-                                          p.Name,
-                                          p.PrivateKey,
-                                          p.PublicKey
-                                      }
-                            }
-            }
-            );
-        }
 
         [HttpGet("key")]
         [Produces("text/plain")]

@@ -29,11 +29,6 @@ namespace WomPlatform.Web.Api {
 
         public IConfiguration Configuration { get; }
 
-        public const string ApiLoginPolicy = "APILoginPolicy";
-        public const string UserLoginPolicy = "UserLoginPolicy";
-
-        public const string ActiveMerchantClaimType = "ActiveMerchantClaim";
-
         public static string GetJwtIssuerName() => $"WOM Registry at {Environment.GetEnvironmentVariable("SELF_HOST")}";
 
         public void ConfigureServices(IServiceCollection services) {
@@ -56,11 +51,6 @@ namespace WomPlatform.Web.Api {
             });
 
             services.AddRouting();
-
-            services.AddApiVersioning(o => {
-                o.ReportApiVersions = true;
-                o.AssumeDefaultVersionWhenUnspecified = false;
-            });
 
             services.AddControllers()
                 .AddMvcOptions(opts => {
@@ -119,10 +109,6 @@ namespace WomPlatform.Web.Api {
             services.AddMailComposer();
         }
 
-        private readonly string[] SupportedCultures = new string[] {
-            "en-US",
-        };
-
         public void Configure(
             IApplicationBuilder app,
             IWebHostEnvironment env,
@@ -179,11 +165,6 @@ namespace WomPlatform.Web.Api {
 
             app.UseStaticFiles();
 
-            app.UseRequestLocalization(o => {
-                o.AddSupportedCultures(SupportedCultures);
-                o.AddSupportedUICultures(SupportedCultures);
-                o.DefaultRequestCulture = new RequestCulture(SupportedCultures[0]);
-            });
 
             app.UseRouting();
 

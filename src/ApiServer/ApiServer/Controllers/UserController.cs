@@ -16,8 +16,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("api/v{version:apiVersion}/user")]
-    [ApiVersion("1.0")]
+    [Route("v1/user")]
     [RequireHttps]
     public class UserController : BaseRegistryController {
 
@@ -46,68 +45,6 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return true;
         }
-
-        /*
-        [TempData]
-        public bool PreviousLoginFailed { get; set; } = false;
-
-        [TempData]
-        public bool HasResetPassword { get; set; } = false;
-
-        [HttpGet("login")]
-        public IActionResult Login(
-            [FromQuery] string @return
-        ) {
-            return View("Login", new LoginViewModel {
-                PreviousLoginFailed = PreviousLoginFailed,
-                HasResetPassword = HasResetPassword,
-                ReturnUrl = @return
-            });
-        }
-
-        [HttpPost("login")]
-        public async Task<IActionResult> LoginPerform(
-            [FromForm] string email,
-            [FromForm] string password,
-            [FromForm] string @return
-        ) {
-            Logger.LogDebug("Login attempt by email {0}", email);
-
-            var user = await Mongo.GetUserByEmail(email);
-            if(user == null) {
-                PreviousLoginFailed = true;
-                return RedirectToAction(nameof(Login), new {
-                    @return
-                });
-            }
-
-            if(!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash)) {
-                PreviousLoginFailed = true;
-                return RedirectToAction(nameof(Login), new {
-                    @return
-                });
-            }
-
-            if(user.VerificationToken != null) {
-                Logger.LogInformation("User {0} logging in but not verified", user.Id);
-                return RedirectToAction(nameof(UserController.WaitForVerification), "User");
-            }
-
-            Logger.LogInformation("User {0} logged in", user.Id);
-
-            var activeMerchant = (await Mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
-            Logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
-
-            await InternalLogin(user, activeMerchant);
-
-            if(@return != null) {
-                return LocalRedirect(@return);
-            }
-            else {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
-        }
-        */
 
         public record RegisterInput(
             string Email, string Password, string Name, string Surname
@@ -391,26 +328,6 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return RedirectToAction(nameof(WaitForVerification));
-        }
-
-        [HttpGet("logout")]
-        public async Task<IActionResult> Logout() {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            return RedirectToAction(nameof(HomeController.Index), "Home");
-        }
-
-        [Authorize(Startup.UserLoginPolicy)]
-        [HttpGet("profile")]
-        public async Task<IActionResult> Profile() {
-            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await Mongo.GetUserById(new ObjectId(userId));
-
-            return View("Profile", new UserProfileModel {
-                Email = user.Email,
-                Name = user.Name,
-                Surname = user.Surname
-            });
         }
 
         [Authorize(Startup.UserLoginPolicy)]
