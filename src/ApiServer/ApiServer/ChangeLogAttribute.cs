@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
+using WomPlatform.Web.Api.DatabaseModels;
 
 namespace WomPlatform.Web.Api {
 
@@ -28,15 +29,22 @@ namespace WomPlatform.Web.Api {
             var logFactory = (ILoggerFactory)context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory));
             var logger = logFactory.CreateLogger<ChangeLogAttribute>();
 
-            var lastEntry = (from l in db.Data.ChangeLog
-                             where l.Code == _changeLogCode
-                             orderby l.Timestamp descending
-                             select l).FirstOrDefault();
-            if(lastEntry == null) {
-                logger.LogDebug("No change entry with code '{0}' found", _changeLogCode);
+            ChangeLogEntry lastEntry;
+            try {
+                lastEntry = (from l in db.Data.ChangeLog
+                                 where l.Code == _changeLogCode
+                                 orderby l.Timestamp descending
+                                 select l).FirstOrDefault();
+                if(lastEntry == null) {
+                    logger.LogDebug("No change entry with code '{0}' found", _changeLogCode);
+                    return;
+                }
+                logger.LogDebug("Last change entry with code '{0}' at {1}", _changeLogCode, lastEntry.Timestamp);
+            }
+            catch(Exception ex) {
+                logger.LogError(ex, "Failed to read last change entry '{0}'", _changeLogCode);
                 return;
             }
-            logger.LogDebug("Last change entry with code '{0}' at {1}", _changeLogCode, lastEntry.Timestamp);
 
             context.HttpContext.Response.Headers.TryAdd(HeaderNames.LastModified, new StringValues(lastEntry.Timestamp.ToString("R")));
 
