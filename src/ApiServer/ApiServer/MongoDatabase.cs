@@ -30,9 +30,11 @@ namespace WomPlatform.Web.Api {
                         if(_client == null) {
                             var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
                             var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
+                            var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
+                            var port = Environment.GetEnvironmentVariable("MONGO_CONNECTION_PORT");
 
                             _logger.LogInformation("Creating new Mongo client");
-                            _client = new MongoClient(string.Format("mongodb://{0}:{1}@mongo", username, password));
+                            _client = new MongoClient(string.Format("mongodb://{0}:{1}@{2}:{3}", username, password, host, port));
                         }
                     }
                 }
