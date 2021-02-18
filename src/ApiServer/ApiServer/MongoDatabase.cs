@@ -127,6 +127,14 @@ namespace WomPlatform.Web.Api {
             return MerchantCollection.Find(merchFilter).ToListAsync();
         }
 
+        /// <summary>
+        /// Replace an existing user, by ID.
+        /// </summary>
+        public Task ReplaceMerchant(Merchant merchant) {
+            var filter = Builders<Merchant>.Filter.Eq(u => u.Id, merchant.Id);
+            return MerchantCollection.ReplaceOneAsync(filter, merchant);
+        }
+
         private IMongoCollection<PaymentRequest> PaymentCollection {
             get {
                 return MainDatabase.GetCollection<PaymentRequest>("PaymentRequests");

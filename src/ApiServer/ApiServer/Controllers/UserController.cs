@@ -56,7 +56,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// User registration payload.
         /// </summary>
-        public record RegisterInput(
+        public record UserRegisterInput(
             string Email, string Password, string Name, string Surname
         );
 
@@ -68,7 +68,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Register(RegisterInput input) {
+        public async Task<IActionResult> Register(UserRegisterInput input) {
             var existingUser = await Mongo.GetUserByEmail(input.Email);
             if(existingUser != null) {
                 return this.ProblemParameter("Supplied email address is already registered");
@@ -134,7 +134,7 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-        public record UpdateInformationInput(string Email, string Name, string Surname, string Password);
+        public record UserUpdateInformationInput(string Email, string Name, string Surname, string Password);
 
         /// <summary>
         /// Updates information about an existing user.
@@ -147,14 +147,18 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateInformation(
             [FromRoute] ObjectId id,
-            UpdateInformationInput input
+            UserUpdateInformationInput input
         ) {
+            if(!User.UserIdEquals(id)) {
+                return Forbid();
+            }
+
             var existingUser = await Mongo.GetUserById(id);
             if(existingUser == null) {
                 return NotFound();
             }
 
-            if(!CheckPassword(input.Password)) {
+            if(input.Password != null && !CheckPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
 
@@ -180,7 +184,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record VerifyInput(string Token);
+        public record UserVerifyInput(string Token);
 
         /// <summary>
         /// Verifies a user account.
@@ -192,7 +196,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Verify(
             [FromRoute] ObjectId id,
-            VerifyInput input
+            UserVerifyInput input
         ) {
             var user = await Mongo.GetUserById(id);
             if(user == null) {
@@ -209,7 +213,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record RequestPasswordResetInput(string Email);
+        public record UserRequestPasswordResetInput(string Email);
 
         /// <summary>
         /// Requests a password reset for an existing user.
@@ -218,7 +222,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("password-reset")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> RequestPasswordReset(
-            RequestPasswordResetInput input
+            UserRequestPasswordResetInput input
         ) {
             var user = await Mongo.GetUserByEmail(input.Email);
             if(user != null) {
@@ -233,7 +237,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record ExecutePasswordResetInput(string Token, string Password);
+        public record UserExecutePasswordResetInput(string Token, string Password);
 
         /// <summary>
         /// Performs a password reset for an existing user.
@@ -246,7 +250,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordReset(
             [FromRoute] ObjectId id,
-            ExecutePasswordResetInput input
+            UserExecutePasswordResetInput input
         ) {
             var user = await Mongo.GetUserById(id);
             if(user == null) {
@@ -268,9 +272,9 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record LoginInput(string Email, string Password);
+        public record UserLoginInput(string Email, string Password);
 
-        public record LoginOutput(string Id, string Token, DateTime LoginUntil);
+        public record UserLoginOutput(string Id, string Token, DateTime LoginUntil);
 
         /// <summary>
         /// Logs in as a user and creates a new session token.
@@ -279,7 +283,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Login(LoginInput input) {
+        public async Task<IActionResult> Login(UserLoginInput input) {
             var user = await Mongo.GetUserByEmail(input.Email);
             if(user == null) {
                 // Delay response to throttle
@@ -316,7 +320,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogDebug("Login performed for user {0} until {1}", user.Id, token.ValidTo);
 
-            return Ok(new LoginOutput(
+            return Ok(new UserLoginOutput(
                 user.Id.ToString(),
                 securityHandler.WriteToken(token),
                 token.ValidTo
@@ -332,123 +336,6 @@ namespace WomPlatform.Web.Api.Controllers {
         public IActionResult Logout() {
             return Ok();
         }
-
-        /*
-        [HttpGet("register-merchant")]
-        public IActionResult RegisterMerchant() {
-            if(HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null) {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
-
-            return View("MerchantRegister");
-        }
-
-        [HttpPost("register-merchant")]
-        public async Task<IActionResult> RegisterMerchantPerform(
-            [FromForm] UserRegisterMerchantModel inputMerchant,
-            [FromForm] UserRegisterPosModelOptional inputPos
-        ) {
-            if(!ModelState.IsValid) {
-                return View("MerchantRegister");
-            }
-
-            var existingUser = await Mongo.GetUserByEmail(inputMerchant.Email);
-            if(existingUser != null) {
-                ModelState.AddModelError(nameof(inputMerchant.Email), "Email already registered");
-                return View("MerchantRegister");
-            }
-
-            var existingMerchant = await Mongo.GetMerchantByFiscalCode(inputMerchant.MerchantFiscalCode);
-            if(existingMerchant != null) {
-                ModelState.AddModelError(nameof(inputMerchant.MerchantFiscalCode), "Fiscal code already registered");
-                return View("MerchantRegister");
-            }
-
-            var verificationToken = new Random().GenerateReadableCode(8);
-            Logger.LogDebug("Registering new user for {0} with verification token {1}", inputMerchant.Email, verificationToken);
-
-            try {
-                var docUser = new User {
-                    Email = inputMerchant.Email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(inputMerchant.Password),
-                    Name = inputMerchant.Name,
-                    Surname = inputMerchant.Surname,
-                    VerificationToken = verificationToken,
-                    RegisteredOn = DateTime.UtcNow
-                };
-                await Mongo.CreateUser(docUser);
-
-                var docMerchant = new Merchant {
-                    Name = inputMerchant.MerchantTitle,
-                    FiscalCode = inputMerchant.MerchantFiscalCode,
-                    PrimaryActivityType = inputMerchant.MerchantActivityType,
-                    Address = inputMerchant.MerchantAddress,
-                    ZipCode = inputMerchant.MerchantZipCode,
-                    City = inputMerchant.MerchantCity,
-                    Country = inputMerchant.MerchantNation,
-                    Description = inputMerchant.MerchantDescription,
-                    WebsiteUrl = inputMerchant.MerchantWebsite,
-                    CreatedOn = DateTime.UtcNow,
-                    AdministratorIds = new ObjectId[] {
-                        docUser.Id
-                    }
-                };
-                await Mongo.CreateMerchant(docMerchant);
-
-                if(inputPos.IsSet()) {
-                    Logger.LogInformation("POS model is valid, creating new POS");
-                    await CreatePos(docMerchant.Id, inputPos.PosName, inputPos.PosUrl, inputPos.PosLatitude.Value, inputPos.PosLongitude.Value);
-                }
-                else {
-                    Logger.LogDebug("POS model not valid, ignoring");
-                }
-
-                _composer.SendVerificationMail(docUser);
-            }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to register");
-                ModelState.AddModelError("Internal", "Failed to register, try again later");
-                return View("MerchantRegister");
-            }
-
-            return RedirectToAction(nameof(WaitForVerification));
-        }
-
-        [Authorize(Startup.UserLoginPolicy)]
-        [HttpPost("profile")]
-        public async Task<IActionResult> UpdateProfile(
-            [FromForm] UserProfileModel user
-        ) {
-            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await Mongo.UpdateUser(new ObjectId(userId), name: user.Name, surname: user.Surname);
-
-            return RedirectToAction(nameof(Profile));
-        }
-
-        private Task InternalLogin(User userProfile, Merchant activeMerchant) {
-            var claims = new List<Claim> {
-                new Claim(ClaimTypes.Name, $"{userProfile.Name} {userProfile.Surname}"),
-                new Claim(ClaimTypes.NameIdentifier, userProfile.Id.ToString()),
-                new Claim(ClaimTypes.GivenName, userProfile.Name),
-                new Claim(ClaimTypes.Email, userProfile.Email)
-            };
-            if(activeMerchant != null) {
-                claims.Add(new Claim(Startup.ActiveMerchantClaimType, activeMerchant.Id.ToString()));
-            }
-
-            return HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(
-                    new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)
-                ),
-                new AuthenticationProperties {
-                    AllowRefresh = true,
-                    IsPersistent = true
-                }
-            );
-        }
-
-        */
 
     }
 
