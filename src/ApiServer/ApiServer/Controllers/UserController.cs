@@ -149,6 +149,34 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id,
             UpdateInformationInput input
         ) {
+            var existingUser = await Mongo.GetUserById(id);
+            if(existingUser == null) {
+                return NotFound();
+            }
+
+            if(!CheckPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
+            }
+
+            try {
+                if(input.Name != null) {
+                    existingUser.Name = input.Name;
+                }
+                if(input.Surname != null) {
+                    existingUser.Surname = input.Surname;
+                }
+                if(input.Password != null) {
+                    existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
+                }
+                existingUser.LastUpdate = DateTime.UtcNow;
+
+                await Mongo.ReplaceUser(existingUser);
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to update user {0}", id);
+                throw;
+            }
+
             return Ok();
         }
 

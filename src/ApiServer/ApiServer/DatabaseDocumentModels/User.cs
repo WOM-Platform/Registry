@@ -35,6 +35,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public DateTime? RegisteredOn { get; set; }
 
+        [BsonElement("lastUpdate")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonIgnoreIfNull]
+        public DateTime? LastUpdate { get; set; }
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 
