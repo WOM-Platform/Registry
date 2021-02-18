@@ -9,23 +9,23 @@ namespace WomPlatform.Web.Api {
         Construction,
         [Display(Name = "Manifacture")]
         Manifacture,
-        [Display(Name = "Retail commerce")]
+        [Display(Name = "Retail")]
         RetailCommerce,
         [Display(Name = "Transport")]
         Transport,
-        [Display(Name = "Lodging and accomodation")]
+        [Display(Name = "Lodging")]
         Lodging,
-        [Display(Name = "Food and catering")]
+        [Display(Name = "Food")]
         Food,
         [Display(Name = "Information")]
         Information,
-        [Display(Name = "Financial services")]
+        [Display(Name = "Finance")]
         Finance,
         [Display(Name = "Travel")]
         Travel,
         [Display(Name = "Education")]
         Education,
-        [Display(Name = "Health and wellbeing")]
+        [Display(Name = "Health")]
         Health,
         [Display(Name = "Sports")]
         Sports,

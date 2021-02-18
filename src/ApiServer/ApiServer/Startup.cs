@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -74,15 +75,9 @@ namespace WomPlatform.Web.Api {
                     opts.AllowEmptyInputInBodyModelBinding = true;
                     opts.InputFormatters.Add(new PermissiveInputFormatter());
                 })
-                .AddNewtonsoftJson(setup => {
-                    var cs = Client.JsonSettings;
-                    setup.SerializerSettings.ContractResolver = cs.ContractResolver;
-                    setup.SerializerSettings.Culture = cs.Culture;
-                    setup.SerializerSettings.DateFormatHandling = cs.DateFormatHandling;
-                    setup.SerializerSettings.DateTimeZoneHandling = cs.DateTimeZoneHandling;
-                    setup.SerializerSettings.DateParseHandling = cs.DateParseHandling;
-                    setup.SerializerSettings.Formatting = cs.Formatting;
-                    setup.SerializerSettings.NullValueHandling = cs.NullValueHandling;
+                .AddJsonOptions(options => {
+                    options.JsonSerializerOptions.AllowTrailingCommas = true;
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
 
             services.AddSwaggerGen(options => {

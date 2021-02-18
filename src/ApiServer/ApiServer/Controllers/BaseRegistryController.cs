@@ -5,10 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
-using Newtonsoft.Json;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
-using WomPlatform.Web.Api.InputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -54,10 +52,6 @@ namespace WomPlatform.Web.Api.Controllers {
         protected (T, ActionResult) ExtractInputPayload<T>(string payload, int loggingKey) {
             try {
                 return (Crypto.Decrypt<T>(payload, KeyManager.RegistryPrivateKey), null);
-            }
-            catch(JsonSerializationException jsonEx) {
-                Logger.LogError(loggingKey, jsonEx, "Failed to decode JSON payload");
-                return (default(T), ControllerExtensions.ProblemParameter(null, "Invalid JSON"));
             }
             catch(Exception ex) {
                 Logger.LogError(loggingKey, ex, "Failed to decrypt payload");

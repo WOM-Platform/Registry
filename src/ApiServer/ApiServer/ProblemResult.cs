@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace WomPlatform.Web.Api {
 
@@ -29,10 +24,10 @@ namespace WomPlatform.Web.Api {
             resp.Headers["Content-Language"] = "en";
 
             using(var tw = new StreamWriter(resp.Body)) {
-                tw.Write(JsonConvert.SerializeObject(new {
+                tw.Write(JsonSerializer.Serialize(new {
                     type = ProblemType,
                     title = ProblemTitle
-                }, Formatting.None));
+                }));
             }
         }
 

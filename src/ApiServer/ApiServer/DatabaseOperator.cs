@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.DatabaseModels;
 
@@ -36,13 +37,6 @@ namespace WomPlatform.Web.Api {
         }
 
         private static Random _random = new Random();
-
-        private static JsonSerializerSettings DatabaseSerializerSettings { get; } = new JsonSerializerSettings {
-            DateFormatHandling = DateFormatHandling.IsoDateFormat,
-            DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate,
-            Formatting = Formatting.None,
-            NullValueHandling = NullValueHandling.Ignore
-        };
 
         /// <summary>
         /// Gets a source by its primary ID or null if not found.
@@ -252,11 +246,10 @@ namespace WomPlatform.Web.Api {
                 Password = password
             };
             if(creationParameters.SimpleFilter != null) {
-                payRequest.JsonFilter = JsonConvert.SerializeObject(
+                payRequest.JsonFilter = JsonSerializer.Serialize(
                     new Filter {
                         Simple = creationParameters.SimpleFilter
-                    },
-                    DatabaseSerializerSettings
+                    }
                 );
             }
             Data.PaymentRequests.Add(payRequest);
@@ -321,7 +314,7 @@ namespace WomPlatform.Web.Api {
 
             Filter f = null;
             if(request.JsonFilter != null) {
-                f = JsonConvert.DeserializeObject<Filter>(request.JsonFilter, DatabaseSerializerSettings);
+                f = JsonSerializer.Deserialize<Filter>(request.JsonFilter);
             }
 
             return (request, f);
