@@ -35,12 +35,18 @@ namespace WomPlatform.Web.Api.Controllers {
             _composer = composer;
         }
 
+        /// <summary>
+        /// Check whether a user password is acceptable.
+        /// </summary>
         private bool CheckPassword(string password) {
+            var userSecuritySection = Configuration.GetSection("UserSecurity");
+            var minLength = Convert.ToInt32(userSecuritySection["MinimumUserPasswordLength"]);
+
             if(string.IsNullOrWhiteSpace(password)) {
                 return false;
             }
 
-            if(password.Length < 8) {
+            if(password.Length < minLength) {
                 return false;
             }
 

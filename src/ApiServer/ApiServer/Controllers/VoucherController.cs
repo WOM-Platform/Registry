@@ -70,7 +70,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
                 return this.PayloadVerificationFailure("Verification of nonce in payload failed");
             }
-            if(!CheckPasswordValidity(payloadContent.Password)) {
+            if(!CheckTransferPassword(payloadContent.Password)) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Password '{0}' unacceptable", payloadContent.Password);
                 return this.PasswordUnacceptableFailure();
             }
