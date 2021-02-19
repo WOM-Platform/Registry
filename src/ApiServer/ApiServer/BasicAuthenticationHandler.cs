@@ -28,10 +28,11 @@ namespace WomPlatform.Web.Api {
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync() {
             if(!Request.Headers.TryGetValue(HeaderNames.Authorization, out var authorizationHeader)) {
-                return AuthenticateResult.Fail("Authorization header not set or not readable");
+                return AuthenticateResult.NoResult();
             }
-
-            Logger.LogDebug("Authorization header: {0}", authorizationHeader);
+            if(!authorizationHeader[0].StartsWith("Basic ")) {
+                return AuthenticateResult.NoResult();
+            }
 
             var authContent = Convert.FromBase64String(authorizationHeader[0][6..]);
             var authFields = System.Text.Encoding.ASCII.GetString(authContent).Split(':', StringSplitOptions.None);
