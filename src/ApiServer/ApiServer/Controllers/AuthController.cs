@@ -26,14 +26,6 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
-        private User GetApiLoginUser() {
-            if(User == null)
-                return null;
-            if(!(User.Identity is WomUserIdentity))
-                return null;
-            return ((WomUserIdentity)User.Identity).WomUser;
-        }
-
         /// <summary>
         /// Retrieves available WOM sources for the authenticated user.
         /// </summary>
@@ -44,13 +36,12 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> SourceLoginV1() {
             Logger.LogDebug("Source login V1");
 
-            var user = GetApiLoginUser();
-            if(user == null) {
+            if(!User.GetUserId(out var userId)) {
                 return Forbid();
             }
 
-            var sources = await Mongo.GetSourcesByUser(user.Id);
-            Logger.LogInformation("User {0} has {1} source entries", user.Id, sources.Count);
+            var sources = await Mongo.GetSourcesByUser(userId);
+            Logger.LogInformation("User {0} has {1} source entries", userId, sources.Count);
 
             return Ok(new {
                 Sources = from s in sources
@@ -73,13 +64,12 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> PosLoginV1() {
             Logger.LogDebug("POS login V1");
 
-            var user = GetApiLoginUser();
-            if(user == null) {
+            if(!User.GetUserId(out var userId)) {
                 return Forbid();
             }
 
-            var pos = await Mongo.GetPosByUser(user.Id);
-            Logger.LogInformation("User {0} has {1} POS entries", user.Id, pos.Count);
+            var pos = await Mongo.GetPosByUser(userId);
+            Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new {
                 POS = from p in pos

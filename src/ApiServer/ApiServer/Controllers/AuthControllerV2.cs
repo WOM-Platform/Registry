@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,14 +27,6 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
-        private User GetApiLoginUser() {
-            if(User == null)
-                return null;
-            if(!(User.Identity is WomUserIdentity))
-                return null;
-            return ((WomUserIdentity)User.Identity).WomUser;
-        }
-
         /// <summary>
         /// Retrieves available WOM Merchants for the authenticated user.
         /// </summary>
@@ -44,18 +37,15 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> PosLoginV2() {
             Logger.LogDebug("POS login V2");
 
-            var user = GetApiLoginUser();
-            if(user == null) {
+            if(!User.GetUserId(out var userId)) {
                 return Forbid();
             }
 
-            var data = await Mongo.GetMerchantsAndPosByUser(user.Id);
-            Logger.LogInformation("User {0} controls POS for {1} merchants", user.Id, data.Count);
+            var data = await Mongo.GetMerchantsAndPosByUser(userId);
+            Logger.LogInformation("User {0} controls POS for {1} merchants", userId, data.Count);
 
             return Ok(new {
-                user.Name,
-                user.Surname,
-                user.Email,
+                Email = User.FindFirst(ClaimTypes.Email).Value,
                 Merchants = from m in data
                             select new {
                                 m.Item1.Id,
