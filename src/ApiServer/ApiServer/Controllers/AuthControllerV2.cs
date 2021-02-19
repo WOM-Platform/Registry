@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -39,6 +40,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("merchant")]
         [Produces("application/json")]
         [RequireHttps]
+        [Authorize(Policy = Startup.SimpleAuthPolicy)]
         public async Task<IActionResult> PosLoginV2() {
             Logger.LogDebug("POS login V2");
 

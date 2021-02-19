@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -43,6 +45,9 @@ namespace WomPlatform.Web.Api {
         }
 
         public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
+
+        public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
+        public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
 
         public void ConfigureServices(IServiceCollection services) {
             services.Configure<KestrelServerOptions>(options => {
@@ -150,6 +155,24 @@ namespace WomPlatform.Web.Api {
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
+            }).AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.SchemeName, null);
+
+            services.AddAuthorization(options => {
+                options.AddPolicy(TokenSessionAuthPolicy, new AuthorizationPolicyBuilder(
+                        JwtBearerDefaults.AuthenticationScheme
+                    )
+                    .RequireAuthenticatedUser()
+                    .RequireClaim(ClaimTypes.NameIdentifier)
+                    .Build()
+                );
+                options.AddPolicy(SimpleAuthPolicy, new AuthorizationPolicyBuilder(
+                        BasicAuthenticationSchemeOptions.SchemeName,
+                        JwtBearerDefaults.AuthenticationScheme
+                    )
+                    .RequireAuthenticatedUser()
+                    .Build()
+                );
+                options.DefaultPolicy = options.GetPolicy(SimpleAuthPolicy);
             });
 
             // Add services to dependency registry

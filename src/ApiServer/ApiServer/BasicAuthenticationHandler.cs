@@ -33,7 +33,7 @@ namespace WomPlatform.Web.Api {
 
             Logger.LogDebug("Authorization header: {0}", authorizationHeader);
 
-            var authContent = Convert.FromBase64String(authorizationHeader[0].Substring(6));
+            var authContent = Convert.FromBase64String(authorizationHeader[0][6..]);
             var authFields = System.Text.Encoding.ASCII.GetString(authContent).Split(':', StringSplitOptions.None);
             if(authFields.Length != 2) {
                 return AuthenticateResult.Fail("Authorization header invalid");
@@ -50,11 +50,9 @@ namespace WomPlatform.Web.Api {
                 return AuthenticateResult.Fail("Invalid username or password");
             }
 
-            var identity = new WomUserIdentity(userProfile);
-
             var ticket = new AuthenticationTicket(
-                new ClaimsPrincipal(identity),
-                BasicAuthenticationSchemeOptions.DefaultScheme
+                new ClaimsPrincipal(new BasicIdentity(userProfile.Id, email)),
+                BasicAuthenticationSchemeOptions.SchemeName
             );
             return AuthenticateResult.Success(ticket);
         }
