@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.OutputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -27,6 +28,13 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
+        public record AuthV2PosLoginOutput(
+            string Name,
+            string Surname,
+            string Email,
+            AuthMerchantLoginInfo[] Merchants
+        );
+
         /// <summary>
         /// Retrieves available WOM Merchants for the authenticated user.
         /// </summary>
@@ -41,31 +49,33 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
+            var userData = await Mongo.GetUserById(userId);
+
             var data = await Mongo.GetMerchantsAndPosByUser(userId);
             Logger.LogInformation("User {0} controls POS for {1} merchants", userId, data.Count);
 
-            return Ok(new {
-                Email = User.FindFirst(ClaimTypes.Email).Value,
-                Merchants = from m in data
-                            select new {
-                                m.Item1.Id,
-                                m.Item1.Name,
-                                m.Item1.FiscalCode,
-                                m.Item1.Address,
-                                m.Item1.ZipCode,
-                                m.Item1.City,
-                                m.Item1.Country,
-                                Url = m.Item1.WebsiteUrl,
-                                Pos = from p in m.Item2
-                                      select new {
-                                          p.Id,
-                                          p.Name,
-                                          p.PrivateKey,
-                                          p.PublicKey
-                                      }
-                            }
-            }
-            );
+            return Ok(new AuthV2PosLoginOutput(
+                userData.Name,
+                userData.Surname,
+                userData.Email,
+                data.Select(d => new AuthMerchantLoginInfo(
+                    d.Item1.Id.ToString(),
+                    d.Item1.Name,
+                    d.Item1.FiscalCode,
+                    d.Item1.Address,
+                    d.Item1.ZipCode,
+                    d.Item1.City,
+                    d.Item1.Country,
+                    d.Item1.WebsiteUrl,
+                    d.Item2.Select(p => new AuthPosLoginInfo(
+                        p.Id.ToString(),
+                        p.Name,
+                        p.Url,
+                        p.PrivateKey,
+                        p.PublicKey
+                    )).ToArray()
+                )).ToArray()
+            ));
         }
 
         /// <summary>
@@ -80,3 +90,4 @@ namespace WomPlatform.Web.Api.Controllers {
     }
 
 }
+

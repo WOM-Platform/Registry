@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.OutputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -26,6 +27,10 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
+        public record AuthSourceLoginOutput(
+            AuthSourceLoginInfo[] Sources
+        );
+
         /// <summary>
         /// Retrieves available WOM sources for the authenticated user.
         /// </summary>
@@ -43,16 +48,20 @@ namespace WomPlatform.Web.Api.Controllers {
             var sources = await Mongo.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} has {1} source entries", userId, sources.Count);
 
-            return Ok(new {
-                Sources = from s in sources
-                          select new {
-                              id = s.Id,
-                              name = s.Name,
-                              url = s.Url,
-                              privateKey = s.PrivateKey
-                          }
-            });
+            return Ok(new AuthSourceLoginOutput(
+                sources.Select(s => new AuthSourceLoginInfo(
+                    s.Id.ToString(),
+                    s.Name,
+                    s.Url,
+                    s.PrivateKey,
+                    s.PublicKey
+                )).ToArray()
+            ));
         }
+
+        public record AuthPosLoginOutput(
+            AuthPosLoginInfo[] POS
+        );
 
         /// <summary>
         /// Retrieves available WOM POS instances for the authenticated user.
@@ -71,15 +80,15 @@ namespace WomPlatform.Web.Api.Controllers {
             var pos = await Mongo.GetPosByUser(userId);
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
-            return Ok(new {
-                POS = from p in pos
-                      select new {
-                          id = p.Id,
-                          name = p.Name,
-                          url = p.Url,
-                          privateKey = p.PrivateKey
-                      }
-            });
+            return Ok(new AuthPosLoginOutput(
+                pos.Select(p => new AuthPosLoginInfo(
+                    p.Id.ToString(),
+                    p.Name,
+                    p.Url,
+                    p.PrivateKey,
+                    p.PublicKey
+                )).ToArray()
+            ));
         }
 
         /// <summary>
