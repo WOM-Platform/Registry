@@ -52,7 +52,7 @@ namespace WomPlatform.Web.Api.Controllers {
             string Country,
             string Description,
             [Url]
-            string WebsiteUrl
+            string Url
         );
 
         /// <summary>
@@ -60,7 +60,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="input">Merchant registration payload.</param>
         [HttpPost("register")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -82,7 +81,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     City = input.City,
                     Country = input.Country,
                     Description = input.Description,
-                    WebsiteUrl = input.WebsiteUrl,
+                    WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
                     AdministratorIds = new ObjectId[] {
                         new ObjectId(loggedUserId)
@@ -114,7 +113,7 @@ namespace WomPlatform.Web.Api.Controllers {
             string City,
             string Country,
             string Description,
-            string WebsiteUrl
+            string Url
         );
 
         /// <summary>
@@ -163,7 +162,7 @@ namespace WomPlatform.Web.Api.Controllers {
             string Country,
             string Description,
             [Url]
-            string WebsiteUrl
+            string Url
         );
 
         /// <summary>
@@ -211,8 +210,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 if(input.Description != null) {
                     existingMerchant.Description = input.Description;
                 }
-                if(input.WebsiteUrl != null) {
-                    existingMerchant.WebsiteUrl = input.WebsiteUrl;
+                if(input.Url != null) {
+                    existingMerchant.WebsiteUrl = input.Url;
                 }
                 existingMerchant.LastUpdate = DateTime.UtcNow;
 
