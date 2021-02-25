@@ -33,7 +33,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
-        /// User registration payload.
+        /// Merchant registration payload.
         /// </summary>
         public record MerchantRegisterInput(
             [Required]
@@ -57,12 +57,13 @@ namespace WomPlatform.Web.Api.Controllers {
         );
 
         /// <summary>
-        /// Register a new merchant to the service.
+        /// Registers a new merchant to the service.
         /// </summary>
         /// <param name="input">Merchant registration payload.</param>
-        [HttpPost("register")]
+        [HttpPut]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
             var existingMerchant = await Mongo.GetMerchantByFiscalCode(input.FiscalCode);
@@ -70,7 +71,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.ProblemParameter("Supplied fiscal code is already registered");
             }
 
-            var loggedUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(!User.GetUserId(out var loggedUserId)) {
+                return Forbid();
+            }
 
             try {
                 var merchant = new Merchant {
@@ -85,7 +88,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
                     AdministratorIds = new ObjectId[] {
-                        new ObjectId(loggedUserId)
+                        loggedUserId
                     }
                 };
                 await Mongo.CreateMerchant(merchant);
@@ -108,8 +111,13 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves information about an existing merchant.
         /// </summary>
         /// <param name="id">Merchant ID.</param>
+        /// <remarks>
+        /// Can be accessed only if logged in user is the merchant's administrator or POS user.
+        /// </remarks>
         [HttpGet("{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
@@ -117,6 +125,14 @@ namespace WomPlatform.Web.Api.Controllers {
             var existingMerchant = await Mongo.GetMerchantById(id);
             if(existingMerchant == null) {
                 return NotFound();
+            }
+
+            // Forbid if logged user is not in admin list OR POS user list
+            if(!User.GetUserId(out var loggedUserId) ||
+               !(
+                   existingMerchant.AdministratorIds.Contains(loggedUserId) || existingMerchant.PosUserIds.Contains(loggedUserId)
+               )) {
+                return Forbid();
             }
 
             return Ok(existingMerchant.ToOutput());
@@ -143,9 +159,13 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="id">Merchant ID.</param>
         /// <param name="input">Updated information.</param>
+        /// <remarks>
+        /// Can be accessed only if logged in user is the merchant's administrator.
+        /// </remarks>
         [HttpPatch("{id}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateMerchant(

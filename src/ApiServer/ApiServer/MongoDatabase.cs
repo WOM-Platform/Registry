@@ -128,7 +128,7 @@ namespace WomPlatform.Web.Api {
         }
 
         /// <summary>
-        /// Replace an existing user, by ID.
+        /// Replace an existing merchant, by ID.
         /// </summary>
         public Task ReplaceMerchant(Merchant merchant) {
             var filter = Builders<Merchant>.Filter.Eq(u => u.Id, merchant.Id);
