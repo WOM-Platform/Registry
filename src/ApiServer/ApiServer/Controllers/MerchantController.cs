@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.OutputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -94,7 +95,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     new {
                         id = merchant.Id
                     },
-                    MerchantToInfoOutput(merchant)
+                    merchant.ToOutput()
                 );
             }
             catch(Exception ex) {
@@ -102,19 +103,6 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
         }
-
-        public record MerchantInformationOutput(
-            string Id,
-            string Name,
-            string FiscalCode,
-            MerchantActivityType PrimaryActivity,
-            string Address,
-            string ZipCode,
-            string City,
-            string Country,
-            string Description,
-            string Url
-        );
 
         /// <summary>
         /// Retrieves information about an existing merchant.
@@ -131,22 +119,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            return Ok(MerchantToInfoOutput(existingMerchant));
-        }
-
-        private static MerchantInformationOutput MerchantToInfoOutput(Merchant m) {
-            return new MerchantInformationOutput(
-                m.Id.ToString(),
-                m.Name,
-                m.FiscalCode,
-                m.PrimaryActivityType,
-                m.Address,
-                m.ZipCode,
-                m.City,
-                m.Country,
-                m.Description,
-                m.WebsiteUrl
-            );
+            return Ok(existingMerchant.ToOutput());
         }
 
         /// <summary>
@@ -222,7 +195,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
 
-            return Ok();
+            return Ok(existingMerchant.ToOutput());
         }
 
     }

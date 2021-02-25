@@ -28,7 +28,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record AuthSourceLoginOutput(
-            AuthSourceLoginInfo[] Sources
+            SourceLoginOutput[] Sources
         );
 
         /// <summary>
@@ -49,18 +49,18 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("User {0} has {1} source entries", userId, sources.Count);
 
             return Ok(new AuthSourceLoginOutput(
-                sources.Select(s => new AuthSourceLoginInfo(
-                    s.Id.ToString(),
-                    s.Name,
-                    s.Url,
-                    s.PrivateKey,
-                    s.PublicKey
-                )).ToArray()
+                sources.Select(s => new SourceLoginOutput {
+                    Id = s.Id.ToString(),
+                    Name = s.Name,
+                    Url = s.Url,
+                    PrivateKey = s.PrivateKey,
+                    PublicKey = s.PublicKey
+                }).ToArray()
             ));
         }
 
         public record AuthPosLoginOutput(
-            AuthPosLoginInfo[] POS
+            PosLoginOutput[] POS
         );
 
         /// <summary>
@@ -81,13 +81,13 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new AuthPosLoginOutput(
-                pos.Select(p => new AuthPosLoginInfo(
-                    p.Id.ToString(),
-                    p.Name,
-                    p.Url,
-                    p.PrivateKey,
-                    p.PublicKey
-                )).ToArray()
+                pos.Select(p => new PosLoginOutput {
+                    Id = p.Id.ToString(),
+                    Name = p.Name,
+                    Url = p.Url,
+                    PrivateKey = p.PrivateKey,
+                    PublicKey = p.PublicKey
+                }).ToArray()
             ));
         }
 

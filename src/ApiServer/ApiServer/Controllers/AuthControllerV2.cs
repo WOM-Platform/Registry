@@ -32,7 +32,7 @@ namespace WomPlatform.Web.Api.Controllers {
             string Name,
             string Surname,
             string Email,
-            AuthMerchantLoginInfo[] Merchants
+            MerchantAuthOutput[] Merchants
         );
 
         /// <summary>
@@ -58,23 +58,25 @@ namespace WomPlatform.Web.Api.Controllers {
                 userData.Name,
                 userData.Surname,
                 userData.Email,
-                data.Select(d => new AuthMerchantLoginInfo(
-                    d.Item1.Id.ToString(),
-                    d.Item1.Name,
-                    d.Item1.FiscalCode,
-                    d.Item1.Address,
-                    d.Item1.ZipCode,
-                    d.Item1.City,
-                    d.Item1.Country,
-                    d.Item1.WebsiteUrl,
-                    d.Item2.Select(p => new AuthPosLoginInfo(
-                        p.Id.ToString(),
-                        p.Name,
-                        p.Url,
-                        p.PrivateKey,
-                        p.PublicKey
-                    )).ToArray()
-                )).ToArray()
+                data.Select(d => new MerchantAuthOutput {
+                    Id = d.Item1.Id.ToString(),
+                    Name = d.Item1.Name,
+                    FiscalCode = d.Item1.FiscalCode,
+                    PrimaryActivityType = d.Item1.PrimaryActivityType,
+                    Address = d.Item1.Address,
+                    ZipCode = d.Item1.ZipCode,
+                    City = d.Item1.City,
+                    Country = d.Item1.Country,
+                    Description = d.Item1.Description,
+                    Url = d.Item1.WebsiteUrl,
+                    Pos = d.Item2.Select(p => new PosLoginOutput {
+                        Id = p.Id.ToString(),
+                        Name = p.Name,
+                        Url = p.Url,
+                        PrivateKey = p.PrivateKey,
+                        PublicKey = p.PublicKey
+                    }).ToArray()
+                }).ToArray()
             ));
         }
 
