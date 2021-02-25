@@ -227,6 +227,14 @@ namespace WomPlatform.Web.Api {
             });
         }
 
+        /// <summary>
+        /// Replace an existing POS, by ID.
+        /// </summary>
+        public Task ReplacePos(Pos pos) {
+            var filter = Builders<Pos>.Filter.Eq(p => p.Id, pos.Id);
+            return PosCollection.ReplaceOneAsync(filter, pos);
+        }
+
         private IMongoCollection<Source> SourceCollection {
             get {
                 return MainDatabase.GetCollection<Source>("Sources");

@@ -20,4 +20,16 @@ namespace WomPlatform.Web.Api.OutputModels {
 
     }
 
+    public static class PosOutputHelpers {
+
+        public static PosOutput ToOutput(this DatabaseDocumentModels.Pos pos) {
+            return new PosOutput {
+                Id = pos.Id.ToString(),
+                Name = pos.Name,
+                Url = pos.Url
+            };
+        }
+
+    }
+
 }

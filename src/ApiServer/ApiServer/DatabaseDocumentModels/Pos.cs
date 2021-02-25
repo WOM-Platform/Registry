@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using System;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver.GeoJsonObjectModel;
@@ -29,6 +30,16 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("url")]
         [BsonIgnoreIfNull]
         public string Url { get; set; }
+
+        [BsonElement("createdOn")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonIgnoreIfNull]
+        public DateTime? CreatedOn { get; set; }
+
+        [BsonElement("lastUpdate")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonIgnoreIfNull]
+        public DateTime? LastUpdate { get; set; }
 
         [BsonElement("isDummy")]
         [BsonDefaultValue(false)]
