@@ -198,17 +198,18 @@ namespace WomPlatform.Web.Api {
         /// </summary>
         public async Task<List<(Merchant, List<Pos>)>> GetMerchantsAndPosByUser(ObjectId userId) {
             // Get all merchants with control
-            var merchants = (await GetMerchantsWithPosControl(userId)).ToDictionary(m => m.Id);
+            var merchants = await GetMerchantsWithPosControl(userId);
 
             // Get all matching POS
-            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants.Values select m.Id);
+            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants select m.Id);
             var pos = await PosCollection.Find(posFilter).ToListAsync();
 
             // Build nested list
             var ret = new List<(Merchant, List<Pos>)>(merchants.Count);
-            foreach(var g in pos.GroupBy(pos => pos.MerchantId)) {
-                ret.Add((merchants[g.Key], g.ToList()));
+            foreach(var merchant in merchants) {
+                ret.Add((merchant, pos.Where(p => p.MerchantId == merchant.Id).ToList()));
             }
+
             return ret;
         }
 
