@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace WomPlatform.Web.Api {
 
+    /// <summary>
+    /// Allows reading of input without content-type header.
+    /// </summary>
     public class PermissiveInputFormatter : IInputFormatter {
 
         public bool CanRead(InputFormatterContext context) {

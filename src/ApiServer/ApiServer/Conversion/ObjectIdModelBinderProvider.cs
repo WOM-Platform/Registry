@@ -3,9 +3,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MongoDB.Bson;
 
-namespace WomPlatform.Web.Api {
+namespace WomPlatform.Web.Api.Conversion {
 
-    public class ObjectIdModelBinderProvider : IModelBinderProvider {
+    /// <summary>
+    /// Allows direct model binding to ObjectId values.
+    /// </summary>
+    class ObjectIdModelBinderProvider : IModelBinderProvider {
 
         private class ObjectIdModelBinder : IModelBinder {
 

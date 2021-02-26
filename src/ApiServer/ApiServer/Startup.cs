@@ -23,6 +23,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.IdentityModel.Tokens;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.Conversion;
 
 namespace WomPlatform.Web.Api {
 
@@ -83,6 +84,7 @@ namespace WomPlatform.Web.Api {
                 .AddJsonOptions(options => {
                     options.JsonSerializerOptions.AllowTrailingCommas = true;
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    options.JsonSerializerOptions.Converters.Add(new JsonObjectIdConverter());
                 });
 
             services.AddSwaggerGen(options => {

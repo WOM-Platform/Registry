@@ -9,7 +9,7 @@ namespace WomPlatform.Web.Api {
     /// Used to constrain an action based on the request's Accept header.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-    public class AcceptHeaderAttribute : Attribute, IActionConstraint {
+    class AcceptHeaderAttribute : Attribute, IActionConstraint {
 
         public AcceptHeaderAttribute(string contentType) {
             if(contentType == null) {
