@@ -9,6 +9,8 @@ namespace WomPlatform.Web.Api.OutputModels {
 
         public string Id { get; init; }
         public string Name { get; init; }
+        public double Latitude { get; init; }
+        public double Longitude { get; init; }
         public string Url { get; init; }
 
     }
@@ -26,6 +28,8 @@ namespace WomPlatform.Web.Api.OutputModels {
             return new PosOutput {
                 Id = pos.Id.ToString(),
                 Name = pos.Name,
+                Latitude = pos.Position.Coordinates.Latitude,
+                Longitude = pos.Position.Coordinates.Longitude,
                 Url = pos.Url
             };
         }
