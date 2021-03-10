@@ -275,7 +275,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record UserLoginInput(string Email, string Password);
 
-        public record UserLoginOutput(string Id, string Token, DateTime LoginUntil);
+        public record UserLoginOutput(string Id, string Token, DateTime LoginUntil, bool Verified);
 
         /// <summary>
         /// Logs in as a user and creates a new session token.
@@ -324,7 +324,8 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new UserLoginOutput(
                 user.Id.ToString(),
                 securityHandler.WriteToken(token),
-                token.ValidTo
+                token.ValidTo,
+                user.VerificationToken == null
             ));
         }
 
