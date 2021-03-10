@@ -13,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.OutputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -97,11 +98,11 @@ namespace WomPlatform.Web.Api.Controllers {
                     new {
                         id = user.Id.ToString()
                     },
-                    new {
-                        user.Id,
-                        user.Email,
-                        user.Name,
-                        user.Surname
+                    new UserOutput {
+                        Id = user.Id.ToString(),
+                        Email = user.Email,
+                        Name = user.Name,
+                        Surname = user.Surname
                     }
                 );
             }
@@ -126,11 +127,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            return Ok(new {
-                existingUser.Id,
-                existingUser.Email,
-                existingUser.Name,
-                existingUser.Surname
+            return Ok(new UserOutput {
+                Id = existingUser.Id.ToString(),
+                Email = existingUser.Email,
+                Name = existingUser.Name,
+                Surname = existingUser.Surname
             });
         }
 
