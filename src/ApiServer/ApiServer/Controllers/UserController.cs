@@ -1,8 +1,11 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +13,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
@@ -273,9 +277,9 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserLoginInput(string Email, string Password);
+        public record UserLoginInput(string Email, string Password, string ClientName, bool Persistent);
 
-        public record UserLoginOutput(string Id, string Token, DateTime LoginUntil, bool Verified);
+        public record UserLoginOutput(string Id, DateTime LoginUntil, bool Verified);
 
         /// <summary>
         /// Logs in as a user and creates a new session token.
@@ -298,33 +302,44 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var securityHandler = new JwtSecurityTokenHandler();
-            var jwtKey = Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"));
-            var jwtJti = Guid.NewGuid().ToString("N");
-            var jwtDescriptor = new SecurityTokenDescriptor {
-                Subject = new ClaimsIdentity(new[] {
+            var newSessionId = Guid.NewGuid();
+            var sessionStart = DateTime.UtcNow;
+            var sessionEnd = sessionStart.Add(Startup.DefaultCookieValidity);
+
+            var principal = new ClaimsPrincipal(
+                new ClaimsIdentity(new[] {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.GivenName, user.Name),
                     new Claim(ClaimTypes.Surname, user.Surname),
-                    new Claim(JwtRegisteredClaimNames.Jti, jwtJti)
-                }),
-                Issuer = Startup.GetJwtIssuerName(),
-                IssuedAt = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddYears(1),
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(jwtKey),
-                    SecurityAlgorithms.HmacSha512Signature
-                )
+                    new Claim(Startup.CookieSessionClaimType, newSessionId.ToString("N"))
+                }, CookieAuthenticationDefaults.AuthenticationScheme)
+            );
+            var authProperties = new AuthenticationProperties {
+                IssuedUtc = sessionStart,
+                IsPersistent = input.Persistent,
+                AllowRefresh = true,
             };
-            var token = securityHandler.CreateToken(jwtDescriptor);
 
-            Logger.LogDebug("Login performed for user {0} until {1}", user.Id, token.ValidTo);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                authProperties
+            );
+
+            Logger.LogDebug("Login performed for user {0} with session ID {1}", user.Id, newSessionId);
+
+            await Mongo.StoreSession(new Session {
+                Id = newSessionId,
+                UserId = user.Id,
+                StartedOn = sessionStart,
+                Client = input.ClientName,
+                UserAgent = HttpContext.Request.Headers[HeaderNames.UserAgent]
+            });
 
             return Ok(new UserLoginOutput(
                 user.Id.ToString(),
-                securityHandler.WriteToken(token),
-                token.ValidTo,
+                sessionEnd,
                 user.VerificationToken == null
             ));
         }
@@ -335,7 +350,9 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("logout")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult Logout() {
+        public async Task<IActionResult> Logout() {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
             return Ok();
         }
 

@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -45,7 +45,8 @@ namespace WomPlatform.Web.Api {
             }
         }
 
-        public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
+        public static readonly TimeSpan DefaultCookieValidity = TimeSpan.FromDays(14);
+        public const string CookieSessionClaimType = "SessionIdClaim";
 
         public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
         public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
@@ -145,31 +146,30 @@ namespace WomPlatform.Web.Api {
             });
 
             services.AddAuthentication(options => {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(options => {
-                options.RequireHttpsMetadata = true;
-                options.TokenValidationParameters = new TokenValidationParameters {
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"))),
-                    ValidateIssuer = true,
-                    ValidIssuer = GetJwtIssuerName(),
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-            }).AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.SchemeName, null);
+                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie(opts => {
+                opts.Cookie.HttpOnly = true;
+                opts.Cookie.IsEssential = true;
+                opts.Cookie.Name = "WomLogin";
+                opts.ExpireTimeSpan = DefaultCookieValidity;
+                opts.SlidingExpiration = true;
+            })
+            .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.SchemeName, null);
 
             services.AddAuthorization(options => {
-                options.AddPolicy(TokenSessionAuthPolicy, new AuthorizationPolicyBuilder(
-                        JwtBearerDefaults.AuthenticationScheme
+                options.AddPolicy(TokenSessionAuthPolicy,
+                    new AuthorizationPolicyBuilder(
+                        CookieAuthenticationDefaults.AuthenticationScheme
                     )
                     .RequireAuthenticatedUser()
                     .RequireClaim(ClaimTypes.NameIdentifier)
                     .Build()
                 );
-                options.AddPolicy(SimpleAuthPolicy, new AuthorizationPolicyBuilder(
+                options.AddPolicy(SimpleAuthPolicy,
+                    new AuthorizationPolicyBuilder(
                         BasicAuthenticationSchemeOptions.SchemeName,
-                        JwtBearerDefaults.AuthenticationScheme
+                        CookieAuthenticationDefaults.AuthenticationScheme
                     )
                     .RequireAuthenticatedUser()
                     .Build()
@@ -216,8 +216,8 @@ namespace WomPlatform.Web.Api {
                 mongo.UpsertPosSync(new DatabaseDocumentModels.Pos {
                     Id = new MongoDB.Bson.ObjectId(devPosId),
                     Name = "Development POS",
-                    PrivateKey = System.IO.File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
-                    PublicKey = System.IO.File.ReadAllText(devPosSection["KeyPathBase"] + ".pub")
+                    PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
+                    PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub")
                 });
                 logger.LogDebug("Configured development POS #{0}", devPosId);
             }
