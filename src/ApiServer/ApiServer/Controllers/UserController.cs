@@ -94,6 +94,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 };
                 await Mongo.CreateUser(user);
 
+                _composer.SendVerificationMail(user);
+
                 return CreatedAtAction(
                     nameof(GetInformation),
                     new {
@@ -187,6 +189,33 @@ namespace WomPlatform.Web.Api.Controllers {
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to update user {0}", id);
                 throw;
+            }
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Requests a user verification e-mail.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        [HttpPost("{id}/request-verification")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RequestVerification(
+            [FromRoute] ObjectId id
+        ) {
+            if(!User.UserIdEquals(id)) {
+                return Forbid();
+            }
+
+            var user = await Mongo.GetUserById(id);
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(user.VerificationToken != null) {
+                _composer.SendVerificationMail(user);
             }
 
             return Ok();
