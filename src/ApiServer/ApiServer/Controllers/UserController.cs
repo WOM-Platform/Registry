@@ -1,8 +1,5 @@
 ﻿using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -12,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using MongoDB.Bson;
 using WomPlatform.Connector;
@@ -70,6 +66,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="input">User registration payload.</param>
         [HttpPost("register")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -121,11 +118,16 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="id">User ID.</param>
         [HttpGet("{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
         ) {
+            if(!User.UserIdEquals(id)) {
+                return Forbid();
+            }
+
             var existingUser = await Mongo.GetUserById(id);
             if(existingUser == null) {
                 return NotFound();
@@ -147,6 +149,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">User ID.</param>
         /// <param name="input">User information payload.</param>
         [HttpPatch("{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -194,22 +197,35 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Verifies a user account.
         /// </summary>
+        /// <remarks>
+        /// Must be authenticated as the same user that is being verified.
+        /// </remarks>
         /// <param name="id">User ID.</param>
         /// <param name="input">User verification payload.</param>
         [HttpPost("{id}/verify")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Verify(
             [FromRoute] ObjectId id,
             UserVerifyInput input
         ) {
+            if(!User.UserIdEquals(id)) {
+                return NotFound();
+            }
+
             var user = await Mongo.GetUserById(id);
             if(user == null) {
                 return NotFound();
             }
 
+            if(user.VerificationToken == null) {
+                return Ok();
+            }
+
             if(user.VerificationToken != input.Token) {
-                return NotFound();
+                return this.ProblemParameter("Token not valid");
             }
 
             user.VerificationToken = null;
@@ -225,6 +241,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="input">Password request payload.</param>
         [HttpPost("password-reset")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> RequestPasswordReset(
             UserRequestPasswordResetInput input
@@ -250,6 +267,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">User ID.</param>
         /// <param name="input">Password reset payload.</param>
         [HttpPost("{id}/password-reset")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -286,6 +304,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="input">Login payload.</param>
         [HttpPost("login")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Login(UserLoginInput input) {
@@ -348,7 +367,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Logs out the currently logged in user and voids existing sessions.
         /// </summary>
         [HttpPost("logout")]
-        [Authorize]
+        [Authorize(Policy = Startup.TokenSessionAuthPolicy)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Logout() {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
