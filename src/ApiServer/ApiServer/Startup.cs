@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -45,8 +45,7 @@ namespace WomPlatform.Web.Api {
             }
         }
 
-        public static readonly TimeSpan DefaultCookieValidity = TimeSpan.FromDays(14);
-        public const string CookieSessionClaimType = "SessionIdClaim";
+        public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
 
         public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
         public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
@@ -146,21 +145,25 @@ namespace WomPlatform.Web.Api {
             });
 
             services.AddAuthentication(options => {
-                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            })
-            .AddCookie(opts => {
-                opts.Cookie.HttpOnly = true;
-                opts.Cookie.IsEssential = true;
-                opts.Cookie.Name = "WomLogin";
-                opts.ExpireTimeSpan = DefaultCookieValidity;
-                opts.SlidingExpiration = true;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options => {
+                options.RequireHttpsMetadata = true;
+                options.TokenValidationParameters = new TokenValidationParameters {
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"))),
+                    ValidateIssuer = true,
+                    ValidIssuer = GetJwtIssuerName(),
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
             })
             .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.SchemeName, null);
 
             services.AddAuthorization(options => {
                 options.AddPolicy(TokenSessionAuthPolicy,
                     new AuthorizationPolicyBuilder(
-                        CookieAuthenticationDefaults.AuthenticationScheme
+                        JwtBearerDefaults.AuthenticationScheme
                     )
                     .RequireAuthenticatedUser()
                     .RequireClaim(ClaimTypes.NameIdentifier)
@@ -169,7 +172,7 @@ namespace WomPlatform.Web.Api {
                 options.AddPolicy(SimpleAuthPolicy,
                     new AuthorizationPolicyBuilder(
                         BasicAuthenticationSchemeOptions.SchemeName,
-                        CookieAuthenticationDefaults.AuthenticationScheme
+                        JwtBearerDefaults.AuthenticationScheme
                     )
                     .RequireAuthenticatedUser()
                     .Build()

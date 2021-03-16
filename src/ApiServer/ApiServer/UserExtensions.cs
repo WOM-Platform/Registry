@@ -40,29 +40,6 @@ namespace WomPlatform.Web.Api {
             return valUserId.Equals(refUserId);
         }
 
-        /// <summary>
-        /// Extracts the current session ID from the authentication claims.
-        /// </summary>
-        public static bool GetSessionId(this ClaimsPrincipal principal, out Guid sessionId) {
-            sessionId = Guid.Empty;
-
-            if(principal == null) {
-                return false;
-            }
-
-            var sessionValue = principal.FindFirstValue(Startup.CookieSessionClaimType);
-            if(sessionValue == null) {
-                return false;
-            }
-
-            if(!Guid.TryParseExact(sessionValue, "N", out Guid result)) {
-                return false;
-            }
-
-            sessionId = result;
-            return true;
-        }
-
     }
 
 }

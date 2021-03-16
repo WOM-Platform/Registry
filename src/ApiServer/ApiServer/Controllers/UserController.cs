@@ -1,15 +1,15 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Net.Http.Headers;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
@@ -324,9 +324,9 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserLoginInput(string Email, string Password, string ClientName, bool Persistent);
+        public record UserLoginInput(string Email, string Password, string ClientName);
 
-        public record UserLoginOutput(string Id, DateTime LoginUntil, bool Verified);
+        public record UserLoginOutput(string Id, string Token, DateTime LoginUntil, bool Verified);
 
         /// <summary>
         /// Logs in as a user and creates a new session token.
@@ -350,58 +350,37 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var newSessionId = Guid.NewGuid();
-            var sessionStart = DateTime.UtcNow;
-            var sessionEnd = sessionStart.Add(Startup.DefaultCookieValidity);
+            var sessionId = Guid.NewGuid().ToString("N");
 
-            var principal = new ClaimsPrincipal(
-                new ClaimsIdentity(new[] {
+            var securityHandler = new JwtSecurityTokenHandler();
+            var jwtKey = Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"));
+            var jwtDescriptor = new SecurityTokenDescriptor {
+                Subject = new ClaimsIdentity(new[] {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.GivenName, user.Name),
                     new Claim(ClaimTypes.Surname, user.Surname),
-                    new Claim(Startup.CookieSessionClaimType, newSessionId.ToString("N"))
-                }, CookieAuthenticationDefaults.AuthenticationScheme)
-            );
-            var authProperties = new AuthenticationProperties {
-                IssuedUtc = sessionStart,
-                IsPersistent = input.Persistent,
-                AllowRefresh = true,
+                    new Claim(JwtRegisteredClaimNames.Jti, sessionId)
+                }),
+                Issuer = Startup.GetJwtIssuerName(),
+                IssuedAt = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.AddYears(1),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(jwtKey),
+                    SecurityAlgorithms.HmacSha512Signature
+                )
             };
 
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                authProperties
-            );
+            var token = securityHandler.CreateToken(jwtDescriptor);
 
-            Logger.LogDebug("Login performed for user {0} with session ID {1}", user.Id, newSessionId);
-
-            await Mongo.StoreSession(new Session {
-                Id = newSessionId,
-                UserId = user.Id,
-                StartedOn = sessionStart,
-                Client = input.ClientName,
-                UserAgent = HttpContext.Request.Headers[HeaderNames.UserAgent]
-            });
+            Logger.LogDebug("Login performed for user {0} with session ID {1}", user.Id, sessionId);
 
             return Ok(new UserLoginOutput(
                 user.Id.ToString(),
-                sessionEnd,
+                securityHandler.WriteToken(token),
+                token.ValidTo,
                 user.VerificationToken == null
             ));
-        }
-
-        /// <summary>
-        /// Logs out the currently logged in user and voids existing sessions.
-        /// </summary>
-        [HttpPost("logout")]
-        [Authorize(Policy = Startup.TokenSessionAuthPolicy)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> Logout() {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            return Ok();
         }
 
     }

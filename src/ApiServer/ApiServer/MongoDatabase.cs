@@ -367,26 +367,6 @@ namespace WomPlatform.Web.Api {
             return ret;
         }
 
-        private IMongoCollection<Session> SessionCollection {
-            get {
-                return MainDatabase.GetCollection<Session>("Sessions");
-            }
-        }
-
-        public Task<Session> GetSessionById(Guid sessionId) {
-            var filter = Builders<Session>.Filter.Eq(s => s.Id, sessionId);
-            return SessionCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        public Task StoreSession(Session session) {
-            return SessionCollection.InsertOneAsync(session);
-        }
-
-        public Task DeleteSessionsByUserId(ObjectId userId) {
-            var filter = Builders<Session>.Filter.Eq(s => s.UserId, userId);
-            return SessionCollection.DeleteManyAsync(filter);
-        }
-
     }
 
 }
