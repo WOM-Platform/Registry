@@ -78,7 +78,6 @@ namespace WomPlatform.Web.Api {
             services.AddControllers()
                 .AddMvcOptions(opts => {
                     opts.ModelBinderProviders.Insert(0, new ObjectIdModelBinderProvider());
-                    opts.AllowEmptyInputInBodyModelBinding = true;
                     opts.InputFormatters.Add(new PermissiveInputFormatter());
                 })
                 .AddJsonOptions(options => {

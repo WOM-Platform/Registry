@@ -4,8 +4,10 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -329,28 +331,58 @@ namespace WomPlatform.Web.Api.Controllers {
         public record UserLoginOutput(string Id, string Token, DateTime LoginUntil, bool Verified);
 
         /// <summary>
+        /// Gets the user to login, either through login data or through the already authenticated basic authentication.
+        /// </summary>
+        private async Task<User> GetUserToLogin(UserLoginInput input) {
+            if(User.GetUserId(out var loggedInUser)) {
+                Logger.LogDebug("User {0} already logged in", loggedInUser);
+                return await Mongo.GetUserById(loggedInUser);
+            }
+
+            if(input == null) {
+                return null;
+            }
+
+            var user = await Mongo.GetUserByEmail(input.Email);
+            if(user == null) {
+                Logger.LogTrace("User {0} does not exist", input.Email);
+
+                // Delay response to throttle
+                await Task.Delay(1050);
+                return null;
+            }
+
+            if(!BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash)) {
+                Logger.LogTrace("User {0} password not correct", input.Email);
+
+                // Delay response to throttle
+                await Task.Delay(1000);
+                return null;
+            }
+
+            return user;
+        }
+
+        /// <summary>
         /// Logs in as a user and creates a new session token.
         /// </summary>
         /// <param name="input">Login payload.</param>
         [HttpPost("login")]
         [AllowAnonymous]
+        [ForceAuthChallenge(BasicAuthenticationSchemeOptions.SchemeName)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Login(UserLoginInput input) {
-            var user = await Mongo.GetUserByEmail(input.Email);
+        public async Task<IActionResult> Login(
+            [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] UserLoginInput input
+        ) {
+            var user = await GetUserToLogin(input);
             if(user == null) {
-                // Delay response to throttle
-                await Task.Delay(1050);
-                return NotFound();
-            }
-
-            if(!BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash)) {
-                // Delay response to throttle
-                await Task.Delay(1000);
                 return NotFound();
             }
 
             var sessionId = Guid.NewGuid().ToString("N");
+            var issueTimestamp = DateTime.UtcNow;
+            var expirationTimestamp = issueTimestamp.AddDays(1);
 
             var securityHandler = new JwtSecurityTokenHandler();
             var jwtKey = Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"));
@@ -363,8 +395,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     new Claim(JwtRegisteredClaimNames.Jti, sessionId)
                 }),
                 Issuer = Startup.GetJwtIssuerName(),
-                IssuedAt = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddYears(1),
+                IssuedAt = issueTimestamp,
+                Expires = expirationTimestamp,
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(jwtKey),
                     SecurityAlgorithms.HmacSha512Signature
@@ -378,7 +410,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new UserLoginOutput(
                 user.Id.ToString(),
                 securityHandler.WriteToken(token),
-                token.ValidTo,
+                expirationTimestamp,
                 user.VerificationToken == null
             ));
         }
