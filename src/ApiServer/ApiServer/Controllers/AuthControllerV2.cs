@@ -62,7 +62,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Id = d.Item1.Id.ToString(),
                     Name = d.Item1.Name,
                     FiscalCode = d.Item1.FiscalCode,
-                    PrimaryActivityType = d.Item1.PrimaryActivityType,
+                    PrimaryActivity = d.Item1.PrimaryActivityType,
                     Address = d.Item1.Address,
                     ZipCode = d.Item1.ZipCode,
                     City = d.Item1.City,

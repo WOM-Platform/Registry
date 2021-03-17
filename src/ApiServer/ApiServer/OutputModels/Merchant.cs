@@ -10,7 +10,7 @@ namespace WomPlatform.Web.Api.OutputModels {
         public string Id { get; init; }
         public string Name { get; init; }
         public string FiscalCode { get; init; }
-        public MerchantActivityType PrimaryActivityType { get; init; }
+        public MerchantActivityType PrimaryActivity { get; init; }
         public string Address { get; init; }
         public string ZipCode { get; init; }
         public string City { get; init; }
@@ -33,7 +33,7 @@ namespace WomPlatform.Web.Api.OutputModels {
                 Id = merchant.Id.ToString(),
                 Name = merchant.Name,
                 FiscalCode = merchant.FiscalCode,
-                PrimaryActivityType = merchant.PrimaryActivityType,
+                PrimaryActivity = merchant.PrimaryActivityType,
                 Address = merchant.Address,
                 ZipCode = merchant.ZipCode,
                 City = merchant.City,
