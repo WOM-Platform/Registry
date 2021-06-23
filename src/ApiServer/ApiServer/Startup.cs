@@ -84,6 +84,7 @@ namespace WomPlatform.Web.Api {
                     options.JsonSerializerOptions.AllowTrailingCommas = true;
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonObjectIdConverter());
+                    options.JsonSerializerOptions.Converters.Add(new JsonWomIdentifierConverter());
                 });
 
             services.AddSwaggerGen(options => {

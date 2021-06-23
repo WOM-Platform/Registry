@@ -36,7 +36,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromBody] PaymentRegisterPayload payload
         ) {
             if(payload == null || payload.Nonce == null) {
-                Logger.LogInformation(LoggingEvents.PaymentCreation, "Payload or nonce void, aborting");
+                Logger.LogDebug(LoggingEvents.PaymentCreation, "Payload or nonce void, aborting");
 
                 return BadRequest();
             }
