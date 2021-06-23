@@ -38,6 +38,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromBody] VoucherCreatePayload payload
         ) {
             if(payload == null || payload.Nonce == null) {
+                Logger.LogInformation(LoggingEvents.VoucherCreation, "Payload or nonce void, aborting");
                 return BadRequest();
             }
 
