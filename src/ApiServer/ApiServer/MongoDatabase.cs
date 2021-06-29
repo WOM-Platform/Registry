@@ -30,9 +30,11 @@ namespace WomPlatform.Web.Api {
                         if(_client == null) {
                             var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
                             var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
+                            var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
+                            var port = Environment.GetEnvironmentVariable("MONGO_CONNECTION_PORT");
 
                             _logger.LogInformation("Creating new Mongo client");
-                            _client = new MongoClient(string.Format("mongodb://{0}:{1}@mongo", username, password));
+                            _client = new MongoClient(string.Format("mongodb://{0}:{1}@{2}:{3}", username, password, host, port));
                         }
                     }
                 }
@@ -125,6 +127,14 @@ namespace WomPlatform.Web.Api {
             return MerchantCollection.Find(merchFilter).ToListAsync();
         }
 
+        /// <summary>
+        /// Replace an existing merchant, by ID.
+        /// </summary>
+        public Task ReplaceMerchant(Merchant merchant) {
+            var filter = Builders<Merchant>.Filter.Eq(u => u.Id, merchant.Id);
+            return MerchantCollection.ReplaceOneAsync(filter, merchant);
+        }
+
         private IMongoCollection<PaymentRequest> PaymentCollection {
             get {
                 return MainDatabase.GetCollection<PaymentRequest>("PaymentRequests");
@@ -188,17 +198,18 @@ namespace WomPlatform.Web.Api {
         /// </summary>
         public async Task<List<(Merchant, List<Pos>)>> GetMerchantsAndPosByUser(ObjectId userId) {
             // Get all merchants with control
-            var merchants = (await GetMerchantsWithPosControl(userId)).ToDictionary(m => m.Id);
+            var merchants = await GetMerchantsWithPosControl(userId);
 
             // Get all matching POS
-            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants.Values select m.Id);
+            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants select m.Id);
             var pos = await PosCollection.Find(posFilter).ToListAsync();
 
             // Build nested list
             var ret = new List<(Merchant, List<Pos>)>(merchants.Count);
-            foreach(var g in pos.GroupBy(pos => pos.MerchantId)) {
-                ret.Add((merchants[g.Key], g.ToList()));
+            foreach(var merchant in merchants) {
+                ret.Add((merchant, pos.Where(p => p.MerchantId == merchant.Id).ToList()));
             }
+
             return ret;
         }
 
@@ -215,6 +226,14 @@ namespace WomPlatform.Web.Api {
             PosCollection.ReplaceOne(filter, pos, new ReplaceOptions {
                 IsUpsert = true
             });
+        }
+
+        /// <summary>
+        /// Replace an existing POS, by ID.
+        /// </summary>
+        public Task ReplacePos(Pos pos) {
+            var filter = Builders<Pos>.Filter.Eq(p => p.Id, pos.Id);
+            return PosCollection.ReplaceOneAsync(filter, pos);
         }
 
         private IMongoCollection<Source> SourceCollection {

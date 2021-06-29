@@ -10,17 +10,17 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Provides access to a list of aims.
     /// </summary>
-    [Route("v1/aims")]
+    [Route("v2/aims")]
     [OperationsTags("Aims")]
-    public class AimsController : BaseRegistryController {
+    public class AimsControllerV2 : BaseRegistryController {
 
-        public AimsController(
+        public AimsControllerV2(
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             MongoDatabase mongo,
             Operator @operator,
-            ILogger<AimsController> logger)
+            ILogger<AimsControllerV2> logger)
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
@@ -31,14 +31,20 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        public async Task<IActionResult> List() {
+        /// <summary>
+        /// Get list of all aims.
+        /// </summary>
+        public async Task<IActionResult> ListV2() {
             var aims = await Mongo.GetAims();
-            return Ok(from a in aims
-                      select new {
-                          a.Code,
-                          a.Titles,
-                          a.Order
-                      });
+            var aimList = from a in aims
+                          select new {
+                              a.Code,
+                              a.Titles,
+                              a.Order
+                          };
+            return Ok(new {
+                Aims = aimList
+            });
         }
 
     }

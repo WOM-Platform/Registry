@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -12,9 +13,9 @@ using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
     [Produces("application/json")]
-    [Route("api/v{version:apiVersion}/voucher")]
+    [Route("v1/voucher")]
+    [OperationsTags("Voucher generation protocol", "Operations")]
     public class VoucherController : BaseRegistryController {
 
         public VoucherController(
@@ -28,12 +29,17 @@ namespace WomPlatform.Web.Api.Controllers {
 
         }
 
-        // POST api/v1/voucher/create
+        /// <summary>
+        /// Registers a new voucher generation request.
+        /// </summary>
+        /// <param name="payload">Voucher generation request payload.</param>
         [HttpPost("create")]
         public async Task<ActionResult> Create(
             [FromBody] VoucherCreatePayload payload
         ) {
             if(payload == null || payload.Nonce == null) {
+                Logger.LogDebug(LoggingEvents.VoucherCreation, "Payload or nonce void, aborting");
+
                 return BadRequest();
             }
 
@@ -67,7 +73,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
                 return this.PayloadVerificationFailure("Verification of nonce in payload failed");
             }
-            if(!CheckPasswordValidity(payloadContent.Password)) {
+            if(!CheckTransferPassword(payloadContent.Password)) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Password '{0}' unacceptable", payloadContent.Password);
                 return this.PasswordUnacceptableFailure();
             }
@@ -92,6 +98,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        /// <summary>
+        /// Verifies and activates an existing voucher generation request.
+        /// </summary>
+        /// <param name="payload">Voucher generation verification payload.</param>
         [HttpPost("verify")]
         public async Task<IActionResult> Verify(
             [FromBody] VoucherVerifyPayload payload
@@ -143,8 +153,17 @@ namespace WomPlatform.Web.Api.Controllers {
             return ret;
         }
 
-        // POST api/v1/voucher/redeem
+        /// <summary>
+        /// Confirms a voucher generation request and redeems vouchers.
+        /// </summary>
+        /// <param name="payload">Voucher redemption payload.</param>
         [HttpPost("redeem")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status410Gone)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Redeem(
             [FromBody] VoucherRedeemPayload payload
         ) {

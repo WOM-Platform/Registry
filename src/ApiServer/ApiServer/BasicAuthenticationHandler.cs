@@ -28,12 +28,13 @@ namespace WomPlatform.Web.Api {
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync() {
             if(!Request.Headers.TryGetValue(HeaderNames.Authorization, out var authorizationHeader)) {
-                return AuthenticateResult.Fail("Authorization header not set or not readable");
+                return AuthenticateResult.NoResult();
+            }
+            if(!authorizationHeader[0].StartsWith("Basic ")) {
+                return AuthenticateResult.NoResult();
             }
 
-            Logger.LogDebug("Authorization header: {0}", authorizationHeader);
-
-            var authContent = Convert.FromBase64String(authorizationHeader[0].Substring(6));
+            var authContent = Convert.FromBase64String(authorizationHeader[0][6..]);
             var authFields = System.Text.Encoding.ASCII.GetString(authContent).Split(':', StringSplitOptions.None);
             if(authFields.Length != 2) {
                 return AuthenticateResult.Fail("Authorization header invalid");
@@ -50,11 +51,9 @@ namespace WomPlatform.Web.Api {
                 return AuthenticateResult.Fail("Invalid username or password");
             }
 
-            var identity = new WomUserIdentity(userProfile);
-
             var ticket = new AuthenticationTicket(
-                new ClaimsPrincipal(identity),
-                BasicAuthenticationSchemeOptions.DefaultScheme
+                new ClaimsPrincipal(new BasicIdentity(userProfile.Id, email)),
+                BasicAuthenticationSchemeOptions.SchemeName
             );
             return AuthenticateResult.Success(ticket);
         }

@@ -50,6 +50,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public DateTime? CreatedOn { get; set; }
 
+        [BsonElement("lastUpdate")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonIgnoreIfNull]
+        public DateTime? LastUpdate { get; set; }
+
         [BsonElement("adminUserIds")]
         [BsonIgnoreIfNull]
         public ObjectId[] AdministratorIds { get; set; }

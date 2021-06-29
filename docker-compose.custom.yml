@@ -18,7 +18,7 @@ services:
     - "traefik.docker.network=web"
     - "traefik.protocol=http"
     - "traefik.port=8779"
-    - "traefik.frontend.rule=Host:dev.wom.social"
+    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefixStrip:/api"
     - "traefik.frontend.entryPoints=http,https"
 
   database:

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -10,9 +11,9 @@ using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
     [Produces("application/json")]
-    [Route("api/v{version:apiVersion}/payment")]
+    [Route("v1/payment")]
+    [OperationsTags("Payment protocol", "Operations")]
     public class PaymentController : BaseRegistryController {
 
         public PaymentController(
@@ -26,12 +27,17 @@ namespace WomPlatform.Web.Api.Controllers {
 
         }
 
-        // POST /api/v1/payment/register
+        /// <summary>
+        /// Registers a new payment request.
+        /// </summary>
+        /// <param name="payload">Payment request payload.</param>
         [HttpPost("register")]
         public async Task<IActionResult> Register(
             [FromBody] PaymentRegisterPayload payload
         ) {
             if(payload == null || payload.Nonce == null) {
+                Logger.LogDebug(LoggingEvents.PaymentCreation, "Payload or nonce void, aborting");
+
                 return BadRequest();
             }
 
@@ -59,7 +65,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Verification failed, nonce {0} differs from nonce {1} in payload", payload.Nonce, payloadContent.Nonce);
                 return this.PayloadVerificationFailure("Verification of nonce in payload failed");
             }
-            if(!CheckPasswordValidity(payloadContent.Password)) {
+            if(!CheckTransferPassword(payloadContent.Password)) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Password '{0}' unacceptable", payloadContent.Password);
                 return this.PasswordUnacceptableFailure();
             }
@@ -84,6 +90,10 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        /// <summary>
+        /// Verifies and activates an existing payment request.
+        /// </summary>
+        /// <param name="payload">Payment verification payload.</param>
         [HttpPost("verify")]
         public async Task<IActionResult> Verify(
             [FromBody] PaymentVerifyPayload payload
@@ -116,8 +126,17 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        // POST /api/v1/payment/info
+        /// <summary>
+        /// Retrieves information about an existing and activated payment request.
+        /// </summary>
+        /// <param name="payload">Payment information request payload.</param>
         [HttpPost("info")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status410Gone)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetInformation(
             [FromBody] PaymentInfoPayload payload
         ) {
@@ -175,8 +194,18 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        // POST /api/v1/payment/confirm
+        /// <summary>
+        /// Confirms and executes a payment.
+        /// This voids all vouchers passed in payment and confirms the payment to the originating POS.
+        /// </summary>
+        /// <param name="payload">Payment confirmation payload.</param>
         [HttpPost("confirm")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status410Gone)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Confirm(
             [FromBody] PaymentConfirmPayload payload
         ) {
@@ -223,4 +252,5 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
     }
+
 }

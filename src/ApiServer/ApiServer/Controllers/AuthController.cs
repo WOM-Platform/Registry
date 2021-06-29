@@ -6,11 +6,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.OutputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
-    [Route("api/v{version:apiVersion}/auth")]
+    /// <summary>
+    /// Methods used to provide authentication and key exchange for clients.
+    /// </summary>
+    [Route("v1/auth")]
+    [OperationsTags("Authentication")]
     public class AuthController : BaseRegistryController {
 
         public AuthController(
@@ -23,117 +27,75 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
         }
 
-        private User GetApiLoginUser() {
-            if(User == null)
-                return null;
-            if(!(User.Identity is WomUserIdentity))
-                return null;
-            return ((WomUserIdentity)User.Identity).WomUser;
-        }
+        public record AuthSourceLoginOutput(
+            SourceLoginOutput[] Sources
+        );
 
-        // GET /api/v1/auth/sources
+        /// <summary>
+        /// Retrieves available WOM sources for the authenticated user.
+        /// </summary>
         [HttpGet("sources")]
         [Produces("application/json")]
-        [Authorize(Startup.ApiLoginPolicy)]
         [RequireHttps]
-        [ApiVersion("1.0")]
+        [Authorize(Policy = Startup.SimpleAuthPolicy)]
         public async Task<IActionResult> SourceLoginV1() {
             Logger.LogDebug("Source login V1");
 
-            var user = GetApiLoginUser();
-            if(user == null) {
+            if(!User.GetUserId(out var userId)) {
                 return Forbid();
             }
 
-            var sources = await Mongo.GetSourcesByUser(user.Id);
-            Logger.LogInformation("User {0} has {1} source entries", user.Id, sources.Count);
+            var sources = await Mongo.GetSourcesByUser(userId);
+            Logger.LogInformation("User {0} has {1} source entries", userId, sources.Count);
 
-            return Ok(new {
-                Sources = from s in sources
-                          select new {
-                              id = s.Id,
-                              name = s.Name,
-                              url = s.Url,
-                              privateKey = s.PrivateKey
-                          }
-            });
+            return Ok(new AuthSourceLoginOutput(
+                sources.Select(s => new SourceLoginOutput {
+                    Id = s.Id.ToString(),
+                    Name = s.Name,
+                    Url = s.Url,
+                    PrivateKey = s.PrivateKey,
+                    PublicKey = s.PublicKey
+                }).ToArray()
+            ));
         }
 
-        // GET /api/v1/auth/pos
+        public record AuthPosLoginOutput(
+            PosLoginOutput[] POS
+        );
+
+        /// <summary>
+        /// Retrieves available WOM POS instances for the authenticated user.
+        /// </summary>
         [HttpGet("pos")]
         [Produces("application/json")]
-        [Authorize(Startup.ApiLoginPolicy)]
         [RequireHttps]
-        [ApiVersion("1.0")]
+        [Authorize(Policy = Startup.SimpleAuthPolicy)]
         public async Task<IActionResult> PosLoginV1() {
             Logger.LogDebug("POS login V1");
 
-            var user = GetApiLoginUser();
-            if(user == null) {
+            if(!User.GetUserId(out var userId)) {
                 return Forbid();
             }
 
-            var pos = await Mongo.GetPosByUser(user.Id);
-            Logger.LogInformation("User {0} has {1} POS entries", user.Id, pos.Count);
+            var pos = await Mongo.GetPosByUser(userId);
+            Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
-            return Ok(new {
-                POS = from p in pos
-                      select new {
-                          id = p.Id,
-                          name = p.Name,
-                          url = p.Url,
-                          privateKey = p.PrivateKey
-                      }
-            });
+            return Ok(new AuthPosLoginOutput(
+                pos.Select(p => new PosLoginOutput {
+                    Id = p.Id.ToString(),
+                    Name = p.Name,
+                    Url = p.Url,
+                    PrivateKey = p.PrivateKey,
+                    PublicKey = p.PublicKey
+                }).ToArray()
+            ));
         }
 
-        // POST /api/v2/auth/merchant
-        [HttpPost("merchant")]
-        [Produces("application/json")]
-        [Authorize(Startup.ApiLoginPolicy)]
-        [RequireHttps]
-        [ApiVersion("2.0")]
-        public async Task<IActionResult> PosLoginV2() {
-            Logger.LogDebug("POS login V2");
-
-            var user = GetApiLoginUser();
-            if(user == null) {
-                return Forbid();
-            }
-
-            var data = await Mongo.GetMerchantsAndPosByUser(user.Id);
-            Logger.LogInformation("User {0} controls POS for {1} merchants", user.Id, data.Count);
-
-            return Ok(new {
-                user.Name,
-                user.Surname,
-                user.Email,
-                Merchants = from m in data
-                            select new {
-                                m.Item1.Id,
-                                m.Item1.Name,
-                                m.Item1.FiscalCode,
-                                m.Item1.Address,
-                                m.Item1.ZipCode,
-                                m.Item1.City,
-                                m.Item1.Country,
-                                Url = m.Item1.WebsiteUrl,
-                                Pos = from p in m.Item2
-                                      select new {
-                                          p.Id,
-                                          p.Name,
-                                          p.PrivateKey,
-                                          p.PublicKey
-                                      }
-                            }
-            }
-            );
-        }
-
+        /// <summary>
+        /// Retrieves the public key used by the WOM Registry.
+        /// </summary>
         [HttpGet("key")]
         [Produces("text/plain")]
-        [ApiVersion("1.0")]
-        [ApiVersion("2.0")]
         public IActionResult GetPublicKey() {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }

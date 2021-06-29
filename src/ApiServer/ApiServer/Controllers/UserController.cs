@@ -1,24 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
-using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
-using WomPlatform.Web.Api.InputModels;
-using WomPlatform.Web.Api.ViewModel;
+using WomPlatform.Web.Api.OutputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Route("user")]
+    [Route("v1/user")]
+    [RequireHttps]
+    [OperationsTags("User and session management")]
     public class UserController : BaseRegistryController {
 
         private readonly MailComposer _composer;
@@ -35,326 +37,381 @@ namespace WomPlatform.Web.Api.Controllers {
             _composer = composer;
         }
 
-        [TempData]
-        public bool PreviousLoginFailed { get; set; } = false;
+        /// <summary>
+        /// Check whether a user password is acceptable.
+        /// </summary>
+        private bool CheckPassword(string password) {
+            var userSecuritySection = Configuration.GetSection("UserSecurity");
+            var minLength = Convert.ToInt32(userSecuritySection["MinimumUserPasswordLength"]);
 
-        [TempData]
-        public bool HasResetPassword { get; set; } = false;
+            if(string.IsNullOrWhiteSpace(password)) {
+                return false;
+            }
 
-        [HttpGet("login")]
-        public IActionResult Login(
-            [FromQuery] string @return
-        ) {
-            return View("Login", new LoginViewModel {
-                PreviousLoginFailed = PreviousLoginFailed,
-                HasResetPassword = HasResetPassword,
-                ReturnUrl = @return
-            });
+            if(password.Length < minLength) {
+                return false;
+            }
+
+            return true;
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> LoginPerform(
-            [FromForm] string email,
-            [FromForm] string password,
-            [FromForm] string @return
-        ) {
-            Logger.LogDebug("Login attempt by email {0}", email);
+        /// <summary>
+        /// User registration payload.
+        /// </summary>
+        public record UserRegisterInput(
+            string Email, string Password, string Name, string Surname
+        );
 
-            var user = await Mongo.GetUserByEmail(email);
-            if(user == null) {
-                PreviousLoginFailed = true;
-                return RedirectToAction(nameof(Login), new {
-                    @return
-                });
-            }
-
-            if(!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash)) {
-                PreviousLoginFailed = true;
-                return RedirectToAction(nameof(Login), new {
-                    @return
-                });
-            }
-
-            if(user.VerificationToken != null) {
-                Logger.LogInformation("User {0} logging in but not verified", user.Id);
-                return RedirectToAction(nameof(UserController.WaitForVerification), "User");
-            }
-
-            Logger.LogInformation("User {0} logged in", user.Id);
-
-            var activeMerchant = (await Mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
-            Logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
-
-            await InternalLogin(user, activeMerchant);
-
-            if(@return != null) {
-                return LocalRedirect(@return);
-            }
-            else {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
-        }
-
-        [HttpGet("register-merchant")]
-        public IActionResult RegisterMerchant() {
-            if(HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null) {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
-
-            return View("MerchantRegister");
-        }
-
-        [HttpPost("register-merchant")]
-        public async Task<IActionResult> RegisterMerchantPerform(
-            [FromForm] UserRegisterMerchantModel inputMerchant,
-            [FromForm] UserRegisterPosModelOptional inputPos
-        ) {
-            if(!ModelState.IsValid) {
-                return View("MerchantRegister");
-            }
-
-            var existingUser = await Mongo.GetUserByEmail(inputMerchant.Email);
+        /// <summary>
+        /// Register a new user to the service.
+        /// </summary>
+        /// <param name="input">User registration payload.</param>
+        [HttpPost("register")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> Register(UserRegisterInput input) {
+            var existingUser = await Mongo.GetUserByEmail(input.Email);
             if(existingUser != null) {
-                ModelState.AddModelError(nameof(inputMerchant.Email), "Email already registered");
-                return View("MerchantRegister");
+                return this.ProblemParameter("Supplied email address is already registered");
             }
 
-            var existingMerchant = await Mongo.GetMerchantByFiscalCode(inputMerchant.MerchantFiscalCode);
-            if(existingMerchant != null) {
-                ModelState.AddModelError(nameof(inputMerchant.MerchantFiscalCode), "Fiscal code already registered");
-                return View("MerchantRegister");
+            if(!CheckPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
             }
 
             var verificationToken = new Random().GenerateReadableCode(8);
-            Logger.LogDebug("Registering new user for {0} with verification token {1}", inputMerchant.Email, verificationToken);
+            Logger.LogDebug("Registering new user for {0} with verification token {1}", input.Email, verificationToken);
 
             try {
-                var docUser = new User {
-                    Email = inputMerchant.Email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(inputMerchant.Password),
-                    Name = inputMerchant.Name,
-                    Surname = inputMerchant.Surname,
+                var user = new User {
+                    Email = input.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
+                    Name = input.Name,
+                    Surname = input.Surname,
                     VerificationToken = verificationToken,
                     RegisteredOn = DateTime.UtcNow
                 };
-                await Mongo.CreateUser(docUser);
+                await Mongo.CreateUser(user);
 
-                var docMerchant = new Merchant {
-                    Name = inputMerchant.MerchantTitle,
-                    FiscalCode = inputMerchant.MerchantFiscalCode,
-                    PrimaryActivityType = inputMerchant.MerchantActivityType,
-                    Address = inputMerchant.MerchantAddress,
-                    ZipCode = inputMerchant.MerchantZipCode,
-                    City = inputMerchant.MerchantCity,
-                    Country = inputMerchant.MerchantNation,
-                    Description = inputMerchant.MerchantDescription,
-                    WebsiteUrl = inputMerchant.MerchantWebsite,
-                    CreatedOn = DateTime.UtcNow,
-                    AdministratorIds = new ObjectId[] {
-                        docUser.Id
+                _composer.SendVerificationMail(user);
+
+                return CreatedAtAction(
+                    nameof(GetInformation),
+                    new {
+                        id = user.Id.ToString()
+                    },
+                    new UserOutput {
+                        Id = user.Id.ToString(),
+                        Email = user.Email,
+                        Name = user.Name,
+                        Surname = user.Surname
                     }
-                };
-                await Mongo.CreateMerchant(docMerchant);
-
-                if(inputPos.IsSet()) {
-                    Logger.LogInformation("POS model is valid, creating new POS");
-                    await CreatePos(docMerchant.Id, inputPos.PosName, inputPos.PosUrl, inputPos.PosLatitude.Value, inputPos.PosLongitude.Value);
-                }
-                else {
-                    Logger.LogDebug("POS model not valid, ignoring");
-                }
-
-                _composer.SendVerificationMail(docUser);
+                );
             }
             catch(Exception ex) {
-                Logger.LogError(ex, "Failed to register");
-                ModelState.AddModelError("Internal", "Failed to register, try again later");
-                return View("MerchantRegister");
+                Logger.LogError(ex, "Failed to register new user with email {0}", input.Email);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves information about an existing user.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        [HttpGet("{id}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetInformation(
+            [FromRoute] ObjectId id
+        ) {
+            if(!User.UserIdEquals(id)) {
+                return Forbid();
             }
 
-            return RedirectToAction(nameof(WaitForVerification));
-        }
-
-        [HttpGet("verify")]
-        public IActionResult WaitForVerification(
-        ) {
-            return View("Wait");
-        }
-
-        [HttpGet("verify/{userId}/{token}")]
-        public async Task<IActionResult> Verify(
-            [FromRoute] string userId,
-            [FromRoute] string token
-        ) {
-            var user = await Mongo.GetUserById(new ObjectId(userId));
-            if(user == null) {
+            var existingUser = await Mongo.GetUserById(id);
+            if(existingUser == null) {
                 return NotFound();
             }
 
-            if(user.VerificationToken != token) {
-                return NotFound();
-            }
-
-            return View("Verification", new LoginVerificationViewModel {
-                UserId = userId,
-                Token = token
+            return Ok(new UserOutput {
+                Id = existingUser.Id.ToString(),
+                Email = existingUser.Email,
+                Name = existingUser.Name,
+                Surname = existingUser.Surname
             });
         }
 
-        [HttpPost("verify/{userId}/{token}")]
-        public async Task<IActionResult> VerifyPerform(
-            [FromRoute] string userId,
-            [FromRoute] string token
+        public record UserUpdateInformationInput(string Email, string Name, string Surname, string Password);
+
+        /// <summary>
+        /// Updates information about an existing user.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        /// <param name="input">User information payload.</param>
+        [HttpPatch("{id}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> UpdateInformation(
+            [FromRoute] ObjectId id,
+            UserUpdateInformationInput input
         ) {
-            var user = await Mongo.GetUserById(new ObjectId(userId));
+            if(!User.UserIdEquals(id)) {
+                return Forbid();
+            }
+
+            var existingUser = await Mongo.GetUserById(id);
+            if(existingUser == null) {
+                return NotFound();
+            }
+
+            if(input.Password != null && !CheckPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
+            }
+
+            try {
+                if(input.Name != null) {
+                    existingUser.Name = input.Name;
+                }
+                if(input.Surname != null) {
+                    existingUser.Surname = input.Surname;
+                }
+                if(input.Password != null) {
+                    existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
+                }
+                existingUser.LastUpdate = DateTime.UtcNow;
+
+                await Mongo.ReplaceUser(existingUser);
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to update user {0}", id);
+                throw;
+            }
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Requests a user verification e-mail.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        [HttpPost("{id}/request-verification")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RequestVerification(
+            [FromRoute] ObjectId id
+        ) {
+            if(!User.UserIdEquals(id)) {
+                return Forbid();
+            }
+
+            var user = await Mongo.GetUserById(id);
             if(user == null) {
                 return NotFound();
             }
 
-            if(user.VerificationToken != token) {
+            if(user.VerificationToken != null) {
+                _composer.SendVerificationMail(user);
+            }
+
+            return Ok();
+        }
+
+        public record UserVerifyInput(string Token);
+
+        /// <summary>
+        /// Verifies a user account.
+        /// </summary>
+        /// <remarks>
+        /// Must be authenticated as the same user that is being verified.
+        /// </remarks>
+        /// <param name="id">User ID.</param>
+        /// <param name="input">User verification payload.</param>
+        [HttpPost("{id}/verify")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> Verify(
+            [FromRoute] ObjectId id,
+            UserVerifyInput input
+        ) {
+            if(!User.UserIdEquals(id)) {
                 return NotFound();
+            }
+
+            var user = await Mongo.GetUserById(id);
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(user.VerificationToken == null) {
+                return Ok();
+            }
+
+            if(user.VerificationToken != input.Token) {
+                return this.ProblemParameter("Token not valid");
             }
 
             user.VerificationToken = null;
             await Mongo.ReplaceUser(user);
 
-            var activeMerchant = (await Mongo.GetMerchantsWithAdminControl(user.Id)).FirstOrDefault();
-            Logger.LogDebug("User {0} selecting merchant {1} as active", user.Id, activeMerchant?.Id);
-
-            await InternalLogin(user, activeMerchant);
-
-            return RedirectToAction(nameof(HomeController.Index), "Home");
+            return Ok();
         }
+
+        public record UserRequestPasswordResetInput(string Email);
 
         /// <summary>
-        /// Requests a password reset for unlogged users.
+        /// Requests a password reset for an existing user.
         /// </summary>
-        [HttpGet("password-reset")]
-        public IActionResult ResetPassword() {
-            if(HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null) {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
-
-            return View("Forgot");
-        }
-
+        /// <param name="input">Password request payload.</param>
         [HttpPost("password-reset")]
-        public async Task<IActionResult> ResetPasswordPerform(string email) {
-            var user = await Mongo.GetUserByEmail(email);
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> RequestPasswordReset(
+            UserRequestPasswordResetInput input
+        ) {
+            var user = await Mongo.GetUserByEmail(input.Email);
             if(user != null) {
-                user.PasswordResetToken = new Random().GenerateReadableCode(8);
-                await Mongo.ReplaceUser(user);
+                if(user.PasswordResetToken == null) {
+                    user.PasswordResetToken = new Random().GenerateReadableCode(8);
+                    await Mongo.ReplaceUser(user);
+                }
 
                 _composer.SendPasswordResetMail(user);
             }
 
-            return View("ForgotConfirm");
+            return Ok();
         }
 
-        [HttpGet("password-reset/{userId}/{token}")]
-        public async Task<IActionResult> ResetPasswordToken(
-            [FromRoute] string userId,
-            [FromRoute] string token
+        public record UserExecutePasswordResetInput(string Token, string Password);
+
+        /// <summary>
+        /// Performs a password reset for an existing user.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        /// <param name="input">Password reset payload.</param>
+        [HttpPost("{id}/password-reset")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> ExecutePasswordReset(
+            [FromRoute] ObjectId id,
+            UserExecutePasswordResetInput input
         ) {
-            var user = await Mongo.GetUserById(new ObjectId(userId));
+            var user = await Mongo.GetUserById(id);
             if(user == null) {
                 return NotFound();
             }
 
-            if(user.PasswordResetToken != token) {
+            if(user.PasswordResetToken != input.Token) {
                 return NotFound();
             }
 
-            return View("ForgotToken", new LoginPasswordResetViewModel {
-                UserId = userId,
-                Token = token
-            });
-        }
-
-        [HttpPost("password-reset/{userId}/{token}")]
-        public async Task<IActionResult> ResetPasswordTokenPerform(
-            [FromRoute] string userId,
-            [FromRoute] string token,
-            [FromForm] string password
-        ) {
-            if(string.IsNullOrWhiteSpace(password) || password.Length < 6) {
-                ModelState.AddModelError("password", "Password too short");
-
-                return View("ForgotToken", new LoginPasswordResetViewModel {
-                    UserId = userId,
-                    Token = token
-                });
-            }
-
-            var user = await Mongo.GetUserById(new ObjectId(userId));
-            if(user == null) {
-                return NotFound();
-            }
-
-            if(user.PasswordResetToken != token) {
-                return NotFound();
+            if(!CheckPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
             }
 
             user.PasswordResetToken = null;
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
             await Mongo.ReplaceUser(user);
 
-            HasResetPassword = true;
-            return RedirectToAction(nameof(Login));
+            return Ok();
         }
 
-        [HttpGet("logout")]
-        public async Task<IActionResult> Logout() {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        public record UserLoginInput(string Email, string Password, string ClientName);
 
-            return RedirectToAction(nameof(HomeController.Index), "Home");
-        }
+        public record UserLoginOutput(string Id, string Token, DateTime LoginUntil, bool Verified);
 
-        [Authorize(Startup.UserLoginPolicy)]
-        [HttpGet("profile")]
-        public async Task<IActionResult> Profile() {
-            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await Mongo.GetUserById(new ObjectId(userId));
-
-            return View("Profile", new UserProfileModel {
-                Email = user.Email,
-                Name = user.Name,
-                Surname = user.Surname
-            });
-        }
-
-        [Authorize(Startup.UserLoginPolicy)]
-        [HttpPost("profile")]
-        public async Task<IActionResult> UpdateProfile(
-            [FromForm] UserProfileModel user
-        ) {
-            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await Mongo.UpdateUser(new ObjectId(userId), name: user.Name, surname: user.Surname);
-
-            return RedirectToAction(nameof(Profile));
-        }
-
-        private Task InternalLogin(User userProfile, Merchant activeMerchant) {
-            var claims = new List<Claim> {
-                new Claim(ClaimTypes.Name, $"{userProfile.Name} {userProfile.Surname}"),
-                new Claim(ClaimTypes.NameIdentifier, userProfile.Id.ToString()),
-                new Claim(ClaimTypes.GivenName, userProfile.Name),
-                new Claim(ClaimTypes.Email, userProfile.Email)
-            };
-            if(activeMerchant != null) {
-                claims.Add(new Claim(Startup.ActiveMerchantClaimType, activeMerchant.Id.ToString()));
+        /// <summary>
+        /// Gets the user to login, either through login data or through the already authenticated basic authentication.
+        /// </summary>
+        private async Task<User> GetUserToLogin(UserLoginInput input) {
+            if(User.GetUserId(out var loggedInUser)) {
+                Logger.LogDebug("User {0} already logged in", loggedInUser);
+                return await Mongo.GetUserById(loggedInUser);
             }
 
-            return HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(
-                    new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)
-                ),
-                new AuthenticationProperties {
-                    AllowRefresh = true,
-                    IsPersistent = true
-                }
-            );
+            if(input == null) {
+                return null;
+            }
+
+            var user = await Mongo.GetUserByEmail(input.Email);
+            if(user == null) {
+                Logger.LogTrace("User {0} does not exist", input.Email);
+
+                // Delay response to throttle
+                await Task.Delay(1050);
+                return null;
+            }
+
+            if(!BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash)) {
+                Logger.LogTrace("User {0} password not correct", input.Email);
+
+                // Delay response to throttle
+                await Task.Delay(1000);
+                return null;
+            }
+
+            return user;
+        }
+
+        /// <summary>
+        /// Logs in as a user and creates a new session token.
+        /// </summary>
+        /// <param name="input">Login payload.</param>
+        [HttpPost("login")]
+        [AllowAnonymous]
+        [ForceAuthChallenge(BasicAuthenticationSchemeOptions.SchemeName)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Login(
+            [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] UserLoginInput input
+        ) {
+            var user = await GetUserToLogin(input);
+            if(user == null) {
+                return NotFound();
+            }
+
+            var sessionId = Guid.NewGuid().ToString("N");
+            var issueTimestamp = DateTime.UtcNow;
+            var expirationTimestamp = issueTimestamp.AddDays(1);
+
+            var securityHandler = new JwtSecurityTokenHandler();
+            var jwtKey = Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"));
+            var jwtDescriptor = new SecurityTokenDescriptor {
+                Subject = new ClaimsIdentity(new[] {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.GivenName, user.Name),
+                    new Claim(ClaimTypes.Surname, user.Surname),
+                    new Claim(JwtRegisteredClaimNames.Jti, sessionId)
+                }),
+                Issuer = Startup.GetJwtIssuerName(),
+                IssuedAt = issueTimestamp,
+                Expires = expirationTimestamp,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(jwtKey),
+                    SecurityAlgorithms.HmacSha512Signature
+                )
+            };
+
+            var token = securityHandler.CreateToken(jwtDescriptor);
+
+            Logger.LogDebug("Login performed for user {0} with session ID {1}", user.Id, sessionId);
+
+            return Ok(new UserLoginOutput(
+                user.Id.ToString(),
+                securityHandler.WriteToken(token),
+                expirationTimestamp,
+                user.VerificationToken == null
+            ));
         }
 
     }

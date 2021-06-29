@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Mail;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api {
@@ -61,17 +63,19 @@ namespace WomPlatform.Web.Api {
             );
         }
 
-        private string GetVerificatonLink(string id, string token) {
-            return _linkGenerator.GetUriByAction(
-                nameof(Controllers.UserController.Verify),
-                "User",
-                new {
-                    userId = id,
-                    token = token
-                },
-                "https",
-                new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
-            );
+        private static string GetVerificatonLink(string id, string token) {
+            return new UriBuilder {
+                Scheme = "http",
+                Host = "localhost",
+                Port = 4200,
+                Path = "/user/verify",
+                Query = QueryString.Create(
+                    new KeyValuePair<string, StringValues>[] {
+                        new KeyValuePair<string, StringValues>("userId", new StringValues(id)),
+                        new KeyValuePair<string, StringValues>("token", new StringValues(token)),
+                    }
+                ).ToString()
+            }.ToString();
         }
 
         public void SendPasswordResetMail(User user) {
@@ -92,17 +96,19 @@ namespace WomPlatform.Web.Api {
             );
         }
 
-        private string GetPasswordResetLink(string id, string token) {
-            return _linkGenerator.GetUriByAction(
-                nameof(Controllers.UserController.ResetPasswordToken),
-                "User",
-                new {
-                    userId = id,
-                    token = token
-                },
-                "https",
-                new HostString(Environment.GetEnvironmentVariable("SELF_HOST"))
-            );
+        private static string GetPasswordResetLink(string id, string token) {
+            return new UriBuilder {
+                Scheme = "http",
+                Host = "localhost",
+                Port = 4200,
+                Path = "/authentication/reset-password",
+                Query = QueryString.Create(
+                    new KeyValuePair<string, StringValues>[] {
+                        new KeyValuePair<string, StringValues>("userId", new StringValues(id)),
+                        new KeyValuePair<string, StringValues>("token", new StringValues(token)),
+                    }
+                ).ToString()
+            }.ToString();
         }
 
         private void SendMessage(string recipientAddress, string subject, string contents) {

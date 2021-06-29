@@ -12,10 +12,10 @@ using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
     [Produces("application/json")]
-    [Route("api/debug")]
+    [Route("debug")]
     [RequireHttps]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class TestController : BaseRegistryController {
 
         private readonly ObjectId _testSourceId, _testPosId;

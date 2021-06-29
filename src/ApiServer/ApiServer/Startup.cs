@@ -1,21 +1,29 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Text;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.IdentityModel.Tokens;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.Conversion;
 
 namespace WomPlatform.Web.Api {
 
@@ -27,10 +35,20 @@ namespace WomPlatform.Web.Api {
 
         public IConfiguration Configuration { get; }
 
-        public const string ApiLoginPolicy = "APILoginPolicy";
-        public const string UserLoginPolicy = "UserLoginPolicy";
+        private static string _selfDomain = null;
+        public static string SelfDomain {
+            get {
+                if(_selfDomain == null) {
+                    _selfDomain = Environment.GetEnvironmentVariable("SELF_HOST");
+                }
+                return _selfDomain;
+            }
+        }
 
-        public const string ActiveMerchantClaimType = "ActiveMerchantClaim";
+        public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
+
+        public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
+        public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
 
         public void ConfigureServices(IServiceCollection services) {
             services.Configure<KestrelServerOptions>(options => {
@@ -39,40 +57,77 @@ namespace WomPlatform.Web.Api {
 
             services.AddCors(options => {
                 options.AddDefaultPolicy(builder => {
-                    builder.WithOrigins(
-                            "https://localhost",
-                            "https://*.wom.social",
-                            "https://wom.social"
-                        )
-                        .SetIsOriginAllowedToAllowWildcardSubdomains()
+                    builder
                         .AllowCredentials()
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowAnyMethod()
+                        .SetIsOriginAllowed(origin => {
+                            var uri = new Uri(origin);
+                            if(uri.Host == "localhost")
+                                return true;
+                            if(uri.Host == SelfDomain)
+                                return true;
+                            return false;
+                        })
+                        .Build();
                 });
             });
 
             services.AddRouting();
 
-            services.AddApiVersioning(o => {
-                o.ReportApiVersions = true;
-                o.AssumeDefaultVersionWhenUnspecified = false;
-            });
-
-            services.AddControllersWithViews()
+            services.AddControllers()
                 .AddMvcOptions(opts => {
-                    opts.AllowEmptyInputInBodyModelBinding = true;
+                    opts.ModelBinderProviders.Insert(0, new ObjectIdModelBinderProvider());
                     opts.InputFormatters.Add(new PermissiveInputFormatter());
                 })
-                .AddNewtonsoftJson(setup => {
-                    var cs = Client.JsonSettings;
-                    setup.SerializerSettings.ContractResolver = cs.ContractResolver;
-                    setup.SerializerSettings.Culture = cs.Culture;
-                    setup.SerializerSettings.DateFormatHandling = cs.DateFormatHandling;
-                    setup.SerializerSettings.DateTimeZoneHandling = cs.DateTimeZoneHandling;
-                    setup.SerializerSettings.DateParseHandling = cs.DateParseHandling;
-                    setup.SerializerSettings.Formatting = cs.Formatting;
-                    setup.SerializerSettings.NullValueHandling = cs.NullValueHandling;
+                .AddJsonOptions(options => {
+                    options.JsonSerializerOptions.AllowTrailingCommas = true;
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    options.JsonSerializerOptions.Converters.Add(new JsonObjectIdConverter());
+                    options.JsonSerializerOptions.Converters.Add(new JsonWomIdentifierConverter());
                 });
+
+            services.AddSwaggerGen(options => {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo {
+                    Title = "WOM Registry API",
+                    Contact = new Microsoft.OpenApi.Models.OpenApiContact {
+                        Email = "info@wom.social",
+                        Name = "The WOM Platform",
+                        Url = new Uri("https://wom.social")
+                    },
+                    Version = "v1"
+                });
+
+                options.OperationFilter<ObjectIdOperationFilter>();
+
+                options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
+                    Url = $"https://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
+                    Description = "WOM development server (HTTPS)"
+                });
+                options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
+                    Url = $"http://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
+                    Description = "WOM development server (HTTP)"
+                });
+
+                options.IncludeXmlComments(Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, "ApiServer.xml"));
+
+                options.TagActionsBy(api => {
+                    var controller = api.ActionDescriptor as ControllerActionDescriptor;
+                    if(controller == null) {
+                        return new[] { string.Empty };
+                    }
+
+                    // Take tag value from OperationsTagsAttribute, if set
+                    var attributes = controller.MethodInfo.GetCustomAttributesData().Concat(controller.ControllerTypeInfo.GetCustomAttributesData());
+                    var attr = controller.ControllerTypeInfo.CustomAttributes.Where(a => a.AttributeType == typeof(OperationsTagsAttribute)).FirstOrDefault();
+                    if(attr != null) {
+                        return ((ReadOnlyCollection<CustomAttributeTypedArgument>)attr.ConstructorArguments[0].Value).Select(a => (string)a.Value).ToArray();
+                    }
+                    else {
+                        return new[] { controller.ControllerName };
+                    }
+                });
+            });
 
             services.AddDbContext<DataContext>(o => {
                 var dbSection = Configuration.GetSection("Database");
@@ -89,41 +144,40 @@ namespace WomPlatform.Web.Api {
                 o.UseMySQL(connectionString);
             });
 
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.DefaultScheme, opt => {
-                    // Noop
-                })
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => {
-                    options.LoginPath = "/user/login";
-                    options.LogoutPath = "/user/logout";
-                    options.ReturnUrlParameter = "return";
-                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-                    options.Cookie = new CookieBuilder {
-                        IsEssential = true,
-                        Name = "WomLogin",
-                        SecurePolicy = CookieSecurePolicy.Always,
-                        SameSite = SameSiteMode.None,
-                        HttpOnly = true
-                    };
-                })
-            ;
+            services.AddAuthentication(options => {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options => {
+                options.RequireHttpsMetadata = true;
+                options.TokenValidationParameters = new TokenValidationParameters {
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"))),
+                    ValidateIssuer = true,
+                    ValidIssuer = GetJwtIssuerName(),
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+            })
+            .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.SchemeName, null);
+
             services.AddAuthorization(options => {
-                options.AddPolicy(
-                    UserLoginPolicy,
-                    new AuthorizationPolicyBuilder()
-                        .RequireAuthenticatedUser()
-                        .RequireClaim(ClaimTypes.NameIdentifier)
-                        .RequireClaim(Startup.ActiveMerchantClaimType) // This fixes login to active merchants, will be removed later on
-                        .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme)
-                        .Build()
+                options.AddPolicy(TokenSessionAuthPolicy,
+                    new AuthorizationPolicyBuilder(
+                        JwtBearerDefaults.AuthenticationScheme
+                    )
+                    .RequireAuthenticatedUser()
+                    .RequireClaim(ClaimTypes.NameIdentifier)
+                    .Build()
                 );
-                options.AddPolicy(
-                    ApiLoginPolicy,
-                    new AuthorizationPolicyBuilder()
-                        .RequireAuthenticatedUser()
-                        .AddAuthenticationSchemes(BasicAuthenticationSchemeOptions.DefaultScheme)
-                        .Build()
+                options.AddPolicy(SimpleAuthPolicy,
+                    new AuthorizationPolicyBuilder(
+                        BasicAuthenticationSchemeOptions.SchemeName,
+                        JwtBearerDefaults.AuthenticationScheme
+                    )
+                    .RequireAuthenticatedUser()
+                    .Build()
                 );
+                options.DefaultPolicy = options.GetPolicy(SimpleAuthPolicy);
             });
 
             // Add services to dependency registry
@@ -135,10 +189,6 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<MongoDatabase>();
             services.AddMailComposer();
         }
-
-        private readonly string[] SupportedCultures = new string[] {
-            "en-US",
-        };
 
         public void Configure(
             IApplicationBuilder app,
@@ -169,8 +219,8 @@ namespace WomPlatform.Web.Api {
                 mongo.UpsertPosSync(new DatabaseDocumentModels.Pos {
                     Id = new MongoDB.Bson.ObjectId(devPosId),
                     Name = "Development POS",
-                    PrivateKey = System.IO.File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
-                    PublicKey = System.IO.File.ReadAllText(devPosSection["KeyPathBase"] + ".pub")
+                    PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
+                    PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub")
                 });
                 logger.LogDebug("Configured development POS #{0}", devPosId);
             }
@@ -194,17 +244,19 @@ namespace WomPlatform.Web.Api {
             forwardOptions.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.20.0.1"), 2));
             app.UseForwardedHeaders(forwardOptions);
 
+            // Use Swagger for documentation
+            if(env.IsDevelopment()) {
+                app.UseSwagger();
+                app.UseSwaggerUI(conf => {
+                    conf.SwaggerEndpoint("v1/swagger.json", "WOM Registry API");
+                });
+            }
+
             app.UseStaticFiles();
 
-            app.UseRequestLocalization(o => {
-                o.AddSupportedCultures(SupportedCultures);
-                o.AddSupportedUICultures(SupportedCultures);
-                o.DefaultRequestCulture = new RequestCulture(SupportedCultures[0]);
-            });
+            app.UseCors();
 
             app.UseRouting();
-
-            app.UseCors();
 
             app.UseAuthentication();
             app.UseAuthorization();
