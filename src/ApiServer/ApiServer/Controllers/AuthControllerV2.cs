@@ -1,12 +1,11 @@
-﻿using System.Linq;
-using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
-using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -76,6 +75,54 @@ namespace WomPlatform.Web.Api.Controllers {
                         PrivateKey = p.PrivateKey,
                         PublicKey = p.PublicKey
                     }).ToArray()
+                }).ToArray()
+            ));
+        }
+
+        public record AuthV2SourceLoginOutput(
+            string Name,
+            string Surname,
+            string Email,
+            SourceLoginV2Output[] Sources
+        );
+
+        /// <summary>
+        /// Retrieves available WOM Merchants for the authenticated user.
+        /// </summary>
+        [HttpPost("source")]
+        [Produces("application/json")]
+        [RequireHttps]
+        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        public async Task<IActionResult> SourceLoginV2() {
+            Logger.LogDebug("Source login V2");
+
+            if(!User.GetUserId(out var userId)) {
+                return Forbid();
+            }
+
+            var user = await Mongo.GetUserById(userId);
+            var sources = await Mongo.GetSourcesByUser(userId);
+            Logger.LogInformation("User {0} controls {1} sources", userId, sources.Count);
+
+            var allAims = (from a in await Mongo.GetRootAims() select a.Code).ToList();
+
+            return Ok(new AuthV2SourceLoginOutput(
+                user.Name,
+                user.Surname,
+                user.Email,
+                sources.Select(s => new SourceLoginV2Output {
+                    Id = s.Id.ToString(),
+                    Name = s.Name,
+                    Url = s.Url,
+                    PrivateKey = s.PrivateKey,
+                    PublicKey = s.PublicKey,
+                    EnabledAims = s.Aims.EnableAll ? allAims : s.Aims.Enabled.ToSafeList(),
+                    PerAimBudget = s.Aims.CurrentBudget ?? new Dictionary<string, int>(),
+                    DefaultLocation = (s.Location.Position == null) ? null : new Location {
+                        Latitude = s.Location.Position.Coordinates.Latitude,
+                        Longitude = s.Location.Position.Coordinates.Longitude
+                    },
+                    LocationIsFixed = s.Location.IsFixed
                 }).ToArray()
             ));
         }

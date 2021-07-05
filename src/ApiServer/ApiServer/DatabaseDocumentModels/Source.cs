@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
+using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
@@ -29,11 +31,48 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public DateTime? CreatedOn { get; set; }
 
+        [BsonElement("aims")]
+        public SourceAims Aims { get; set; } = new SourceAims();
+
+        [BsonElement("location")]
+        public SourceLocation Location { get; set; } = new SourceLocation();
+
         [BsonElement("adminUserIds")]
         public ObjectId[] AdministratorUserIds { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
+
+        public class SourceAims {
+
+            [BsonElement("enableAll")]
+            [BsonIgnoreIfDefault]
+            [BsonDefaultValue(false)]
+            public bool EnableAll { get; set; } = false;
+
+            [BsonElement("enabled")]
+            public string[] Enabled { get; set; }
+
+            [BsonElement("budget")]
+            public Dictionary<string, int> CurrentBudget { get; set; }
+
+            [BsonExtraElements]
+            public BsonDocument CatchAll { get; set; }
+
+        }
+
+        public class SourceLocation {
+
+            [BsonElement("default")]
+            [BsonIgnoreIfNull]
+            public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
+
+            [BsonElement("isFixed")]
+            [BsonIgnoreIfDefault]
+            [BsonDefaultValue(false)]
+            public bool IsFixed { get; set; } = false;
+
+        }
 
     }
 
