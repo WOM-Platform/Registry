@@ -18,6 +18,7 @@ namespace WomPlatform.Web.Api.Controllers {
     public class BaseRegistryController : ControllerBase {
 
         protected readonly string SelfHostDomain;
+        protected readonly string SelfLinkDomain;
 
         public BaseRegistryController(
             IConfiguration configuration,
@@ -35,6 +36,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger = logger;
 
             SelfHostDomain = Environment.GetEnvironmentVariable("SELF_HOST");
+            SelfLinkDomain = Environment.GetEnvironmentVariable("LINK_HOST");
         }
 
         protected IConfiguration Configuration { get; }

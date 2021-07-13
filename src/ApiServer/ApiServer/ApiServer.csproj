@@ -26,7 +26,7 @@
     <PackageReference Include="QRCoder" Version="1.4.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.0.7" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
-    <PackageReference Include="WomPlatform.Connector" Version="4.2.1" />
+    <PackageReference Include="WomPlatform.Connector" Version="4.2.2" />
   </ItemGroup>
 
 </Project>

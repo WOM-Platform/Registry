@@ -88,7 +88,8 @@ namespace WomPlatform.Web.Api.Controllers {
                         RegistryUrl = $"https://{SelfHostDomain}",
                         Nonce = payloadContent.Nonce,
                         Otc = otc,
-                        Password = password
+                        Password = password,
+                        Link = $"https://{SelfLinkDomain}/vouchers/{otc:N}"
                     }, sourcePublicKey)
                 });
             }
