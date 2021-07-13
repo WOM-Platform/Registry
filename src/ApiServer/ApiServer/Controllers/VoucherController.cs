@@ -89,7 +89,7 @@ namespace WomPlatform.Web.Api.Controllers {
                         Nonce = payloadContent.Nonce,
                         Otc = otc,
                         Password = password,
-                        Link = $"https://{SelfLinkDomain}/vouchers/{otc:N}"
+                        Link = $"https://{SelfLinkDomain}/vouchers/{otc:D}"
                     }, sourcePublicKey)
                 });
             }

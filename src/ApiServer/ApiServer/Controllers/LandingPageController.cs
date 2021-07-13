@@ -27,14 +27,14 @@ namespace WomPlatform.Web.Api.Controllers {
         public IActionResult ShowPaymentLandingPage(
             [FromRoute] Guid otc
         ) {
-            return RedirectPermanent($"https://{SelfLinkDomain}/payment/{otc:N}");
+            return RedirectPermanent($"https://{SelfLinkDomain}/payment/{otc:D}");
         }
 
         [HttpGet("vouchers/{otc}")]
         public IActionResult ShowGenerationLandingPage(
             [FromRoute] Guid otc
         ) {
-            return RedirectPermanent($"https://{SelfLinkDomain}/vouchers/{otc:N}");
+            return RedirectPermanent($"https://{SelfLinkDomain}/vouchers/{otc:D}");
         }
 
     }
