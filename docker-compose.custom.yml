@@ -2,43 +2,46 @@
 version: '3'
 
 volumes:
-  wom_registry_database_dev:
+  wom_registry_database_prod:
     external: true
-  wom_registry_mongodb_dev:
+  wom_registry_mongodb_prod:
     external: true
 
 services:
   api:
     environment:
-    - ASPNETCORE_ENVIRONMENT=Development
+    - ASPNETCORE_ENVIRONMENT=Production
     volumes:
-    - ./testkeys:/testkeys:ro
+    - ./keys:/testkeys:ro
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
-    - "traefik.protocol=http"
-    - "traefik.port=8779"
-    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefixStrip:/api"
-    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefix:/payment,/vouchers"
-    - "traefik.frontend.entryPoints=http,https"
+    - "traefik.api.protocol=http"
+    - "traefik.api.port=8779"
+    - "traefik.api.frontend.rule=Host:wom.social;PathPrefixStrip:/api"
+    - "traefik.api.frontend.entryPoints=http,https"
+    - "traefik.link.protocol=http"
+    - "traefik.link.port=8779"
+    - "traefik.link.frontend.rule=Host:wom.social;PathPrefix:/payment,/vouchers"
+    - "traefik.link.frontend.entryPoints=http,https"
 
   database:
     volumes:
-    - wom_registry_database_dev:/var/lib/mysql:rw
+    - wom_registry_database_prod:/var/lib/mysql:rw
 
   database-manager:
     environment:
-    - "PMA_ABSOLUTE_URI=https://dev.wom.social/phpmyadmin/"
+    - "PMA_ABSOLUTE_URI=https://wom.social/phpmyadmin/"
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
     - "traefik.protocol=http"
     - "traefik.port=80"
-    - "traefik.frontend.rule=Host:dev.wom.social;PathPrefixStrip:/phpmyadmin"
+    - "traefik.frontend.rule=Host:wom.social;PathPrefixStrip:/phpmyadmin"
     - "traefik.frontend.entryPoints=https"
 
   mongo:
     volumes:
-    - wom_registry_mongodb_dev:/data/db:rw
+    - wom_registry_mongodb_prod:/data/db:rw
     ports:
-    - "8123:27017"
+    - "8124:27017"
