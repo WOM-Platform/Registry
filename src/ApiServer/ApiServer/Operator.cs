@@ -241,7 +241,7 @@ namespace WomPlatform.Web.Api {
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} is outside geographical bounds", vi.Id);
                 return false;
             }
-            if(filter?.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromSeconds(filter.MaxAge.Value)) {
+            if(filter?.MaxAge != null && DateTime.UtcNow.Subtract(voucher.Timestamp) > TimeSpan.FromDays(filter.MaxAge.Value)) {
                 // Voucher too old
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} is older than {1} days (age {2})", vi.Id, filter.MaxAge.Value, DateTime.UtcNow.Subtract(voucher.Timestamp));
                 return false;
