@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace WomPlatform.Web.Api.OutputModels {
 
@@ -32,6 +29,26 @@ namespace WomPlatform.Web.Api.OutputModels {
         public Location DefaultLocation { get; init; }
 
         public bool LocationIsFixed { get; init; }
+
+    }
+
+    public record SourceBudgetOutput {
+
+        public List<string> EnabledAims { get; init; }
+
+        public Dictionary<string, int> PerAimBudget { get; init; }
+
+    }
+
+    public static class SourceOutputHelpers {
+
+        public static SourceOutput ToOutput(this DatabaseDocumentModels.Source source) {
+            return new SourceOutput {
+                Id = source.Id.ToString(),
+                Name = source.Name,
+                Url = source.Url
+            };
+        }
 
     }
 
