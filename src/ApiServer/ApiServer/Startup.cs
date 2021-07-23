@@ -65,7 +65,7 @@ namespace WomPlatform.Web.Api {
                             var uri = new Uri(origin);
                             if(uri.Host == "localhost")
                                 return true;
-                            if(uri.Host == SelfDomain)
+                            if(uri.Host == SelfDomain || uri.Host.EndsWith(SelfDomain))
                                 return true;
                             return false;
                         })
