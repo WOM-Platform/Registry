@@ -73,7 +73,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
             };
 
-            (var otcGen, var pwd) = await Operator.CreateGenerationRequest(testSource, new VoucherCreatePayload.Content {
+            (var otcGen, var pwd, _) = await Operator.CreateGenerationRequest(testSource, new VoucherCreatePayload.Content {
                 Nonce = Guid.NewGuid().ToString("N"),
                 SourceId = testSource.Id.ToString(),
                 Vouchers = voucherInfos
