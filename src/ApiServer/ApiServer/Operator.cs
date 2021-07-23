@@ -53,7 +53,7 @@ namespace WomPlatform.Web.Api {
         /// <summary>
         /// Creates a new voucher generation instance.
         /// </summary>
-        public async Task<(Guid Otc, string Password)> CreateGenerationRequest(
+        public async Task<(Guid Otc, string Password, int VoucherCount)> CreateGenerationRequest(
             Source source,
             VoucherCreatePayload.Content creationParameters,
             bool isPreVerified = false
@@ -93,9 +93,11 @@ namespace WomPlatform.Web.Api {
                                GenerationRequestId = otc
                            };
             await Mongo.AddVouchers(vouchers);
-            Logger.LogDebug("{0} voucher documents stored for request {1}", vouchers.Count(), otc);
 
-            return (otc, password);
+            var voucherCount = vouchers.Sum(v => v.InitialCount);
+            Logger.LogDebug("{0} voucher documents stored for {1} vouchers in request {2}", vouchers.Count(), otc);
+
+            return (otc, password, voucherCount);
         }
 
         /// <summary>

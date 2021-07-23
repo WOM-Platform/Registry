@@ -79,7 +79,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password) = await Operator.CreateGenerationRequest(source, payloadContent);
+                (var otc, var password, var voucherCount) = await Operator.CreateGenerationRequest(source, payloadContent);
 
                 Logger.LogInformation(LoggingEvents.VoucherCreation, "Voucher generation successfully requested with code {0} for source {1}", otc, payload.SourceId);
 
@@ -89,7 +89,8 @@ namespace WomPlatform.Web.Api.Controllers {
                         Nonce = payloadContent.Nonce,
                         Otc = otc,
                         Password = password,
-                        Link = $"https://{SelfLinkDomain}/vouchers/{otc:D}"
+                        Link = $"https://{SelfLinkDomain}/vouchers/{otc:D}",
+                        Count = voucherCount
                     }, sourcePublicKey)
                 });
             }
