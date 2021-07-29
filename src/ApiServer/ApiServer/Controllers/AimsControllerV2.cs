@@ -14,7 +14,8 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Provides access to a list of aims.
     /// </summary>
-    [Route("v2/aims")]
+    [ApiVersion("2")]
+    [Route("v{version:apiVersion}/aims")]
     [OperationsTags("Aims")]
     public class AimsControllerV2 : BaseRegistryController {
 

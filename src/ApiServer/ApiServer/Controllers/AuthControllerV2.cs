@@ -13,7 +13,8 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Methods used to provide authentication and key exchange for clients.
     /// </summary>
-    [Route("v2/auth")]
+    [ApiVersion("2")]
+    [Route("v{version:apiVersion}/auth")]
     [OperationsTags("Authentication")]
     public class AuthControllerV2 : BaseRegistryController {
 

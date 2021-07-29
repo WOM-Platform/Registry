@@ -11,8 +11,8 @@ using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Produces("application/json")]
-    [Route("v1/payment")]
+    [ApiVersion("1")]
+    [Route("v{version:apiVersion}/payment")]
     [OperationsTags("Payment protocol", "Operations")]
     public class PaymentController : BaseRegistryController {
 
@@ -40,7 +40,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 return BadRequest();
             }
-
+            
             Logger.LogInformation(LoggingEvents.PaymentCreation, "Received payment creation request from POS ID {0} with nonce {1}",
                 payload.PosId, payload.Nonce
             );

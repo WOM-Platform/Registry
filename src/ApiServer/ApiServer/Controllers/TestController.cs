@@ -12,7 +12,6 @@ using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [Produces("application/json")]
     [Route("debug")]
     [RequireHttps]
     [ApiExplorerSettings(IgnoreApi = true)]

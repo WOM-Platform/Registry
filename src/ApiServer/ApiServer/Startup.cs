@@ -87,6 +87,8 @@ namespace WomPlatform.Web.Api {
                     options.JsonSerializerOptions.Converters.Add(new JsonWomIdentifierConverter());
                 });
 
+            services.AddApiVersioning();
+
             services.AddSwaggerGen(options => {
                 options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo {
                     Title = "WOM Registry API",
@@ -209,8 +211,8 @@ namespace WomPlatform.Web.Api {
                 mongo.UpsertSourceSync(new DatabaseDocumentModels.Source {
                     Id = new MongoDB.Bson.ObjectId(devSourceId),
                     Name = "Development source",
-                    PrivateKey = System.IO.File.ReadAllText(devSourceSection["KeyPathBase"] + ".pem"),
-                    PublicKey = System.IO.File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub")
+                    PrivateKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pem"),
+                    PublicKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub")
                 });
                 logger.LogDebug("Configured development source #{0}", devSourceId);
 
@@ -251,6 +253,8 @@ namespace WomPlatform.Web.Api {
                     conf.SwaggerEndpoint("v1/swagger.json", "WOM Registry API");
                 });
             }
+
+            app.UseApiVersioning();
 
             app.UseStaticFiles();
 

@@ -6,8 +6,8 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiController]
-    [Route("v1/stats")]
+    [ApiVersion("1")]
+    [Route("v{version:apiVersion}/stats")]
     [OperationsTags("Stats and info")]
     public class StatsController : BaseRegistryController {
 

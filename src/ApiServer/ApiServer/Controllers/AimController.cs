@@ -10,7 +10,8 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Provides access to single aims.
     /// </summary>
-    [Route("v1/aim")]
+    [ApiVersion("1")]
+    [Route("v{version:apiVersion}/aim")]
     [OperationsTags("Aims")]
     public class AimController : BaseRegistryController {
 
