@@ -95,7 +95,7 @@ namespace WomPlatform.Web.Api {
             await Mongo.AddVouchers(vouchers);
 
             var voucherCount = vouchers.Sum(v => v.InitialCount);
-            Logger.LogDebug("{0} voucher documents stored for {1} vouchers in request {2}", vouchers.Count(), otc);
+            Logger.LogDebug("{0} voucher documents stored for {1} vouchers in request {2}", vouchers.Count(), voucherCount, otc);
 
             return (otc, password, voucherCount);
         }
