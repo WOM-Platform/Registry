@@ -411,6 +411,28 @@ namespace WomPlatform.Web.Api {
             return ret;
         }
 
+        private IMongoCollection<LegacyVoucher> LegacyVoucherCollection {
+            get {
+                return MainDatabase.GetCollection<LegacyVoucher>("LegacyVouchers");
+            }
+        }
+
+        public Task AddLegacyVouchers(IEnumerable<LegacyVoucher> vouchers) {
+            return LegacyVoucherCollection.InsertManyAsync(vouchers);
+        }
+
+        public Task<List<LegacyVoucher>> GetLegacyVouchersWithIds(IEnumerable<long> ids) {
+            var filter = Builders<LegacyVoucher>.Filter.In(v => v.Id, ids);
+            return LegacyVoucherCollection.Find(filter).ToListAsync();
+        }
+
+        public Task ReplaceLegacyVouchers(IEnumerable<LegacyVoucher> vouchers) {
+            var replaces = from v in vouchers
+                           let filter = Builders<LegacyVoucher>.Filter.Eq(vf => vf.Id, v.Id)
+                           select new ReplaceOneModel<LegacyVoucher>(filter, v);
+            return LegacyVoucherCollection.BulkWriteAsync(replaces);
+        }
+
     }
 
 }

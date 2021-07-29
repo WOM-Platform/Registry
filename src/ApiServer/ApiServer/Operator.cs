@@ -259,60 +259,80 @@ namespace WomPlatform.Web.Api {
             return true;
         }
 
-        private async Task<int> ProcessPaymentNewVouchers(IEnumerable<PaymentConfirmPayload.VoucherInfo> v, Filter filter) {
+        private async Task<int> ProcessPaymentVouchers(IEnumerable<PaymentConfirmPayload.VoucherInfo> vi, Filter filter) {
+            if(vi.Count() == 0) {
+                return 0;
+            }
+
             // Extract distinct base IDs
-            var newVoucherIds = v.Select(v => v.Id.GetBaseId()).Distinct().Select(s => new ObjectId(s));
+            var voucherIds = vi.Select(v => v.Id.GetBaseId()).Distinct().Select(s => new ObjectId(s));
 
             // Retrieve distinct voucher instances from Mongo
-            var mongoVouchers = (await Mongo.GetVouchersWithIds(newVoucherIds)).ToDictionary(v => v.Id);
-            if(newVoucherIds.Count() != mongoVouchers.Count) {
+            var vouchers = (await Mongo.GetVouchersWithIds(voucherIds)).ToDictionary(v => v.Id);
+            if(voucherIds.Count() != vouchers.Count) {
                 // One or more distinct IDs did not load
-                Logger.LogError(LoggingEvents.Operations, "One or more vouchers does not exist ({0} expected, {1} found in DB)", newVoucherIds.Count(), mongoVouchers.Count);
+                Logger.LogError(LoggingEvents.Operations, "One or more vouchers does not exist ({0} expected, {1} found in DB)", voucherIds.Count(), vouchers.Count);
                 throw new ArgumentException("One or more voucher(s) not found");
             }
 
-            if(!v.All(v => UpdateAndVerifyVouchers(v, mongoVouchers, filter))) {
+            if(!vi.All(v => UpdateAndVerifyVouchers(v, vouchers, filter))) {
                 Logger.LogError(LoggingEvents.Operations, "One or more vouchers did not satisfy constraints");
                 throw new ArgumentException("Invalid voucher(s)");
             }
 
-            await Mongo.ReplaceVouchers(mongoVouchers.Values);
+            // TODO: this must be done in a two-step process
+            await Mongo.ReplaceVouchers(vouchers.Values);
 
-            return v.Count();
+            return vi.Count();
         }
 
-        private async Task<int> ProcessPaymentOldVouchers(IEnumerable<PaymentConfirmPayload.VoucherInfo> vi, Filter filter) {
-            var voucherIds = vi.Select(v => v.Id.ToLong()).ToArray();
-            var vouchers = (from v in Database.Vouchers
-                            where voucherIds.Contains(v.Id)
-                            where !v.Spent
-                            select v);
-            var voucherMap = vouchers.ToDictionary(v => v.Id);
+        private async Task<int> ProcessPaymentLegacyVouchers(IEnumerable<PaymentConfirmPayload.VoucherInfo> vi, Filter filter) {
+            if(vi.Count() == 0) {
+                return 0;
+            }
 
-            var validCount = vi.Count(vi => {
-                var suppliedId = vi.Id.ToLong();
-                if(!voucherMap.ContainsKey(suppliedId)) {
-                    Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} spent or not existing", vi.Id);
+            var voucherIds = vi.Select(v => v.Id.ToLong());
+
+            var vouchers = (await Mongo.GetLegacyVouchersWithIds(voucherIds)).ToDictionary(v => v.Id);
+            if(voucherIds.Count() != vouchers.Count) {
+                // One or more IDs did not load
+                Logger.LogError(LoggingEvents.Operations, "One or more V1 vouchers does not exist ({0} expected, {1} found in DB)", voucherIds.Count(), vouchers.Count);
+                throw new ArgumentException("One or more voucher(s) not found");
+            }
+
+            if(!vi.All(expected => {
+                if(!vouchers.ContainsKey(expected.Id.ToLong())) {
+                    Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} not found", expected.Id);
                     return false;
                 }
 
-                var expectedSecret = voucherMap[suppliedId].Secret.ToBase64();
-                if(!vi.Secret.Equals(expectedSecret, StringComparison.InvariantCulture)) {
-                    Logger.LogInformation(LoggingEvents.Operations, "Secret of voucher {0} not valid (is '{1}', expedted '{2}')", vi.Id, vi.Secret, expectedSecret);
+                var voucher = vouchers[expected.Id.ToLong()];
+
+                if(voucher.Spent) {
+                    Logger.LogInformation(LoggingEvents.Operations, "Voucher {0} spent", voucher.Id);
                     return false;
                 }
 
-                // We trust client-side validation for old vouchers 🤞
+                if(!voucher.Secret.Equals(expected.Secret, StringComparison.InvariantCulture)) {
+                    Logger.LogInformation(LoggingEvents.Operations, "Secret of voucher {0} not valid (is '{1}', expected '{2}')", voucher.Id, voucher.Secret, expected.Secret);
+                    return false;
+                }
+
+                // Trust client-side validation for old vouchers 🤞
 
                 return true;
-            });
+            })) {
+                Logger.LogError(LoggingEvents.Operations, "One or more V1 vouchers did not satisfy constraints");
+                throw new ArgumentException("Invalid voucher(s)");
+            }
 
-            foreach(var v in vouchers) {
+            // TODO: this must be done in a two-step process
+            foreach(var v in vouchers.Values) {
                 v.Spent = true;
             }
-            await Database.SaveChangesAsync();
+            await Mongo.ReplaceLegacyVouchers(vouchers.Values);
 
-            return validCount;
+            return vouchers.Count;
         }
 
         public async Task<PaymentRequest> ProcessPayment(PaymentConfirmPayload.Content request) {
@@ -338,11 +358,11 @@ namespace WomPlatform.Web.Api {
                 throw new ArgumentException("Wrong number of vouchers");
             }
 
-            int oldCount = await ProcessPaymentOldVouchers(request.Vouchers.Where(v => !v.Id.ToString().Contains('/')), payment.Filter);
-            int newCount = await ProcessPaymentNewVouchers(request.Vouchers.Where(v => v.Id.Id.Contains('/')), payment.Filter);
-            Logger.LogDebug("Old vouchers spent {0}, new vouchers spent {1}", oldCount, newCount);
-            if(oldCount + newCount < payment.Amount) {
-                Logger.LogInformation(LoggingEvents.Operations, "Found {0} valid vouchers, less than requested ({1})", newCount + oldCount, payment.Amount);
+            int v1Count = await ProcessPaymentLegacyVouchers(request.Vouchers.Where(v => !v.Id.ToString().Contains('/')), payment.Filter);
+            int v2Count = await ProcessPaymentVouchers(request.Vouchers.Where(v => v.Id.Id.Contains('/')), payment.Filter);
+            Logger.LogDebug("V1 vouchers spent {0}, V2 vouchers spent {1}", v1Count, v2Count);
+            if(v1Count + v2Count < payment.Amount) {
+                Logger.LogInformation(LoggingEvents.Operations, "Found {0} valid vouchers, less than requested ({1})", v2Count + v1Count, payment.Amount);
                 throw new ArgumentException("Insufficient number of valid vouchers");
             }
 
