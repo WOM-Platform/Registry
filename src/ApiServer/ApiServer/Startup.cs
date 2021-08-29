@@ -51,10 +51,6 @@ namespace WomPlatform.Web.Api {
         public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
 
         public void ConfigureServices(IServiceCollection services) {
-            services.Configure<KestrelServerOptions>(options => {
-                options.AllowSynchronousIO = true;
-            });
-
             services.AddCors(options => {
                 options.AddDefaultPolicy(builder => {
                     builder
@@ -131,21 +127,6 @@ namespace WomPlatform.Web.Api {
                 });
             });
 
-            services.AddDbContext<DataContext>(o => {
-                var dbSection = Configuration.GetSection("Database");
-                var host = dbSection["Host"];
-                var port = Convert.ToInt32(dbSection["Port"]);
-                var username = dbSection["Username"];
-                var password = dbSection["Password"];
-                var schema = dbSection["Schema"];
-                var connectionString = string.Format(
-                    "server={0};port={1};uid={2};pwd={3};database={4};Old Guids=false",
-                    host, port, username, password, schema
-                );
-
-                o.UseMySQL(connectionString);
-            });
-
             services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -186,7 +167,6 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
             services.AddTransient<CryptoProvider>();
-            services.AddScoped<DatabaseOperator>(); // To be removed
             services.AddScoped<Operator>();
             services.AddSingleton<MongoDatabase>();
             services.AddMailComposer();

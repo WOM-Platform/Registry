@@ -23,8 +23,6 @@ namespace WomPlatform.Web.Api.Controllers {
 
         private readonly ObjectId _testSourceId, _testPosId;
 
-        private readonly DataContext Database;
-
         public TestController(
             IWebHostEnvironment webHostEnvironment,
             IConfiguration configuration,
@@ -32,11 +30,9 @@ namespace WomPlatform.Web.Api.Controllers {
             KeyManager keyManager,
             MongoDatabase mongo,
             Operator @operator,
-            DataContext database,
             ILogger<AimsController> logger)
         : base(configuration, crypto, keyManager, mongo, @operator, logger) {
             Hosting = webHostEnvironment;
-            Database = database;
 
             var devSection = configuration.GetSection("DevelopmentSetup");
             
@@ -131,45 +127,6 @@ namespace WomPlatform.Web.Api.Controllers {
                 OtcPay = UrlGenerator.GeneratePaymentUrl(otcPay),
                 Pin = pwd
             });
-        }
-
-        [HttpPost("migrate-vouchers")]
-        public async Task<IActionResult> MigrateVouchers(
-        ) {
-            if(!Hosting.IsDevelopment()) {
-                return Unauthorized();
-            }
-
-            Logger.LogInformation("Starting voucher migration");
-
-            var vouchers = (from v in Database.Vouchers
-                            select v).ToList();
-
-            Logger.LogInformation("Loaded {0} vouchers", vouchers.Count);
-
-            const int chunkSize = 1000;
-            List<LegacyVoucher> voucherDocuments = new();
-            for(int i = 0; i < vouchers.Count; ++i) {
-                var v = vouchers[i];
-
-                voucherDocuments.Add(new LegacyVoucher {
-                    Id = v.Id,
-                    Secret = v.Secret.ToBase64(),
-                    AimCode = v.AimCode,
-                    Position = GeoJson.Point(GeoJson.Geographic(v.Longitude, v.Latitude)),
-                    Timestamp = v.Timestamp,
-                    Spent = v.Spent
-                });
-
-                if(voucherDocuments.Count >= chunkSize) {
-                    Logger.LogDebug("Dumping batch to Mongo at {0}", i+1);
-
-                    await Mongo.AddLegacyVouchers(voucherDocuments);
-                    voucherDocuments = new List<LegacyVoucher>();
-                }
-            }
-
-            return Ok();
         }
 
     }
