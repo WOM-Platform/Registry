@@ -65,9 +65,8 @@ namespace WomPlatform.Web.Api {
 
         private static string GetVerificatonLink(string id, string token) {
             return new UriBuilder {
-                Scheme = "http",
-                Host = "localhost",
-                Port = 4200,
+                Scheme = "https",
+                Host = Environment.GetEnvironmentVariable("SELF_HOST"),
                 Path = "/user/verify",
                 Query = QueryString.Create(
                     new KeyValuePair<string, StringValues>[] {
@@ -98,9 +97,8 @@ namespace WomPlatform.Web.Api {
 
         private static string GetPasswordResetLink(string id, string token) {
             return new UriBuilder {
-                Scheme = "http",
-                Host = "localhost",
-                Port = 4200,
+                Scheme = "https",
+                Host = Environment.GetEnvironmentVariable("SELF_HOST"),
                 Path = "/authentication/reset-password",
                 Query = QueryString.Create(
                     new KeyValuePair<string, StringValues>[] {
