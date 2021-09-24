@@ -24,10 +24,12 @@ services:
     - "traefik.link.port=8779"
     - "traefik.link.frontend.rule=Host:wom.social;PathPrefix:/payment,/vouchers"
     - "traefik.link.frontend.entryPoints=http,https"
+    restart: unless-stopped
 
   database:
     volumes:
     - wom_registry_database_prod:/var/lib/mysql:rw
+    restart: unless-stopped
 
   database-manager:
     environment:
@@ -45,3 +47,4 @@ services:
     - wom_registry_mongodb_prod:/data/db:rw
     ports:
     - "8124:27017"
+    restart: unless-stopped
