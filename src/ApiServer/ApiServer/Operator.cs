@@ -17,7 +17,6 @@ namespace WomPlatform.Web.Api {
     public class Operator {
 
         private readonly MongoDatabase Mongo;
-        private readonly DataContext Database;
         private readonly IConfiguration Configuration;
         private readonly ILogger<Operator> Logger;
 
@@ -29,12 +28,10 @@ namespace WomPlatform.Web.Api {
 
         public Operator(
             MongoDatabase mongo,
-            DataContext database,
             IConfiguration configuration,
             ILogger<Operator> logger
         ) {
             Mongo = mongo;
-            Database = database;
             Configuration = configuration;
             Logger = logger;
 

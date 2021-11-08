@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using WomPlatform.Web.Api.DatabaseModels;
 
 namespace WomPlatform.Web.Api {
 

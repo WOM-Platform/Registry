@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
-using WomPlatform.Web.Api.DatabaseModels;
 
 namespace WomPlatform.Web.Api {
 
@@ -19,6 +18,7 @@ namespace WomPlatform.Web.Api {
             _changeLogCode = changeLogCode;
         }
 
+        /*
         public override void OnActionExecuting(ActionExecutingContext context) {
             if(string.IsNullOrWhiteSpace(_changeLogCode)) {
                 return;
@@ -67,6 +67,7 @@ namespace WomPlatform.Web.Api {
                 }
             }
         }
+        */
 
     }
 
