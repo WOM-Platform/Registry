@@ -1,25 +1,17 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:64421/",
-      "sslPort": 0
-    }
-  },
   "profiles": {
-    "IIS Express": {
-      "commandName": "IISExpress",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
-    },
-    "web-api": {
+    "Local Registry": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "MONGO_CONNECTION_PORT": "1234",
+        "JWT_USER_TOKEN_SECRET": "",
+        "MONGO_INITDB_ROOT_PASSWORD": "",
+        "MONGO_INITDB_ROOT_USERNAME": "",
+        "MONGO_CONNECTION_HOST": "localhost",
+        "LINK_HOST": "link.wom.social",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SELF_HOST": "localhost:64421"
       },
       "applicationUrl": "http://localhost:64422/"
     }
