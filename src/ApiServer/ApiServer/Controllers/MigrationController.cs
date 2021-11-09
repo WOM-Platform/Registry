@@ -11,7 +11,7 @@ using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
     [ApiVersion("1")]
-    [Route("v1/migration")]
+    [Route("v{version:apiVersion}/migration")]
     [OperationsTags("Voucher migration")]
     public class MigrationController : BaseRegistryController {
 
@@ -26,7 +26,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         }
 
-        private readonly Guid SingleRecord = Guid.NewGuid();
+        private static readonly Guid SingleRecord = Guid.NewGuid();
 
         public record CreateMigrationOutput(
             string RegistryUrl,
@@ -82,6 +82,9 @@ namespace WomPlatform.Web.Api.Controllers {
             if(code != SingleRecord) {
                 return NotFound();
             }
+            if(string.IsNullOrWhiteSpace(input.Password)) {
+                return Forbid();
+            }
 
             var rnd = new Random();
             byte[] rndFile = new byte[1024];
@@ -109,6 +112,9 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             if(code != SingleRecord) {
                 return NotFound();
+            }
+            if(string.IsNullOrWhiteSpace(input.Password)) {
+                return Forbid();
             }
 
             return Ok(new GetMigrationInfoOutput(
