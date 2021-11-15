@@ -82,7 +82,7 @@ namespace WomPlatform.Web.Api.Controllers {
             if(code != SingleRecord) {
                 return NotFound();
             }
-            if(string.IsNullOrWhiteSpace(input.Password)) {
+            if(string.IsNullOrWhiteSpace(input?.Password)) {
                 return Forbid();
             }
 
@@ -102,7 +102,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves information about a migration.
         /// </summary>
         /// <param name="code">The unique migration code.</param>
-        [HttpGet("{code}/info")]
+        [HttpPost("{code}/info")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(GetMigrationInfoOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -113,7 +113,7 @@ namespace WomPlatform.Web.Api.Controllers {
             if(code != SingleRecord) {
                 return NotFound();
             }
-            if(string.IsNullOrWhiteSpace(input.Password)) {
+            if(string.IsNullOrWhiteSpace(input?.Password)) {
                 return Forbid();
             }
 
