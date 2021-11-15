@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("render")]
+    [ApiVersionNeutral]
     public class RenderController : Controller {
 
         private readonly ILogger<RenderController> _logger;
