@@ -170,10 +170,9 @@ namespace WomPlatform.Web.Api {
                     throw new InvalidOperationException("Vouchers require user location on redemption");
                 }
 
-                await Mongo.UpdateVoucherLocation(
-                    vouchersRequiringLocation,
-                    new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(userLocation.Value.Longitude, userLocation.Value.Latitude))
-                );
+                var geoPoint = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(userLocation.Value.Longitude, userLocation.Value.Latitude));
+                await Mongo.UpdateVoucherLocation(vouchersRequiringLocation, geoPoint);
+                vouchersRequiringLocation.ForEach(v => { v.Position = geoPoint; });
 
                 Logger.LogDebug("Update {0} voucher records with user location on redemption", vouchersRequiringLocation.Count);
             }
