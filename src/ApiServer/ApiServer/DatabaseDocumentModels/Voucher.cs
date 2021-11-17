@@ -18,6 +18,8 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public string AimCode { get; set; }
 
         [BsonElement("position")]
+        [BsonDefaultValue(null)]
+        [BsonIgnoreIfDefault]
         public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
 
         [BsonElement("timestamp")]
@@ -34,6 +36,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("generationRequestId")]
         public Guid GenerationRequestId { get; set; }
+
+        [BsonElement("mode")]
+        [BsonDefaultValue(VoucherCreationMode.Standard)]
+        [BsonIgnoreIfDefault]
+        public VoucherCreationMode Mode { get; set; } = VoucherCreationMode.Standard;
 
     }
 

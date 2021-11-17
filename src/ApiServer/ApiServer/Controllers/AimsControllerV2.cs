@@ -53,9 +53,6 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        /// <summary>
-        /// Get list of all aims.
-        /// </summary>
         public async Task<IActionResult> ListV2() {
             var aims = await Mongo.GetAims();
 
@@ -106,9 +103,6 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("nested")]
         [HttpHead("nested")]
         [ChangeLog("aim-list")]
-        /// <summary>
-        /// Get list of all aims.
-        /// </summary>
         public async Task<IActionResult> ListNestedV2() {
             var aims = await Mongo.GetAims();
 

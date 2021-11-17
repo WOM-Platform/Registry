@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api {
@@ -361,6 +362,12 @@ namespace WomPlatform.Web.Api {
                            let filter = Builders<Voucher>.Filter.Eq(vf => vf.Id, v.Id)
                            select new ReplaceOneModel<Voucher>(filter, v);
             return VoucherCollection.BulkWriteAsync(replaces);
+        }
+
+        public Task UpdateVoucherLocation(IEnumerable<Voucher> vouchers, GeoJsonPoint<GeoJson2DGeographicCoordinates> location) {
+            var voucherIds = (from v in vouchers select v.Id).ToArray();
+            var update = Builders<Voucher>.Update.Set(v => v.Position, location);
+            return VoucherCollection.UpdateManyAsync<Voucher>(v => voucherIds.Contains(v.Id), update);
         }
 
         public Task<List<Voucher>> GetVouchersByGenerationRequest(Guid otcGen) {

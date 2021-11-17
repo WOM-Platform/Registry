@@ -189,7 +189,9 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 Logger.LogDebug(LoggingEvents.VoucherRedemption, "Redeeming vouchers for request {0}", payloadContent.Otc);
 
-                var (source, vouchers) = await Operator.GenerateVouchers(payloadContent.Otc, payloadContent.Password);
+                var (source, vouchers) = await Operator.GenerateVouchers(payloadContent.Otc, payloadContent.Password,
+                    (payloadContent.RedeemLocation == null) ? null : (payloadContent.RedeemLocation.Latitude, payloadContent.RedeemLocation.Longitude)
+                );
 
                 Logger.LogInformation("Successfully redeemed vouchers by source {0}", source.Id);
 
