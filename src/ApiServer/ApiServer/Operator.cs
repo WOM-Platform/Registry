@@ -55,6 +55,32 @@ namespace WomPlatform.Web.Api {
             VoucherCreatePayload.Content creationParameters,
             bool isPreVerified = false
         ) {
+            Voucher CreateVoucher(Guid otc, VoucherCreatePayload.VoucherInfo info) {
+                var secret = GenerateSecret().ToBase64();
+
+                return info.CreationMode switch {
+                    VoucherCreatePayload.VoucherCreationMode.SetLocationOnRedeem => new Voucher {
+                        Secret = secret,
+                        AimCode = info.Aim,
+                        Timestamp = info.Timestamp,
+                        Count = info.Count,
+                        InitialCount = info.Count,
+                        GenerationRequestId = otc,
+                        Mode = VoucherCreationMode.SetLocationOnRedeem
+                    },
+                    _ => new Voucher {
+                        Secret = secret,
+                        AimCode = info.Aim,
+                        Position = GeoJson.Point(GeoJson.Geographic(info.Longitude, info.Latitude)),
+                        Timestamp = info.Timestamp,
+                        Count = info.Count,
+                        InitialCount = info.Count,
+                        GenerationRequestId = otc,
+                        Mode = VoucherCreationMode.Standard
+                    }
+                };
+            }
+
             if(!creationParameters.SourceId.Equals(source.Id.ToString())) {
                 throw new ArgumentException($"Incoherent POS IDs {creationParameters.SourceId} != {source.Id}");
             }
@@ -78,17 +104,7 @@ namespace WomPlatform.Web.Api {
             await Mongo.AddGenerationRequest(genRequest);
             Logger.LogDebug("Generation request {0} persisted", otc);
 
-            var vouchers = from v in creationParameters.Vouchers
-                           let secret = GenerateSecret()
-                           select new Voucher {
-                               Secret = secret.ToBase64(),
-                               AimCode = v.Aim,
-                               Position = GeoJson.Point(GeoJson.Geographic(v.Longitude, v.Latitude)),
-                               Timestamp = v.Timestamp,
-                               Count = v.Count,
-                               InitialCount = v.Count,
-                               GenerationRequestId = otc
-                           };
+            var vouchers = from v in creationParameters.Vouchers select CreateVoucher(otc, v);
             await Mongo.AddVouchers(vouchers);
 
             var voucherCount = vouchers.Sum(v => v.InitialCount);
@@ -116,7 +132,11 @@ namespace WomPlatform.Web.Api {
         /// Redeems vouchers tied to a given OTC_gen code and marks
         /// the generation request instance as completed.
         /// </summary>
-        public async Task<(Source Source, IEnumerable<Voucher> Vouchers)> GenerateVouchers(Guid otcGen, string password) {
+        public async Task<(Source Source, IEnumerable<Voucher> Vouchers)> GenerateVouchers(
+            Guid otcGen,
+            string password,
+            (double Latitude, double Longitude)? userLocation = null
+        ) {
             var request = await Mongo.GetGenerationRequestByOtc(otcGen);
 
             if(request == null) {
@@ -141,11 +161,24 @@ namespace WomPlatform.Web.Api {
                 throw new ArgumentException("Password does not match");
             }
 
-            request.PerformedAt = DateTime.UtcNow;
-            await Mongo.UpdateGenerationRequest(request);
-
             var source = await Mongo.GetSourceById(request.SourceId);
             var vouchers = await Mongo.GetVouchersByGenerationRequest(otcGen);
+            var vouchersRequiringLocation = (from v in vouchers where v.Mode == VoucherCreationMode.SetLocationOnRedeem select v).ToList();
+            if(vouchersRequiringLocation.Count > 0) {
+                // We require the user's location in order to redeem these vouchers
+                if(!userLocation.HasValue) {
+                    throw new InvalidOperationException("Vouchers require user location on redemption");
+                }
+
+                var geoPoint = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(userLocation.Value.Longitude, userLocation.Value.Latitude));
+                await Mongo.UpdateVoucherLocation(vouchersRequiringLocation, geoPoint);
+                vouchersRequiringLocation.ForEach(v => { v.Position = geoPoint; });
+
+                Logger.LogDebug("Update {0} voucher records with user location on redemption", vouchersRequiringLocation.Count);
+            }
+
+            request.PerformedAt = DateTime.UtcNow;
+            await Mongo.UpdateGenerationRequest(request);
 
             return (source, vouchers);
         }

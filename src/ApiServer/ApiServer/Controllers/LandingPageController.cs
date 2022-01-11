@@ -11,6 +11,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// </summary>
     [ApiVersionNeutral]
     [Route("")]
+    [OperationsTags("Landing pages")]
     public class LandingPageController : BaseRegistryController {
 
         public LandingPageController(

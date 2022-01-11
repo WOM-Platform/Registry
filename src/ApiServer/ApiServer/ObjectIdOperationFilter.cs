@@ -13,11 +13,13 @@ namespace WomPlatform.Web.Api {
     /// </summary>
     class ObjectIdOperationFilter : IOperationFilter {
         private readonly IEnumerable<string> objectIdIgnoreParameters = new[] {
+#pragma warning disable CS0618 // Type or member is obsolete
             nameof(ObjectId.Timestamp),
             nameof(ObjectId.Machine),
             nameof(ObjectId.Pid),
             nameof(ObjectId.Increment),
             nameof(ObjectId.CreationTime)
+#pragma warning restore CS0618 // Type or member is obsolete
         };
 
         public void Apply(OpenApiOperation operation, OperationFilterContext context) {
