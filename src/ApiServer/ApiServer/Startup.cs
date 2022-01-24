@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,6 +76,12 @@ namespace WomPlatform.Web.Api {
                 });
 
             services.AddApiVersioning();
+
+            services.AddVersionedApiExplorer(setup =>
+            {
+                setup.GroupNameFormat = "'v'VVV";
+                setup.SubstituteApiVersionInUrl = true;
+            });
 
             services.AddSwaggerGen(options => {
                 options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo {
@@ -166,6 +173,7 @@ namespace WomPlatform.Web.Api {
         public void Configure(
             IApplicationBuilder app,
             IWebHostEnvironment env,
+            IApiVersionDescriptionProvider provider,
             MongoDatabase mongo,
             ILogger<Startup> logger
         ) {
@@ -221,7 +229,14 @@ namespace WomPlatform.Web.Api {
             if(env.IsDevelopment()) {
                 app.UseSwagger();
                 app.UseSwaggerUI(conf => {
-                    conf.SwaggerEndpoint("v1/swagger.json", "WOM Registry API");
+                    //conf.SwaggerEndpoint("v1/swagger.json", "WOM Registry API");
+
+                    foreach(var description in provider.ApiVersionDescriptions) {
+                        conf.SwaggerEndpoint(
+                            $"/swagger/{description.GroupName}/swagger.json",
+                            description.GroupName.ToUpperInvariant()
+                        );
+                    }
                 });
             }
 
