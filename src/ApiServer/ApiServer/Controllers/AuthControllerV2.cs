@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -18,14 +19,16 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Authentication")]
     public class AuthControllerV2 : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
+
         public AuthControllerV2(
+            MongoDatabase mongo,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<AuthControllerV2> logger)
-        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+        : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
         }
 
         public record AuthV2PosLoginOutput(
@@ -49,9 +52,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var userData = await Mongo.GetUserById(userId);
+            var userData = await _mongo.GetUserById(userId);
 
-            var data = await Mongo.GetMerchantsAndPosByUser(userId);
+            var data = await _mongo.GetMerchantsAndPosByUser(userId);
             Logger.LogInformation("User {0} controls POS for {1} merchants", userId, data.Count);
 
             return Ok(new AuthV2PosLoginOutput(
@@ -101,11 +104,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var user = await Mongo.GetUserById(userId);
-            var sources = await Mongo.GetSourcesByUser(userId);
+            var user = await _mongo.GetUserById(userId);
+            var sources = await _mongo.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} controls {1} sources", userId, sources.Count);
 
-            var allAims = (from a in await Mongo.GetRootAims() select a.Code).ToList();
+            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToList();
 
             return Ok(new AuthV2SourceLoginOutput(
                 user.Name,

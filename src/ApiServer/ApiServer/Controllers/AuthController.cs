@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -18,14 +19,16 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Authentication")]
     public class AuthController : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
+
         public AuthController(
+            MongoDatabase mongo,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+        : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
         }
 
         public record AuthSourceLoginOutput(
@@ -46,7 +49,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var sources = await Mongo.GetSourcesByUser(userId);
+            var sources = await _mongo.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} has {1} source entries", userId, sources.Count);
 
             return Ok(new AuthSourceLoginOutput(
@@ -78,7 +81,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var pos = await Mongo.GetPosByUser(userId);
+            var pos = await _mongo.GetPosByUser(userId);
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new AuthPosLoginOutput(

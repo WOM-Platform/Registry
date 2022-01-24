@@ -15,6 +15,7 @@ using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -24,17 +25,18 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("User and session management")]
     public class UserController : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
         private readonly MailComposer _composer;
 
         public UserController(
+            MongoDatabase mongo,
+            MailComposer composer,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
-            ILogger<UserController> logger,
-            MailComposer composer
-        ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+            ILogger<UserController> logger
+        ) : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
             _composer = composer;
         }
 
@@ -73,7 +75,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(UserRegisterInput input) {
-            var existingUser = await Mongo.GetUserByEmail(input.Email);
+            var existingUser = await _mongo.GetUserByEmail(input.Email);
             if(existingUser != null) {
                 return this.ProblemParameter("Supplied email address is already registered");
             }
@@ -94,7 +96,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     VerificationToken = verificationToken,
                     RegisteredOn = DateTime.UtcNow
                 };
-                await Mongo.CreateUser(user);
+                await _mongo.CreateUser(user);
 
                 _composer.SendVerificationMail(user);
 
@@ -132,7 +134,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var existingUser = await Mongo.GetUserById(id);
+            var existingUser = await _mongo.GetUserById(id);
             if(existingUser == null) {
                 return NotFound();
             }
@@ -165,7 +167,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var existingUser = await Mongo.GetUserById(id);
+            var existingUser = await _mongo.GetUserById(id);
             if(existingUser == null) {
                 return NotFound();
             }
@@ -186,7 +188,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
                 existingUser.LastUpdate = DateTime.UtcNow;
 
-                await Mongo.ReplaceUser(existingUser);
+                await _mongo.ReplaceUser(existingUser);
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to update user {0}", id);
@@ -211,7 +213,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var user = await Mongo.GetUserById(id);
+            var user = await _mongo.GetUserById(id);
             if(user == null) {
                 return NotFound();
             }
@@ -246,7 +248,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var user = await Mongo.GetUserById(id);
+            var user = await _mongo.GetUserById(id);
             if(user == null) {
                 return NotFound();
             }
@@ -260,7 +262,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             user.VerificationToken = null;
-            await Mongo.ReplaceUser(user);
+            await _mongo.ReplaceUser(user);
 
             return Ok();
         }
@@ -277,11 +279,11 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> RequestPasswordReset(
             UserRequestPasswordResetInput input
         ) {
-            var user = await Mongo.GetUserByEmail(input.Email);
+            var user = await _mongo.GetUserByEmail(input.Email);
             if(user != null) {
                 if(user.PasswordResetToken == null) {
                     user.PasswordResetToken = new Random().GenerateReadableCode(8);
-                    await Mongo.ReplaceUser(user);
+                    await _mongo.ReplaceUser(user);
                 }
 
                 _composer.SendPasswordResetMail(user);
@@ -306,7 +308,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id,
             UserExecutePasswordResetInput input
         ) {
-            var user = await Mongo.GetUserById(id);
+            var user = await _mongo.GetUserById(id);
             if(user == null) {
                 return NotFound();
             }
@@ -321,7 +323,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             user.PasswordResetToken = null;
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
-            await Mongo.ReplaceUser(user);
+            await _mongo.ReplaceUser(user);
 
             return Ok();
         }
@@ -336,14 +338,14 @@ namespace WomPlatform.Web.Api.Controllers {
         private async Task<User> GetUserToLogin(UserLoginInput input) {
             if(User.GetUserId(out var loggedInUser)) {
                 Logger.LogDebug("User {0} already logged in", loggedInUser);
-                return await Mongo.GetUserById(loggedInUser);
+                return await _mongo.GetUserById(loggedInUser);
             }
 
             if(input == null) {
                 return null;
             }
 
-            var user = await Mongo.GetUserByEmail(input.Email);
+            var user = await _mongo.GetUserByEmail(input.Email);
             if(user == null) {
                 Logger.LogTrace("User {0} does not exist", input.Email);
 

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -19,14 +20,16 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Aims")]
     public class AimsControllerV2 : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
+
         public AimsControllerV2(
+            MongoDatabase mongo,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<AimsControllerV2> logger)
-        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+        : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
         }
 
         /// <summary>
@@ -53,8 +56,9 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> ListV2() {
-            var aims = await Mongo.GetAims();
+            var aims = await _mongo.GetAims();
 
             return Ok(new AimListOutput(
                 (from a in aims
@@ -103,8 +107,9 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("nested")]
         [HttpHead("nested")]
         [ChangeLog("aim-list")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> ListNestedV2() {
-            var aims = await Mongo.GetAims();
+            var aims = await _mongo.GetAims();
 
             var fakeRoot = new AimListEntry(null, null, new());
             foreach(var aim in aims) {

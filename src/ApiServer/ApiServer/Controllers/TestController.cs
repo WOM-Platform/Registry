@@ -12,6 +12,7 @@ using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -23,15 +24,21 @@ namespace WomPlatform.Web.Api.Controllers {
 
         private readonly ObjectId _testSourceId, _testPosId;
 
+        private readonly MongoDatabase _mongo;
+        private readonly Operator _operator;
+        private IWebHostEnvironment Hosting { get; init; }
+
         public TestController(
+            MongoDatabase mongo,
+            Operator @operator,
             IWebHostEnvironment webHostEnvironment,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+        : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
+            _operator = @operator;
             Hosting = webHostEnvironment;
 
             var devSection = configuration.GetSection("DevelopmentSetup");
@@ -42,8 +49,6 @@ namespace WomPlatform.Web.Api.Controllers {
             var devPosSection = devSection.GetSection("Pos");
             _testPosId = new ObjectId(devPosSection["Id"]);
         }
-
-        protected IWebHostEnvironment Hosting { get; }
 
         [HttpPost("create-vouchers/{count=10}")]
         public async Task<IActionResult> CreateVouchers(
@@ -59,9 +64,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Creating {0} test vouchers", count);
 
-            var testSource = await Mongo.GetSourceById(_testSourceId);
+            var testSource = await _mongo.GetSourceById(_testSourceId);
             var rnd = new Random();
-            var aim = (await Mongo.GetAims()).OrderBy(a => rnd.NextDouble()).First();
+            var aim = (await _mongo.GetAims()).OrderBy(a => rnd.NextDouble()).First();
 
             Logger.LogTrace("Test source: {0}, random aim '{1}'", testSource.Name, aim.Code);
 
@@ -76,7 +81,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
             };
 
-            (var otcGen, var pwd, _) = await Operator.CreateGenerationRequest(testSource, new VoucherCreatePayload.Content {
+            (var otcGen, var pwd, _) = await _operator.CreateGenerationRequest(testSource, new VoucherCreatePayload.Content {
                 Nonce = Guid.NewGuid().ToString("N"),
                 SourceId = testSource.Id.ToString(),
                 Vouchers = voucherInfos
@@ -109,11 +114,11 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Creating payment for {0} vouchers", amount);
 
-            var testPos = await Mongo.GetPosById(_testPosId);
+            var testPos = await _mongo.GetPosById(_testPosId);
 
             Logger.LogTrace("Test POS: {0}", testPos.Id);
 
-            (var otcPay, var pwd) = await Operator.CreatePaymentRequest(testPos, new PaymentRegisterPayload.Content {
+            (var otcPay, var pwd) = await _operator.CreatePaymentRequest(testPos, new PaymentRegisterPayload.Content {
                 Amount = amount,
                 Nonce = Guid.NewGuid().ToString("N"),
                 SimpleFilter = filter,

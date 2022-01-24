@@ -21,8 +21,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.Conversion;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api {
 
@@ -162,11 +164,21 @@ namespace WomPlatform.Web.Api {
             });
 
             // Add services to dependency registry
+            services.AddSingleton(provider => {
+                var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
+                var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
+                var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
+                var port = Environment.GetEnvironmentVariable("MONGO_CONNECTION_PORT");
+
+                string connectionString = string.Format("mongodb://{0}:{1}@{2}:{3}", username, password, host, port);
+                return new MongoClient(connectionString);
+            });
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
             services.AddTransient<CryptoProvider>();
             services.AddScoped<Operator>();
-            services.AddSingleton<MongoDatabase>();
+            services.AddScoped<MongoDatabase>();
+            services.AddScoped<StatsService>();
             services.AddMailComposer();
         }
 

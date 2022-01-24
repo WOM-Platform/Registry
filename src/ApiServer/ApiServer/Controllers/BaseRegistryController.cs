@@ -24,15 +24,11 @@ namespace WomPlatform.Web.Api.Controllers {
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<BaseRegistryController> logger
         ) {
             Configuration = configuration;
             Crypto = crypto;
             KeyManager = keyManager;
-            Mongo = mongo;
-            Operator = @operator;
             Logger = logger;
 
             SelfHostDomain = Environment.GetEnvironmentVariable("SELF_HOST");
@@ -44,10 +40,6 @@ namespace WomPlatform.Web.Api.Controllers {
         protected CryptoProvider Crypto { get; }
 
         protected KeyManager KeyManager { get; }
-
-        protected MongoDatabase Mongo { get; }
-
-        protected Operator Operator { get; }
 
         protected ILogger<BaseRegistryController> Logger { get; }
 
