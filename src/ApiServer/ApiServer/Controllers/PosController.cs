@@ -14,6 +14,7 @@ using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -23,15 +24,16 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Point of service")]
     public class PosController : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
+
         public PosController(
+            MongoDatabase mongo,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<PosController> logger
-        ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
-
+        ) : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
         }
 
         /// <summary>
@@ -65,7 +67,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var owningMerchant = await Mongo.GetMerchantById(input.OwnerMerchantId);
+            var owningMerchant = await _mongo.GetMerchantById(input.OwnerMerchantId);
             if(owningMerchant == null) {
                 return Problem("Owning merchant does not exist");
             }
@@ -92,7 +94,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     CreatedOn = DateTime.UtcNow,
                     IsDummy = false
                 };
-                await Mongo.CreatePos(pos);
+                await _mongo.CreatePos(pos);
 
                 return CreatedAtAction(
                     nameof(GetInformation),
@@ -120,12 +122,12 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
         ) {
-            var pos = await Mongo.GetPosById(id);
+            var pos = await _mongo.GetPosById(id);
             if(pos == null) {
                 return NotFound();
             }
 
-            var merchant = await Mongo.GetMerchantById(pos.MerchantId);
+            var merchant = await _mongo.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
                 Logger.LogWarning("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
                 return NotFound();
@@ -168,12 +170,12 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id,
             PosUpdateInput input
         ) {
-            var pos = await Mongo.GetPosById(id);
+            var pos = await _mongo.GetPosById(id);
             if(pos == null) {
                 return NotFound();
             }
 
-            var merchant = await Mongo.GetMerchantById(pos.MerchantId);
+            var merchant = await _mongo.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
                 Logger.LogWarning("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
                 return NotFound();
@@ -202,7 +204,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
                 pos.LastUpdate = DateTime.UtcNow;
 
-                await Mongo.ReplacePos(pos);
+                await _mongo.ReplacePos(pos);
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to update POS {0}", id);

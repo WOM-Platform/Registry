@@ -10,43 +10,24 @@ using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
-namespace WomPlatform.Web.Api {
+namespace WomPlatform.Web.Api.Service {
 
     public class MongoDatabase {
 
+        private readonly MongoClient _client;
         private readonly ILogger<MongoDatabase> _logger;
 
         public MongoDatabase(
-            ILogger<MongoDatabase> logger) {
+            MongoClient client,
+            ILogger<MongoDatabase> logger
+        ) {
+            _client = client;
             _logger = logger;
-        }
-
-        private readonly object _lockRoot = new object();
-        private MongoClient _client = null;
-
-        private MongoClient Client {
-            get {
-                if(_client == null) {
-                    lock(_lockRoot) {
-                        if(_client == null) {
-                            var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
-                            var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
-                            var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
-                            var port = Environment.GetEnvironmentVariable("MONGO_CONNECTION_PORT");
-
-                            _logger.LogInformation("Creating new Mongo client");
-                            _client = new MongoClient(string.Format("mongodb://{0}:{1}@{2}:{3}", username, password, host, port));
-                        }
-                    }
-                }
-
-                return _client;
-            }
         }
 
         private IMongoDatabase MainDatabase {
             get {
-                return Client.GetDatabase("Wom");
+                return _client.GetDatabase("Wom");
             }
         }
 

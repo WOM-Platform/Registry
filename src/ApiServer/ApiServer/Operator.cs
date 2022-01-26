@@ -8,6 +8,7 @@ using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api {
 

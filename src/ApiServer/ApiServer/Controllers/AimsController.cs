@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -15,14 +16,16 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Aims")]
     public class AimsController : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
+
         public AimsController(
+            MongoDatabase mongo,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
+        : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
         }
 
         /// <summary>
@@ -32,8 +35,9 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
+        [MapToApiVersion("1.0")]
         public async Task<IActionResult> List() {
-            var aims = await Mongo.GetAims();
+            var aims = await _mongo.GetAims();
             return Ok(from a in aims
                       select new {
                           a.Code,

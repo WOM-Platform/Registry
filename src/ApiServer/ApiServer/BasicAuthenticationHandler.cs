@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api {
 

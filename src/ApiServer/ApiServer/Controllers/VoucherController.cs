@@ -10,6 +10,7 @@ using MongoDB.Bson;
 using Org.BouncyCastle.Crypto;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -18,15 +19,19 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Voucher generation protocol", "Operations")]
     public class VoucherController : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
+        private readonly Operator _operator;
+
         public VoucherController(
+            MongoDatabase mongo,
+            Operator @operator,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<BaseRegistryController> logger
-        ) : base(configuration, crypto, keyManager, mongo, @operator, logger) {
-
+        ) : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
+            _operator = @operator;
         }
 
         /// <summary>
@@ -52,7 +57,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.ProblemParameter("Source ID is not valid");
             }
 
-            var source = await Mongo.GetSourceById(sourceId);
+            var source = await _mongo.GetSourceById(sourceId);
             if(source == null) {
                 Logger.LogError(LoggingEvents.VoucherCreation, "Source ID {0} does not exist", payload.SourceId);
                 return this.SourceNotFound();
@@ -79,7 +84,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password, var voucherCount) = await Operator.CreateGenerationRequest(source, payloadContent);
+                (var otc, var password, var voucherCount) = await _operator.CreateGenerationRequest(source, payloadContent);
 
                 Logger.LogInformation(LoggingEvents.VoucherCreation, "Voucher generation successfully requested with code {0} for source {1}", otc, payload.SourceId);
 
@@ -120,7 +125,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                await Operator.VerifyGenerationRequest(payloadContent.Otc);
+                await _operator.VerifyGenerationRequest(payloadContent.Otc);
 
                 Logger.LogInformation(LoggingEvents.VoucherVerification, "Voucher generation {0} verified", payloadContent.Otc);
 
@@ -189,7 +194,7 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 Logger.LogDebug(LoggingEvents.VoucherRedemption, "Redeeming vouchers for request {0}", payloadContent.Otc);
 
-                var (source, vouchers) = await Operator.GenerateVouchers(payloadContent.Otc, payloadContent.Password,
+                var (source, vouchers) = await _operator.GenerateVouchers(payloadContent.Otc, payloadContent.Password,
                     (payloadContent.RedeemLocation == null) ? null : (payloadContent.RedeemLocation.Latitude, payloadContent.RedeemLocation.Longitude)
                 );
 

@@ -8,6 +8,7 @@ using MongoDB.Bson;
 using Org.BouncyCastle.Crypto;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -16,15 +17,19 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Payment protocol", "Operations")]
     public class PaymentController : BaseRegistryController {
 
+        private readonly MongoDatabase _mongo;
+        private readonly Operator _operator;
+
         public PaymentController(
+            MongoDatabase mongo,
+            Operator @operator,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
-            MongoDatabase mongo,
-            Operator @operator,
             ILogger<PaymentController> logger)
-        : base(configuration, crypto, keyManager, mongo, @operator, logger) {
-
+        : base(configuration, crypto, keyManager, logger) {
+            _mongo = mongo;
+            _operator = @operator;
         }
 
         /// <summary>
@@ -45,7 +50,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.PosId, payload.Nonce
             );
 
-            var pos = await Mongo.GetPosById(new ObjectId(payload.PosId));
+            var pos = await _mongo.GetPosById(new ObjectId(payload.PosId));
             if (pos == null) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
                 return this.PosNotFound();
@@ -71,7 +76,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password) = await Operator.CreatePaymentRequest(pos, payloadContent);
+                (var otc, var password) = await _operator.CreatePaymentRequest(pos, payloadContent);
 
                 Logger.LogInformation(LoggingEvents.PaymentCreation, "Payment request successfully created with code {0} for POS {1}", otc, payload.PosId);
 
@@ -111,7 +116,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                await Operator.VerifyPaymentRequest(payloadContent.Otc);
+                await _operator.VerifyPaymentRequest(payloadContent.Otc);
 
                 Logger.LogInformation(LoggingEvents.PaymentVerification, "Payment creation {0} verified", payloadContent.Otc);
 
@@ -159,13 +164,13 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var payment = await Mongo.GetPaymentRequestByOtc(payloadContent.Otc);
+                var payment = await _mongo.GetPaymentRequestByOtc(payloadContent.Otc);
                 if(payment == null) {
                     Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
                     return NotFound();
                 }
 
-                var pos = await Mongo.GetPosById(payment.PosId);
+                var pos = await _mongo.GetPosById(payment.PosId);
 
                 Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.Otc, pos.Id, payment.Amount);
 
@@ -228,7 +233,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var payment = await Operator.ProcessPayment(payloadContent);
+                var payment = await _operator.ProcessPayment(payloadContent);
 
                 Logger.LogInformation("Successfully processed payment {0}", payment.Otc);
 
