@@ -40,20 +40,49 @@ namespace WomPlatform.Web.Api.Service {
             public long TotalCount;
             [BsonElement("availableCount")]
             public long AvailableCount;
-        };
+            [BsonElement("redeemedCount")]
+            public long RedeemedCount;
+        }
 
         public async Task<List<VoucherCountByAimResult>> GetVoucherCountByAim() {
             PipelineDefinition<Voucher, VoucherCountByAimResult> pipeline = new BsonDocument[] {
                 BsonDocument.Parse(@"{
                     $match: {
-                        ""aimCode"": { $ne: """" }
+                        'aimCode': { $ne: '' }
+                    }
+                }"),
+                BsonDocument.Parse(@"{
+                    $lookup: {
+                        from: 'GenerationRequests',
+                        localField: 'generationRequestId',
+                        foreignField: '_id',
+                        as: 'generationRequests'
+                    }
+                }"),
+                BsonDocument.Parse(@"{
+                    $set: {
+                        'generationRequest': { $arrayElemAt: [ '$generationRequests', 0] }
                     }
                 }"),
                 BsonDocument.Parse(@"{
                     $group: {
-                        _id: ""$aimCode"",
-                        ""totalCount"": { $sum: ""$initialCount"" },
-                        ""availableCount"": { $sum: { $ifNull:[ ""$count"", ""$initialCount"" ] } }
+                        _id: '$aimCode',
+                        'totalCount': { $sum: '$initialCount' },
+                        'availableCount': { $sum: { $ifNull:[ '$count', '$initialCount' ] } },
+                        'redeemedCount': {
+                            $sum: { 
+                                $cond: {
+                                    if: '$generationRequest.performedAt',
+                                    then: '$initialCount',
+                                    else: 0
+                                }
+                            }
+                        }
+                    }
+                }"),
+                BsonDocument.Parse(@"{
+                    $sort: {
+                        _id: 1
                     }
                 }")
             };

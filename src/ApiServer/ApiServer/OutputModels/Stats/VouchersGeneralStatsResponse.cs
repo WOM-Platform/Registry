@@ -6,12 +6,14 @@ namespace WomPlatform.Web.Api.OutputModels.Stats {
 
         public long TotalVouchersGenerated { get; set; }
 
-        public long TotalVouchersClaimed { get; set; }
+        public long TotalVouchersRedeemed { get; set; }
 
         public long TotalVouchersAvailable { get; set; }
 
         public class VouchersByAimStatsResponse {
             public long Generated { get; set; }
+
+            public long Redeemed { get; set; }
 
             public long Available { get; set; }
         }

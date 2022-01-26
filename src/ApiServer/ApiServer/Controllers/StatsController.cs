@@ -40,12 +40,13 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new VouchersGeneralStatsResponse {
                 TotalVouchersGenerated = results.Sum(a => a.TotalCount),
                 TotalVouchersAvailable = results.Sum(a => a.AvailableCount),
-                TotalVouchersClaimed = 0, // TODO
+                TotalVouchersRedeemed = results.Sum(a => a.RedeemedCount),
                 Aims = results.ToDictionary(
                     a => a.AimCode,
                     a => new VouchersGeneralStatsResponse.VouchersByAimStatsResponse {
                         Generated = a.TotalCount,
-                        Available = a.AvailableCount
+                        Available = a.AvailableCount,
+                        Redeemed = a.RedeemedCount
                     }
                 )
             });
