@@ -37,16 +37,21 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> GetVoucherStats() {
             var results = await _statsService.GetVoucherCountByAim();
 
+            var totalGenerated = results.Sum(a => a.TotalCount);
+            var totalAvailable = results.Sum(a => a.AvailableCount);
+
             return Ok(new VouchersGeneralStatsResponse {
-                TotalVouchersGenerated = results.Sum(a => a.TotalCount),
-                TotalVouchersAvailable = results.Sum(a => a.AvailableCount),
+                TotalVouchersGenerated = totalGenerated,
                 TotalVouchersRedeemed = results.Sum(a => a.RedeemedCount),
+                TotalVouchersAvailable = totalAvailable,
+                TotalVouchersSpent = totalGenerated - totalAvailable,
                 Aims = results.ToDictionary(
                     a => a.AimCode,
                     a => new VouchersGeneralStatsResponse.VouchersByAimStatsResponse {
                         Generated = a.TotalCount,
+                        Redeemed = a.RedeemedCount,
                         Available = a.AvailableCount,
-                        Redeemed = a.RedeemedCount
+                        Spent = a.TotalCount - a.AvailableCount
                     }
                 )
             });
