@@ -34,20 +34,23 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <remarks>
         /// Sample request:
-        ///     POST /v1/version-check?platform=Android&currentVersion=0.2.4
+        /// 
+        ///     POST /v1/version-check?platform=Android&amp;currentVersion=0.2.4
         ///
         /// Sample response:
-        /// {
-        ///     "status: "ok|shouldUpdate|mustUpdate",
-        ///     "latestVersion": "0.2.4"
-        /// }
+        /// 
+        ///     {
+        ///         "status: "ok|shouldUpdate|mustUpdate",
+        ///         "latestVersion": "0.2.4"
+        ///     }
         /// </remarks>
         /// <param name="platform">Application platform (Android or iOS).</param>
         /// <param name="currentVersion">Current version of the application, as a semantic version string.</param>
         [HttpPost]
         [AllowAnonymous]
         [ProducesResponseType(typeof(VersionCheckResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+        [MapToApiVersion("1.0")]
         public IActionResult Index(
             [FromQuery] string platform,
             [FromQuery] string currentVersion
