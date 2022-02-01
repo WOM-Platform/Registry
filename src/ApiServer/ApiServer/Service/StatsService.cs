@@ -33,6 +33,12 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        private IMongoCollection<GenerationRequest> GenerationRequestCollection {
+            get {
+                return MainDatabase.GetCollection<GenerationRequest>("GenerationRequests");
+            }
+        }
+
         public class VoucherCountByAimResult {
             [BsonId]
             public string AimCode;
@@ -88,6 +94,44 @@ namespace WomPlatform.Web.Api.Service {
             };
 
             return await VoucherCollection.Aggregate(pipeline).ToListAsync();
+        }
+
+        public class VoucherCountBySourceResult {
+            [BsonId]
+            public int Id;
+            [BsonElement("totalCount")]
+            public long TotalCount;
+            [BsonElement("redeemedCount")]
+            public long RedeemedCount;
+        }
+
+        public async Task<VoucherCountBySourceResult> GetVoucherCountBySource(ObjectId sourceId) {
+            PipelineDefinition<GenerationRequest, VoucherCountBySourceResult> pipeline = new BsonDocument[] {
+                BsonDocument.Parse(string.Format(@"{{
+                    $match: {{
+                        'sourceId': ObjectId('{0}')
+                    }}
+                }}", sourceId.ToString())),
+                BsonDocument.Parse(@"{
+                    $group: {
+                        _id: 1,
+                        'totalCount': {
+                            $sum: '$amount'
+                        },
+                        'redeemedCount': {
+                            $sum: {
+                                $cond: {
+                                    if: '$performedAt',
+                                    then: '$amount',
+                                    else: 0
+                                }
+                            }
+                        }
+                    }
+                }")
+            };
+
+            return await GenerationRequestCollection.Aggregate(pipeline).SingleOrDefaultAsync();
         }
 
     }
