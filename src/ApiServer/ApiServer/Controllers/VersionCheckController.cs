@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -27,14 +29,32 @@ namespace WomPlatform.Web.Api.Controllers {
             "android"
         };
 
+        /// <summary>
+        /// Check application version.
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///     POST /v1/version-check?platform=Android&currentVersion=0.2.4
+        ///
+        /// Sample response:
+        /// {
+        ///     "status: "ok|shouldUpdate|mustUpdate",
+        ///     "latestVersion": "0.2.4"
+        /// }
+        /// </remarks>
+        /// <param name="platform">Application platform (Android or iOS).</param>
+        /// <param name="currentVersion">Current version of the application, as a semantic version string.</param>
         [HttpPost]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(VersionCheckResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult Index(
             [FromQuery] string platform,
-            [FromQuery] Version currentVersion
+            [FromQuery] string currentVersion
         ) {
             platform = platform?.ToLowerInvariant() ?? string.Empty;
 
-            if(!SupportedPlatforms.Any(p => p.Equals(platform)) || currentVersion == null) {
+            if(!SupportedPlatforms.Any(p => p.Equals(platform)) || !Version.TryParse(currentVersion, out Version inputVersion)) {
                 return BadRequest();
             }
 
@@ -46,8 +66,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(new VersionCheckResponse {
                 LatestVersion = latestVersion,
-                Status = (currentVersion < minimumVersion) ? VersionCheckResponse.UpdateStatus.MustUpdate :
-                    (currentVersion < latestVersion) ? VersionCheckResponse.UpdateStatus.ShouldUpdate :
+                Status = (inputVersion < minimumVersion) ? VersionCheckResponse.UpdateStatus.MustUpdate :
+                    (inputVersion < latestVersion) ? VersionCheckResponse.UpdateStatus.ShouldUpdate :
                     VersionCheckResponse.UpdateStatus.Ok
             });
         }
