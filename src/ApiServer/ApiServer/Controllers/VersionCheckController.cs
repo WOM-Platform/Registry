@@ -40,7 +40,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Sample response:
         /// 
         ///     {
-        ///         "status: "ok|shouldUpdate|mustUpdate",
+        ///         "status: "Ok|ShouldUpdate|MustUpdate",
         ///         "latestVersion": "0.2.4"
         ///     }
         /// </remarks>
