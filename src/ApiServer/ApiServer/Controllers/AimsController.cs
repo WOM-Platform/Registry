@@ -11,8 +11,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Provides access to a list of aims.
     /// </summary>
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/aims")]
+    [Route("v1/aims")]
     [OperationsTags("Aims")]
     public class AimsController : BaseRegistryController {
 
@@ -35,7 +34,6 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        [MapToApiVersion("1.0")]
         public async Task<IActionResult> List() {
             var aims = await _mongo.GetAims();
             return Ok(from a in aims

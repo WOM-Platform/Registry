@@ -15,8 +15,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Provides access to a list of aims.
     /// </summary>
-    [ApiVersion("2")]
-    [Route("v{version:apiVersion}/aims")]
+    [Route("v2/aims")]
     [OperationsTags("Aims")]
     public class AimsControllerV2 : BaseRegistryController {
 
@@ -56,7 +55,6 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
-        [MapToApiVersion("2.0")]
         public async Task<IActionResult> ListV2() {
             var aims = await _mongo.GetAims();
 
@@ -107,7 +105,6 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet("nested")]
         [HttpHead("nested")]
         [ChangeLog("aim-list")]
-        [MapToApiVersion("2.0")]
         public async Task<IActionResult> ListNestedV2() {
             var aims = await _mongo.GetAims();
 

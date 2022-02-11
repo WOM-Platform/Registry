@@ -11,7 +11,6 @@ using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiVersionNeutral]
     [Route("v1/map")]
     public class MapController : BaseRegistryController {
 

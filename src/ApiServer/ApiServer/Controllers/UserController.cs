@@ -19,8 +19,7 @@ using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/user")]
+    [Route("v1/user")]
     [RequireHttps]
     [OperationsTags("User and session management")]
     public class UserController : BaseRegistryController {

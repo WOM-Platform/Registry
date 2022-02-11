@@ -14,8 +14,7 @@ using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/voucher")]
+    [Route("v1/voucher")]
     [OperationsTags("Voucher generation protocol", "Operations")]
     public class VoucherController : BaseRegistryController {
 
