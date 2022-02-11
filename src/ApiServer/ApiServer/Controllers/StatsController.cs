@@ -13,8 +13,7 @@ using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/stats")]
+    [Route("v1/stats")]
     [OperationsTags("Stats and info")]
     public class StatsController : BaseRegistryController {
 

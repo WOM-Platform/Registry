@@ -16,7 +16,6 @@ using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiVersionNeutral]
     [Route("debug")]
     [RequireHttps]
     [ApiExplorerSettings(IgnoreApi = true)]

@@ -10,8 +10,7 @@ using WomPlatform.Web.Api.OutputModels.VersionCheck;
 
 namespace WomPlatform.Web.Api.Controllers {
 
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/version-check")]
+    [Route("v1/version-check")]
     [OperationsTags("Application configuration")]
     public class VersionCheckController : BaseRegistryController {
 
@@ -50,7 +49,6 @@ namespace WomPlatform.Web.Api.Controllers {
         [AllowAnonymous]
         [ProducesResponseType(typeof(VersionCheckResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-        [MapToApiVersion("1.0")]
         public IActionResult Index(
             [FromQuery] string platform,
             [FromQuery] string currentVersion
