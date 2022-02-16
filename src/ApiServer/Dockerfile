@@ -21,6 +21,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/ApiServer/out ./
 
+# Fix console logging
+ENV Logging__Console__FormatterName=
+
 # Run on localhost:8779
 ENV ASPNETCORE_URLS http://+:8779
 EXPOSE 8779
