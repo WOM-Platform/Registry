@@ -40,7 +40,7 @@ When providing a message payload that cannot be decrypted with the Registry's pu
 ## Table of problem types
 
 | Type | Status | Default title | Scenario | Additional parameters |
-| --- | --- | --- | --- |
+| --- | --- | --- | --- | --- |
 | `wrong-parameter` | 422 | Request parameter not valid | Some parameter of the operation is not valid. | None. |
 | `request-void` | 410 | Request instance is void | Voucher request has been performed or has been canceled. Payment request has been performed or has been canceled. | None. |
 | `source-not-found` | 404 | Source with the specified ID does not exist | The instrument that has requested the voucher generation does not exist. | None. |
