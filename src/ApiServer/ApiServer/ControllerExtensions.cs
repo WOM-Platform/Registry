@@ -64,7 +64,7 @@ namespace WomPlatform.Web.Api {
                 new ProblemDetails {
                     Status = 401,
                     Type = "source-verification-failed",
-                    Title = "Failed to verifiy source identity"
+                    Title = "Failed to verify source identity"
                 }
             );
         }
