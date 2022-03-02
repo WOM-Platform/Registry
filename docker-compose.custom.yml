@@ -2,8 +2,6 @@
 version: '3'
 
 volumes:
-  wom_registry_database_prod:
-    external: true
   wom_registry_mongodb_prod:
     external: true
 
