@@ -24,23 +24,8 @@ services:
     - "traefik.link.port=8779"
     - "traefik.link.frontend.rule=Host:wom.social;PathPrefix:/payment,/vouchers"
     - "traefik.link.frontend.entryPoints=http,https"
+    - "traefik.link.redirect.entryPoint=https"
     restart: unless-stopped
-
-  database:
-    volumes:
-    - wom_registry_database_prod:/var/lib/mysql:rw
-    restart: unless-stopped
-
-  database-manager:
-    environment:
-    - "PMA_ABSOLUTE_URI=https://wom.social/phpmyadmin/"
-    labels:
-    - "traefik.enable=true"
-    - "traefik.docker.network=web"
-    - "traefik.protocol=http"
-    - "traefik.port=80"
-    - "traefik.frontend.rule=Host:wom.social;PathPrefixStrip:/phpmyadmin"
-    - "traefik.frontend.entryPoints=https"
 
   mongo:
     volumes:

@@ -2,7 +2,7 @@ version: '3'
 
 services:
   mongo:
-    image: mongo:4.4.5
+    image: mongo:5.0
     ports:
     - "1234:27017"
     env_file: config.env
