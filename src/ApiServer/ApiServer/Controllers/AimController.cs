@@ -1,5 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -27,12 +28,19 @@ namespace WomPlatform.Web.Api.Controllers {
             _mongo = mongo;
         }
 
+        public record AimShowOutput(
+            string Code,
+            Dictionary<string, string> Titles
+        );
+
         /// <summary>
         /// Retrieve information about an aim.
         /// </summary>
         /// <param name="code">Aim code (ex. 'H').</param>
         [HttpGet("{*code}")]
         [ChangeLog("aim-list")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AimShowOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> Show(string code) {
             var cleanCode = code.Replace("/", string.Empty);
 
@@ -41,10 +49,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            return Ok(new {
-                aim.Code,
-                aim.Titles
-            });
+            return Ok(new AimShowOutput(aim.Code, aim.Titles));
         }
 
     }

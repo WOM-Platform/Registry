@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -51,10 +52,11 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Retrieves a list of all aims recognized by the WOM Platform.
         /// </summary>
-        [Produces("application/json")]
         [HttpGet]
         [HttpHead]
         [ChangeLog("aim-list")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AimListOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> ListV2() {
             var aims = await _mongo.GetAims();
 
@@ -101,10 +103,11 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Retrieves a list of all aims recognized by the WOM Platform.
         /// </summary>
-        [Produces("application/json")]
         [HttpGet("nested")]
         [HttpHead("nested")]
         [ChangeLog("aim-list")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AimListOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> ListNestedV2() {
             var aims = await _mongo.GetAims();
 

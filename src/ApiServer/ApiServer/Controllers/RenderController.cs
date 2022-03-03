@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +17,8 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("qrcode")]
+        [Produces("image/png")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult QrCode(
             [FromQuery] string url
         ) {

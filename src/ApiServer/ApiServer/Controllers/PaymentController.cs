@@ -36,6 +36,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="payload">Payment request payload.</param>
         [HttpPost("register")]
+        [ProducesResponseType(typeof(PaymentRegisterResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Register(
             [FromBody] PaymentRegisterPayload payload
         ) {
@@ -100,6 +104,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="payload">Payment verification payload.</param>
         [HttpPost("verify")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         public async Task<IActionResult> Verify(
             [FromBody] PaymentVerifyPayload payload
         ) {
@@ -136,12 +141,11 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="payload">Payment information request payload.</param>
         [HttpPost("info")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PaymentInfoResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status410Gone)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetInformation(
             [FromBody] PaymentInfoPayload payload
         ) {
@@ -205,7 +209,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="payload">Payment confirmation payload.</param>
         [HttpPost("confirm")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PaymentConfirmResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status410Gone)]

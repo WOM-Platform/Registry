@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -41,9 +42,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM Merchants for the authenticated user.
         /// </summary>
         [HttpPost("merchant")]
-        [Produces("application/json")]
-        [RequireHttps]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AuthV2PosLoginOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> PosLoginV2() {
             Logger.LogDebug("POS login V2");
 
@@ -93,9 +95,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM Merchants for the authenticated user.
         /// </summary>
         [HttpPost("source")]
-        [Produces("application/json")]
-        [RequireHttps]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AuthV2SourceLoginOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> SourceLoginV2() {
             Logger.LogDebug("Source login V2");
 
@@ -135,6 +138,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpGet("key")]
         [Produces("text/plain")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public IActionResult GetPublicKey() {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }

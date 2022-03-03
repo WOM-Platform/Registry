@@ -38,6 +38,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="payload">Voucher generation request payload.</param>
         [HttpPost("create")]
+        [ProducesResponseType(typeof(VoucherCreateResponse), StatusCodes.Status200OK)]
         public async Task<ActionResult> Create(
             [FromBody] VoucherCreatePayload payload
         ) {
@@ -109,6 +110,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="payload">Voucher generation verification payload.</param>
         [HttpPost("verify")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         public async Task<IActionResult> Verify(
             [FromBody] VoucherVerifyPayload payload
         ) {
@@ -164,12 +166,11 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="payload">Voucher redemption payload.</param>
         [HttpPost("redeem")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(VoucherRedeemResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status410Gone)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Redeem(
             [FromBody] VoucherRedeemPayload payload
         ) {

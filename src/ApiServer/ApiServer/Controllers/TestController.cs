@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -8,16 +7,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
-using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("debug")]
-    [RequireHttps]
     [ApiExplorerSettings(IgnoreApi = true)]
     public class TestController : BaseRegistryController {
 
@@ -131,6 +127,22 @@ namespace WomPlatform.Web.Api.Controllers {
                 OtcPay = UrlGenerator.GeneratePaymentUrl(otcPay),
                 Pin = pwd
             });
+        }
+
+        [HttpGet("payment/{otc:guid}")]
+        public async Task<IActionResult> GetPaymentInfo(
+            [FromRoute] Guid otc
+        ) {
+            if(!Hosting.IsDevelopment()) {
+                return Unauthorized();
+            }
+
+            var payment = await _mongo.GetPaymentRequestByOtc(otc);
+            if(payment == null) {
+                return NotFound();
+            }
+
+            return Ok(payment);
         }
 
     }

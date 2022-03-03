@@ -70,7 +70,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="input">User registration payload.</param>
         [HttpPost("register")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(UserOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(UserRegisterInput input) {
@@ -124,7 +124,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">User ID.</param>
         [HttpGet("{id}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
@@ -153,9 +153,9 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="id">User ID.</param>
         /// <param name="input">User information payload.</param>
-        [HttpPatch("{id}")]
+        [HttpPut("{id}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateInformation(
@@ -194,6 +194,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
 
+            // TODO: should return user information
             return Ok();
         }
 
@@ -203,8 +204,8 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">User ID.</param>
         [HttpPost("{id}/request-verification")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RequestVerification(
             [FromRoute] ObjectId id
         ) {
@@ -236,9 +237,9 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="input">User verification payload.</param>
         [HttpPost("{id}/verify")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Verify(
             [FromRoute] ObjectId id,
             UserVerifyInput input
@@ -274,7 +275,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="input">Password request payload.</param>
         [HttpPost("password-reset")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         public async Task<IActionResult> RequestPasswordReset(
             UserRequestPasswordResetInput input
         ) {
@@ -300,9 +301,9 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="input">Password reset payload.</param>
         [HttpPost("{id}/password-reset")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordReset(
             [FromRoute] ObjectId id,
             UserExecutePasswordResetInput input
@@ -371,8 +372,8 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("login")]
         [AllowAnonymous]
         [ForceAuthChallenge(BasicAuthenticationSchemeOptions.SchemeName)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(UserLoginOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Login(
             [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] UserLoginInput input
         ) {

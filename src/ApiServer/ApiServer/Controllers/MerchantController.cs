@@ -63,11 +63,11 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Registers a new merchant to the service.
         /// </summary>
         /// <param name="input">Merchant registration payload.</param>
-        [HttpPut]
+        [HttpPost]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
             var existingMerchant = await _mongo.GetMerchantByFiscalCode(input.FiscalCode);
             if(existingMerchant != null) {
@@ -119,9 +119,9 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </remarks>
         [HttpGet("{id}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
         ) {
@@ -165,12 +165,12 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <remarks>
         /// Can be accessed only if logged in user is the merchant's administrator.
         /// </remarks>
-        [HttpPatch("{id}")]
+        [HttpPut("{id}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateMerchant(
             [FromRoute] ObjectId id,
             MerchantUpdateInput input
