@@ -9,7 +9,6 @@ services:
   api:
     build: ./src/ApiServer
     depends_on:
-    - database
     - mongo
     networks:
     - web
@@ -18,37 +17,8 @@ services:
     expose:
     - "8779"
 
-  database:
-    image: mysql:5.7.29
-    networks:
-    - backend
-    env_file: config.env
-
-  database-client:
-    build: ./src/MysqlClient
-    depends_on:
-    - database
-    networks:
-    - backend
-    env_file: config.env
-
-  database-manager:
-    image: phpmyadmin/phpmyadmin:latest
-    depends_on:
-    - database
-    networks:
-    - web
-    - backend
-    env_file: config.env
-    environment:
-    - "PMA_HOST=database"
-    expose:
-    - "80"
-    stdin_open: true
-    tty: true
-
   mongo:
-    image: mongo:4.4.5
+    image: mongo:4.4.12
     networks:
     - backend
     expose:

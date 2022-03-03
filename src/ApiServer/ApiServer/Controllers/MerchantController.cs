@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -42,6 +41,8 @@ namespace WomPlatform.Web.Api.Controllers {
             [MinLength(8)]
             string Name,
             [Required]
+            [MinLength(11)] // Length of Partita IVA
+            [MaxLength(16)] // Length of Codice Fiscale
             string FiscalCode,
             [Required]
             MerchantActivityType PrimaryActivity,
