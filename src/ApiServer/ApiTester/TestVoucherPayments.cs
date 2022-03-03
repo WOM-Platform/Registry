@@ -72,22 +72,22 @@ namespace ApiTester {
             int beforeCount = p.VoucherCount;
             int requestCount = (from v in vi select v.Count).Sum();
 
-            (var otcGen, var pwd) = await _instrument.RequestVouchers(vi);
-            await p.CollectVouchers(otcGen, pwd);
+            var response = await _instrument.RequestVouchers(vi);
+            await p.CollectVouchers(response.OtcGen, response.Password);
 
             Assert.AreEqual(beforeCount + requestCount, p.VoucherCount);
 
-            return (otcGen, pwd);
+            return (response.OtcGen, response.Password);
         }
 
         private async Task<(string AckUrl, Guid Otc, string Password)> Pay(Pocket p, int amount, string pocketAckUrl, SimpleFilter filter = null) {
             int beforeCount = p.VoucherCount;
 
-            (var otcPay, var pwd) = await _pos.RequestPayment(amount, pocketAckUrl, "https://example.org", filter, false);
-            var ret = await p.PayWithRandomVouchers(otcPay, pwd);
+            var response = await _pos.RequestPayment(amount, pocketAckUrl, "https://example.org", filter, false);
+            var ret = await p.PayWithRandomVouchers(response.OtcPay, response.Password);
 
             Assert.AreEqual(beforeCount - amount, p.VoucherCount);
-            return (ret, otcPay, pwd);
+            return (ret, response.OtcPay, response.Password);
         }
 
         [Test]
@@ -147,6 +147,35 @@ namespace ApiTester {
             Assert.AreEqual(voucherInfos[1].Longitude, p.Vouchers[1].Longitude);
             Assert.AreEqual(voucherInfos[1].Latitude, p.Vouchers[2].Latitude);
             Assert.AreEqual(voucherInfos[1].Longitude, p.Vouchers[2].Longitude);
+        }
+
+        [Test]
+        public async Task CreateLocationLessVouchers() {
+            var now = DateTime.UtcNow;
+
+            var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "I",
+                    Latitude = 12.34,
+                    Longitude = 23.45,
+                    Timestamp = now,
+                    CreationMode = VoucherCreatePayload.VoucherCreationMode.SetLocationOnRedeem
+                },
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "I",
+                    Latitude = 23.45,
+                    Longitude = 34.56,
+                    Timestamp = now,
+                    Count = 2,
+                    CreationMode = VoucherCreatePayload.VoucherCreationMode.SetLocationOnRedeem
+                }
+            };
+
+            var response = await _instrument.RequestVouchers(voucherInfos);
+
+            Console.WriteLine("OTC: {0}", response.OtcGen);
+            Console.WriteLine("Password: {0}", response.Password);
+            Console.WriteLine("Link: {0}", response.Link);
         }
 
         [Test]
