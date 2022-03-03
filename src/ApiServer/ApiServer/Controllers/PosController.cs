@@ -90,7 +90,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     PrivateKey = posKeys.Private.ToPemString(),
                     PublicKey = posKeys.Public.ToPemString(),
                     CreatedOn = DateTime.UtcNow,
-                    IsDummy = false
+                    IsDummy = false,
+                    IsActive = true,
                 };
                 await _mongo.CreatePos(pos);
 
@@ -159,7 +160,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="id">Merchant ID.</param>
         /// <param name="input">Updated information.</param>
-        [HttpPatch("{id}")]
+        [HttpPut("{id}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
