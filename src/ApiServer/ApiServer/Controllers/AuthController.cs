@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -38,9 +39,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM sources for the authenticated user.
         /// </summary>
         [HttpGet("sources")]
-        [Produces("application/json")]
-        [RequireHttps]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AuthSourceLoginOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> SourceLoginV1() {
             Logger.LogDebug("Source login V1");
 
@@ -70,9 +72,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM POS instances for the authenticated user.
         /// </summary>
         [HttpGet("pos")]
-        [Produces("application/json")]
-        [RequireHttps]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AuthPosLoginOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> PosLoginV1() {
             Logger.LogDebug("POS login V1");
 
@@ -87,6 +90,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 pos.Select(p => new PosLoginOutput {
                     Id = p.Id.ToString(),
                     Name = p.Name,
+                    Latitude = p.Position.Coordinates.Latitude,
+                    Longitude = p.Position.Coordinates.Longitude,
                     Url = p.Url,
                     PrivateKey = p.PrivateKey,
                     PublicKey = p.PublicKey
@@ -99,6 +104,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpGet("key")]
         [Produces("text/plain")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public IActionResult GetPublicKey() {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }

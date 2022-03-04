@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("payment/{otc}")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status301MovedPermanently)]
         public IActionResult ShowPaymentLandingPage(
             [FromRoute] Guid otc
         ) {
@@ -30,6 +32,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("vouchers/{otc}")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status301MovedPermanently)]
         public IActionResult ShowGenerationLandingPage(
             [FromRoute] Guid otc
         ) {

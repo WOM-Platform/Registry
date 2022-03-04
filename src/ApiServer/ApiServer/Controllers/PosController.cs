@@ -55,11 +55,11 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Registers a new POS to the service.
         /// </summary>
         /// <param name="input">POS registration payload.</param>
-        [HttpPut]
+        [HttpPost]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(PosOutput), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(PosRegisterInput input) {
             if(!User.GetUserId(out var loggedUserId)) {
                 return Forbid();
@@ -115,7 +115,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">POS ID.</param>
         [HttpGet("{id}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PosOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
@@ -152,7 +152,8 @@ namespace WomPlatform.Web.Api.Controllers {
             double? Latitude,
             double? Longitude,
             [Url]
-            string Url
+            string Url,
+            bool? IsActive
         );
 
         /// <summary>
@@ -200,6 +201,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
                 if(input.Url != null) {
                     pos.Url = input.Url;
+                }
+                if(input.IsActive.HasValue) {
+                    pos.IsActive = input.IsActive.Value;
                 }
                 pos.LastUpdate = DateTime.UtcNow;
 
