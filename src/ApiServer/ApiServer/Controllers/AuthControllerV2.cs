@@ -76,6 +76,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Pos = d.Item2.Select(p => new PosLoginOutput {
                         Id = p.Id.ToString(),
                         Name = p.Name,
+                        Latitude = p.Position.Coordinates.Latitude,
+                        Longitude = p.Position.Coordinates.Longitude,
                         Url = p.Url,
                         PrivateKey = p.PrivateKey,
                         PublicKey = p.PublicKey
