@@ -87,15 +87,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new AuthPosLoginOutput(
-                pos.Select(p => new PosLoginOutput {
-                    Id = p.Id.ToString(),
-                    Name = p.Name,
-                    Latitude = p.Position.Coordinates.Latitude,
-                    Longitude = p.Position.Coordinates.Longitude,
-                    Url = p.Url,
-                    PrivateKey = p.PrivateKey,
-                    PublicKey = p.PublicKey
-                }).ToArray()
+                pos.Select(p => p.ToLoginOutput()).ToArray()
             ));
         }
 

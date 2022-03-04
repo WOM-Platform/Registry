@@ -25,6 +25,19 @@
                 IsActive = pos.IsActive,
             };
         }
+
+        public static PosLoginOutput ToLoginOutput(this DatabaseDocumentModels.Pos pos) {
+            return new PosLoginOutput {
+                Id = pos.Id.ToString(),
+                Name = pos.Name,
+                Latitude = pos.Position.Coordinates.Latitude,
+                Longitude = pos.Position.Coordinates.Longitude,
+                Url = pos.Url,
+                IsActive = pos.IsActive,
+                PrivateKey = pos.PrivateKey,
+                PublicKey = pos.PublicKey,
+            };
+        }
     }
 
 }
