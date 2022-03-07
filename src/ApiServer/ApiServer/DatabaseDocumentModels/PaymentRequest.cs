@@ -41,6 +41,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public string Password { get; set; }
 
         [BsonElement("ackUrlPocket")]
+        [BsonIgnoreIfNull]
         public string AckUrlPocket { get; set; }
 
         [BsonElement("ackUrlPos")]
