@@ -1,24 +1,33 @@
-﻿namespace WomPlatform.Web.Api.OutputModels {
+﻿using System.Text.Json.Serialization;
+
+namespace WomPlatform.Web.Api.OutputModels {
 
     public record MerchantOutput {
-
         public string Id { get; init; }
-        public string Name { get; init; }
-        public string FiscalCode { get; init; }
-        public MerchantActivityType PrimaryActivity { get; init; }
-        public string Address { get; init; }
-        public string ZipCode { get; init; }
-        public string City { get; init; }
-        public string Country { get; init; }
-        public string Description { get; init; }
-        public string Url { get; init; }
 
+        public string Name { get; init; }
+
+        public string FiscalCode { get; init; }
+
+        public MerchantActivityType PrimaryActivity { get; init; }
+
+        public string Address { get; init; }
+
+        public string ZipCode { get; init; }
+
+        public string City { get; init; }
+
+        public string Country { get; init; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public string Description { get; init; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public string Url { get; init; }
     }
 
     public record MerchantAuthOutput : MerchantOutput {
-
         public PosLoginOutput[] Pos { get; init; }
-
     }
 
     public static class MerchantOutputHelpers {
