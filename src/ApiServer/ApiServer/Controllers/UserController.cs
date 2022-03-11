@@ -236,7 +236,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">User ID.</param>
         /// <param name="input">User verification payload.</param>
         [HttpPost("{id}/verify")]
-        [Authorize]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]

@@ -11,6 +11,7 @@ using WomPlatform.Web.Api.OutputModels.VersionCheck;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/version-check")]
+    [AllowAnonymous]
     [OperationsTags("Application configuration")]
     public class VersionCheckController : BaseRegistryController {
 
@@ -46,7 +47,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="platform">Application platform (Android or iOS).</param>
         /// <param name="currentVersion">Current version of the application, as a semantic version string.</param>
         [HttpPost]
-        [AllowAnonymous]
         [ProducesResponseType(typeof(VersionCheckResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
         public IActionResult Index(
