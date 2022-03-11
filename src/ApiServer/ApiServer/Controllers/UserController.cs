@@ -241,12 +241,8 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Verify(
             [FromRoute] ObjectId id,
-            UserVerifyInput input
+            [FromQuery] UserVerifyInput input
         ) {
-            if(!User.UserIdEquals(id)) {
-                return NotFound();
-            }
-
             var user = await _mongo.GetUserById(id);
             if(user == null) {
                 return NotFound();
