@@ -140,7 +140,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record GetAnonymousCredentialsOutput(
             string PosId,
-            string PrivateKey
+            string posPrivateKey
         );
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
-using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.Service;
 
@@ -17,6 +17,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// </summary>
     [Route("v1/auth")]
     [OperationsTags("Authentication")]
+    [Obsolete]
     public class AuthController : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
