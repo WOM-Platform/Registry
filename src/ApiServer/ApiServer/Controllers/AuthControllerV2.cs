@@ -146,7 +146,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Retrieves the auth information (ID and private key) used by the anonymous POS.
         /// </summary>
-        [HttpGet("key")]
+        [HttpGet("anonymous")]
         [Produces("application/json")]
         [ProducesResponseType(typeof(GetAnonymousCredentialsOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAnonymousCredentials() {
