@@ -132,6 +132,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves the public key used by the WOM Registry.
         /// </summary>
         [HttpGet("key")]
+        [RequireHttps]
         [Produces("text/plain")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public IActionResult GetPublicKey() {
@@ -147,6 +148,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves the auth information (ID and private key) used by the anonymous POS.
         /// </summary>
         [HttpGet("anonymous")]
+        [RequireHttps]
         [Produces("application/json")]
         [ProducesResponseType(typeof(GetAnonymousCredentialsOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAnonymousCredentials() {
