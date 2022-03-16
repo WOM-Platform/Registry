@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.Service;
@@ -135,6 +136,33 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public IActionResult GetPublicKey() {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
+        }
+
+        public record GetAnonymousCredentialsOutput(
+            string PosId,
+            string PrivateKey
+        );
+
+        /// <summary>
+        /// Retrieves the auth information (ID and private key) used by the anonymous POS.
+        /// </summary>
+        [HttpGet("key")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(GetAnonymousCredentialsOutput), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAnonymousCredentials() {
+            var anonymousSection = Configuration.GetSection("AnonymousSetup");
+            var posId = anonymousSection["Id"];
+
+            if(!ObjectId.TryParse(posId, out var id)) {
+                return NotFound();
+            }
+
+            var pos = await _mongo.GetPosById(id);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            return Ok(new GetAnonymousCredentialsOutput(posId, pos.PrivateKey));
         }
 
     }
