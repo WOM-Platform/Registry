@@ -81,7 +81,7 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 var merchant = new Merchant {
                     Name = input.Name,
-                    FiscalCode = input.FiscalCode,
+                    FiscalCode = input.FiscalCode.ToUpperInvariant(),
                     PrimaryActivityType = input.PrimaryActivity,
                     Address = input.Address,
                     ZipCode = input.ZipCode,
