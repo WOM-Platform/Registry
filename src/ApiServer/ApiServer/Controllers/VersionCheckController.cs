@@ -12,6 +12,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/version-check")]
     [AllowAnonymous]
+    [RequireHttps]
     [OperationsTags("Application configuration")]
     public class VersionCheckController : BaseRegistryController {
 
