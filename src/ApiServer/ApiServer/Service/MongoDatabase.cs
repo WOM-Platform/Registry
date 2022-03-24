@@ -131,7 +131,10 @@ namespace WomPlatform.Web.Api.Service {
 
         public Task<Merchant> GetMerchantByFiscalCode(string fiscalCode) {
             var filter = Builders<Merchant>.Filter.Eq(m => m.FiscalCode, fiscalCode);
-            return MerchantCollection.Find(filter).SingleOrDefaultAsync();
+            var options = new FindOptions {
+                Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false)
+            };
+            return MerchantCollection.Find(filter, options).SingleOrDefaultAsync();
         }
 
         /// <summary>
@@ -301,7 +304,10 @@ namespace WomPlatform.Web.Api.Service {
 
         public Task<User> GetUserByEmail(string email) {
             var filter = Builders<User>.Filter.Eq(u => u.Email, email);
-            return UserCollection.Find(filter).SingleOrDefaultAsync();
+            var options = new FindOptions {
+                Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false)
+            };
+            return UserCollection.Find(filter, options).SingleOrDefaultAsync();
         }
 
         public Task CreateUser(User user) {
