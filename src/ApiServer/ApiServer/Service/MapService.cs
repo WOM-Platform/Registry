@@ -34,12 +34,16 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public Task<List<Pos>> FetchPosWithin(double lowerLeftLong, double lowerLeftLat, double upperRightLong, double upperRightLat) {
-            var geoFilter = Builders<Pos>.Filter.GeoWithinBox(p => p.Position,
-                lowerLeftLong, lowerLeftLat,
-                upperRightLong, upperRightLat
+            var filter = Builders<Pos>.Filter.And(
+                Builders<Pos>.Filter.Ne(p => p.IsDummy, true), // Not dummy
+                Builders<Pos>.Filter.Ne(p => p.IsActive, false), // Not inactive
+                Builders<Pos>.Filter.GeoWithinBox(p => p.Position,
+                    lowerLeftLong, lowerLeftLat,
+                    upperRightLong, upperRightLat
+                ) // Within boundaries
             );
 
-            return PosCollection.Find(geoFilter).ToListAsync();
+            return PosCollection.Find(filter).ToListAsync();
         }
 
     }
