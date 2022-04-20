@@ -18,7 +18,7 @@ services:
     - "8779"
 
   mongo:
-    image: mongo:4.4.12
+    image: mongo:4.4.13
     networks:
     - backend
     expose:
