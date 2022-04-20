@@ -132,16 +132,16 @@ namespace WomPlatform.Web.Api.Service {
                 var pos = searchNear.Value;
 
                 var pipeline = new EmptyPipelineDefinition<Pos>()
-                    .Match(basicFilter)
-                    .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{
-                            $geoNear: {
-                              'near': { 'type': 'Point', 'coordinates': [ {0}, {1} ] },
+                    .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
+                            $geoNear: {{
+                              'near': {{ 'type': 'Point', 'coordinates': [ {0}, {1} ] }},
                               'distanceField': 'distance',
                               'spherical': true,
-                            }
-                        }", pos.Longitude, pos.Latitude)))
+                            }}
+                        }}", pos.Longitude, pos.Latitude)))
+                    .Match(basicFilter)
                     .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(@"{
-                            sort: {
+                            $sort: {
                               'distance': -1,
                             }
                         }"))

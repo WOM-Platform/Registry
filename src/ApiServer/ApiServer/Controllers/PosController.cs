@@ -136,7 +136,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record PosListOutput(
-            IList<Pos> Pos,
+            PosOutput[] Pos,
             int Page,
             int PageSize,
             bool HasPrevious,
@@ -160,7 +160,8 @@ namespace WomPlatform.Web.Api.Controllers {
             (var results, var count) = await _posService.ListPos(near, page, pageSize, orderBy);
 
             return Ok(new PosListOutput(
-                results,
+                (from pos in results
+                 select pos.ToOutput()).ToArray(),
                 page,
                 pageSize,
                 page > 1,
