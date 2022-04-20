@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -132,6 +133,40 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return Ok(pos.ToOutput());
+        }
+
+        public record PosListOutput(
+            IList<Pos> Pos,
+            int Page,
+            int PageSize,
+            bool HasPrevious,
+            bool HasNext,
+            long TotalCount
+        );
+
+        [HttpGet]
+        [ProducesResponseType(typeof(PosListOutput), StatusCodes.Status200OK)]
+        public async Task<IActionResult> List(
+            [FromQuery] double? latitude,
+            [FromQuery] double? longitude,
+            [FromQuery] int page = 0,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] [DefaultValue(PosService.PosListOrder.Name)] PosService.PosListOrder orderBy = PosService.PosListOrder.Name
+        ) {
+            GeoCoords? near = (latitude.HasValue && longitude.HasValue) ?
+                new GeoCoords { Latitude = latitude.Value, Longitude = longitude.Value } :
+                null;
+
+            (var results, var count) = await _posService.ListPos(near, page, pageSize, orderBy);
+
+            return Ok(new PosListOutput(
+                results,
+                page,
+                pageSize,
+                page > 1,
+                count > (page * pageSize),
+                count
+            ));
         }
 
         /// <summary>

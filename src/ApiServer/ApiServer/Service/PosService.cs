@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -105,6 +107,58 @@ namespace WomPlatform.Web.Api.Service {
         public Task<List<Pos>> GetPosByMerchant(ObjectId merchantId) {
             var posFilter = Builders<Pos>.Filter.Eq(p => p.MerchantId, merchantId);
             return PosCollection.Find(posFilter).ToListAsync();
+        }
+
+        public enum PosListOrder {
+            Name,
+            Nearby,
+            CreatedOn,
+        }
+
+        public async Task<(List<Pos> Results, long Total)> ListPos(
+            GeoCoords? searchNear, int page, int pageSize, PosListOrder orderBy
+        ) {
+            var basicFilter = Builders<Pos>.Filter.And(
+                Builders<Pos>.Filter.Ne(p => p.IsActive, false),
+                Builders<Pos>.Filter.Ne(p => p.IsDummy, true)
+            );
+
+            var count = await PosCollection.CountDocumentsAsync(basicFilter);
+
+            if(orderBy == PosListOrder.Nearby) {
+                if(!searchNear.HasValue) {
+                    throw new ArgumentException("A search point must be supplied when ordering by distance");
+                }
+                var pos = searchNear.Value;
+
+                var pipeline = new EmptyPipelineDefinition<Pos>()
+                    .Match(basicFilter)
+                    .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{
+                            $geoNear: {
+                              'near': { 'type': 'Point', 'coordinates': [ {0}, {1} ] },
+                              'distanceField': 'distance',
+                              'spherical': true,
+                            }
+                        }", pos.Longitude, pos.Latitude)))
+                    .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(@"{
+                            sort: {
+                              'distance': -1,
+                            }
+                        }"))
+                    .Skip((page, pageSize).GetSkip()).Limit(pageSize);
+
+                return (await PosCollection.Aggregate(pipeline).ToListAsync(), count);
+            }
+            else {
+                var q = PosCollection.Find(basicFilter);
+                var sorted = orderBy switch {
+                    PosListOrder.Name => q.SortBy(p => p.Name),
+                    PosListOrder.CreatedOn => q.SortByDescending(p => p.CreatedOn),
+                    _ => throw new ArgumentException("Unsupported order clause"),
+                };
+
+                return (await sorted.ToListAsync(), count);
+            }
         }
 
         /// <summary>
