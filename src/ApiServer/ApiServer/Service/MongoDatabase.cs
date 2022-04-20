@@ -114,56 +114,6 @@ namespace WomPlatform.Web.Api.Service {
             return GenerationCollection.ReplaceOneAsync(filter, request);
         }
 
-        private IMongoCollection<Merchant> MerchantCollection {
-            get {
-                return MainDatabase.GetCollection<Merchant>("Merchants");
-            }
-        }
-
-        public Task CreateMerchant(Merchant merchant) {
-            return MerchantCollection.InsertOneAsync(merchant);
-        }
-
-        public Task<Merchant> GetMerchantById(ObjectId id) {
-            var filter = Builders<Merchant>.Filter.Eq(m => m.Id, id);
-            return MerchantCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        public Task<Merchant> GetMerchantByFiscalCode(string fiscalCode) {
-            var filter = Builders<Merchant>.Filter.Eq(m => m.FiscalCode, fiscalCode);
-            var options = new FindOptions {
-                Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false)
-            };
-            return MerchantCollection.Find(filter, options).SingleOrDefaultAsync();
-        }
-
-        /// <summary>
-        /// Gets a list of merchants that the user controls as an administrator.
-        /// </summary>
-        public Task<List<Merchant>> GetMerchantsWithAdminControl(ObjectId userId) {
-            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorIds, userId);
-            return MerchantCollection.Find(merchFilter).ToListAsync();
-        }
-
-        /// <summary>
-        /// Gets a list of merchants that the user controls as a POS user.
-        /// </summary>
-        public Task<List<Merchant>> GetMerchantsWithPosControl(ObjectId userId) {
-            var merchFilter = Builders<Merchant>.Filter.Or(
-                Builders<Merchant>.Filter.AnyEq(m => m.AdministratorIds, userId),
-                Builders<Merchant>.Filter.AnyEq(m => m.PosUserIds, userId)
-            );
-            return MerchantCollection.Find(merchFilter).ToListAsync();
-        }
-
-        /// <summary>
-        /// Replace an existing merchant, by ID.
-        /// </summary>
-        public Task ReplaceMerchant(Merchant merchant) {
-            var filter = Builders<Merchant>.Filter.Eq(u => u.Id, merchant.Id);
-            return MerchantCollection.ReplaceOneAsync(filter, merchant);
-        }
-
         private IMongoCollection<PaymentRequest> PaymentCollection {
             get {
                 return MainDatabase.GetCollection<PaymentRequest>("PaymentRequests");
@@ -184,87 +134,6 @@ namespace WomPlatform.Web.Api.Service {
             return PaymentCollection.InsertOneAsync(paymentRequest);
         }
 
-        private IMongoCollection<Pos> PosCollection {
-            get {
-                return MainDatabase.GetCollection<Pos>("Pos");
-            }
-        }
-
-        public Task CreatePos(Pos pos) {
-            return PosCollection.InsertOneAsync(pos);
-        }
-
-        public Task<Pos> GetPosById(ObjectId id) {
-            var filter = Builders<Pos>.Filter.Eq(u => u.Id, id);
-            return PosCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        /// <summary>
-        /// Gets list of POS that the user controls.
-        /// </summary>
-        public async Task<List<Pos>> GetPosByUser(ObjectId userId) {
-            var merchantIds = from m in await GetMerchantsWithPosControl(userId)
-                              select m.Id;
-
-            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, merchantIds);
-            return await PosCollection.Find(posFilter).ToListAsync();
-        }
-
-        /// <summary>
-        /// Get list of POS with position.
-        /// </summary>
-        public Task<List<Pos>> GetPosWithPosition() {
-            var filter = Builders<Pos>.Filter.And(
-                Builders<Pos>.Filter.Ne(pos => pos.IsDummy, true),
-                Builders<Pos>.Filter.Exists(pos => pos.Position, true),
-                Builders<Pos>.Filter.Ne(pos => pos.Position, null)
-            );
-            return PosCollection.Find(filter).ToListAsync();
-        }
-
-        /// <summary>
-        /// Gets list of Merchants and POS that the user controls.
-        /// </summary>
-        public async Task<List<(Merchant, List<Pos>)>> GetMerchantsAndPosByUser(ObjectId userId) {
-            // Get all merchants with control
-            var merchants = await GetMerchantsWithPosControl(userId);
-
-            // Get all matching POS
-            var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants select m.Id);
-            var pos = await PosCollection.Find(posFilter).ToListAsync();
-
-            // Build nested list
-            var ret = new List<(Merchant, List<Pos>)>(merchants.Count);
-            foreach(var merchant in merchants) {
-                ret.Add((merchant, pos.Where(p => p.MerchantId == merchant.Id).ToList()));
-            }
-
-            return ret;
-        }
-
-        public Task<List<Pos>> GetPosByMerchant(ObjectId merchantId) {
-            var posFilter = Builders<Pos>.Filter.Eq(p => p.MerchantId, merchantId);
-            return PosCollection.Find(posFilter).ToListAsync();
-        }
-
-        /// <summary>
-        /// Upserts a POS synchronously.
-        /// </summary>
-        public void UpsertPosSync(Pos pos) {
-            var filter = Builders<Pos>.Filter.Eq(p => p.Id, pos.Id);
-            PosCollection.ReplaceOne(filter, pos, new ReplaceOptions {
-                IsUpsert = true
-            });
-        }
-
-        /// <summary>
-        /// Replace an existing POS, by ID.
-        /// </summary>
-        public Task ReplacePos(Pos pos) {
-            var filter = Builders<Pos>.Filter.Eq(p => p.Id, pos.Id);
-            return PosCollection.ReplaceOneAsync(filter, pos);
-        }
-
         private IMongoCollection<Source> SourceCollection {
             get {
                 return MainDatabase.GetCollection<Source>("Sources");
@@ -279,16 +148,6 @@ namespace WomPlatform.Web.Api.Service {
         public Task<List<Source>> GetSourcesByUser(ObjectId userId) {
             var filter = Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, userId);
             return SourceCollection.Find(filter).ToListAsync();
-        }
-
-        /// <summary>
-        /// Upserts a source synchronously.
-        /// </summary>
-        public void UpsertSourceSync(Source source) {
-            var filter = Builders<Source>.Filter.Eq(s => s.Id, source.Id);
-            SourceCollection.ReplaceOne(filter, source, new ReplaceOptions {
-                IsUpsert = true
-            });
         }
 
         private IMongoCollection<User> UserCollection {

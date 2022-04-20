@@ -168,15 +168,18 @@ namespace WomPlatform.Web.Api {
             services.AddTransient<CryptoProvider>();
             services.AddScoped<Operator>();
             services.AddScoped<MongoDatabase>();
+            services.AddScoped<MerchantService>();
+            services.AddScoped<PosService>();
             services.AddScoped<StatsService>();
             services.AddScoped<MapService>();
+            services.AddScoped<SetupService>();
             services.AddMailComposer();
         }
 
         public void Configure(
             IApplicationBuilder app,
             IWebHostEnvironment env,
-            MongoDatabase mongo,
+            SetupService setupService,
             ILogger<Startup> logger
         ) {
             if (env.IsDevelopment()) {
@@ -189,7 +192,7 @@ namespace WomPlatform.Web.Api {
 
                 var devSourceSection = devSection.GetSection("Source");
                 var devSourceId = devSourceSection["Id"];
-                mongo.UpsertSourceSync(new DatabaseDocumentModels.Source {
+                setupService.UpsertSourceSync(new DatabaseDocumentModels.Source {
                     Id = new MongoDB.Bson.ObjectId(devSourceId),
                     Name = "Development source",
                     PrivateKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pem"),
@@ -199,7 +202,7 @@ namespace WomPlatform.Web.Api {
 
                 var devPosSection = devSection.GetSection("Pos");
                 var devPosId = devPosSection["Id"];
-                mongo.UpsertPosSync(new DatabaseDocumentModels.Pos {
+                setupService.UpsertPosSync(new DatabaseDocumentModels.Pos {
                     Id = new MongoDB.Bson.ObjectId(devPosId),
                     Name = "Development POS",
                     PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),

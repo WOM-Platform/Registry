@@ -17,10 +17,12 @@ namespace WomPlatform.Web.Api.Controllers {
     public class PaymentController : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly PosService _posService;
         private readonly Operator _operator;
 
         public PaymentController(
             MongoDatabase mongo,
+            PosService posService,
             Operator @operator,
             IConfiguration configuration,
             CryptoProvider crypto,
@@ -28,6 +30,7 @@ namespace WomPlatform.Web.Api.Controllers {
             ILogger<PaymentController> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _posService = posService;
             _operator = @operator;
         }
 
@@ -53,7 +56,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.PosId, payload.Nonce
             );
 
-            var pos = await _mongo.GetPosById(new ObjectId(payload.PosId));
+            var pos = await _posService.GetPosById(new ObjectId(payload.PosId));
             if (pos == null) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
                 return this.PosNotFound();
@@ -173,7 +176,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     return NotFound();
                 }
 
-                var pos = await _mongo.GetPosById(payment.PosId);
+                var pos = await _posService.GetPosById(payment.PosId);
 
                 Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.Otc, pos.Id, payment.Amount);
 

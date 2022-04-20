@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,15 +24,21 @@ namespace WomPlatform.Web.Api.Controllers {
     public class PosController : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly MerchantService _merchantService;
+        private readonly PosService _posService;
 
         public PosController(
             MongoDatabase mongo,
+            MerchantService merchantService,
+            PosService posService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<PosController> logger
         ) : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _merchantService = merchantService;
+            _posService = posService;
         }
 
         /// <summary>
@@ -65,7 +72,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var owningMerchant = await _mongo.GetMerchantById(input.OwnerMerchantId);
+            var owningMerchant = await _merchantService.GetMerchantById(input.OwnerMerchantId);
             if(owningMerchant == null) {
                 return Problem("Owning merchant does not exist");
             }
@@ -93,7 +100,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     IsDummy = false,
                     IsActive = true,
                 };
-                await _mongo.CreatePos(pos);
+                await _posService.CreatePos(pos);
 
                 return CreatedAtAction(
                     nameof(GetInformation),
@@ -114,30 +121,14 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="id">POS ID.</param>
         [HttpGet("{id}")]
-        [Authorize]
         [ProducesResponseType(typeof(PosOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
         ) {
-            var pos = await _mongo.GetPosById(id);
+            var pos = await _posService.GetPosById(id);
             if(pos == null) {
                 return NotFound();
-            }
-
-            var merchant = await _mongo.GetMerchantById(pos.MerchantId);
-            if(merchant == null) {
-                Logger.LogWarning("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return NotFound();
-            }
-
-            // Forbid if logged user is not in admin list OR POS user list
-            if(!User.GetUserId(out var loggedUserId) ||
-               !(
-                   merchant.AdministratorIds.Contains(loggedUserId) || merchant.PosUserIds.Contains(loggedUserId)
-               )) {
-                return Forbid();
             }
 
             return Ok(pos.ToOutput());
@@ -170,12 +161,12 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id,
             PosUpdateInput input
         ) {
-            var pos = await _mongo.GetPosById(id);
+            var pos = await _posService.GetPosById(id);
             if(pos == null) {
                 return NotFound();
             }
 
-            var merchant = await _mongo.GetMerchantById(pos.MerchantId);
+            var merchant = await _merchantService.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
                 Logger.LogWarning("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
                 return NotFound();
@@ -207,7 +198,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
                 pos.LastUpdate = DateTime.UtcNow;
 
-                await _mongo.ReplacePos(pos);
+                await _posService.ReplacePos(pos);
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to update POS {0}", id);

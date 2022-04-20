@@ -21,15 +21,18 @@ namespace WomPlatform.Web.Api.Controllers {
     public class AuthControllerV2 : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly PosService _posService;
 
         public AuthControllerV2(
             MongoDatabase mongo,
+            PosService posService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<AuthControllerV2> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _posService = posService;
         }
 
         public record AuthV2PosLoginOutput(
@@ -56,7 +59,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var userData = await _mongo.GetUserById(userId);
 
-            var data = await _mongo.GetMerchantsAndPosByUser(userId);
+            var data = await _posService.GetMerchantsAndPosByUser(userId);
             Logger.LogInformation("User {0} controls POS for {1} merchants", userId, data.Count);
 
             return Ok(new AuthV2PosLoginOutput(
@@ -159,7 +162,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var pos = await _mongo.GetPosById(id);
+            var pos = await _posService.GetPosById(id);
             if(pos == null) {
                 return NotFound();
             }

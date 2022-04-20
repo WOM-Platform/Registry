@@ -20,11 +20,13 @@ namespace WomPlatform.Web.Api.Controllers {
         private readonly ObjectId _testSourceId, _testPosId;
 
         private readonly MongoDatabase _mongo;
+        private readonly PosService _posService;
         private readonly Operator _operator;
         private IWebHostEnvironment Hosting { get; init; }
 
         public TestController(
             MongoDatabase mongo,
+            PosService posService,
             Operator @operator,
             IWebHostEnvironment webHostEnvironment,
             IConfiguration configuration,
@@ -33,6 +35,7 @@ namespace WomPlatform.Web.Api.Controllers {
             ILogger<AimsController> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _posService = posService;
             _operator = @operator;
             Hosting = webHostEnvironment;
 
@@ -109,7 +112,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Creating payment for {0} vouchers", amount);
 
-            var testPos = await _mongo.GetPosById(_testPosId);
+            var testPos = await _posService.GetPosById(_testPosId);
 
             Logger.LogTrace("Test POS: {0}", testPos.Id);
 

@@ -21,15 +21,18 @@ namespace WomPlatform.Web.Api.Controllers {
     public class AuthController : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly PosService _posService;
 
         public AuthController(
             MongoDatabase mongo,
+            PosService posService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<AimsController> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _posService = posService;
         }
 
         public record AuthSourceLoginOutput(
@@ -84,7 +87,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var pos = await _mongo.GetPosByUser(userId);
+            var pos = await _posService.GetPosByUser(userId);
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new AuthPosLoginOutput(
