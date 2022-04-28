@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
@@ -63,6 +64,37 @@ namespace WomPlatform.Web.Api.Service {
         public Task ReplaceMerchant(Merchant merchant) {
             var filter = Builders<Merchant>.Filter.Eq(u => u.Id, merchant.Id);
             return MerchantCollection.ReplaceOneAsync(filter, merchant);
+        }
+
+        public class MerchantWithAdmins : Merchant {
+            [BsonElement("adminUsers")]
+            public User[] Administrators { get; set; }
+        }
+
+        /// <summary>
+        /// Fetches a list of all merchants with associated admin users.
+        /// </summary>
+        public Task<List<MerchantWithAdmins>> GetAllMerchantsWithUsers() {
+            var pipeline = new EmptyPipelineDefinition<Merchant>()
+                .AppendStage<Merchant, Merchant, MerchantWithAdmins>(BsonDocument.Parse(@"{
+                    $lookup: {
+                        from: 'Users',
+                        localField: 'adminUserIds',
+                        foreignField: '_id',
+                        as: 'adminUsers'
+                    }
+                }"))
+                .AppendStage<Merchant, MerchantWithAdmins, MerchantWithAdmins>(BsonDocument.Parse(@"{
+                    $match: {
+                        'adminUsers.0': {
+                            $exists: true
+                        }
+                    }
+                }"))
+                .Sort(Builders<MerchantWithAdmins>.Sort.Ascending(m => m.Name))
+            ;
+
+            return MerchantCollection.Aggregate(pipeline).ToListAsync();
         }
 
     }
