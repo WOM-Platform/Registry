@@ -47,7 +47,6 @@ All ‘type’ codes in the table below are preceded by the URL `https://wom.soc
 | `request-void` | 410 | Request instance is void | Voucher request has been performed or has been canceled. Payment request has been performed or has been canceled. | None. |
 | `source-not-found` | 404 | Source with the specified ID does not exist | The instrument that has requested the voucher generation does not exist. | None. |
 | `pos-not-found` | 404 | POS with the specified ID does not exist | The POS that has requested the payment does not exist. | None. |
-| `source-verification-failed` | 401 | Failed to verify source identity | None. | None. |
 | `payload-verification-failure` | 403 | Failed to verify request contents | The encrypted contents of the request do not match the unencrypted (i.e., the request is forged and cannot be accepted). | None. |
 | `password-unacceptable` | 422 | Supplied password is not acceptable | The password supplied by the client is not acceptable (e.g., too short). | None. |
 | `otc-not-valid` | 404 | OTC code does not exist | The supplied OTC code is invalid, was not generated correctly or was never verified by the creator. | None. |

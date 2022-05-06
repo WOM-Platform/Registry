@@ -65,16 +65,6 @@ namespace WomPlatform.Web.Api {
             );
         }
 
-        public static ActionResult SourceVerificationFailure(this ControllerBase c) {
-            return new ObjectResult(
-                new ProblemDetails {
-                    Status = StatusCodes.Status401Unauthorized,
-                    Type = "https://wom.social/api/problems/source-verification-failed",
-                    Title = "Failed to verify source identity"
-                }
-            );
-        }
-
         public static ActionResult PayloadVerificationFailure(this ControllerBase c, string title = null) {
             return new ObjectResult(
                 new ProblemDetails {
