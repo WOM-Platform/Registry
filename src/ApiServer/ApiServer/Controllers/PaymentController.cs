@@ -250,15 +250,19 @@ namespace WomPlatform.Web.Api.Controllers {
                 });
             }
             catch (ArgumentException ex) {
-                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Payment parameter not valid");
+                Logger.LogError(LoggingEvents.PaymentProcessing, ex, "Payment parameter not valid");
                 return this.ProblemParameter(ex.Message);
             }
             catch (InvalidOperationException ex) {
-                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Payment in invalid status");
+                Logger.LogError(LoggingEvents.PaymentProcessing, ex, "Payment in invalid status");
                 return this.RequestVoid(ex.Message);
             }
+            catch(ServiceProblemException ex) {
+                Logger.LogError(LoggingEvents.PaymentProcessing, ex, "Failed to perform payment operation");
+                return ex.ToActionResult();
+            }
             catch (Exception ex) {
-                Logger.LogError(LoggingEvents.PaymentInformationAccess, ex, "Failed to process payment");
+                Logger.LogError(LoggingEvents.PaymentProcessing, ex, "Failed to process payment");
                 return this.UnexpectedError();
             }
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -370,23 +371,45 @@ namespace WomPlatform.Web.Api {
             var payment = await Mongo.GetPaymentRequestByOtc(request.Otc);
             if(payment == null) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not found", request.Otc);
-                throw new ArgumentException("OTC code not valid");
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/otc-not-valid",
+                    "OTC code does not exist",
+                    StatusCodes.Status404NotFound
+                );
             }
             if(!payment.Verified) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not verified, cannot be performed", request.Otc);
-                throw new ArgumentException("OTC code not verified");
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/otc-not-valid",
+                    "OTC code does not exist",
+                    StatusCodes.Status404NotFound
+                );
             }
             if(!payment.IsPersistent && payment.Confirmations?.Count > 0) {
-                Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not persistent and already performed");
-                throw new InvalidOperationException("Payment already performed");
+                Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not persistent and already performed", request.Otc);
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/operation-already-performed",
+                    "Operation already performed",
+                    StatusCodes.Status400BadRequest
+                );
             }
             if(!payment.Password.Equals(request.Password, StringComparison.Ordinal)) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment password does not match");
-                throw new ArgumentException("Password does not match");
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/wrong-password",
+                    "Wrong password",
+                    StatusCodes.Status422UnprocessableEntity
+                );
             }
             if(request.Vouchers.Length != payment.Amount) {
                 Logger.LogInformation(LoggingEvents.Operations, "{0} vouchers given instead of {1}", request.Vouchers.Length, payment.Amount);
-                throw new ArgumentException("Wrong number of vouchers");
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/wrong-number-of-vouchers",
+                    "Wrong number of vouchers supplied",
+                    StatusCodes.Status400BadRequest,
+                    "required", payment.Amount.ToString(),
+                    "supplied", request.Vouchers.Length.ToString()
+                );
             }
 
             int v1Count = await ProcessPaymentLegacyVouchers(request.Vouchers.Where(v => !v.Id.ToString().Contains('/')), payment.Filter);
@@ -394,7 +417,13 @@ namespace WomPlatform.Web.Api {
             Logger.LogDebug("V1 vouchers spent {0}, V2 vouchers spent {1}", v1Count, v2Count);
             if(v1Count + v2Count < payment.Amount) {
                 Logger.LogInformation(LoggingEvents.Operations, "Found {0} valid vouchers, less than requested ({1})", v2Count + v1Count, payment.Amount);
-                throw new ArgumentException("Insufficient number of valid vouchers");
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/insufficient-valid-vouchers",
+                    "Insufficient valid vouchers supplied",
+                    StatusCodes.Status400BadRequest,
+                    "required", payment.Amount.ToString(),
+                    "supplied", (v2Count + v1Count).ToString()
+                );
             }
 
             Logger.LogDebug(LoggingEvents.Operations, "Payment confirmed, vouchers updated");

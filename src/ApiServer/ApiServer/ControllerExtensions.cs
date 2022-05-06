@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WomPlatform.Web.Api {
@@ -11,8 +8,8 @@ namespace WomPlatform.Web.Api {
         public static ActionResult ProblemParameter(this ControllerBase c, string title = null) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 422, // Unprocessable Entity, see https://httpstatuses.com/422
-                    Type = "wrong-parameter",
+                    Status = StatusCodes.Status422UnprocessableEntity, // See https://httpstatuses.com/422
+                    Type = "https://wom.social/api/problems/wrong-parameter",
                     Title = title ?? "Request parameter not valid"
                 }
             );
@@ -21,19 +18,18 @@ namespace WomPlatform.Web.Api {
         public static ActionResult RequestVoid(this ControllerBase c, string title = null) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 410, // Gone, see https://httpstatuses.com/410
-                    Type = "request-void",
+                    Status = StatusCodes.Status410Gone, // See https://httpstatuses.com/410
+                    Type = "https://wom.social/api/problems/request-void",
                     Title = title ?? "Request instance is void"
                 }
             );
         }
 
         public static ActionResult UnexpectedError(this ControllerBase c, string title = null) {
-
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 500,
-                    Type = "unexpected",
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://wom.social/api/problems/unexpected",
                     Title = title ?? "Unexpected internal error"
                 }
             );
@@ -42,8 +38,8 @@ namespace WomPlatform.Web.Api {
         public static ActionResult SourceNotFound(this ControllerBase c) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 404,
-                    Type = "source-not-found",
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://wom.social/api/problems/source-not-found",
                     Title = "Source with the specified ID does not exist"
                 }
             );
@@ -52,8 +48,8 @@ namespace WomPlatform.Web.Api {
         public static ActionResult PosNotFound(this ControllerBase c) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 404,
-                    Type = "pos-not-found",
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://wom.social/api/problems/pos-not-found",
                     Title = "POS with the specified ID does not exist"
                 }
             );
@@ -62,8 +58,8 @@ namespace WomPlatform.Web.Api {
         public static ActionResult SourceVerificationFailure(this ControllerBase c) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 401,
-                    Type = "source-verification-failed",
+                    Status = StatusCodes.Status401Unauthorized,
+                    Type = "https://wom.social/api/problems/source-verification-failed",
                     Title = "Failed to verify source identity"
                 }
             );
@@ -72,8 +68,8 @@ namespace WomPlatform.Web.Api {
         public static ActionResult PayloadVerificationFailure(this ControllerBase c, string title = null) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 403,
-                    Type = "payload-verification-failure",
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://wom.social/api/problems/payload-verification-failure",
                     Title = title ?? "Failed to verify request contents"
                 }
             );
@@ -82,8 +78,8 @@ namespace WomPlatform.Web.Api {
         public static ActionResult PasswordUnacceptableFailure(this ControllerBase c, string title = null) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = 422, // Unprocessable Entity, see https://httpstatuses.com/422
-                    Type = "password-unacceptable",
+                    Status = StatusCodes.Status422UnprocessableEntity, // See https://httpstatuses.com/422
+                    Type = "https://wom.social/api/problems/password-unacceptable",
                     Title = title ?? "Supplied password is not acceptable"
                 }
             );
