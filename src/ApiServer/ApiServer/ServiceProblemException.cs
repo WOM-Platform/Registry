@@ -10,13 +10,11 @@ namespace WomPlatform.Web.Api {
             string type,
             string title,
             int statusCode = StatusCodes.Status500InternalServerError,
-            string detail = null,
             params string[] extensionPairs
         ) {
             Type = type;
             Title = title;
             HttpStatus = statusCode;
-            Detail = detail;
             if(extensionPairs != null) {
                 if(extensionPairs.Length % 2 != 0) {
                     throw new ArgumentException("List of extension pairs must be even");
