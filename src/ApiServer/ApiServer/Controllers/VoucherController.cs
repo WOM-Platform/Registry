@@ -167,10 +167,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="payload">Voucher redemption payload.</param>
         [HttpPost("redeem")]
         [ProducesResponseType(typeof(VoucherRedeemResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status410Gone)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Redeem(
             [FromBody] VoucherRedeemPayload payload
         ) {
