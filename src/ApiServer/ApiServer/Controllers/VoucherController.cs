@@ -219,6 +219,10 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Cannot perform voucher generation");
                 return this.RequestVoid(ex.Message);
             }
+            catch(ServiceProblemException ex) {
+                Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to perform voucher generation");
+                return ex.ToActionResult();
+            }
             catch(Exception ex) {
                 Logger.LogError(LoggingEvents.VoucherRedemption, ex, "Failed to redeem vouchers");
                 return this.UnexpectedError();

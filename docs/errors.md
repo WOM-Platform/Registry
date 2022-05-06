@@ -55,3 +55,4 @@ All ‘type’ codes in the table below are preceded by the URL `https://wom.soc
 | `wrong-password` | 422 | Wrong password | The password supplied does not match. | None. |
 | `wrong-number-of-vouchers` | 400 | Wrong number of vouchers supplied | Number of vouchers supplied as payment does not match required vouchers. | `required` (string), `supplied` (string). |
 | `insufficient-valid-vouchers` | 400 | Insufficient valid vouchers supplied | Number of vouchers supplied as payment does not match required vouchers. | `required` (string), `supplied` (string). |
+| `location-not-provided` | 400 | User location not provided | Voucher redemption requires user location. | None. |

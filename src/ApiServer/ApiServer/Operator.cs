@@ -142,25 +142,55 @@ namespace WomPlatform.Web.Api {
             var request = await Mongo.GetGenerationRequestByOtc(otcGen);
 
             if(request == null) {
-                throw new ArgumentException("OTC code not valid");
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} not found", request.Otc);
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/otc-not-valid",
+                    "OTC code does not exist",
+                    StatusCodes.Status404NotFound
+                );
             }
             if(!request.Verified) {
-                throw new ArgumentException("OTC code not verified");
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} not verified, cannot be performed", request.Otc);
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/otc-not-valid",
+                    "OTC code does not exist",
+                    StatusCodes.Status404NotFound
+                );
             }
             if(request.PerformedAt.HasValue) {
-                throw new InvalidOperationException("Vouchers already redeemed");
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} already redeemed", request.Otc);
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/operation-already-performed",
+                    "Operation already performed",
+                    StatusCodes.Status400BadRequest
+                );
             }
             if(request.Void) {
-                throw new InvalidOperationException("Voucher generation request has been voided");
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} has been voided", request.Otc);
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/request-void",
+                    "Request instance is void",
+                    StatusCodes.Status410Gone
+                );
             }
             if(request.Attempts <= 0) {
-                throw new InvalidOperationException("No PIN attempts left for this generation request");
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} has no more attempts available", request.Otc);
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/request-void",
+                    "Request instance is void",
+                    StatusCodes.Status410Gone
+                );
             }
             if(!request.Password.Equals(password, StringComparison.Ordinal)) {
                 request.Attempts -= 1;
                 await Mongo.UpdateGenerationRequest(request);
 
-                throw new ArgumentException("Password does not match");
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation password does not match");
+                throw new ServiceProblemException(
+                    "https://wom.social/api/problems/wrong-password",
+                    "Wrong password",
+                    StatusCodes.Status422UnprocessableEntity
+                );
             }
 
             var source = await Mongo.GetSourceById(request.SourceId);
@@ -169,7 +199,12 @@ namespace WomPlatform.Web.Api {
             if(vouchersRequiringLocation.Count > 0) {
                 // We require the user's location in order to redeem these vouchers
                 if(!userLocation.HasValue) {
-                    throw new InvalidOperationException("Vouchers require user location on redemption");
+                    Logger.LogInformation(LoggingEvents.Operations, "Vouchers require user location on redemption");
+                    throw new ServiceProblemException(
+                        "https://wom.social/api/problems/location-not-provided",
+                        "User location not provided",
+                        StatusCodes.Status400BadRequest
+                    );
                 }
 
                 var geoPoint = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(userLocation.Value.Longitude, userLocation.Value.Latitude));
