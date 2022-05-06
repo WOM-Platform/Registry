@@ -173,7 +173,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var payment = await _mongo.GetPaymentRequestByOtc(payloadContent.Otc);
                 if(payment == null) {
                     Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
-                    return NotFound();
+                    return this.OtcNotFound();
                 }
 
                 var pos = await _posService.GetPosById(payment.PosId);

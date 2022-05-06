@@ -55,6 +55,16 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public static ActionResult OtcNotFound(this ControllerBase c) {
+            return new ObjectResult(
+                new ProblemDetails {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://wom.social/api/problems/otc-not-valid",
+                    Title = "OTC code does not exist"
+                }
+            );
+        }
+
         public static ActionResult SourceVerificationFailure(this ControllerBase c) {
             return new ObjectResult(
                 new ProblemDetails {
