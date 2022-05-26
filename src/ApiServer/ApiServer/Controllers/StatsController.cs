@@ -85,6 +85,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var result = await _statsService.GetVoucherCountBySource(sourceId);
 
             return Ok(new VoucherSourceStatsResponse {
+                GenerationRequests = result?.GenerationRequests ?? 0,
                 TotalVouchersGenerated = result?.TotalCount ?? 0,
                 TotalVouchersRedeemed = result?.RedeemedCount ?? 0
             });

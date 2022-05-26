@@ -99,6 +99,8 @@ namespace WomPlatform.Web.Api.Service {
         public class VoucherCountBySourceResult {
             [BsonId]
             public int Id;
+            [BsonElement("generationRequests")]
+            public long GenerationRequests;
             [BsonElement("totalCount")]
             public long TotalCount;
             [BsonElement("redeemedCount")]
@@ -115,14 +117,17 @@ namespace WomPlatform.Web.Api.Service {
                 BsonDocument.Parse(@"{
                     $group: {
                         _id: 1,
+                        'generationRequests': {
+                            $sum: 1
+                        },
                         'totalCount': {
-                            $sum: '$amount'
+                            $sum: '$totalVoucherCount'
                         },
                         'redeemedCount': {
                             $sum: {
                                 $cond: {
                                     if: '$performedAt',
-                                    then: '$amount',
+                                    then: '$totalVoucherCount',
                                     else: 0
                                 }
                             }
