@@ -34,6 +34,10 @@ namespace WomPlatform.Web.Api.OutputModels {
         public Dictionary<string, int> PerAimBudget { get; init; }
     }
 
+    public record SourceGeneratedCountOutput {
+        public int Total { get; set; }
+    }
+
     public static class SourceOutputHelpers {
 
         public static SourceOutput ToOutput(this DatabaseDocumentModels.Source source) {

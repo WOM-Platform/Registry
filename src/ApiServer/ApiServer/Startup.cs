@@ -173,6 +173,7 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<StatsService>();
             services.AddScoped<MapService>();
             services.AddScoped<SetupService>();
+            services.AddScoped<SourceService>();
             services.AddMailComposer();
         }
 
