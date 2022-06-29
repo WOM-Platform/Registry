@@ -170,6 +170,7 @@ namespace WomPlatform.Web.Api {
 
             services.AddScoped<Operator>();
             services.AddScoped<MongoDatabase>();
+
             services.AddScoped<ApiKeyService>();
             services.AddScoped<MerchantService>();
             services.AddScoped<PosService>();
@@ -177,6 +178,7 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<MapService>();
             services.AddScoped<SetupService>();
             services.AddScoped<SourceService>();
+            services.AddScoped<BackupService>();
 
             services.AddMailComposer();
         }

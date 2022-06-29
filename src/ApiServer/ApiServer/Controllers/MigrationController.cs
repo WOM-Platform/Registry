@@ -1,23 +1,29 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
+
     [Route("v1/migration")]
     [OperationsTags("Voucher migration")]
     public class MigrationController : BaseRegistryController {
+
+        private readonly BackupService _backupService;
 
         public MigrationController(
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
+            BackupService backupService,
             ILogger<MigrationController> logger)
         : base(configuration, crypto, keyManager, logger) {
-
+            _backupService = backupService;
         }
 
         private static readonly Guid SingleRecord = Guid.NewGuid();
@@ -100,10 +106,12 @@ namespace WomPlatform.Web.Api.Controllers {
         [AllowAnonymous]
         [ProducesResponseType(typeof(GetMigrationInfoOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetInformation(
+        public async Task<IActionResult> GetInformation(
             [FromRoute] Guid code,
             [FromBody] RetrieveMigrationInput input
         ) {
+            await _backupService.Test();
+
             if(code != SingleRecord) {
                 return NotFound();
             }
