@@ -166,14 +166,17 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
             services.AddTransient<CryptoProvider>();
+
             services.AddScoped<Operator>();
             services.AddScoped<MongoDatabase>();
+            services.AddScoped<ApiKeyService>();
             services.AddScoped<MerchantService>();
             services.AddScoped<PosService>();
             services.AddScoped<StatsService>();
             services.AddScoped<MapService>();
             services.AddScoped<SetupService>();
             services.AddScoped<SourceService>();
+
             services.AddMailComposer();
         }
 
