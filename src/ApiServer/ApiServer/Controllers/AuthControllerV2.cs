@@ -21,18 +21,24 @@ namespace WomPlatform.Web.Api.Controllers {
     public class AuthControllerV2 : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly SourceService _sourceService;
         private readonly PosService _posService;
+        private readonly ApiKeyService _apiKeyService;
 
         public AuthControllerV2(
             MongoDatabase mongo,
+            SourceService sourceService,
             PosService posService,
+            ApiKeyService apiKeyService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<AuthControllerV2> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _sourceService = sourceService;
             _posService = posService;
+            _apiKeyService = apiKeyService;
         }
 
         public record AuthV2PosLoginOutput(
@@ -168,6 +174,52 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return Ok(new GetAnonymousCredentialsOutput(posId, pos.PrivateKey));
+        }
+
+        public record GetApiKeyCredentialsOutput(
+            string EntityKind,
+            string EntityId,
+            string PrivateKey,
+            string PublicKey
+        );
+
+        /// <summary>
+        /// Retrieves credentials bound to an API key.
+        /// </summary>
+        /// <remarks>
+        /// The API key must be supplied as the "X-WOM-ApiKey" HTTP header.
+        /// </remarks>
+        [HttpPost("apikey")]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(GetApiKeyCredentialsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetApiKeyCredentials() {
+            if(!Request.Headers.TryGetValue("X-WOM-ApiKey", out var apiKeyHeader)) {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Request does not contain X-WOM-ApiKey header");
+            }
+
+            var apiKey = apiKeyHeader.ToString();
+            var entry = await _apiKeyService.RetrieveApiKey(apiKey);
+            if(entry == null || entry.Expired) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "API key not valid");
+            }
+
+            return entry.Kind switch {
+                DatabaseDocumentModels.ApiKey.KindOfKey.SourceAdministrator => await GetApiKeyCredentialsSource(entry.ControlledEntityId),
+                _ => Problem(statusCode: StatusCodes.Status400BadRequest, title: "API key does not match a recognized entity kind"),
+            };
+        }
+
+        private async Task<IActionResult> GetApiKeyCredentialsSource(ObjectId sourceId) {
+            var source = await _sourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "Source bound to API key does not exist");
+            }
+
+            return Ok(new GetApiKeyCredentialsOutput("Source", sourceId.ToString(), source.PrivateKey, source.PublicKey));
         }
 
     }
