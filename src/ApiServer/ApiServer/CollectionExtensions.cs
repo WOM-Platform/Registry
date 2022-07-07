@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,6 +16,25 @@ namespace WomPlatform.Web.Api {
                 return new List<T>();
 
             return source.ToList();
+        }
+
+        /// <summary>
+        /// Converts a list or a null reference to an array.
+        /// </summary>
+        public static T[] ToSafeArray<T>(this IEnumerable<T> source) {
+            if(source == null) {
+                return Array.Empty<T>();
+            }
+
+            return source.ToArray();
+        }
+
+        public static ImmutableDictionary<K, V> ToSafeImmutableDictionary<K, V>(this IDictionary<K, V> d) {
+            if(d == null) {
+                return ImmutableDictionary<K, V>.Empty;
+            }
+
+            return d.ToImmutableDictionary();
         }
 
     }

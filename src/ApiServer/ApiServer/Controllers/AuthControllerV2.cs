@@ -114,26 +114,13 @@ namespace WomPlatform.Web.Api.Controllers {
             var sources = await _mongo.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} controls {1} sources", userId, sources.Count);
 
-            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToList();
+            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToArray();
 
             return Ok(new AuthV2SourceLoginOutput(
                 user.Name,
                 user.Surname,
                 user.Email,
-                sources.Select(s => new SourceLoginV2Output {
-                    Id = s.Id.ToString(),
-                    Name = s.Name,
-                    Url = s.Url,
-                    PrivateKey = s.PrivateKey,
-                    PublicKey = s.PublicKey,
-                    EnabledAims = s.Aims.EnableAll ? allAims : s.Aims.Enabled.ToSafeList(),
-                    PerAimBudget = s.Aims.CurrentBudget ?? new Dictionary<string, int>(),
-                    DefaultLocation = (s.Location.Position == null) ? null : new Location {
-                        Latitude = s.Location.Position.Coordinates.Latitude,
-                        Longitude = s.Location.Position.Coordinates.Longitude
-                    },
-                    LocationIsFixed = s.Location.IsFixed
-                }).ToArray()
+                sources.Select(s => s.ToLoginV2Output(allAims)).ToArray()
             ));
         }
 
@@ -180,7 +167,8 @@ namespace WomPlatform.Web.Api.Controllers {
             string EntityKind,
             string EntityId,
             string PrivateKey,
-            string PublicKey
+            string PublicKey,
+            object Details
         );
 
         /// <summary>
@@ -213,13 +201,35 @@ namespace WomPlatform.Web.Api.Controllers {
             };
         }
 
+        private record GetApiKeySourceDetails(
+            string Name,
+            string Url,
+            string[] EnabledAims,
+            Location DefaultLocation,
+            bool LocationIsFixed
+        );
+
         private async Task<IActionResult> GetApiKeyCredentialsSource(ObjectId sourceId) {
             var source = await _sourceService.GetSourceById(sourceId);
             if(source == null) {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: "Source bound to API key does not exist");
             }
 
-            return Ok(new GetApiKeyCredentialsOutput("Source", sourceId.ToString(), source.PrivateKey, source.PublicKey));
+            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToArray();
+
+            return Ok(new GetApiKeyCredentialsOutput(
+                "Source", sourceId.ToString(), source.PrivateKey, source.PublicKey,
+                new GetApiKeySourceDetails(
+                    source.Name,
+                    source.Url,
+                    (source.Aims.EnableAll ? allAims : source.Aims.Enabled).ToSafeArray(),
+                    (source.Location.Position == null) ? null : new Location {
+                        Latitude = source.Location.Position.Coordinates.Latitude,
+                        Longitude = source.Location.Position.Coordinates.Longitude
+                    },
+                    source.Location.IsFixed
+                )
+            ));
         }
 
     }
