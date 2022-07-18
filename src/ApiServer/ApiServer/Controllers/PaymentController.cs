@@ -304,6 +304,10 @@ namespace WomPlatform.Web.Api.Controllers {
                     Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
                     return this.OtcNotFound();
                 }
+                if(payment.PosId != payment.PosId) {
+                    Logger.LogWarning(LoggingEvents.PaymentStatus, "Payment {0} has not been created by POS {1}", payment.Otc, payment.PosId);
+                    return this.OtcNotFound();
+                }
 
                 var pos = await _posService.GetPosById(payment.PosId);
                 if(pos == null) {
@@ -316,6 +320,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogInformation(LoggingEvents.PaymentStatus, "Retrieved status of payment {0}", payloadContent.Otc);
 
                 return Ok(new PaymentStatusResponse {
+                    PosId = payload.PosId,
                     Payload = Crypto.Encrypt(new PaymentStatusResponse.Content {
                         Persistent = payment.IsPersistent,
                         HasBeenPerformed = (payment.Confirmations != null && payment.Confirmations.Count > 0),
