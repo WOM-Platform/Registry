@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -263,6 +264,70 @@ namespace WomPlatform.Web.Api.Controllers {
             }
             catch (Exception ex) {
                 Logger.LogError(LoggingEvents.PaymentProcessing, ex, "Failed to process payment");
+                return this.UnexpectedError();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves status information about a payment.
+        /// </summary>
+        /// <param name="payload">Payment confirmation payload.</param>
+        [HttpPost("status")]
+        [ProducesResponseType(typeof(PaymentStatusResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetStatus(
+            [FromBody] PaymentStatusPayload payload
+        ) {
+            if(payload == null) {
+                return BadRequest();
+            }
+
+            Logger.LogDebug(LoggingEvents.PaymentStatus, "Received status request");
+
+            (var payloadContent, var decryptResult) = ExtractInputPayload<PaymentStatusPayload.Content>(payload.Payload, LoggingEvents.PaymentStatus);
+            if(decryptResult != null) {
+                return decryptResult;
+            }
+
+            if(payload.PosId != payloadContent.PosId) {
+                Logger.LogError(LoggingEvents.PaymentStatus, "POS ID mismatch in payload ({0} != {1})", payload.PosId, payloadContent.PosId);
+                return BadRequest();
+            }
+
+            try {
+                var payment = await _mongo.GetPaymentRequestByOtc(payloadContent.Otc);
+                if(payment == null) {
+                    Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
+                    return this.OtcNotFound();
+                }
+
+                var pos = await _posService.GetPosById(payment.PosId);
+                if(pos == null) {
+                    Logger.LogWarning(LoggingEvents.PaymentStatus, "POS of payment {0} does not exist", payment.Otc);
+                    return this.PosNotFound();
+                }
+
+                var posPublicKey = CryptoHelper.LoadKeyFromString<AsymmetricKeyParameter>(pos.PublicKey);
+
+                Logger.LogInformation(LoggingEvents.PaymentStatus, "Retrieved status of payment {0}", payloadContent.Otc);
+
+                return Ok(new PaymentStatusResponse {
+                    Payload = Crypto.Encrypt(new PaymentStatusResponse.Content {
+                        Persistent = payment.IsPersistent,
+                        HasBeenPerformed = (payment.Confirmations != null && payment.Confirmations.Count > 0),
+                        Confirmations = (from c in payment.Confirmations ?? new()
+                                         select new PaymentStatusResponse.Confirmation {
+                                             PerformedAt = DateTime.SpecifyKind(c.PerformedAt, DateTimeKind.Utc)
+                                         }).ToList(),
+                    }, posPublicKey)
+                });
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.PaymentStatus, ex, "Failed to retrieve payment status");
                 return this.UnexpectedError();
             }
         }
