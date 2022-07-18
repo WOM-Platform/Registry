@@ -197,6 +197,13 @@ namespace ApiTester {
             Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await Pay(p, 5, ackUrl);
             });
+
+            var status = await _pos.GetPaymentStatus(otcPay);
+            Assert.AreEqual(false, status.Persistent);
+            Assert.AreEqual(true, status.HasBeenPerformed);
+            Assert.AreEqual(1, status.Confirmations.Count);
+            Assert.LessOrEqual(status.Confirmations[0].PerformedAt, DateTime.UtcNow);
+            Assert.GreaterOrEqual(status.Confirmations[0].PerformedAt, DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(5)));
         }
 
         [Test]
