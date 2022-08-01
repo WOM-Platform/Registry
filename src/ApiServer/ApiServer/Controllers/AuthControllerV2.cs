@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -126,12 +127,10 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record AuthV2CreateSourceApiKeyOutput(
-            ObjectId sourceId,
+            string sourceId,
             string selector,
             ApiKey.KindOfKey kind,
-            string apiKey,
-            string publicKey,
-            string privateKey
+            string apiKey
         );
 
         /// <summary>
@@ -147,7 +146,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> CreateSourceApiKey(
             [FromRoute] ObjectId sourceId,
-            [FromQuery] string selector,
+            [FromQuery] [Required] string selector,
             [FromQuery] ApiKey.KindOfKey kind = ApiKey.KindOfKey.SourceAdministrator
         ) {
             Logger.LogDebug("Create source API key");
@@ -174,12 +173,10 @@ namespace WomPlatform.Web.Api.Controllers {
             var apiKey = await _apiKeyService.CreateOrGetApiKey(sourceId, selector, kind);
 
             return Ok(new AuthV2CreateSourceApiKeyOutput(
-                sourceId,
+                sourceId.ToString(),
                 selector,
                 kind,
-                apiKey.Key,
-                apiKey.PublicKey,
-                apiKey.PrivateKey
+                apiKey.Key
             ));
         }
 
