@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.Service;
 
@@ -124,6 +125,64 @@ namespace WomPlatform.Web.Api.Controllers {
             ));
         }
 
+        public record AuthV2CreateSourceApiKeyOutput(
+            ObjectId sourceId,
+            string selector,
+            ApiKey.KindOfKey kind,
+            string apiKey,
+            string publicKey,
+            string privateKey
+        );
+
+        /// <summary>
+        /// Creates a new API key access for a given source.
+        /// </summary>
+        [HttpPost("source/{sourceId}/apikey")]
+        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AuthV2CreateSourceApiKeyOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CreateSourceApiKey(
+            [FromRoute] ObjectId sourceId,
+            [FromQuery] string selector,
+            [FromQuery] ApiKey.KindOfKey kind = ApiKey.KindOfKey.SourceAdministrator
+        ) {
+            Logger.LogDebug("Create source API key");
+
+            if(!User.GetUserId(out var userId)) {
+                return Forbid();
+            }
+
+            var source = await _sourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return NotFound();
+            }
+            if(!source.AdministratorUserIds.Contains(userId)) {
+                return Forbid();
+            }
+
+            if(string.IsNullOrWhiteSpace(selector)) {
+                return Problem(statusCode: 400, title: "API key selector cannot be null or empty");
+            }
+            if(!Enum.IsDefined(kind)) {
+                return Problem(statusCode: 400, title: "API key kind is not valid");
+            }
+
+            var apiKey = await _apiKeyService.CreateOrGetApiKey(sourceId, selector, kind);
+
+            return Ok(new AuthV2CreateSourceApiKeyOutput(
+                sourceId,
+                selector,
+                kind,
+                apiKey.Key,
+                apiKey.PublicKey,
+                apiKey.PrivateKey
+            ));
+        }
+
         /// <summary>
         /// Retrieves the public key used by the WOM Registry.
         /// </summary>
@@ -196,7 +255,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return entry.Kind switch {
-                DatabaseDocumentModels.ApiKey.KindOfKey.SourceAdministrator => await GetApiKeyCredentialsSource(entry.ControlledEntityId),
+                ApiKey.KindOfKey.SourceAdministrator => await GetApiKeyCredentialsSource(entry, entry.ControlledEntityId),
                 _ => Problem(statusCode: StatusCodes.Status400BadRequest, title: "API key does not match a recognized entity kind"),
             };
         }
@@ -209,7 +268,7 @@ namespace WomPlatform.Web.Api.Controllers {
             bool LocationIsFixed
         );
 
-        private async Task<IActionResult> GetApiKeyCredentialsSource(ObjectId sourceId) {
+        private async Task<IActionResult> GetApiKeyCredentialsSource(ApiKey apiKey, ObjectId sourceId) {
             var source = await _sourceService.GetSourceById(sourceId);
             if(source == null) {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: "Source bound to API key does not exist");
@@ -218,7 +277,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToArray();
 
             return Ok(new GetApiKeyCredentialsOutput(
-                "Source", sourceId.ToString(), source.PrivateKey, source.PublicKey,
+                "Source", sourceId.ToString(), apiKey.PrivateKey, apiKey.PublicKey,
                 new GetApiKeySourceDetails(
                     source.Name,
                     source.Url,

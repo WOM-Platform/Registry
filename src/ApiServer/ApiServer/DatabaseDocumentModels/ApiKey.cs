@@ -16,6 +16,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonRequired]
         public ObjectId ControlledEntityId { get; set; }
 
+        [BsonElement("selector")]
+        [BsonIgnoreIfNull]
+        public string KeySelector { get; set; }
+
         public enum KindOfKey {
             SourceAdministrator
         }
@@ -29,6 +33,12 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonDefaultValue(false)]
         [BsonIgnoreIfDefault]
         public bool Expired { get; set; }
+
+        [BsonElement("publicKey")]
+        public string PublicKey { get; set; }
+
+        [BsonElement("privateKey")]
+        public string PrivateKey { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
