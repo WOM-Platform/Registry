@@ -18,7 +18,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -100,7 +99,7 @@ namespace WomPlatform.Web.Api {
                     Description = "WOM development server (HTTP)"
                 });
 
-                options.IncludeXmlComments(Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, "ApiServer.xml"));
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "ApiServer.xml"));
 
                 options.TagActionsBy(api => {
                     var controller = api.ActionDescriptor as ControllerActionDescriptor;

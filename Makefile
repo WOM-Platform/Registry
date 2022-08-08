@@ -80,8 +80,8 @@ rs:
 
 .PHONY: rebuild
 rebuild:
-	${DC} rm -sf api
 	${DC} build api
+	${DC} rm -sf api
 	${DC} up -d api
 
 .PHONY: stop
