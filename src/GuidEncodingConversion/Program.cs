@@ -13,7 +13,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     .UseEnvironment("Development")
 #endif
     .ConfigureServices(services => {
-        services.AddHostedService<ImportService<PaymentRequest>>();
+        services.AddHostedService<ImportService<Voucher>>();
     })
     .Build();
 host.Run();

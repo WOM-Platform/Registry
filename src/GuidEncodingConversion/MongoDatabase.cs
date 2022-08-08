@@ -9,6 +9,9 @@ namespace GuidEncodingConversion {
             else if(typeof(T) == typeof(GenerationRequest)) {
                 return "GenerationRequests";
             }
+            else if(typeof(T) == typeof(Voucher)) {
+                return "Vouchers";
+            }
             else {
                 throw new NotSupportedException();
             }
