@@ -20,6 +20,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.Conversion;
@@ -155,6 +158,8 @@ namespace WomPlatform.Web.Api {
 
             // Add services to dependency registry
             services.AddSingleton(provider => {
+                BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+
                 var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
                 var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
                 var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
