@@ -158,6 +158,8 @@ namespace WomPlatform.Web.Api {
 
             // Add services to dependency registry
             services.AddSingleton(provider => {
+                BsonDefaults.GuidRepresentation = GuidRepresentation.Standard;
+                BsonDefaults.GuidRepresentationMode = GuidRepresentationMode.V3;
                 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
                 var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
