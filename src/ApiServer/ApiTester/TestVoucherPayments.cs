@@ -179,6 +179,27 @@ namespace ApiTester {
         }
 
         [Test]
+        public async Task CreateVouchers() {
+            var now = DateTime.UtcNow;
+
+            var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "H",
+                    Latitude = 63.5269992,
+                    Longitude = -19.510935,
+                    Timestamp = now,
+                    CreationMode = VoucherCreatePayload.VoucherCreationMode.Standard
+                }
+            };
+
+            var response = await _instrument.RequestVouchers(voucherInfos);
+
+            Console.WriteLine("OTC: {0}", response.OtcGen);
+            Console.WriteLine("Password: {0}", response.Password);
+            Console.WriteLine("Link: {0}", response.Link);
+        }
+
+        [Test]
         public async Task CreateVouchersAndProcessSimplePayment() {
             var p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherRequests(5, "E"));
