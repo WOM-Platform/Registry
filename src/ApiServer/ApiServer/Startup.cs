@@ -28,13 +28,10 @@ using WomPlatform.Web.Api.Conversion;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api {
-
     public class Startup {
-
         public Startup(IConfiguration configuration) {
             Configuration = configuration;
         }
-
         public IConfiguration Configuration { get; }
 
         private static string _selfDomain = null;
@@ -46,12 +43,10 @@ namespace WomPlatform.Web.Api {
                 return _selfDomain;
             }
         }
-
         public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
 
         public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
         public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
-
         public void ConfigureServices(IServiceCollection services) {
             services.AddCors(options => {
                 options.AddDefaultPolicy(builder => {
