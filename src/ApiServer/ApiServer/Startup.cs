@@ -195,23 +195,35 @@ namespace WomPlatform.Web.Api {
                 // Refresh development setup
                 var devSection = Configuration.GetSection("DevelopmentSetup");
 
+                var devUserSection = devSection.GetSection("AdminUser");
+                var devUserEntity = new DatabaseDocumentModels.User {
+                    Id = new ObjectId(devUserSection["Id"]),
+                    Email = devUserSection["Email"],
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(devUserSection["Password"]),
+                    Name = devUserSection["Name"],
+                    Surname = devUserSection["Surname"],
+                    RegisteredOn = DateTime.UtcNow
+                };
+                setupService.UpsertUserSync(devUserEntity);
+
                 var devSourceSection = devSection.GetSection("Source");
                 var devSourceId = devSourceSection["Id"];
                 setupService.UpsertSourceSync(new DatabaseDocumentModels.Source {
-                    Id = new MongoDB.Bson.ObjectId(devSourceId),
+                    Id = new ObjectId(devSourceId),
                     Name = "Development source",
                     PrivateKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pem"),
-                    PublicKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub")
+                    PublicKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub"),
+                    AdministratorUserIds = new ObjectId[] { devUserEntity.Id },
                 });
                 logger.LogDebug("Configured development source #{0}", devSourceId);
 
                 var devPosSection = devSection.GetSection("Pos");
                 var devPosId = devPosSection["Id"];
                 setupService.UpsertPosSync(new DatabaseDocumentModels.Pos {
-                    Id = new MongoDB.Bson.ObjectId(devPosId),
+                    Id = new ObjectId(devPosId),
                     Name = "Development POS",
                     PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
-                    PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub")
+                    PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub"),
                 });
                 logger.LogDebug("Configured development POS #{0}", devPosId);
             }

@@ -11,7 +11,6 @@ using WomPlatform.Web.Api;
 namespace ApiTester {
 
     public class TestVoucherPayments {
-
         AsymmetricKeyParameter _keyPos, _keyInstrument1, _keyRegistry;
         string _idPos = "5e74205c5f21bb265a2d26d8";
         string _idSource = "5e74203f5f21bb265a2d26bd";
@@ -354,7 +353,5 @@ namespace ApiTester {
                 });
             });
         }
-
     }
-
 }

@@ -62,6 +62,22 @@ namespace WomPlatform.Web.Api.Service {
             });
         }
 
+        private IMongoCollection<User> UserCollection {
+            get {
+                return MainDatabase.GetCollection<User>("Users");
+            }
+        }
+
+        /// <summary>
+        /// Upserts a user synchronously.
+        /// </summary>
+        public void UpsertUserSync(User user) {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+            UserCollection.ReplaceOne(filter, user, new ReplaceOptions {
+                IsUpsert = true
+            });
+        }
+
     }
 
 }
