@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Org.BouncyCastle.Crypto;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Service {
@@ -75,5 +77,31 @@ namespace WomPlatform.Web.Api.Service {
             return matchingKey;
         }
 
+        /// <summary>
+        /// Gets the public key of an entity through an API key, performing safety checks.
+        /// If no API key is passed, a default key is used instead.
+        /// </summary>
+        /// <param name="apiKey">API key to lookup.</param>
+        /// <param name="entityId">Identity of the entity that the API key must control to obtain the key.</param>
+        /// <param name="defaultKey">Default public key to use if no API key is passed.</param>
+        public async Task<AsymmetricKeyParameter> GetPublicKey(string apiKey, ObjectId entityId, string defaultKey) {
+            if(string.IsNullOrEmpty(apiKey)) {
+                return CryptoHelper.LoadKeyFromString<AsymmetricKeyParameter>(defaultKey);
+            }
+            else {
+                var entry = await RetrieveApiKey(apiKey);
+                if(entry == null) {
+                    _logger.LogInformation("API key {0} not registered", apiKey);
+                    return null;
+                }
+
+                if(entry.ControlledEntityId != entityId) {
+                    _logger.LogWarning("API key {0} does not control entity {1}", apiKey, entityId);
+                    return null;
+                }
+
+                return CryptoHelper.LoadKeyFromString<AsymmetricKeyParameter>(entry.PublicKey);
+            }
+        }
     }
 }

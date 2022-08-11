@@ -20,10 +20,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         private readonly MongoDatabase _mongo;
         private readonly Operator _operator;
+        private readonly ApiKeyService _apiKeyService;
 
         public VoucherController(
             MongoDatabase mongo,
             Operator @operator,
+            ApiKeyService apiKeyService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
@@ -31,6 +33,7 @@ namespace WomPlatform.Web.Api.Controllers {
         ) : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
             _operator = @operator;
+            _apiKeyService = apiKeyService;
         }
 
         /// <summary>
@@ -63,7 +66,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.SourceNotFound();
             }
 
-            var sourcePublicKey = CryptoHelper.LoadKeyFromString<AsymmetricKeyParameter>(source.PublicKey);
+            var sourcePublicKey = await _apiKeyService.GetPublicKey(Request.Headers["X-WOM-ApiKey"].ToString(), source.Id, source.PublicKey);
+            if(sourcePublicKey == null) {
+                Logger.LogError(LoggingEvents.VoucherCreation, "Unable to load public key for source ID {0}", payload.SourceId);
+                return BadRequest();
+            }
 
             (var payloadContent, var decryptResult) = ExtractInputPayload<VoucherCreatePayload.Content>(payload.Payload, LoggingEvents.VoucherCreation);
             if(decryptResult != null) {
