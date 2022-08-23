@@ -59,7 +59,7 @@ mongoimport: confirmation
 	test -f mongo.zip
 	@echo 'Replacing database with contents from file mongo.zip...'
 	${DC} up -d mongo
-	cat mongo.zip | docker exec --interactive $(shell ${DC} ps -q mongo) mongorestore --uri 'mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo' --archive --gzip --drop --preserveUUID
+	cat mongo.zip | docker exec --interactive $(shell ${DC} ps -q mongo) mongorestore --uri 'mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo' --authenticationDatabase admin --archive --gzip --drop --preserveUUID
 	@echo 'Import completed.'
 
 .PHONY: up
@@ -80,8 +80,8 @@ rs:
 
 .PHONY: rebuild
 rebuild:
-	${DC} rm -sf api
 	${DC} build api
+	${DC} rm -sf api
 	${DC} up -d api
 
 .PHONY: stop

@@ -18,21 +18,20 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.Conversion;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api {
-
     public class Startup {
-
         public Startup(IConfiguration configuration) {
             Configuration = configuration;
         }
-
         public IConfiguration Configuration { get; }
 
         private static string _selfDomain = null;
@@ -44,12 +43,10 @@ namespace WomPlatform.Web.Api {
                 return _selfDomain;
             }
         }
-
         public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
 
         public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
         public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
-
         public void ConfigureServices(IServiceCollection services) {
             services.AddCors(options => {
                 options.AddDefaultPolicy(builder => {
@@ -97,7 +94,7 @@ namespace WomPlatform.Web.Api {
                     Description = "WOM development server (HTTP)"
                 });
 
-                options.IncludeXmlComments(Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, "ApiServer.xml"));
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "ApiServer.xml"));
 
                 options.TagActionsBy(api => {
                     var controller = api.ActionDescriptor as ControllerActionDescriptor;
@@ -155,6 +152,10 @@ namespace WomPlatform.Web.Api {
 
             // Add services to dependency registry
             services.AddSingleton(provider => {
+                BsonDefaults.GuidRepresentation = GuidRepresentation.Standard;
+                BsonDefaults.GuidRepresentationMode = GuidRepresentationMode.V3;
+                BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+
                 var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
                 var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
                 var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
@@ -166,14 +167,17 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<KeyManager>();
             services.AddTransient<CryptoProvider>();
+
             services.AddScoped<Operator>();
             services.AddScoped<MongoDatabase>();
+            services.AddScoped<ApiKeyService>();
             services.AddScoped<MerchantService>();
             services.AddScoped<PosService>();
             services.AddScoped<StatsService>();
             services.AddScoped<MapService>();
             services.AddScoped<SetupService>();
             services.AddScoped<SourceService>();
+
             services.AddMailComposer();
         }
 
@@ -191,23 +195,35 @@ namespace WomPlatform.Web.Api {
                 // Refresh development setup
                 var devSection = Configuration.GetSection("DevelopmentSetup");
 
+                var devUserSection = devSection.GetSection("AdminUser");
+                var devUserEntity = new DatabaseDocumentModels.User {
+                    Id = new ObjectId(devUserSection["Id"]),
+                    Email = devUserSection["Email"],
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(devUserSection["Password"]),
+                    Name = devUserSection["Name"],
+                    Surname = devUserSection["Surname"],
+                    RegisteredOn = DateTime.UtcNow
+                };
+                setupService.UpsertUserSync(devUserEntity);
+
                 var devSourceSection = devSection.GetSection("Source");
                 var devSourceId = devSourceSection["Id"];
                 setupService.UpsertSourceSync(new DatabaseDocumentModels.Source {
-                    Id = new MongoDB.Bson.ObjectId(devSourceId),
+                    Id = new ObjectId(devSourceId),
                     Name = "Development source",
                     PrivateKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pem"),
-                    PublicKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub")
+                    PublicKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub"),
+                    AdministratorUserIds = new ObjectId[] { devUserEntity.Id },
                 });
                 logger.LogDebug("Configured development source #{0}", devSourceId);
 
                 var devPosSection = devSection.GetSection("Pos");
                 var devPosId = devPosSection["Id"];
                 setupService.UpsertPosSync(new DatabaseDocumentModels.Pos {
-                    Id = new MongoDB.Bson.ObjectId(devPosId),
+                    Id = new ObjectId(devPosId),
                     Name = "Development POS",
                     PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
-                    PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub")
+                    PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub"),
                 });
                 logger.LogDebug("Configured development POS #{0}", devPosId);
             }

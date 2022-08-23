@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.Service;
 
@@ -21,18 +23,24 @@ namespace WomPlatform.Web.Api.Controllers {
     public class AuthControllerV2 : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly SourceService _sourceService;
         private readonly PosService _posService;
+        private readonly ApiKeyService _apiKeyService;
 
         public AuthControllerV2(
             MongoDatabase mongo,
+            SourceService sourceService,
             PosService posService,
+            ApiKeyService apiKeyService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<AuthControllerV2> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _sourceService = sourceService;
             _posService = posService;
+            _apiKeyService = apiKeyService;
         }
 
         public record AuthV2PosLoginOutput(
@@ -108,26 +116,67 @@ namespace WomPlatform.Web.Api.Controllers {
             var sources = await _mongo.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} controls {1} sources", userId, sources.Count);
 
-            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToList();
+            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToArray();
 
             return Ok(new AuthV2SourceLoginOutput(
                 user.Name,
                 user.Surname,
                 user.Email,
-                sources.Select(s => new SourceLoginV2Output {
-                    Id = s.Id.ToString(),
-                    Name = s.Name,
-                    Url = s.Url,
-                    PrivateKey = s.PrivateKey,
-                    PublicKey = s.PublicKey,
-                    EnabledAims = s.Aims.EnableAll ? allAims : s.Aims.Enabled.ToSafeList(),
-                    PerAimBudget = s.Aims.CurrentBudget ?? new Dictionary<string, int>(),
-                    DefaultLocation = (s.Location.Position == null) ? null : new Location {
-                        Latitude = s.Location.Position.Coordinates.Latitude,
-                        Longitude = s.Location.Position.Coordinates.Longitude
-                    },
-                    LocationIsFixed = s.Location.IsFixed
-                }).ToArray()
+                sources.Select(s => s.ToLoginV2Output(allAims)).ToArray()
+            ));
+        }
+
+        public record AuthV2CreateSourceApiKeyOutput(
+            string sourceId,
+            string selector,
+            ApiKey.KindOfKey kind,
+            string apiKey
+        );
+
+        /// <summary>
+        /// Creates a new API key access for a given source.
+        /// </summary>
+        [HttpPost("source/{sourceId}/apikey")]
+        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(AuthV2CreateSourceApiKeyOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CreateSourceApiKey(
+            [FromRoute] ObjectId sourceId,
+            [FromQuery] [Required] string selector,
+            [FromQuery] ApiKey.KindOfKey kind = ApiKey.KindOfKey.SourceAdministrator
+        ) {
+            Logger.LogDebug("Create source API key");
+
+            if(!User.GetUserId(out var userId)) {
+                return Forbid();
+            }
+
+            var source = await _sourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return NotFound();
+            }
+            if(!source.AdministratorUserIds.Contains(userId)) {
+                return Forbid();
+            }
+
+            if(string.IsNullOrWhiteSpace(selector)) {
+                return Problem(statusCode: 400, title: "API key selector cannot be null or empty");
+            }
+            if(!Enum.IsDefined(kind)) {
+                return Problem(statusCode: 400, title: "API key kind is not valid");
+            }
+
+            var apiKey = await _apiKeyService.CreateOrGetApiKey(sourceId, selector, kind);
+
+            return Ok(new AuthV2CreateSourceApiKeyOutput(
+                sourceId.ToString(),
+                selector,
+                kind,
+                apiKey.Key
             ));
         }
 
@@ -168,6 +217,75 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return Ok(new GetAnonymousCredentialsOutput(posId, pos.PrivateKey));
+        }
+
+        public record GetApiKeyCredentialsOutput(
+            string EntityKind,
+            string EntityId,
+            string PrivateKey,
+            string PublicKey,
+            object Details
+        );
+
+        /// <summary>
+        /// Retrieves credentials bound to an API key.
+        /// </summary>
+        /// <remarks>
+        /// The API key must be supplied as the "X-WOM-ApiKey" HTTP header.
+        /// </remarks>
+        [HttpPost("apikey")]
+        [RequireHttps]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(GetApiKeyCredentialsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetApiKeyCredentials() {
+            if(!Request.Headers.TryGetValue("X-WOM-ApiKey", out var apiKeyHeader)) {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Request does not contain X-WOM-ApiKey header");
+            }
+
+            var apiKey = apiKeyHeader.ToString();
+            var entry = await _apiKeyService.RetrieveApiKey(apiKey);
+            if(entry == null || entry.Expired) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "API key not valid");
+            }
+
+            return entry.Kind switch {
+                ApiKey.KindOfKey.SourceAdministrator => await GetApiKeyCredentialsSource(entry, entry.ControlledEntityId),
+                _ => Problem(statusCode: StatusCodes.Status400BadRequest, title: "API key does not match a recognized entity kind"),
+            };
+        }
+
+        private record GetApiKeySourceDetails(
+            string Name,
+            string Url,
+            string[] EnabledAims,
+            Location DefaultLocation,
+            bool LocationIsFixed
+        );
+
+        private async Task<IActionResult> GetApiKeyCredentialsSource(ApiKey apiKey, ObjectId sourceId) {
+            var source = await _sourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "Source bound to API key does not exist");
+            }
+
+            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToArray();
+
+            return Ok(new GetApiKeyCredentialsOutput(
+                "Source", sourceId.ToString(), apiKey.PrivateKey, apiKey.PublicKey,
+                new GetApiKeySourceDetails(
+                    source.Name,
+                    source.Url,
+                    (source.Aims.EnableAll ? allAims : source.Aims.Enabled).ToSafeArray(),
+                    (source.Location.Position == null) ? null : new Location {
+                        Latitude = source.Location.Position.Coordinates.Latitude,
+                        Longitude = source.Location.Position.Coordinates.Longitude
+                    },
+                    source.Location.IsFixed
+                )
+            ));
         }
 
     }

@@ -1,12 +1,6 @@
-using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.OpenSsl;
-using Org.BouncyCastle.Security;
 
 namespace WomPlatform.Web.Api {
 

@@ -18,6 +18,7 @@ namespace WomPlatform.Web.Api {
         public const int PaymentProcessing = 3002;
         public const int PaymentVerification = 3003;
         public const int PaymentInformationAccess = 3004;
+        public const int PaymentStatus = 3005;
 
         public const int Voucher = 4000;
         public const int VoucherCreation = 4001;

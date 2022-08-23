@@ -11,7 +11,6 @@ using WomPlatform.Web.Api;
 namespace ApiTester {
 
     public class TestVoucherPayments {
-
         AsymmetricKeyParameter _keyPos, _keyInstrument1, _keyRegistry;
         string _idPos = "5e74205c5f21bb265a2d26d8";
         string _idSource = "5e74203f5f21bb265a2d26bd";
@@ -179,6 +178,27 @@ namespace ApiTester {
         }
 
         [Test]
+        public async Task CreateVouchers() {
+            var now = DateTime.UtcNow;
+
+            var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
+                new VoucherCreatePayload.VoucherInfo {
+                    Aim = "H",
+                    Latitude = 63.5269992,
+                    Longitude = -19.510935,
+                    Timestamp = now,
+                    CreationMode = VoucherCreatePayload.VoucherCreationMode.Standard
+                }
+            };
+
+            var response = await _instrument.RequestVouchers(voucherInfos);
+
+            Console.WriteLine("OTC: {0}", response.OtcGen);
+            Console.WriteLine("Password: {0}", response.Password);
+            Console.WriteLine("Link: {0}", response.Link);
+        }
+
+        [Test]
         public async Task CreateVouchersAndProcessSimplePayment() {
             var p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherRequests(5, "E"));
@@ -197,6 +217,13 @@ namespace ApiTester {
             Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await Pay(p, 5, ackUrl);
             });
+
+            var status = await _pos.GetPaymentStatus(otcPay);
+            Assert.AreEqual(false, status.Persistent);
+            Assert.AreEqual(true, status.HasBeenPerformed);
+            Assert.AreEqual(1, status.Confirmations.Count);
+            Assert.LessOrEqual(status.Confirmations[0].PerformedAt, DateTime.UtcNow);
+            Assert.GreaterOrEqual(status.Confirmations[0].PerformedAt, DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(5)));
         }
 
         [Test]
@@ -326,7 +353,5 @@ namespace ApiTester {
                 });
             });
         }
-
     }
-
 }
