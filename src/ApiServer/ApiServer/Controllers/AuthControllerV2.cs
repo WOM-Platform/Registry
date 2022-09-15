@@ -85,7 +85,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Country = d.Item1.Country,
                     Description = d.Item1.Description,
                     Url = d.Item1.WebsiteUrl,
-                    Pos = d.Item2.Select(p => p.ToLoginOutput()).ToArray()
+                    Pos = d.Item2.Select(p => p.ToLoginOutput()).ToArray(),
+                    Enabled = d.Item1.Enabled
                 }).ToArray()
             ));
         }

@@ -24,6 +24,8 @@ namespace WomPlatform.Web.Api.OutputModels {
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Url { get; init; }
+
+        public bool Enabled { get; init; }
     }
 
     public record MerchantAuthOutput : MerchantOutput {
@@ -43,7 +45,8 @@ namespace WomPlatform.Web.Api.OutputModels {
                 City = merchant.City,
                 Country = merchant.Country,
                 Description = merchant.Description,
-                Url = merchant.WebsiteUrl
+                Url = merchant.WebsiteUrl,
+                Enabled = merchant.Enabled
             };
         }
 

@@ -66,6 +66,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfDefault]
         public bool IsDummy { get; set; }
 
+        [BsonElement("enabled")]
+        [BsonDefaultValue(false)]
+        public bool Enabled { get; set; }
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 

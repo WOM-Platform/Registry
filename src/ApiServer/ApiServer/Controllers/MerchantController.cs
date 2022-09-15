@@ -157,7 +157,8 @@ namespace WomPlatform.Web.Api.Controllers {
             string Country,
             string Description,
             [Url]
-            string Url
+            string Url,
+            bool Enabled
         );
 
         /// <summary>
@@ -213,6 +214,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     existingMerchant.WebsiteUrl = input.Url;
                 }
                 existingMerchant.LastUpdate = DateTime.UtcNow;
+                existingMerchant.Enabled = input.Enabled;
 
                 await _merchantService.ReplaceMerchant(existingMerchant);
             }
