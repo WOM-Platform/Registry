@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -44,22 +45,28 @@ namespace WomPlatform.Web.Api.Controllers {
         [AllowAnonymous]
         [ProducesResponseType(typeof(CreateMigrationOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult Register(
+        public async Task<ActionResult> Register(
             IFormFile payload,
             [FromForm] string password
         ) {
             if(payload == null || payload.Length == 0) {
                 return BadRequest();
             }
-            if(!CheckTransferPassword(password)) {
+            if(!CheckTransferPassword(password, false)) {
+                return BadRequest();
+            }
+            if(payload.Length > 1024 * 1024 * 4) { // More than 4 MB
                 return BadRequest();
             }
 
+            using var inputStream = payload.OpenReadStream();
+            (var migrationId, var expiresOn) = await _backupService.CreateBackup(inputStream, password);
+
             return Ok(new CreateMigrationOutput(
                 RegistryUrl: $"https://{SelfHostDomain}",
-                Code: SingleRecord,
-                Link: $"wom://migration/{SingleRecord:D}",
-                Deadline: DateTime.UtcNow.AddDays(7)
+                Code: migrationId,
+                Link: $"wom://migration/{migrationId:D}",
+                Deadline: expiresOn
             ));
         }
 
@@ -110,8 +117,6 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] Guid code,
             [FromBody] RetrieveMigrationInput input
         ) {
-            await _backupService.Test();
-
             if(code != SingleRecord) {
                 return NotFound();
             }

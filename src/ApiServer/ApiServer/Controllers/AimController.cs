@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +40,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="code">Aim code (ex. 'H').</param>
         [HttpGet("{*code}")]
         [ChangeLog("aim-list")]
-        [Produces("application/json")]
+        [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(AimShowOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> Show(string code) {
             var cleanCode = code.Replace("/", string.Empty);
