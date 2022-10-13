@@ -12,6 +12,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("password")]
         public string Password { get; set; }
 
+        [BsonElement("accessCount")]
+        [BsonDefaultValue(0)]
+        [BsonIgnoreIfDefault]
+        public int AccessCount { get; set; } = 0;
+
         [BsonElement("expiresOn")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime ExpiresOn { get; set; }

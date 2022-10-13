@@ -82,22 +82,19 @@ namespace WomPlatform.Web.Api.Controllers {
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult Retrieve(
+        public async Task<ActionResult> Retrieve(
             [FromRoute] Guid code,
             [FromBody] RetrieveMigrationInput input
         ) {
-            if(code != SingleRecord) {
+            (var exists, var accessGranted, var file) = await _backupService.RetrieveBackup(code, input.Password);
+            if(!exists) {
                 return NotFound();
             }
-            if(string.IsNullOrWhiteSpace(input?.Password)) {
+            if(!accessGranted) {
                 return Forbid();
             }
 
-            var rnd = new Random();
-            byte[] rndFile = new byte[1024];
-            rnd.NextBytes(rndFile);
-
-            return File(rndFile, "application/octet-stream");
+            return File(file, "application/octet-stream");
         }
 
         public record GetMigrationInfoOutput(
@@ -117,16 +114,17 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] Guid code,
             [FromBody] RetrieveMigrationInput input
         ) {
-            if(code != SingleRecord) {
+            (var exists, var accessGranted, var migration) = await _backupService.GetBackupInformation(code, input.Password);
+            if(!exists) {
                 return NotFound();
             }
-            if(string.IsNullOrWhiteSpace(input?.Password)) {
+            if(!accessGranted) {
                 return Forbid();
             }
 
             return Ok(new GetMigrationInfoOutput(
-                1,
-                DateTime.UtcNow.AddDays(7)
+                migration.AccessCount,
+                migration.ExpiresOn
             ));
         }
 
