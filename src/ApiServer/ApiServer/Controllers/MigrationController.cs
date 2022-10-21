@@ -63,9 +63,9 @@ namespace WomPlatform.Web.Api.Controllers {
             (var migrationId, var expiresOn) = await _backupService.CreateBackup(inputStream, password);
 
             return Ok(new CreateMigrationOutput(
-                RegistryUrl: $"https://{SelfHostDomain}",
+                RegistryUrl: SelfHostDomain,
                 Code: migrationId,
-                Link: $"wom://migration/{migrationId:D}",
+                Link: $"https://{SelfLinkDomain}/migration/{migrationId:D}",
                 Deadline: expiresOn
             ));
         }
