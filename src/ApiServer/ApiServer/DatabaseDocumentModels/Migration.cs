@@ -21,6 +21,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime ExpiresOn { get; set; }
 
+        [BsonElement("completed")]
+        [BsonDefaultValue(false)]
+        [BsonIgnoreIfDefault]
+        public bool IsCompleted { get; set; } = false;
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -26,8 +25,6 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(configuration, crypto, keyManager, logger) {
             _backupService = backupService;
         }
-
-        private static readonly Guid SingleRecord = Guid.NewGuid();
 
         public record CreateMigrationOutput(
             string RegistryUrl,
@@ -86,7 +83,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] Guid code,
             [FromBody] RetrieveMigrationInput input
         ) {
-            (var exists, var accessGranted, var file) = await _backupService.RetrieveBackup(code, input.Password);
+            (var exists, var accessGranted, var file) = await _backupService.RetrieveBackup(code, input?.Password);
             if(!exists) {
                 return NotFound();
             }
@@ -95,6 +92,30 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return File(file, "application/octet-stream");
+        }
+
+        public record MarkMigrationCompleteInput(
+            string Password
+        );
+
+        /// <summary>
+        /// Mark migration as completed.
+        /// </summary>
+        /// <param name="code">Unique registration code of the required migration.</param>
+        [HttpPost("{code}/complete")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> MarkAsCompleted(
+            [FromRoute] Guid code,
+            [FromBody] MarkMigrationCompleteInput input
+        ) {
+            bool found = await _backupService.MarkBackupAsCompleted(code, input?.Password);
+            if(!found) {
+                return NotFound();
+            }
+
+            return Ok();
         }
 
         public record GetMigrationInfoOutput(

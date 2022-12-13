@@ -56,7 +56,8 @@ namespace WomPlatform.Web.Api.Service {
                 Id = id,
                 Password = password,
                 AccessCount = 0,
-                ExpiresOn = DateTime.UtcNow.AddDays(7),
+                ExpiresOn = DateTime.UtcNow.AddDays(31),
+                IsCompleted = false,
             };
             await MigrationCollection.InsertOneAsync(entry);
 
@@ -71,7 +72,10 @@ namespace WomPlatform.Web.Api.Service {
             }
 
             var entry = await MigrationCollection.FindOneAndUpdateAsync(
-                Builders<Migration>.Filter.Eq(m => m.Id, id),
+                Builders<Migration>.Filter.And(
+                    Builders<Migration>.Filter.Eq(m => m.Id, id),
+                    Builders<Migration>.Filter.Eq(m => m.IsCompleted, false)
+                ),
                 Builders<Migration>.Update.Inc(m => m.AccessCount, 1)
             );
             if(entry == null) {
@@ -88,6 +92,18 @@ namespace WomPlatform.Web.Api.Service {
             return (true, true, output);
         }
 
+        public async Task<bool> MarkBackupAsCompleted(Guid id, string password) {
+            var entry = await MigrationCollection.FindOneAndUpdateAsync(
+                Builders<Migration>.Filter.And(
+                    Builders<Migration>.Filter.Eq(m => m.Id, id),
+                    Builders<Migration>.Filter.Eq(m => m.Password, password)
+                ),
+                Builders<Migration>.Update.Set(m => m.IsCompleted, true)
+            );
+
+            return entry != null;
+        }
+
         public async Task<(bool Exists, bool AccessGranted, Migration Migration)> GetBackupInformation(Guid id, string password) {
             if(string.IsNullOrWhiteSpace(password)) {
                 throw new ArgumentNullException(nameof(password));
@@ -95,6 +111,9 @@ namespace WomPlatform.Web.Api.Service {
 
             var entry = await MigrationCollection.Find(Builders<Migration>.Filter.Eq(m => m.Id, id)).FirstOrDefaultAsync();
             if(entry == null) {
+                return (false, false, null);
+            }
+            if(entry.IsCompleted) {
                 return (false, false, null);
             }
             if(!entry.Password.Equals(password)) {
