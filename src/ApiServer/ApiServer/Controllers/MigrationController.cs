@@ -120,7 +120,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record GetMigrationInfoOutput(
             int AccessCount,
-            DateTime Deadline
+            DateTime Deadline,
+            bool Completed
         );
 
         /// <summary>
@@ -145,7 +146,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(new GetMigrationInfoOutput(
                 migration.AccessCount,
-                migration.ExpiresOn
+                migration.ExpiresOn,
+                migration?.IsCompleted ?? false
             ));
         }
 
