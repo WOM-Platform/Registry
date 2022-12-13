@@ -51,7 +51,7 @@ phpmyadmin:
 
 .PHONY: mondodump mongoimport
 mongodump:
-	@echo 'Dumping MongoDB to /data/...'
+	@echo 'Dumping MongoDB to mongo.zip...'
 	${DC} up -d mongo
 	docker exec $(shell ${DC} ps -q mongo) mongodump --uri 'mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo' --archive --gzip > mongo.zip
 
