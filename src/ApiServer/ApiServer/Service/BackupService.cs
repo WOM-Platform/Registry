@@ -50,7 +50,7 @@ namespace WomPlatform.Web.Api.Service {
             }
 
             Guid id = Guid.NewGuid();
-            _logger.LogDebug("Creating new backup with ID {0}", id);
+            _logger.LogInformation("Creating new backup with ID {0}", id);
 
             var entry = new Migration {
                 Id = id,
@@ -60,8 +60,10 @@ namespace WomPlatform.Web.Api.Service {
                 IsCompleted = false,
             };
             await MigrationCollection.InsertOneAsync(entry);
+            _logger.LogDebug("Migration will be valid until {0}", entry.ExpiresOn);
 
             await _storageClient.UploadObjectAsync(_googleStorageBucketName, id.ToString("N"), MediaTypeNames.Application.Octet, rawFilePayload);
+            _logger.LogDebug("Storage object uploaded at {0}/{1}", _googleStorageBucketName, id.ToString("N"));
 
             return (id, entry.ExpiresOn);
         }
@@ -71,28 +73,35 @@ namespace WomPlatform.Web.Api.Service {
                 throw new ArgumentNullException(nameof(password));
             }
 
+            _logger.LogInformation("Retrieving backup with ID {0}", id);
+
             var entry = await MigrationCollection.FindOneAndUpdateAsync(
                 Builders<Migration>.Filter.And(
                     Builders<Migration>.Filter.Eq(m => m.Id, id),
-                    Builders<Migration>.Filter.Eq(m => m.IsCompleted, false)
+                    Builders<Migration>.Filter.Not(Builders<Migration>.Filter.Eq(m => m.IsCompleted, true))
                 ),
                 Builders<Migration>.Update.Inc(m => m.AccessCount, 1)
             );
             if(entry == null) {
+                _logger.LogInformation("Backup not found");
                 return (false, false, null);
             }
             if(!entry.Password.Equals(password)) {
+                _logger.LogInformation("Password does not match");
                 return (true, false, null);
             }
 
             var output = new MemoryStream();
             await _storageClient.DownloadObjectAsync(_googleStorageBucketName, id.ToString("N"), output);
             output.Seek(0, SeekOrigin.Begin);
+            _logger.LogDebug("Storage object downloaded from {0}/{1}", _googleStorageBucketName, id.ToString("N"));
 
             return (true, true, output);
         }
 
         public async Task<bool> MarkBackupAsCompleted(Guid id, string password) {
+            _logger.LogInformation("Marking backup with ID {0} as completed", id);
+
             var entry = await MigrationCollection.FindOneAndUpdateAsync(
                 Builders<Migration>.Filter.And(
                     Builders<Migration>.Filter.Eq(m => m.Id, id),
@@ -108,6 +117,8 @@ namespace WomPlatform.Web.Api.Service {
             if(string.IsNullOrWhiteSpace(password)) {
                 throw new ArgumentNullException(nameof(password));
             }
+
+            _logger.LogInformation("Getting information about migration with ID {0}", id);
 
             var entry = await MigrationCollection.Find(Builders<Migration>.Filter.Eq(m => m.Id, id)).FirstOrDefaultAsync();
             if(entry == null) {
