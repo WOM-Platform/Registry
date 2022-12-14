@@ -124,9 +124,6 @@ namespace WomPlatform.Web.Api.Service {
             if(entry == null) {
                 return (false, false, null);
             }
-            if(entry.IsCompleted) {
-                return (false, false, null);
-            }
             if(!entry.Password.Equals(password)) {
                 return (true, false, null);
             }
