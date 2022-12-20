@@ -16,6 +16,11 @@ services:
     env_file: config.env
     expose:
     - "8779"
+    logging:
+      driver: "local"
+      options:
+        max-size: "30m"
+        max-file: "2"
 
   mongo:
     image: mongo:4.4.13
@@ -24,3 +29,5 @@ services:
     expose:
     - "27017"
     env_file: config.env
+    logging:
+      driver: "none"
