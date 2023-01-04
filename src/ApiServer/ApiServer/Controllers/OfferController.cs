@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Offers;
 using WomPlatform.Web.Api.Service;
@@ -17,81 +21,127 @@ namespace WomPlatform.Web.Api.Controllers {
     public class OfferController : BaseRegistryController {
 
         private readonly OfferService _offerService;
+        private readonly PaymentService _paymentService;
+        private readonly PosService _posService;
+        private readonly MerchantService _merchantService;
 
         public OfferController(
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             OfferService offerService,
+            PaymentService paymentService,
+            PosService posService,
+            MerchantService merchantService,
             ILogger<MigrationController> logger)
         : base(configuration, crypto, keyManager, logger) {
             _offerService = offerService;
+            _paymentService = paymentService;
+            _posService = posService;
+            _merchantService = merchantService;
         }
 
+        /// <summary>
+        /// Searches available points of service and offers around a location.
+        /// </summary>
+        /// <param name="latitude">Latitude of the location.</param>
+        /// <param name="longitude">Longitude of the location.</param>
+        /// <param name="range">Maximum range to search, in kilometers. Defaults to 10 kms.</param>
         [HttpPost("search/distance")]
         [AllowAnonymous]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(Paged<OfferSearchPosOutput>), StatusCodes.Status200OK)]
-        public ActionResult SearchByDistance(
-            double latitude, double longitude, double range
+        [ProducesResponseType(typeof(OfferSearchPosOutput[]), StatusCodes.Status200OK)]
+        public async Task<ActionResult> SearchByDistance(
+            double latitude, double longitude, double range = 10
         ) {
-            return Ok(Paged<OfferSearchPosOutput>.FromAll(new OfferSearchPosOutput[] {
-                new OfferSearchPosOutput {
-                    PosId = "6295f82084bf4e0021b07ea3",
-                    Name = "POS vicino",
-                    Description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-                    Picture = null,
-                    Url = "https://example.org",
-                    Position = new OutputModels.GeoCoords {
-                        Latitude = 42.934872,
-                        Longitude = 12.609390
-                    },
-                    DistanceInKms = 123.45,
-                    Offers = new OfferSearchOfferOutput[] {
-                        new OfferSearchOfferOutput {
-                            OfferId = new Guid("6c7f4b71-fb04-4540-8f76-b3a2e792dfc9"),
-                            Title = "Offer 1",
-                            Description = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-                            Picture = null,
-                            Cost = 50,
-                            CreatedAt = new DateTime(2022, 12, 11, 10, 11, 12),
-                            UpdatedAt = new DateTime(2022, 12, 31, 10, 11, 12),
-                        },
-                        new OfferSearchOfferOutput {
-                            OfferId = new Guid("6c7f4b71-fb04-4540-8f76-b3a2e792dfd9"),
-                            Title = "Offer 2",
-                            Description = "Offendit eleifend moderatius ex vix, quem odio mazim et qui, purto expetendis cotidieque quo cu, veri persius vituperata ei nec.",
-                            Picture = null,
-                            Cost = 100,
-                            CreatedAt = new DateTime(2022, 12, 13, 12, 13, 14),
-                            UpdatedAt = new DateTime(2022, 12, 28, 12, 13, 14),
-                        }
-                    }
-                },
-                new OfferSearchPosOutput {
-                    PosId = "62976d4384bf4e0021b0a4d4",
-                    Name = "POS lontano",
-                    Description = "Then God said, Let the earth and no herb of the field and every bird of the air, and brought her to the man. God set them in the dome Sky.",
-                    Picture = null,
-                    Url = "https://example.org",
-                    Position = new OutputModels.GeoCoords {
-                        Latitude = 42.945000,
-                        Longitude = 12.702040
-                    },
-                    DistanceInKms = 234.56,
-                    Offers = new OfferSearchOfferOutput[] {
-                        new OfferSearchOfferOutput {
-                            OfferId = new Guid("e31217dd-a6f6-4908-b67a-13daa864a2fe"),
-                            Title = "Offer 3",
-                            Description = "Then God said, Let there be lights in the dome of the waters, and let it separate the day from the night; and let birds multiply on the seventh day and hallowed it.",
-                            Picture = null,
-                            Cost = 75,
-                            CreatedAt = new DateTime(2022, 12, 11, 10, 11, 12),
-                            UpdatedAt = new DateTime(2022, 12, 31, 10, 11, 12),
-                        }
-                    }
-                },
+            Logger.LogInformation("Searching for POS offers at {0} kms from ({1},{2})", range, latitude, longitude);
+
+            var results = await _offerService.GetOffersByDistance(latitude, longitude, range);
+
+            return Ok(results.Select(go => new OfferSearchPosOutput {
+                PosId = go.Id.ToString(),
+                Name = go.Name,
+                Description = go.Description,
+                Picture = null, // TODO
+                Url = null, // TODO
+                Position = go.Position.ToOutput(),
+                Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
+                    OfferId = o.Otc,
+                    Title = o.Title,
+                    Description = o.Description,
+                    Picture = null, // TODO
+                    Cost = o.Cost,
+                    Filter = o.Filter.ToOutput(),
+                    CreatedAt = o.CreatedOn,
+                    UpdatedAt = o.LastUpdate,
+                }).ToArray(),
             }));
+        }
+
+        [HttpPost("migrate")]
+        public async Task<ActionResult> Migrate() {
+            Logger.LogInformation("Migrating payments to offers");
+
+            Dictionary<ObjectId, Pos> posMap = new ();
+            Dictionary<ObjectId, Merchant> merchantMap = new();
+
+            var payments = await _paymentService.GetPersistentPayments();
+            foreach(var payment in payments) {
+                if(!posMap.ContainsKey(payment.PosId)) {
+                    Logger.LogDebug("Fetching info for POS {0}", payment.PosId);
+                    posMap.Add(payment.PosId, await _posService.GetPosById(payment.PosId));
+                }
+                var pos = posMap[payment.PosId];
+                if(pos == null) {
+                    Logger.LogWarning("Skipping payment {0} with no POS", payment.Otc);
+                    continue;
+                }
+                if(pos.IsDummy) {
+                    continue;
+                }
+
+                if(!merchantMap.ContainsKey(pos.MerchantId)) {
+                    Logger.LogDebug("Fetcing info for merchant {0}", pos.MerchantId);
+                    merchantMap.Add(pos.MerchantId, await _merchantService.GetMerchantById(pos.MerchantId));
+                }
+                var merchant = merchantMap[pos.MerchantId];
+                if(merchant == null) {
+                    Logger.LogWarning("Skipping payment {0} with no merchant", payment.Otc);
+                    continue;
+                }
+                if(merchant.IsDummy) {
+                    continue;
+                }
+
+                var offer = new Offer {
+                    Otc = Guid.NewGuid(),
+                    Title = "Offerta",
+                    Description = null,
+                    Cost = payment.Amount,
+                    Filter = payment.Filter,
+                    Pos = new Offer.PosInformation {
+                        Id = pos.Id,
+                        Name = pos.Name,
+                        Description = null,
+                        Position = pos.Position,
+                    },
+                    Merchant = new Offer.MerchantInformation {
+                        Id = pos.MerchantId,
+                        Name = merchant.Name,
+                        WebsiteUrl = merchant.WebsiteUrl,
+                    },
+                    CreatedOn = payment.CreatedAt,
+                    LastUpdate = DateTime.UtcNow,
+                    Deactivated = false,
+                };
+                Logger.LogInformation("Migrating payment {0} as offer {1}", payment.Otc, offer.Otc);
+
+                await _offerService.AddOffer(offer);
+            }
+
+            Logger.LogInformation("{0} payments processed", payments.Count);
+
+            return Ok();
         }
 
     }

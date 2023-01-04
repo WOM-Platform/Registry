@@ -16,8 +16,6 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
 
         public GeoCoords Position { get; init; }
 
-        public double DistanceInKms { get; init; }
-
         public OfferSearchOfferOutput[] Offers { get; init; }
     }
 
@@ -32,6 +30,8 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         public PictureOutput Picture { get; init; }
 
         public int Cost { get; init; }
+
+        public SimpleFilter Filter { get; init; }
 
         public DateTime CreatedAt { get; init; }
 

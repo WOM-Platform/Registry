@@ -17,6 +17,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("name")]
         public string Name { get; set; }
 
+        [BsonElement("description")]
+        [BsonIgnoreIfNull]
+        public string Description { get; set; }
+
         [BsonElement("publicKey")]
         public string PublicKey { get; set; }
 
