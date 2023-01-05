@@ -4,10 +4,8 @@
 \.vs/
 *.csproj.user
 keys/*
+!keys/placeholder
 dump.sql
 **/output.sql
 config.env
 src/ApiServer/ApiServer/ApiServer.xml
-src/ApiServer/ApiServer/appsettings_local.Development.json
-src/ApiServer/ApiServer/appsettings_local.json
-src/ApiServer/ApiServer/Properties/launchSettings_local.json
