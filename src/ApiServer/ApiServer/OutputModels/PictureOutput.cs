@@ -31,5 +31,10 @@
         /// Assumes 300×300 dp with extra-high density (xhdpi) = 600×600 pixels.
         /// </remarks>
         public string SquareThumbnailUrl { get; init; }
+
+        /// <summary>
+        /// Blur hash of the picture.
+        /// </summary>
+        public string BlurHash { get; init; }
     }
 }

@@ -8,14 +8,17 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
     public class Offer {
 
-        [BsonId(IdGenerator = typeof(GuidGenerator))]
-        public Guid Otc { get; set; }
+        [BsonId(IdGenerator = typeof(ObjectIdGenerator))]
+        public ObjectId Id { get; set; }
 
         [BsonElement("title")]
         public string Title { get; set; }
 
         [BsonElement("description")]
         public string Description { get; set; }
+
+        [BsonElement("paymentRequestId")]
+        public Guid PaymentRequestId { get; set; }
 
         [BsonElement("cost")]
         public int Cost { get; set; }
@@ -35,8 +38,20 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
             [BsonIgnoreIfNull]
             public string Description { get; set; }
 
+            [BsonElement("coverPath")]
+            [BsonIgnoreIfNull]
+            public string CoverPath { get; set; }
+
+            [BsonElement("coverBlurHash")]
+            [BsonIgnoreIfNull]
+            public string CoverBlurHash { get; set; }
+
             [BsonElement("position")]
             public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
+
+            [BsonElement("url")]
+            [BsonIgnoreIfNull]
+            public string Url { get; set; }
         }
 
         [BsonElement("pos")]

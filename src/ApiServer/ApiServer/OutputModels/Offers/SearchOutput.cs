@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json.Serialization;
+using MongoDB.Bson;
 
 namespace WomPlatform.Web.Api.OutputModels.Offers {
     public class OfferSearchPosOutput {
@@ -10,8 +11,9 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         public string Description { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public PictureOutput Picture { get; init; }
+        public PictureOutput Cover { get; init; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Url { get; init; }
 
         public GeoCoords Position { get; init; }
@@ -20,17 +22,15 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
     }
 
     public class OfferSearchOfferOutput {
-        public Guid OfferId { get; init; }
+        public ObjectId OfferId { get; init; }
 
         public string Title { get; init; }
 
         public string Description { get; init; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public PictureOutput Picture { get; init; }
-
         public int Cost { get; init; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public SimpleFilter Filter { get; init; }
 
         public DateTime CreatedAt { get; init; }

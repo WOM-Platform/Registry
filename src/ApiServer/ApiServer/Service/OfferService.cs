@@ -6,11 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
-using static WomPlatform.Connector.Models.MerchantLoginResultV2;
 
 namespace WomPlatform.Web.Api.Service {
     public class OfferService : BaseService {
@@ -42,6 +40,15 @@ namespace WomPlatform.Web.Api.Service {
             [BsonElement("description")]
             public string Description { get; set; }
 
+            [BsonElement("coverPath")]
+            public string CoverPath { get; set; }
+
+            [BsonElement("coverBlurHash")]
+            public string CoverBlurHash { get; set; }
+
+            [BsonElement("url")]
+            public string Url { get; set; }
+
             [BsonElement("position")]
             public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
 
@@ -53,7 +60,7 @@ namespace WomPlatform.Web.Api.Service {
 
             public class Offer {
                 [BsonId]
-                public Guid Otc { get; set; }
+                public ObjectId Id { get; set; }
 
                 [BsonElement("title")]
                 public string Title { get; set; }
@@ -96,10 +103,23 @@ namespace WomPlatform.Web.Api.Service {
                         _id: ""$pos._id"",
                         name: { $first: ""$pos.name"" },
                         description: { $first: ""$pos.description"" },
+                        coverPath: { $first: ""$pos.coverPath"" },
+                        coverBlurHash: { $first: ""$pos.coverBlurHash"" },
+                        url: { $first: ""$pos.url"" },
                         position: { $first: ""$pos.position"" },
                         distance: { $first: ""$distance"" },
                         offerCount: { $sum: 1 },
-                        offers: { $push: { _id: ""$_id"", title: ""$title"", description: ""$description"", cost: ""$cost"", filter: ""$filter"", createdOn: ""$createdOn"", lastUpdate: ""$lastUpdate"" } }
+                        offers: {
+                            $push: {
+                                _id: ""$_id"",
+                                title: ""$title"",
+                                description: ""$description"",
+                                cost: ""$cost"",
+                                filter: ""$filter"",
+                                createdOn: ""$createdOn"",
+                                lastUpdate: ""$lastUpdate""
+                            }
+                        }
                     }
                 }"))
                 .Sort(Builders<GroupedOffersByPos>.Sort.Ascending(go => go.Distance))
