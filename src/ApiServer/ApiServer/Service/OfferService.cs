@@ -161,8 +161,8 @@ namespace WomPlatform.Web.Api.Service {
                         ""pos.position"": {{
                             $geoWithin: {{
                                 $box: [
-                                    [{1}, {0}],
-                                    [{3}, {2}]
+                                    [{0}, {1}],
+                                    [{2}, {3}]
                                 ]
                             }}
                         }}
