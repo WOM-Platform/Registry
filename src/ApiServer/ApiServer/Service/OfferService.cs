@@ -26,6 +26,26 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        public enum OfferOrder {
+            Distance,
+            LastUpdate,
+            AlfanumericTitle
+        }
+
+        private PipelineDefinition<Offer, GroupedOffersByPos> ApplyOrder(PipelineDefinition<Offer, GroupedOffersByPos> pipeline, OfferOrder orderBy) {
+            switch(orderBy) {
+                default:
+                case OfferOrder.AlfanumericTitle:
+                    return pipeline.Sort(Builders<GroupedOffersByPos>.Sort.Ascending(go => go.Name));
+
+                case OfferOrder.Distance:
+                    return pipeline.Sort(Builders<GroupedOffersByPos>.Sort.Ascending(go => go.Distance));
+
+                case OfferOrder.LastUpdate:
+                    return pipeline.Sort(Builders<GroupedOffersByPos>.Sort.Descending(go => go.MostRecentUpdate));
+            }
+        }
+
         public Task AddOffer(Offer offer) {
             return OfferCollection.InsertOneAsync(offer);
         }
@@ -58,6 +78,9 @@ namespace WomPlatform.Web.Api.Service {
             [BsonElement("offerCount")]
             public int OfferCount { get; set; }
 
+            [BsonElement("mostRecentUpdate")]
+            public DateTime? MostRecentUpdate { get; set; }
+
             public class Offer {
                 [BsonId]
                 public ObjectId Id { get; set; }
@@ -87,10 +110,11 @@ namespace WomPlatform.Web.Api.Service {
             public Offer[] Offers { get; set; }
         }
 
-        public Task<List<GroupedOffersByPos>> GetOffersByDistance(double latitude, double longitude, double rangeKms) {
+        public Task<List<GroupedOffersByPos>> GetOffersByDistance(double latitude, double longitude, double rangeKms, OfferOrder orderBy) {
             var pipeline = new EmptyPipelineDefinition<Offer>()
                 .AppendStage<Offer, Offer, Offer>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
                     $geoNear: {{
+                        key: ""pos.position"",
                         near: {{ ""type"": ""Point"", ""coordinates"": [ {0}, {1} ] }},
                         distanceField: 'distance',
                         maxDistance: {2},
@@ -109,6 +133,7 @@ namespace WomPlatform.Web.Api.Service {
                         position: { $first: ""$pos.position"" },
                         distance: { $first: ""$distance"" },
                         offerCount: { $sum: 1 },
+                        mostRecentUpdate: { $max: ""$pos.lastUpdate"" },
                         offers: {
                             $push: {
                                 _id: ""$_id"",
@@ -121,9 +146,54 @@ namespace WomPlatform.Web.Api.Service {
                             }
                         }
                     }
-                }"))
-                .Sort(Builders<GroupedOffersByPos>.Sort.Ascending(go => go.Distance))
-            ;
+                }"));
+
+            pipeline = ApplyOrder(pipeline, orderBy);
+
+            return OfferCollection.Aggregate(pipeline).ToListAsync();
+        }
+
+        public Task<List<GroupedOffersByPos>> GetOffersInBox(double lowerLeftLong, double lowerLeftLat, double upperRightLong, double upperRightLat, OfferOrder orderBy) {
+            var pipeline = new EmptyPipelineDefinition<Offer>()
+                .Match(Builders<Offer>.Filter.Ne(o => o.Deactivated, true))
+                .AppendStage<Offer, Offer, Offer>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
+                    $match: {{
+                        ""pos.position"": {{
+                            $geoWithin: {{
+                                $box: [
+                                    [{1}, {0}],
+                                    [{3}, {2}]
+                                ]
+                            }}
+                        }}
+                    }}
+                }}", lowerLeftLong, lowerLeftLat, upperRightLong, upperRightLat)))
+                .AppendStage<Offer, Offer, GroupedOffersByPos>(BsonDocument.Parse(@"{
+                    $group: {
+                        _id: ""$pos._id"",
+                        name: { $first: ""$pos.name"" },
+                        description: { $first: ""$pos.description"" },
+                        coverPath: { $first: ""$pos.coverPath"" },
+                        coverBlurHash: { $first: ""$pos.coverBlurHash"" },
+                        url: { $first: ""$pos.url"" },
+                        position: { $first: ""$pos.position"" },
+                        offerCount: { $sum: 1 },
+                        mostRecentUpdate: { $max: ""$pos.lastUpdate"" },
+                        offers: {
+                            $push: {
+                                _id: ""$_id"",
+                                title: ""$title"",
+                                description: ""$description"",
+                                cost: ""$cost"",
+                                filter: ""$filter"",
+                                createdOn: ""$createdOn"",
+                                lastUpdate: ""$lastUpdate""
+                            }
+                        }
+                    }
+                }"));
+
+            pipeline = ApplyOrder(pipeline, orderBy);
 
             return OfferCollection.Aggregate(pipeline).ToListAsync();
         }

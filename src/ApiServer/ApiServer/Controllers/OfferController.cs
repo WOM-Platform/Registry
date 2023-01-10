@@ -14,8 +14,10 @@ using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Map;
 using WomPlatform.Web.Api.OutputModels.Offers;
 using WomPlatform.Web.Api.Service;
+using static WomPlatform.Web.Api.Service.OfferService;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -55,10 +57,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="range">Maximum range to search, in kilometers. Defaults to 10 kms.</param>
         [HttpPost("search/distance")]
         [AllowAnonymous]
-        [Produces("application/json")]
+        [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(OfferSearchPosOutput[]), StatusCodes.Status200OK)]
         public async Task<ActionResult> SearchByDistance(
-            double latitude, double longitude, double range = 10
+            double latitude, double longitude, double range = 10, OfferOrder orderBy = OfferOrder.LastUpdate
         ) {
             if(range > 30) {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Search range cannot be greater than 30 kms");
@@ -66,7 +68,39 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Searching for POS offers at {0} kms from ({1},{2})", range, latitude, longitude);
 
-            var results = await _offerService.GetOffersByDistance(latitude, longitude, range);
+            var results = await _offerService.GetOffersByDistance(latitude, longitude, range, orderBy);
+
+            return Ok(results.Select(go => new OfferSearchPosOutput {
+                PosId = go.Id.ToString(),
+                Name = go.Name,
+                Description = go.Description,
+                Cover = _picturesService.DefaultPosCover,
+                Url = go.Url,
+                Position = go.Position.ToOutput(),
+                Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
+                    OfferId = o.Id,
+                    Title = o.Title,
+                    Description = o.Description,
+                    Cost = o.Cost,
+                    Filter = o.Filter.ToOutput(),
+                    CreatedAt = o.CreatedOn,
+                    UpdatedAt = o.LastUpdate,
+                }).ToArray(),
+            }));
+        }
+
+        [HttpPost("search/box")]
+        [AllowAnonymous]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(OfferSearchPosOutput[]), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchByBox(
+            [FromQuery] double llx, [FromQuery] double lly,
+            [FromQuery] double urx, [FromQuery] double ury,
+            [FromQuery] OfferOrder orderBy = OfferOrder.LastUpdate
+        ) {
+            Logger.LogInformation("Searching for POS offers between ({0},{1}) and ({2},{3})", llx, lly, urx, ury);
+
+            var results = await _offerService.GetOffersInBox(llx, lly, urx, ury, orderBy);
 
             return Ok(results.Select(go => new OfferSearchPosOutput {
                 PosId = go.Id.ToString(),
