@@ -153,7 +153,7 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.Aggregate(pipeline).ToListAsync();
         }
 
-        public Task<List<GroupedOffersByPos>> GetOffersInBox(double lowerLeftLong, double lowerLeftLat, double upperRightLong, double upperRightLat, OfferOrder orderBy) {
+        public Task<List<GroupedOffersByPos>> GetOffersInBox(double lowerLeftLong, double lowerLeftLat, double upperRightLong, double upperRightLat) {
             var pipeline = new EmptyPipelineDefinition<Offer>()
                 .Match(Builders<Offer>.Filter.Ne(o => o.Deactivated, true))
                 .AppendStage<Offer, Offer, Offer>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
@@ -192,8 +192,6 @@ namespace WomPlatform.Web.Api.Service {
                         }
                     }
                 }"));
-
-            pipeline = ApplyOrder(pipeline, orderBy);
 
             return OfferCollection.Aggregate(pipeline).ToListAsync();
         }

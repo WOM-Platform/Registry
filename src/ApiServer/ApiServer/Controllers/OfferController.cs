@@ -95,12 +95,11 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(OfferSearchPosOutput[]), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchByBox(
             [FromQuery] double llx, [FromQuery] double lly,
-            [FromQuery] double urx, [FromQuery] double ury,
-            [FromQuery] OfferOrder orderBy = OfferOrder.LastUpdate
+            [FromQuery] double urx, [FromQuery] double ury
         ) {
             Logger.LogInformation("Searching for POS offers between ({0},{1}) and ({2},{3})", llx, lly, urx, ury);
 
-            var results = await _offerService.GetOffersInBox(llx, lly, urx, ury, orderBy);
+            var results = await _offerService.GetOffersInBox(llx, lly, urx, ury);
 
             return Ok(results.Select(go => new OfferSearchPosOutput {
                 PosId = go.Id.ToString(),
