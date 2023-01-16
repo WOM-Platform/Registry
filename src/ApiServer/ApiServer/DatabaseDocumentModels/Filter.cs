@@ -1,7 +1,5 @@
-﻿using System;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
@@ -12,11 +10,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("aims")]
         [BsonIgnoreIfNull]
-        public string Aims { get; set; } = null;
+        public string Aims { get; set; }
 
         [BsonElement("bounds")]
         [BsonIgnoreIfNull]
-        public Bounds Bounds { get; set; } = null;
+        public Bounds Bounds { get; set; }
 
         [BsonElement("maxAge")]
         [BsonIgnoreIfNull]

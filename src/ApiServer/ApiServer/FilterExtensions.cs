@@ -1,5 +1,4 @@
-﻿using System;
-using MongoDB.Driver.GeoJsonObjectModel;
+﻿using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api {

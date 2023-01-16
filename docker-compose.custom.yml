@@ -11,6 +11,7 @@ services:
     - ASPNETCORE_ENVIRONMENT=Production
     volumes:
     - ./keys:/testkeys:ro
+    - ./keys:/keys:ro
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
