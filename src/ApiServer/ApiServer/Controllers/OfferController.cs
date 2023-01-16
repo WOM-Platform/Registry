@@ -216,6 +216,9 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] string posName,
             [FromForm] [Required] IFormFile image
         ) {
+            if(string.IsNullOrWhiteSpace(posName)) {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Query posName cannot be empty");
+            }
             if(image == null || image.Length == 0) {
                 return BadRequest();
             }
@@ -226,7 +229,7 @@ namespace WomPlatform.Web.Api.Controllers {
             using var stream = new MemoryStream();
             await image.CopyToAsync(stream);
 
-            var output = await _picturesService.ProcessAndUploadPicture(stream, $"pos-covers/{posName}-{Guid.NewGuid():N}");
+            var output = await _picturesService.ProcessAndUploadPicture(stream, $"pos-covers/{posName}/{Guid.NewGuid():N}");
 
             return Ok(output);
         }
