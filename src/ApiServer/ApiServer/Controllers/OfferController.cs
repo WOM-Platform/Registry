@@ -74,7 +74,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 PosId = go.Id.ToString(),
                 Name = go.Name,
                 Description = go.Description,
-                Cover = _picturesService.DefaultPosCover,
+                Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
@@ -105,7 +105,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 PosId = go.Id.ToString(),
                 Name = go.Name,
                 Description = go.Description,
-                Cover = _picturesService.DefaultPosCover,
+                Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
