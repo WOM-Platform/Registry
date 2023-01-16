@@ -14,7 +14,6 @@ using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
-using WomPlatform.Web.Api.OutputModels.Map;
 using WomPlatform.Web.Api.OutputModels.Offers;
 using WomPlatform.Web.Api.Service;
 using static WomPlatform.Web.Api.Service.OfferService;
@@ -74,7 +73,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 PosId = go.Id.ToString(),
                 Name = go.Name,
                 Description = go.Description,
-                Cover = _picturesService.DefaultPosCover,
+                Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
@@ -105,7 +104,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 PosId = go.Id.ToString(),
                 Name = go.Name,
                 Description = go.Description,
-                Cover = _picturesService.DefaultPosCover,
+                Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
@@ -206,6 +205,28 @@ namespace WomPlatform.Web.Api.Controllers {
             await image.CopyToAsync(stream);
 
             var output = await _picturesService.ProcessAndUploadPicture(stream, "pos-covers/default");
+
+            return Ok(output);
+        }
+
+        [HttpPost("cover")]
+        [DisableRequestSizeLimit]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> UploadPosCover(
+            [FromQuery] string posName,
+            [FromForm] [Required] IFormFile image
+        ) {
+            if(image == null || image.Length == 0) {
+                return BadRequest();
+            }
+            if(image.Length > 4 * 1024 * 1024) {
+                return BadRequest();
+            }
+
+            using var stream = new MemoryStream();
+            await image.CopyToAsync(stream);
+
+            var output = await _picturesService.ProcessAndUploadPicture(stream, $"pos-covers/{posName}-{Guid.NewGuid():N}");
 
             return Ok(output);
         }
