@@ -23,12 +23,14 @@ namespace WomPlatform.Web.Api.Controllers {
     public class AuthControllerV2 : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly AimService _aimService;
         private readonly SourceService _sourceService;
         private readonly PosService _posService;
         private readonly ApiKeyService _apiKeyService;
 
         public AuthControllerV2(
             MongoDatabase mongo,
+            AimService aimService,
             SourceService sourceService,
             PosService posService,
             ApiKeyService apiKeyService,
@@ -38,6 +40,7 @@ namespace WomPlatform.Web.Api.Controllers {
             ILogger<AuthControllerV2> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _aimService = aimService;
             _sourceService = sourceService;
             _posService = posService;
             _apiKeyService = apiKeyService;
@@ -117,7 +120,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var sources = await _mongo.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} controls {1} sources", userId, sources.Count);
 
-            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToArray();
+            var allAims = (from a in await _aimService.GetRootAims() select a.Code).ToArray();
 
             return Ok(new AuthV2SourceLoginOutput(
                 user.Name,
@@ -272,7 +275,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: "Source bound to API key does not exist");
             }
 
-            var allAims = (from a in await _mongo.GetRootAims() select a.Code).ToArray();
+            var allAims = (from a in await _aimService.GetRootAims() select a.Code).ToArray();
 
             return Ok(new GetApiKeyCredentialsOutput(
                 "Source", sourceId.ToString(), apiKey.PrivateKey, apiKey.PublicKey,

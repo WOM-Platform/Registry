@@ -30,69 +30,6 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-        private IMongoCollection<Aim> AimCollection {
-            get {
-                return MainDatabase.GetCollection<Aim>("Aims");
-            }
-        }
-
-        /// <summary>
-        /// Get all non-hidden aims.
-        /// </summary>
-        public Task<List<Aim>> GetAims() {
-            return AimCollection.Aggregate()
-                // Projects and adds length and root (first code character)
-                .Project<BsonDocument>((ProjectionDefinition<Aim>)@"{
-                    ""titles"": 1,
-                    ""order"": 1,
-                    ""hidden"": 1,
-                    ""root"": { $substrCP:[ ""$_id"", 0, 1 ] }
-                }")
-                // Hide hidden aims
-                .Match(@"{
-                    ""hidden"": {$ne: true }
-                }")
-                // Sort by root aim
-                .Sort(@"{
-                    ""root"": 1,
-                    ""_id"": 1
-                }")
-                .As<Aim>()
-                .ToListAsync();
-        }
-
-        /// <summary>
-        /// Get all non-hidden root aims.
-        /// </summary>
-        public Task<List<Aim>> GetRootAims() {
-            return AimCollection.Aggregate()
-                // Projects and adds length and root (first code character)
-                .Project<BsonDocument>((ProjectionDefinition<Aim>)@"{
-                    ""titles"": 1,
-                    ""order"": 1,
-                    ""hidden"": 1,
-                    ""length"": {$strLenCP: ""$_id""},
-                    ""root"": { $substrCP:[ ""$_id"", 0, 1 ] }
-                }")
-                // Match only aims with length == 1
-                .Match(@"{
-                    ""hidden"": {$ne: true },
-                    ""length"": 1
-                }")
-                // Sort by root aim
-                .Sort(@"{
-                    ""root"": 1,
-                    ""_id"": 1
-                }")
-                .As<Aim>()
-                .ToListAsync();
-        }
-
-        public Task<Aim> GetAimByCode(string code) {
-            var filter = Builders<Aim>.Filter.Eq(a => a.Code, code);
-            return AimCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
         private IMongoCollection<GenerationRequest> GenerationCollection {
             get {
                 return MainDatabase.GetCollection<GenerationRequest>("GenerationRequests");

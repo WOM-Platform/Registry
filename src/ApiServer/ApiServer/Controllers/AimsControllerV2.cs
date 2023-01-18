@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.OutputModels.Aim;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -20,34 +19,17 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Aims")]
     public class AimsControllerV2 : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
+        private readonly AimService _aimService;
 
         public AimsControllerV2(
-            MongoDatabase mongo,
+            AimService aimService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<AimsControllerV2> logger)
         : base(configuration, crypto, keyManager, logger) {
-            _mongo = mongo;
+            _aimService = aimService;
         }
-
-        /// <summary>
-        /// Single aim output record.
-        /// </summary>
-        public record AimListEntry(
-            string Code,
-            Dictionary<string, string> Titles,
-            [property:JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-            List<AimListEntry> Children
-        );
-
-        /// <summary>
-        /// Aim list output record.
-        /// </summary>
-        public record AimListOutput(
-            List<AimListEntry> Aims
-        );
 
         /// <summary>
         /// Retrieves a list of all aims recognized by the WOM Platform.
@@ -56,48 +38,51 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpHead]
         [ChangeLog("aim-list")]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(AimListOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AimListResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> ListV2() {
-            var aims = await _mongo.GetAims();
+            var aims = await _aimService.GetAllAims();
 
-            return Ok(new AimListOutput(
-                (from a in aims
-                 select new AimListEntry(
-                     a.Code,
-                     a.Titles,
-                     null
-                 )).ToList()
-            ));
+            return Ok(new AimListResponse {
+                Aims = (from a in aims
+                        select new AimListResponse.AimNode {
+                            Code = a.Code,
+                            Titles = a.Titles,
+                            Hidden = a.Hidden,
+                            Children = null,
+                        }).ToArray()
+            });
         }
 
-        private void InsertAimEntry(AimListEntry entry, Aim aim, int codeIndex) {
-            int parentIndex = -1;
-            for(int i = 0; i < entry.Children.Count; ++i) {
-                if(aim.Code.StartsWith(entry.Children[i].Code)) {
-                    parentIndex = i;
+        private void InsertAimEntry(AimListResponse.AimNode entry, Aim aim, int level) {
+            // Insertion point is at first character "larger" than current
+            // Starts at -1, which indicates insertion at the back
+            int insertionIndex = -1;
+            for(int i = 0; i < entry.Children.Length; ++i) {
+                if(entry.Children[i].Code[level] == aim.Code[level]) {
+                    // First character matches with first character of insertion point, we must insert at a lower level
+                    InsertAimEntry(entry.Children[i], aim, level + 1);
+                    return;
+                }
+                else if(entry.Children[i].Code[level] > aim.Code[level]) {
+                    insertionIndex = i;
+                    break;
                 }
             }
-
-            if(aim.Code.Length == codeIndex + 1) {
-                // Must be inserted at this height
-                if(parentIndex >= 0) {
-                    // At this height, parent and aim to insert must have same code
-                    Logger.LogError("Duplicate aim (code {0} already in tree with parent {1})", aim.Code, entry.Children[parentIndex].Code);
-                }
-                else {
-                    entry.Children.Add(new AimListEntry(
-                        aim.Code,
-                        aim.Titles,
-                        new()
-                    ));
-
-                    entry.Children.Sort((x, y) => x.Code.CompareTo(y.Code));
-                }
+            if(insertionIndex == -1) {
+                insertionIndex = entry.Children.Length; // Append at end
             }
-            else {
-                // Must be inserted down in the tree
-                InsertAimEntry(entry.Children[parentIndex], aim, codeIndex + 1);
-            }            
+
+            var newChildren = new AimListResponse.AimNode[entry.Children.Length + 1];
+            Array.Copy(entry.Children[..insertionIndex], newChildren, insertionIndex);
+            newChildren[insertionIndex] = new AimListResponse.AimNode {
+                Code = aim.Code,
+                Titles = aim.Titles,
+                Hidden = aim.Hidden,
+                Children = Array.Empty<AimListResponse.AimNode>(),
+            };
+            Array.Copy(entry.Children[insertionIndex..], 0, newChildren, insertionIndex + 1, entry.Children.Length - insertionIndex);
+
+            entry.Children = newChildren;
         }
 
         /// <summary>
@@ -107,18 +92,18 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpHead("nested")]
         [ChangeLog("aim-list")]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(AimListOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AimListResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> ListNestedV2() {
-            var aims = await _mongo.GetAims();
+            var aims = await _aimService.GetAllAims();
 
-            var fakeRoot = new AimListEntry(null, null, new());
+            var root = new AimListResponse.AimNode { Children = Array.Empty<AimListResponse.AimNode>() };
             foreach(var aim in aims) {
-                InsertAimEntry(fakeRoot, aim, 0);
+                InsertAimEntry(root, aim, 0);
             }
 
-            return Ok(new AimListOutput(
-                fakeRoot.Children
-            ));
+            return Ok(new AimListResponse {
+                Aims = root.Children
+            });
         }
 
     }

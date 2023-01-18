@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Org.BouncyCastle.Crypto;

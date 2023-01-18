@@ -20,12 +20,14 @@ namespace WomPlatform.Web.Api.Controllers {
         private readonly ObjectId _testSourceId, _testPosId;
 
         private readonly MongoDatabase _mongo;
+        private readonly AimService _aimService;
         private readonly PosService _posService;
         private readonly Operator _operator;
         private IWebHostEnvironment Hosting { get; init; }
 
         public TestController(
             MongoDatabase mongo,
+            AimService aimService,
             PosService posService,
             Operator @operator,
             IWebHostEnvironment webHostEnvironment,
@@ -35,6 +37,7 @@ namespace WomPlatform.Web.Api.Controllers {
             ILogger<AimsController> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _aimService = aimService;
             _posService = posService;
             _operator = @operator;
             Hosting = webHostEnvironment;
@@ -64,7 +67,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var testSource = await _mongo.GetSourceById(_testSourceId);
             var rnd = new Random();
-            var aim = (await _mongo.GetAims()).OrderBy(a => rnd.NextDouble()).First();
+            var aim = (await _aimService.GetAllAims()).OrderBy(a => rnd.NextDouble()).First();
 
             Logger.LogTrace("Test source: {0}, random aim '{1}'", testSource.Name, aim.Code);
 

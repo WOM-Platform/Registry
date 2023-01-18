@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -13,20 +14,24 @@ namespace WomPlatform.Web.Api.Controllers {
     /// <summary>
     /// Provides access to single aims.
     /// </summary>
+    [Obsolete]
     [Route("v1/aim")]
     [OperationsTags("Aims")]
     public class AimController : BaseRegistryController {
 
         private readonly MongoDatabase _mongo;
+        private readonly AimService _aimService;
 
         public AimController(
             MongoDatabase mongo,
+            AimService aimService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<AimsController> logger)
         : base(configuration, crypto, keyManager, logger) {
             _mongo = mongo;
+            _aimService = aimService;
         }
 
         public record AimShowOutput(
@@ -45,7 +50,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Show(string code) {
             var cleanCode = code.Replace("/", string.Empty);
 
-            var aim = await _mongo.GetAimByCode(cleanCode);
+            var aim = await _aimService.GetAimByCode(code);
             if(aim == null) {
                 return NotFound();
             }

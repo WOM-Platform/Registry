@@ -182,6 +182,7 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<OfferService>();
             services.AddScoped<PaymentService>();
             services.AddScoped<PicturesService>();
+            services.AddScoped<AimService>();
 
             services.AddMailComposer();
         }
