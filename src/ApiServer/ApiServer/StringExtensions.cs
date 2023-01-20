@@ -1,6 +1,8 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace WomPlatform.Web.Api {
 
@@ -42,6 +44,49 @@ namespace WomPlatform.Web.Api {
                 return false;
 
             return s.Length >= min && s.Length <= max;
+        }
+
+        private static readonly Regex _regexDuplicateDash = new("-+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        public static string ToCleanUrl(this string s) {
+            if(string.IsNullOrEmpty(s)) {
+                return s;
+            }
+
+            static char ConvertChar(char c) {
+                return CharUnicodeInfo.GetUnicodeCategory(c) switch {
+                    // These are kept as-is
+                    UnicodeCategory.DecimalDigitNumber => c,
+                    UnicodeCategory.LowercaseLetter => c,
+                    UnicodeCategory.UppercaseLetter => c,
+                    UnicodeCategory.SpaceSeparator => '-',
+
+                    // Punctuation
+                    UnicodeCategory.ClosePunctuation => '-',
+                    UnicodeCategory.ConnectorPunctuation => '-',
+                    UnicodeCategory.DashPunctuation => '-',
+                    UnicodeCategory.FinalQuotePunctuation => '-',
+                    UnicodeCategory.InitialQuotePunctuation => '-',
+                    UnicodeCategory.OpenPunctuation => '-',
+                    UnicodeCategory.OtherPunctuation => '-',
+
+                    // Modifiers and others to remove
+                    UnicodeCategory.ModifierLetter => '?',
+                    UnicodeCategory.ModifierSymbol => '?',
+                    UnicodeCategory.NonSpacingMark => '?',
+                    _ => '?',
+                };
+            }
+
+            var output = new StringBuilder(s.Length);
+            foreach(var c in s.Normalize(NormalizationForm.FormD)) {
+                output.Append(ConvertChar(c));
+            }
+
+            var modifiersRemoved = output.Replace("?", null).ToString();
+            var spacesFixed = _regexDuplicateDash.Replace(modifiersRemoved, "-");
+
+            return spacesFixed.ToLowerInvariant().Trim('-');
         }
 
     }
