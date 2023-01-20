@@ -169,6 +169,16 @@ namespace WomPlatform.Web.Api.Service {
             return PosCollection.ReplaceOneAsync(filter, pos);
         }
 
+        /// <summary>
+        /// Sets cover path and blur hash on an existing POS.
+        /// </summary>
+        public Task UpdatePosCover(ObjectId posId, string coverPath, string coverBlurHash) {
+            return PosCollection.UpdateOneAsync(
+                Builders<Pos>.Filter.Eq(pos => pos.Id, posId),
+                Builders<Pos>.Update.Set(pos => pos.CoverPath, coverPath).Set(pos => pos.CoverBlurHash, coverBlurHash)
+            );
+        }
+
     }
 
 }

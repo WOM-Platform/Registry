@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,7 +15,9 @@ using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels.Pos;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -24,40 +27,26 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Point of service")]
     public class PosController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
         private readonly MerchantService _merchantService;
         private readonly PosService _posService;
+        private readonly OfferService _offerService;
+        private readonly PicturesService _picturesService;
 
         public PosController(
-            MongoDatabase mongo,
             MerchantService merchantService,
             PosService posService,
+            OfferService offerService,
+            PicturesService picturesService,
             IConfiguration configuration,
             CryptoProvider crypto,
             KeyManager keyManager,
             ILogger<PosController> logger
         ) : base(configuration, crypto, keyManager, logger) {
-            _mongo = mongo;
             _merchantService = merchantService;
             _posService = posService;
+            _offerService = offerService;
+            _picturesService = picturesService;
         }
-
-        /// <summary>
-        /// POS registration payload.
-        /// </summary>
-        public record PosRegisterInput(
-            [Required]
-            ObjectId OwnerMerchantId,
-            [Required]
-            [MinLength(4)]
-            string Name,
-            [Required]
-            double Latitude,
-            [Required]
-            double Longitude,
-            [Url]
-            string Url
-        );
 
         /// <summary>
         /// Registers a new POS to the service.
@@ -68,7 +57,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(PosOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Register(PosRegisterInput input) {
+        public async Task<IActionResult> Register(PosRegistrationInput input) {
             if(!User.GetUserId(out var loggedUserId)) {
                 return Forbid();
             }
@@ -108,7 +97,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     new {
                         id = pos.Id
                     },
-                    pos.ToOutput()
+                    pos.ToOutput(null)
                 );
             }
             catch(Exception ex) {
@@ -132,7 +121,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            return Ok(pos.ToOutput());
+            var picCover = _picturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+
+            return Ok(pos.ToOutput(picCover));
         }
 
         public record PosListOutput(
@@ -149,7 +140,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> List(
             [FromQuery] double? latitude,
             [FromQuery] double? longitude,
-            [FromQuery] int page = 0,
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(PosService.PosListOrder.Name)] PosService.PosListOrder orderBy = PosService.PosListOrder.Name
         ) {
@@ -159,43 +150,29 @@ namespace WomPlatform.Web.Api.Controllers {
 
             (var results, var count) = await _posService.ListPos(near, page, pageSize, orderBy);
 
-            return Ok(new PosListOutput(
+            return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results
-                 select pos.ToOutput()).ToArray(),
+                 let picCover = _picturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
+                 select pos.ToOutput(picCover)).ToArray(),
                 page,
                 pageSize,
-                page > 1,
-                count > (page * pageSize),
                 count
             ));
         }
 
         /// <summary>
-        /// POS update payload.
-        /// </summary>
-        public record PosUpdateInput(
-            [MinLength(4)]
-            string Name,
-            double? Latitude,
-            double? Longitude,
-            [Url]
-            string Url,
-            bool? IsActive
-        );
-
-        /// <summary>
-        /// Updates information about an existing merchant.
+        /// Updates information about an existing POS.
         /// </summary>
         /// <param name="id">Merchant ID.</param>
         /// <param name="input">Updated information.</param>
         [HttpPut("{id}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(PosOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(
             [FromRoute] ObjectId id,
-            PosUpdateInput input
+            [FromBody] PosUpdateInput input
         ) {
             var pos = await _posService.GetPosById(id);
             if(pos == null) {
@@ -204,34 +181,26 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var merchant = await _merchantService.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
-                Logger.LogWarning("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
                 return NotFound();
             }
 
             // Forbid if logged user is not in admin list
-            if(!User.GetUserId(out var loggedUserId) ||
-               !merchant.AdministratorIds.Contains(loggedUserId)) {
+            if(!User.GetUserId(out var loggedUserId) || !merchant.AdministratorIds.Contains(loggedUserId)) {
                 return Forbid();
             }
 
             try {
-                if(input.Name != null) {
-                    pos.Name = input.Name;
-                }
-                if(input.Latitude.HasValue && input.Longitude.HasValue) {
-                    pos.Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(
-                        new GeoJson2DGeographicCoordinates(
-                            input.Longitude.Value,
-                            input.Latitude.Value
-                        )
-                    );
-                }
-                if(input.Url != null) {
-                    pos.Url = input.Url;
-                }
-                if(input.IsActive.HasValue) {
-                    pos.IsActive = input.IsActive.Value;
-                }
+                pos.Name = input.Name;
+                pos.Description = input.Description;
+                pos.Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(
+                    new GeoJson2DGeographicCoordinates(
+                        input.Longitude,
+                        input.Latitude
+                    )
+                );
+                pos.Url = input.Url;
+                pos.IsActive = input.IsActive;
                 pos.LastUpdate = DateTime.UtcNow;
 
                 await _posService.ReplacePos(pos);
@@ -241,7 +210,68 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
 
-            return Ok(pos.ToOutput());
+            var picPosCover = _picturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+
+            return Ok(pos.ToOutput(picPosCover));
+        }
+
+        /// <summary>
+        /// Updates the cover of an existing POS.
+        /// </summary>
+        [HttpPost("{id}/cover")]
+        [Authorize]
+        [DisableRequestSizeLimit]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(PosOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateCover(
+            [FromRoute] ObjectId id,
+            [FromForm] [Required] IFormFile image
+        ) {
+            var pos = await _posService.GetPosById(id);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            var merchant = await _merchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                return NotFound();
+            }
+
+            // Forbid if logged user is not in admin list
+            if(!User.GetUserId(out var loggedUserId) || !merchant.AdministratorIds.Contains(loggedUserId)) {
+                return Forbid();
+            }
+
+            // Safety checks on uploaded file
+            if(image == null || image.Length == 0) {
+                return BadRequest();
+            }
+            if(image.Length > 4 * 1024 * 1024) {
+                return BadRequest();
+            }
+
+            try {
+                var posUrl = string.Format("{0}-{1}", merchant.City, pos.Name).ToCleanUrl();
+
+                // Process and upload image
+                using var stream = new MemoryStream();
+                await image.CopyToAsync(stream);
+                (var picturePath, var pictureBlurHash) = await _picturesService.ProcessAndUploadPicture(stream, posUrl, PicturesService.PictureUsage.PosCover);
+
+                await _posService.UpdatePosCover(id, picturePath, pictureBlurHash);
+                await _offerService.UpdatePosCovers(id, picturePath, pictureBlurHash);
+
+                var picPosCover = _picturesService.GetPictureOutput(picturePath, pictureBlurHash);
+                return Ok(pos.ToOutput(picPosCover));
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to update POS {0}", id);
+                throw;
+            }
         }
 
     }

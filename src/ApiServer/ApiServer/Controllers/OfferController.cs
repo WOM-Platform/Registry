@@ -188,52 +188,6 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        [HttpPost("defaultCover")]
-        [DisableRequestSizeLimit]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult> UploadDefaultImage(
-            [FromForm] [Required] IFormFile image
-        ) {
-            if(image == null || image.Length == 0) {
-                return BadRequest();
-            }
-            if(image.Length > 4 * 1024 * 1024) {
-                return BadRequest();
-            }
-
-            using var stream = new MemoryStream();
-            await image.CopyToAsync(stream);
-
-            var output = await _picturesService.ProcessAndUploadPicture(stream, "pos-covers/default");
-
-            return Ok(output);
-        }
-
-        [HttpPost("cover")]
-        [DisableRequestSizeLimit]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult> UploadPosCover(
-            [FromQuery] string posName,
-            [FromForm] [Required] IFormFile image
-        ) {
-            if(string.IsNullOrWhiteSpace(posName)) {
-                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Query posName cannot be empty");
-            }
-            if(image == null || image.Length == 0) {
-                return BadRequest();
-            }
-            if(image.Length > 4 * 1024 * 1024) {
-                return BadRequest();
-            }
-
-            using var stream = new MemoryStream();
-            await image.CopyToAsync(stream);
-
-            var output = await _picturesService.ProcessAndUploadPicture(stream, $"pos-covers/{posName}/{Guid.NewGuid():N}");
-
-            return Ok(output);
-        }
-
     }
 
 }

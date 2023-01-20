@@ -1,4 +1,6 @@
-﻿namespace WomPlatform.Web.Api.OutputModels {
+﻿using System.Text.Json.Serialization;
+
+namespace WomPlatform.Web.Api.OutputModels {
     public class PictureOutput {
         /// <summary>
         /// URL to full-sized version of the image.

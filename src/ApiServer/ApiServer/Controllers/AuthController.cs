@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -69,7 +70,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record AuthPosLoginOutput(
-            PosLoginOutput[] POS
+            PosAuthOutput[] POS
         );
 
         /// <summary>
@@ -91,7 +92,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new AuthPosLoginOutput(
-                pos.Select(p => p.ToLoginOutput()).ToArray()
+                pos.Select(p => p.ToAuthOutput()).ToArray()
             ));
         }
 

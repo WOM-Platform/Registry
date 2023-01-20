@@ -196,6 +196,16 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.Aggregate(pipeline).ToListAsync();
         }
 
+        /// <summary>
+        /// Sets cover path and blur hash on all offers by a given POS.
+        /// </summary>
+        public Task UpdatePosCovers(ObjectId posId, string coverPath, string coverBlurHash) {
+            return OfferCollection.UpdateManyAsync(
+                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Update.Set(o => o.Pos.CoverPath, coverPath).Set(o => o.Pos.CoverBlurHash, coverBlurHash)
+            );
+        }
+
     }
 
 }

@@ -131,7 +131,24 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-        public async Task<PictureOutput> ProcessAndUploadPicture(Stream pictureData, string basePath) {
+        public enum PictureUsage {
+            PosCover,
+        }
+
+        private static string GenerateNewPath(string basePath, PictureUsage usage) {
+            if(string.IsNullOrWhiteSpace(basePath)) {
+                throw new ArgumentException("Picture base path cannot be empty");
+            }
+
+            return usage switch {
+                PictureUsage.PosCover => $"pos-covers/{basePath}/{Guid.NewGuid():N}",
+                _ => throw new ArgumentException("Unsupported picture usage"),
+            };
+        }
+
+        public async Task<(string PicturePath, string BlurHash)> ProcessAndUploadPicture(Stream pictureData, string basePath, PictureUsage usage) {
+            var picturePath = GenerateNewPath(basePath, usage);
+
             pictureData.Seek(0, SeekOrigin.Begin);
 
             using var original = Image.Load(pictureData);
@@ -144,17 +161,20 @@ namespace WomPlatform.Web.Api.Service {
             }
 
             // Prep and upload scaled images
-            (var thumbnailPath, var blurHash) = await ProcessAndUploadThumbnail(original, basePath);
-            return new PictureOutput {
-                FullSizeUrl = _baseUrl + await ProcessAndUploadPicture(original, basePath, _resolutionFullPartPath, _resolutionFullMaxLength),
-                MidDensityFullWidthUrl = _baseUrl + await ProcessAndUploadPicture(original, basePath, _resolutionMidPartPath, _resolutionMidMaxLength),
-                HighDensityFullWidthUrl = _baseUrl + await ProcessAndUploadPicture(original, basePath, _resolutionHighPartPath, _resolutionHighMaxLength),
-                SquareThumbnailUrl = _baseUrl + thumbnailPath,
-                BlurHash = blurHash,
-            };
+            var taskThumbnail = ProcessAndUploadThumbnail(original, picturePath);
+            var taskFull = ProcessAndUploadPicture(original, picturePath, _resolutionFullPartPath, _resolutionFullMaxLength);
+            var taskMid = ProcessAndUploadPicture(original, picturePath, _resolutionMidPartPath, _resolutionMidMaxLength);
+            var taskHigh = ProcessAndUploadPicture(original, picturePath, _resolutionHighPartPath, _resolutionHighMaxLength);
+            await Task.WhenAll(taskThumbnail, taskFull, taskMid, taskHigh);
+
+            return (picturePath, taskThumbnail.Result.BlurHash);
         }
 
         public PictureOutput GetPictureOutput(string basePath, string blurHash, string pathSuffix = JpegPathPart) {
+            if(string.IsNullOrWhiteSpace(basePath)) {
+                return null;
+            }
+
             return new PictureOutput {
                 FullSizeUrl = _baseUrl + basePath + _resolutionFullPartPath + pathSuffix,
                 MidDensityFullWidthUrl = _baseUrl + basePath + _resolutionMidPartPath + pathSuffix,

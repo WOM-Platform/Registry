@@ -31,6 +31,14 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("position")]
         public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
 
+        [BsonElement("coverPath")]
+        [BsonIgnoreIfNull]
+        public string CoverPath { get; set; }
+
+        [BsonElement("coverBlurHash")]
+        [BsonIgnoreIfNull]
+        public string CoverBlurHash { get; set; }
+
         [BsonElement("url")]
         [BsonIgnoreIfNull]
         public string Url { get; set; }

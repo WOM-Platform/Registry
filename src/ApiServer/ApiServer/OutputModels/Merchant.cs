@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using WomPlatform.Web.Api.OutputModels.Pos;
 
 namespace WomPlatform.Web.Api.OutputModels {
 
@@ -29,7 +30,7 @@ namespace WomPlatform.Web.Api.OutputModels {
     }
 
     public record MerchantAuthOutput : MerchantOutput {
-        public PosLoginOutput[] Pos { get; init; }
+        public PosAuthOutput[] Pos { get; init; }
     }
 
     public static class MerchantOutputHelpers {
