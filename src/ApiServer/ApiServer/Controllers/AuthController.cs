@@ -44,7 +44,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpGet("sources")]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
-        [RequireHttps]
+        [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthSourceLoginOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> SourceLoginV1() {
@@ -77,7 +77,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpGet("pos")]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
-        [RequireHttps]
+        [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthPosLoginOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> PosLoginV1() {

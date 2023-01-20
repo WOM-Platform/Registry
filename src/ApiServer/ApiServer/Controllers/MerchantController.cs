@@ -17,7 +17,7 @@ using WomPlatform.Web.Api.Service;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/merchant")]
-    [RequireHttps]
+    [RequireHttpsInProd]
     [OperationsTags("Merchant")]
     public class MerchantController : BaseRegistryController {
 

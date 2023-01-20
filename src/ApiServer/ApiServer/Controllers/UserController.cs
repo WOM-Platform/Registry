@@ -20,7 +20,7 @@ using WomPlatform.Web.Api.Service;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/user")]
-    [RequireHttps]
+    [RequireHttpsInProd]
     [OperationsTags("User and session management")]
     public class UserController : BaseRegistryController {
 

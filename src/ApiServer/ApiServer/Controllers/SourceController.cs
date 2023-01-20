@@ -16,7 +16,7 @@ using WomPlatform.Web.Api.Service;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/source")]
-    [RequireHttps]
+    [RequireHttpsInProd]
     [OperationsTags("Instrument")]
     public class SourceController : BaseRegistryController 
     {
