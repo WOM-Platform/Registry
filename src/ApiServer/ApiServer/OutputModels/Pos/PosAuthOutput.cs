@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-using System.Text.Json.Serialization;
-using System;
+﻿using System.Text.Json.Serialization;
 
 namespace WomPlatform.Web.Api.OutputModels.Pos {
     public class PosAuthOutput {
@@ -14,16 +12,16 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
 
         public string PublicKey { get; init; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? Latitude { get; init; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? Longitude { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Url { get; init; }
         
-        [DefaultValue(true)]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public bool IsActive { get; init; } = true;
+        public bool IsActive { get; init; }
     }
 
     public static class PosAuthOutputExtensions {

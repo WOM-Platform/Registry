@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace WomPlatform.Web.Api.OutputModels.Pos {
@@ -10,8 +9,10 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
 
         public string Description { get; init; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? Latitude { get; init; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? Longitude { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -35,8 +36,8 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
                 Id = pos.Id.ToString(),
                 Name = pos.Name,
                 Description = pos.Description,
-                Latitude = pos.Position.Coordinates.Latitude,
-                Longitude = pos.Position.Coordinates.Longitude,
+                Latitude = pos.Position?.Coordinates.Latitude,
+                Longitude = pos.Position?.Coordinates.Longitude,
                 Cover = posCoverPicture,
                 Url = pos.Url,
                 CreateOn = pos.CreatedOn,
