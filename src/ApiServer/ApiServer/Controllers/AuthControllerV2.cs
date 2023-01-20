@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Connector;
@@ -35,11 +34,9 @@ namespace WomPlatform.Web.Api.Controllers {
             SourceService sourceService,
             PosService posService,
             ApiKeyService apiKeyService,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<AuthControllerV2> logger)
-        : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _mongo = mongo;
             _aimService = aimService;
             _sourceService = sourceService;

@@ -4,9 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -19,18 +17,13 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Aims")]
     public class AimsController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
         private readonly AimService _aimService;
 
         public AimsController(
-            MongoDatabase mongo,
             AimService aimService,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, logger) {
-            _mongo = mongo;
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _aimService = aimService;
         }
 

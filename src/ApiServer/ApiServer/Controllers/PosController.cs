@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
@@ -37,11 +36,9 @@ namespace WomPlatform.Web.Api.Controllers {
             PosService posService,
             OfferService offerService,
             PicturesService picturesService,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<PosController> logger
-        ) : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _merchantService = merchantService;
             _posService = posService;
             _offerService = offerService;
@@ -241,8 +238,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            // Forbid if logged user is not in admin list
-            if(!User.GetUserId(out var loggedUserId) || !merchant.AdministratorIds.Contains(loggedUserId)) {
+            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
                 return Forbid();
             }
 

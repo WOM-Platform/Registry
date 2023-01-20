@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Offers;
@@ -31,16 +27,14 @@ namespace WomPlatform.Web.Api.Controllers {
         private readonly PicturesService _picturesService;
 
         public OfferController(
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
             OfferService offerService,
             PaymentService paymentService,
             PosService posService,
             MerchantService merchantService,
             PicturesService picturesService,
-            ILogger<MigrationController> logger)
-        : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _offerService = offerService;
             _paymentService = paymentService;
             _posService = posService;

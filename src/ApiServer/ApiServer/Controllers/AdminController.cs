@@ -2,11 +2,8 @@
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -19,11 +16,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public AdminController(
             MerchantService merchantService,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
+            IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
-        : base(configuration, crypto, keyManager, logger) {
+        : base(serviceProvider, logger) {
             _merchantService = merchantService;
         }
 

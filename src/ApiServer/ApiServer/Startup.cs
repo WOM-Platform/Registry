@@ -183,6 +183,7 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<PaymentService>();
             services.AddScoped<PicturesService>();
             services.AddScoped<AimService>();
+            services.AddScoped<UserService>();
 
             services.AddMailComposer();
         }
@@ -208,6 +209,7 @@ namespace WomPlatform.Web.Api {
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(devUserSection["Password"]),
                     Name = devUserSection["Name"],
                     Surname = devUserSection["Surname"],
+                    Role = DatabaseDocumentModels.User.UserRole.User,
                     RegisteredOn = DateTime.UtcNow
                 };
                 setupService.UpsertUserSync(devUserEntity);

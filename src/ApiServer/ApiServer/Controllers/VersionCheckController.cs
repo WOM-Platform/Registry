@@ -3,9 +3,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.OutputModels.VersionCheck;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -17,12 +15,10 @@ namespace WomPlatform.Web.Api.Controllers {
     public class VersionCheckController : BaseRegistryController {
 
         public VersionCheckController(
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<VersionCheckController> logger)
-        : base(configuration, crypto, keyManager, logger) {
-            
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
+
         }
 
         private readonly string[] SupportedPlatforms = new string[] {

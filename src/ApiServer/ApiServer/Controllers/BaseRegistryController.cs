@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -20,28 +23,44 @@ namespace WomPlatform.Web.Api.Controllers {
         protected readonly string SelfHostDomain;
         protected readonly string SelfLinkDomain;
 
+        private readonly IServiceProvider _serviceProvider;
+
         public BaseRegistryController(
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
+            IServiceProvider serviceProvider,
             ILogger<BaseRegistryController> logger
         ) {
-            Configuration = configuration;
-            Crypto = crypto;
-            KeyManager = keyManager;
+            _serviceProvider = serviceProvider;
             Logger = logger;
 
             SelfHostDomain = Environment.GetEnvironmentVariable("SELF_HOST");
             SelfLinkDomain = Environment.GetEnvironmentVariable("LINK_HOST");
         }
 
-        protected IConfiguration Configuration { get; }
+        protected IConfiguration Configuration {
+            get {
+                return _serviceProvider.GetRequiredService<IConfiguration>();
+            }
+        }
 
-        protected CryptoProvider Crypto { get; }
+        protected CryptoProvider Crypto {
+            get {
+                return _serviceProvider.GetRequiredService<CryptoProvider>();
+            }
+        }
 
-        protected KeyManager KeyManager { get; }
+        protected KeyManager KeyManager {
+            get {
+                return _serviceProvider.GetRequiredService<KeyManager>();
+            }
+        }
 
         protected ILogger<BaseRegistryController> Logger { get; }
+
+        protected UserService UserService {
+            get {
+                return _serviceProvider.GetRequiredService<UserService>();
+            }
+        }
 
         protected (T, ActionResult) ExtractInputPayload<T>(string payload, int loggingKey) {
             try {
@@ -70,6 +89,19 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return true;
+        }
+
+        protected async Task<bool> VerifyUserIsAdminOfMerchant(Merchant merchant) {
+            if(!User.GetUserId(out var loggedUserId)) {
+                return false;
+            }
+
+            var userProfile = await UserService.GetUserById(loggedUserId);
+            if(userProfile.Role == DatabaseDocumentModels.User.UserRole.Admin) {
+                return true;
+            }
+
+            return !merchant.AdministratorIds.Contains(loggedUserId);
         }
 
     }

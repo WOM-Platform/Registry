@@ -1,9 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using WomPlatform.Connector;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -15,11 +13,9 @@ namespace WomPlatform.Web.Api.Controllers {
     public class LandingPageController : BaseRegistryController {
 
         public LandingPageController(
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<LandingPageController> logger)
-        : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
 
         }
 

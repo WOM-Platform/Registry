@@ -1,11 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.OutputModels.Map;
 using WomPlatform.Web.Api.Service;
 
@@ -18,11 +17,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public MapController(
             MapService mapService,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _mapService = mapService;
         }
 

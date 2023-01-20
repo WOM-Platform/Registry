@@ -8,11 +8,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.Service;
@@ -30,11 +28,9 @@ namespace WomPlatform.Web.Api.Controllers {
         public UserController(
             MongoDatabase mongo,
             MailComposer composer,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<UserController> logger
-        ) : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _mongo = mongo;
             _composer = composer;
         }
@@ -93,6 +89,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Name = input.Name,
                     Surname = input.Surname,
                     VerificationToken = verificationToken,
+                    Role = DatabaseDocumentModels.User.UserRole.User,
                     RegisteredOn = DateTime.UtcNow
                 };
                 await _mongo.CreateUser(user);

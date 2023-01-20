@@ -3,11 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.Service;
 
@@ -31,18 +29,16 @@ namespace WomPlatform.Web.Api.Controllers {
             PosService posService,
             Operator @operator,
             IWebHostEnvironment webHostEnvironment,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<AimsController> logger)
-        : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _mongo = mongo;
             _aimService = aimService;
             _posService = posService;
             _operator = @operator;
             Hosting = webHostEnvironment;
 
-            var devSection = configuration.GetSection("DevelopmentSetup");
+            var devSection = Configuration.GetSection("DevelopmentSetup");
             
             var devSourceSection = devSection.GetSection("Source");
             _testSourceId = new ObjectId(devSourceSection["Id"]);

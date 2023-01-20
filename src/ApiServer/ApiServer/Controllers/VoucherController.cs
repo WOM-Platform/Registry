@@ -4,11 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using Org.BouncyCastle.Crypto;
-using WomPlatform.Connector;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.Service;
 
@@ -26,11 +23,9 @@ namespace WomPlatform.Web.Api.Controllers {
             MongoDatabase mongo,
             Operator @operator,
             ApiKeyService apiKeyService,
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
-            ILogger<BaseRegistryController> logger
-        ) : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _mongo = mongo;
             _operator = @operator;
             _apiKeyService = apiKeyService;

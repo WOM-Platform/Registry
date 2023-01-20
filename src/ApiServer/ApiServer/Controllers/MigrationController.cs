@@ -3,9 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -17,12 +15,10 @@ namespace WomPlatform.Web.Api.Controllers {
         private readonly BackupService _backupService;
 
         public MigrationController(
-            IConfiguration configuration,
-            CryptoProvider crypto,
-            KeyManager keyManager,
             BackupService backupService,
-            ILogger<MigrationController> logger)
-        : base(configuration, crypto, keyManager, logger) {
+            IServiceProvider serviceProvider,
+            ILogger<AdminController> logger)
+        : base(serviceProvider, logger) {
             _backupService = backupService;
         }
 
