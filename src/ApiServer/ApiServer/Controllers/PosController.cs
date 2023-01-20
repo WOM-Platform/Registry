@@ -270,6 +270,26 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-    }
+        /// <summary>
+        /// Updates the cover of an existing POS.
+        /// </summary>
+        [HttpPost("migrate-pos-covers")]
+        [Authorize]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        public async Task<IActionResult> MigratePosCovers() {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
 
+            var posWithOffer = await _offerService.GetOffersWithCover();
+            Logger.LogInformation("Loaded {0} POS", posWithOffer.Count);
+
+            foreach(var pos in posWithOffer) {
+                Logger.LogDebug("Updating cover for POS {0}", pos.Name);
+                await _posService.UpdatePosCover(pos.Id, pos.CoverPath, pos.CoverBlurHash);
+            }
+
+            return Ok();
+        }
+    }
 }

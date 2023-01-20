@@ -91,6 +91,19 @@ namespace WomPlatform.Web.Api.Controllers {
             return true;
         }
 
+        protected async Task<bool> VerifyUserIsAdmin() {
+            if(!User.GetUserId(out var loggedUserId)) {
+                return false;
+            }
+
+            var userProfile = await UserService.GetUserById(loggedUserId);
+            if(userProfile.Role == DatabaseDocumentModels.User.UserRole.Admin) {
+                return true;
+            }
+
+            return false;
+        }
+
         protected async Task<bool> VerifyUserIsAdminOfMerchant(Merchant merchant) {
             if(!User.GetUserId(out var loggedUserId)) {
                 return false;

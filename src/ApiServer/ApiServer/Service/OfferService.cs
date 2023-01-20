@@ -206,6 +206,41 @@ namespace WomPlatform.Web.Api.Service {
             );
         }
 
+        [Obsolete]
+        public Task<List<GroupedOffersByPos>> GetOffersWithCover() {
+            var pipeline = new EmptyPipelineDefinition<Offer>()
+                .Match(Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Ne(o => o.Pos.CoverPath, null),
+                    Builders<Offer>.Filter.Ne(o => o.Pos.CoverBlurHash, null)
+                ))
+                .AppendStage<Offer, Offer, GroupedOffersByPos>(BsonDocument.Parse(@"{
+                    $group: {
+                        _id: ""$pos._id"",
+                        name: { $first: ""$pos.name"" },
+                        description: { $first: ""$pos.description"" },
+                        coverPath: { $first: ""$pos.coverPath"" },
+                        coverBlurHash: { $first: ""$pos.coverBlurHash"" },
+                        url: { $first: ""$pos.url"" },
+                        position: { $first: ""$pos.position"" },
+                        offerCount: { $sum: 1 },
+                        mostRecentUpdate: { $max: ""$pos.lastUpdate"" },
+                        offers: {
+                            $push: {
+                                _id: ""$_id"",
+                                title: ""$title"",
+                                description: ""$description"",
+                                cost: ""$cost"",
+                                filter: ""$filter"",
+                                createdOn: ""$createdOn"",
+                                lastUpdate: ""$lastUpdate""
+                            }
+                        }
+                    }
+                }"));
+
+            return OfferCollection.Aggregate(pipeline).ToListAsync();
+        }
+
     }
 
 }
