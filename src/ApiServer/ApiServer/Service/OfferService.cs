@@ -58,6 +58,15 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.ReplaceOneAsync(Builders<Offer>.Filter.Eq(o => o.Id, offerId), offer);
         }
 
+        public Task UpdateOfferDescription(ObjectId offerId, string title, string description) {
+            return OfferCollection.UpdateOneAsync(
+                Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+                Builders<Offer>.Update
+                    .Set(o => o.Title, title)
+                    .Set(o => o.Description, description)
+            );
+        }
+
         public class GroupedOffersByPos {
             [BsonId]
             public ObjectId Id { get; set; }

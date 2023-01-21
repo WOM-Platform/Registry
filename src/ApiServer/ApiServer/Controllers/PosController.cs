@@ -328,6 +328,27 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
+        /// Retrieve an offer.
+        /// </summary>
+        [HttpGet("{posId}/offers/{offerId}")]
+        [ProducesResponseType(typeof(PosOfferOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetPosOffer(
+            [FromRoute] ObjectId posId,
+            [FromRoute] ObjectId offerId
+        ) {
+            var offer = await OfferService.GetOfferById(offerId);
+            if(offer == null) {
+                return NotFound();
+            }
+            if(offer.Pos.Id != posId) {
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
+            }
+
+            return Ok(offer.ToOutput());
+        }
+
+        /// <summary>
         /// Create a new offer tied to a POS.
         /// </summary>
         /// <param name="posId">POS ID.</param>
@@ -462,6 +483,53 @@ namespace WomPlatform.Web.Api.Controllers {
                 await OfferService.ReplaceOffer(offerId, offer);
 
                 return Ok(offer.ToDetailsOutput(paymentRequest));
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to persist offer");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Overwrites an offer's title and description.
+        /// </summary>
+        [HttpPut("{posId}/offers/{offerId}/title")]
+        [Authorize]
+        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> OverwriteOfferTitle(
+            [FromRoute] ObjectId posId,
+            [FromRoute] ObjectId offerId,
+            [FromBody] OfferDescriptionInput input
+        ) {
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                return NotFound();
+            }
+
+            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
+                return Forbid();
+            }
+
+            var existingOffer = await OfferService.GetOfferById(offerId);
+            if(existingOffer == null) {
+                return NotFound();
+            }
+            if(existingOffer.Pos.Id != posId) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: $"Offer {offerId} is not owned by POS {posId}");
+            }
+
+            try {
+                await OfferService.UpdateOfferDescription(offerId, input.Title, input.Description);
+
+                return AcceptedAtAction(nameof(GetPosOffer), new { posId = posId, offerId = offerId }, null);
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to persist offer");
