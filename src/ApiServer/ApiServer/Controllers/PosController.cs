@@ -328,27 +328,6 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
-        /// Retrieve an offer.
-        /// </summary>
-        [HttpGet("{posId}/offers/{offerId}")]
-        [ProducesResponseType(typeof(PosOfferOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetPosOffer(
-            [FromRoute] ObjectId posId,
-            [FromRoute] ObjectId offerId
-        ) {
-            var offer = await OfferService.GetOfferById(offerId);
-            if(offer == null) {
-                return NotFound();
-            }
-            if(offer.Pos.Id != posId) {
-                return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
-            }
-
-            return Ok(offer.ToOutput());
-        }
-
-        /// <summary>
         /// Create a new offer tied to a POS.
         /// </summary>
         /// <param name="posId">POS ID.</param>
@@ -412,6 +391,27 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(ex, "Failed to persist offer");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Retrieve an offer.
+        /// </summary>
+        [HttpGet("{posId}/offers/{offerId}")]
+        [ProducesResponseType(typeof(PosOfferOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetPosOffer(
+            [FromRoute] ObjectId posId,
+            [FromRoute] ObjectId offerId
+        ) {
+            var offer = await OfferService.GetOfferById(offerId);
+            if(offer == null) {
+                return NotFound();
+            }
+            if(offer.Pos.Id != posId) {
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
+            }
+
+            return Ok(offer.ToOutput());
         }
 
         /// <summary>
@@ -535,6 +535,29 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(ex, "Failed to persist offer");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Delete an offer.
+        /// </summary>
+        [HttpDelete("{posId}/offers/{offerId}")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeletePosOffer(
+            [FromRoute] ObjectId posId,
+            [FromRoute] ObjectId offerId
+        ) {
+            var offer = await OfferService.GetOfferById(offerId);
+            if(offer == null) {
+                return NotFound();
+            }
+            if(offer.Pos.Id != posId) {
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
+            }
+
+            await OfferService.DeleteOffer(offerId);
+
+            return Ok();
         }
     }
 }

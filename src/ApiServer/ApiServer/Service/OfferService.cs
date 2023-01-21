@@ -265,6 +265,13 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         /// <summary>
+        /// Delete an offer by its ID.
+        /// </summary>
+        public Task DeleteOffer(ObjectId offerId) {
+            return OfferCollection.DeleteOneAsync(Builders<Offer>.Filter.Eq(o => o.Id, offerId));
+        }
+
+        /// <summary>
         /// Bulk updates POS information on all of its offers.
         /// </summary>
         public Task UpdatePosInformation(ObjectId posId, string name, string description, double? latitude, double? longitude, string url, bool posActive) {
