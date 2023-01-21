@@ -111,54 +111,56 @@ namespace WomPlatform.Web.Api.Service {
 
         public enum PosListOrder {
             Name,
-            Nearby,
             CreatedOn,
         }
 
-        public async Task<(List<Pos> Results, long Total)> ListPos(
-            GeoCoords? searchNear, int page, int pageSize, PosListOrder orderBy
-        ) {
-            var basicFilter = Builders<Pos>.Filter.And(
-                Builders<Pos>.Filter.Ne(p => p.IsActive, false),
+        public async Task<(List<Pos>, long Total)> ListPos(string textSearch, int page, int pageSize, PosListOrder orderBy) {
+            List<FilterDefinition<Pos>> filters = new() {
                 Builders<Pos>.Filter.Ne(p => p.IsDummy, true)
-            );
+            };
+            if(!string.IsNullOrWhiteSpace(textSearch)) {
+                filters.Add(Builders<Pos>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
+            }
+
+            var count = await PosCollection.CountDocumentsAsync(Builders<Pos>.Filter.And(filters));
+
+            var query = PosCollection.Find(Builders<Pos>.Filter.And(filters));
+            query = orderBy switch {
+                PosListOrder.Name => query.SortBy(p => p.Name),
+                PosListOrder.CreatedOn => query.SortByDescending(p => p.CreatedOn),
+                _ => throw new ArgumentException("Unsupported order clause"),
+            };
+            query = query.Skip((page, pageSize).GetSkip()).Limit(pageSize);
+
+            var results = await query.ToListAsync();
+
+            return (results, count);
+        }
+
+        public async Task<(List<Pos> Results, long Total)> ListPosByDistance(double latitude, double longitude, int page, int pageSize) {
+            var basicFilter = Builders<Pos>.Filter.Ne(p => p.IsDummy, true);
 
             var count = await PosCollection.CountDocumentsAsync(basicFilter);
 
-            if(orderBy == PosListOrder.Nearby) {
-                if(!searchNear.HasValue) {
-                    throw new ArgumentException("A search point must be supplied when ordering by distance");
-                }
-                var pos = searchNear.Value;
+            var pipeline = new EmptyPipelineDefinition<Pos>()
+                .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
+                        $geoNear: {{
+                            'near': {{ 'type': 'Point', 'coordinates': [ {0}, {1} ] }},
+                            'distanceField': 'distance',
+                            'spherical': true,
+                        }}
+                    }}", longitude, latitude)))
+                .Match(basicFilter)
+                .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(@"{
+                        $sort: {
+                            'distance': -1,
+                        }
+                    }"))
+                .Skip((page, pageSize).GetSkip()).Limit(pageSize);
 
-                var pipeline = new EmptyPipelineDefinition<Pos>()
-                    .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
-                            $geoNear: {{
-                              'near': {{ 'type': 'Point', 'coordinates': [ {0}, {1} ] }},
-                              'distanceField': 'distance',
-                              'spherical': true,
-                            }}
-                        }}", pos.Longitude, pos.Latitude)))
-                    .Match(basicFilter)
-                    .AppendStage<Pos, Pos, Pos>(BsonDocument.Parse(@"{
-                            $sort: {
-                              'distance': -1,
-                            }
-                        }"))
-                    .Skip((page, pageSize).GetSkip()).Limit(pageSize);
+            var results = await PosCollection.Aggregate(pipeline).ToListAsync();
 
-                return (await PosCollection.Aggregate(pipeline).ToListAsync(), count);
-            }
-            else {
-                var q = PosCollection.Find(basicFilter);
-                var sorted = orderBy switch {
-                    PosListOrder.Name => q.SortBy(p => p.Name),
-                    PosListOrder.CreatedOn => q.SortByDescending(p => p.CreatedOn),
-                    _ => throw new ArgumentException("Unsupported order clause"),
-                };
-
-                return (await sorted.ToListAsync(), count);
-            }
+            return (results, count);
         }
 
         /// <summary>

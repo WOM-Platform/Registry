@@ -12,7 +12,7 @@ namespace WomPlatform.Web.Api.OutputModels {
         /// Optional geographical bounds filter.
         /// </summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public GeoBounds Bounds { get; set; }
+        public GeoBoundsOutput Bounds { get; set; }
 
         /// <summary>
         /// Optional voucher freshness filter, expressed in days of age.

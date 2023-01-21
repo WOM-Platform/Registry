@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
 namespace WomPlatform.Web.Api.Service {
     public class BaseService {
         private readonly MongoClient _client;
+        private readonly Random _random;
         private readonly ILogger<BaseService> _logger;
 
         protected BaseService(
@@ -12,6 +14,8 @@ namespace WomPlatform.Web.Api.Service {
         ) {
             _client = client;
             _logger = logger;
+
+            _random = new Random();
         }
 
         protected IMongoDatabase MainDatabase {
@@ -21,5 +25,7 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         protected ILogger<BaseService> Logger { get { return _logger; } }
+
+        protected Random Random { get { return _random; } }
     }
 }

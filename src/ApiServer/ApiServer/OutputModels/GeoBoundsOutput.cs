@@ -1,13 +1,13 @@
 ﻿namespace WomPlatform.Web.Api.OutputModels {
-    public class GeoBounds {
+    public class GeoBoundsOutput {
         public double[] LeftTop { get; set; }
 
         public double[] RightBottom { get; set; }
     }
 
     public static class GeoBoundsExtensions {
-        public static GeoBounds ToOutput(this DatabaseDocumentModels.Bounds bounds) {
-            return (bounds == null) ? null : new GeoBounds {
+        public static GeoBoundsOutput ToOutput(this DatabaseDocumentModels.Bounds bounds) {
+            return (bounds == null) ? null : new GeoBoundsOutput {
                 LeftTop = new double[] {
                     bounds.LeftTop.Latitude, bounds.LeftTop.Longitude
                 },

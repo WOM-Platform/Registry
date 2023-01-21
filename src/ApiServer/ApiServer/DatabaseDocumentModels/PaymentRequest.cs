@@ -35,6 +35,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public ObjectId PosId { get; set; }
 
         [BsonElement("nonce")]
+        [BsonIgnoreIfNull]
         public string Nonce { get; set; }
 
         [BsonElement("password")]

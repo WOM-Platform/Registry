@@ -51,7 +51,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("search/distance")]
         [AllowAnonymous]
         [Produces(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(typeof(OfferSearchPosOutput[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PosWithOffersOutput[]), StatusCodes.Status200OK)]
         public async Task<ActionResult> SearchByDistance(
             double latitude, double longitude, double range = 10, OfferOrder orderBy = OfferOrder.LastUpdate
         ) {
@@ -63,14 +63,14 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var results = await _offerService.GetOffersByDistance(latitude, longitude, range, orderBy);
 
-            return Ok(results.Select(go => new OfferSearchPosOutput {
+            return Ok(results.Select(go => new PosWithOffersOutput {
                 PosId = go.Id.ToString(),
                 Name = go.Name,
                 Description = go.Description,
                 Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
-                Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
+                Offers = go.Offers.Select(o => new PosWithOffersOutput.OfferOutput {
                     OfferId = o.Id,
                     Title = o.Title,
                     Description = o.Description,
@@ -85,7 +85,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("search/box")]
         [AllowAnonymous]
         [Produces(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(typeof(OfferSearchPosOutput[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PosWithOffersOutput[]), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchByBox(
             [FromQuery] double llx, [FromQuery] double lly,
             [FromQuery] double urx, [FromQuery] double ury
@@ -94,14 +94,14 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var results = await _offerService.GetOffersInBox(llx, lly, urx, ury);
 
-            return Ok(results.Select(go => new OfferSearchPosOutput {
+            return Ok(results.Select(go => new PosWithOffersOutput {
                 PosId = go.Id.ToString(),
                 Name = go.Name,
                 Description = go.Description,
                 Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
-                Offers = go.Offers.Select(o => new OfferSearchOfferOutput {
+                Offers = go.Offers.Select(o => new PosWithOffersOutput.OfferOutput {
                     OfferId = o.Id,
                     Title = o.Title,
                     Description = o.Description,
@@ -115,6 +115,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpPost("migrate")]
         public async Task<ActionResult> Migrate() {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
             Logger.LogInformation("Migrating payments to offers");
 
             Dictionary<ObjectId, Pos> posMap = new ();

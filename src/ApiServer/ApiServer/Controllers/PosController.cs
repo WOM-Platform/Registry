@@ -12,10 +12,12 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
-using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels;
+using WomPlatform.Web.Api.InputModels.Offers;
 using WomPlatform.Web.Api.InputModels.Pos;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Offers;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.Service;
 
@@ -26,23 +28,8 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Point of service")]
     public class PosController : BaseRegistryController {
 
-        private readonly MerchantService _merchantService;
-        private readonly PosService _posService;
-        private readonly OfferService _offerService;
-        private readonly PicturesService _picturesService;
-
-        public PosController(
-            MerchantService merchantService,
-            PosService posService,
-            OfferService offerService,
-            PicturesService picturesService,
-            IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+        public PosController(IServiceProvider serviceProvider, ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _merchantService = merchantService;
-            _posService = posService;
-            _offerService = offerService;
-            _picturesService = picturesService;
         }
 
         /// <summary>
@@ -53,19 +40,22 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         [ProducesResponseType(typeof(PosOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Register(PosRegistrationInput input) {
-            if(!User.GetUserId(out var loggedUserId)) {
-                return Forbid();
-            }
-
-            var owningMerchant = await _merchantService.GetMerchantById(input.OwnerMerchantId);
+        public async Task<IActionResult> Register(
+            [FromBody] PosRegistrationInput input
+        ) {
+            var owningMerchant = await MerchantService.GetMerchantById(input.OwnerMerchantId);
             if(owningMerchant == null) {
-                return Problem("Owning merchant does not exist");
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant does not exist");
             }
 
-            if(!owningMerchant.AdministratorIds.Contains(loggedUserId)) {
+            if(!await VerifyUserIsAdminOfMerchant(owningMerchant)) {
                 return Forbid();
+            }
+
+            if((!input.Latitude.HasValue || !input.Longitude.HasValue) && string.IsNullOrWhiteSpace(input.Url)) {
+                return Problem(statusCode: StatusCodes.Status422UnprocessableEntity, title: "POS without geographic position must have an URL");
             }
 
             try {
@@ -74,23 +64,21 @@ namespace WomPlatform.Web.Api.Controllers {
                 var pos = new Pos {
                     MerchantId = owningMerchant.Id,
                     Name = input.Name,
-                    Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(
-                        new GeoJson2DGeographicCoordinates(
-                            input.Longitude,
-                            input.Latitude
-                        )
-                    ),
-                    Url = input.Url,
+                    Description = input.Description,
+                    Position = (input.Latitude.HasValue && input.Longitude.HasValue) ?
+                        new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(input.Longitude.Value, input.Latitude.Value)) :
+                        null,
+                    Url = string.IsNullOrWhiteSpace(input.Url) ? null : input.Url,
                     PrivateKey = posKeys.Private.ToPemString(),
                     PublicKey = posKeys.Public.ToPemString(),
                     CreatedOn = DateTime.UtcNow,
                     IsDummy = false,
                     IsActive = true,
                 };
-                await _posService.CreatePos(pos);
+                await PosService.CreatePos(pos);
 
                 return CreatedAtAction(
-                    nameof(GetInformation),
+                    nameof(GetPosInformation),
                     new {
                         id = pos.Id
                     },
@@ -106,50 +94,62 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Retrieves information about an existing POS.
         /// </summary>
-        /// <param name="id">POS ID.</param>
-        [HttpGet("{id}")]
+        /// <param name="posId">POS ID.</param>
+        [HttpGet("{posId}")]
         [ProducesResponseType(typeof(PosOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetInformation(
-            [FromRoute] ObjectId id
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetPosInformation(
+            [FromRoute] ObjectId posId
         ) {
-            var pos = await _posService.GetPosById(id);
+            var pos = await PosService.GetPosById(posId);
             if(pos == null) {
                 return NotFound();
             }
 
-            var picCover = _picturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+            var picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
 
             return Ok(pos.ToOutput(picCover));
         }
 
-        public record PosListOutput(
-            PosOutput[] Pos,
-            int Page,
-            int PageSize,
-            bool HasPrevious,
-            bool HasNext,
-            long TotalCount
-        );
-
+        /// <summary>
+        /// Retrieves a list of POS.
+        /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(PosListOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Paged<PosOutput>), StatusCodes.Status200OK)]
         public async Task<IActionResult> List(
-            [FromQuery] double? latitude,
-            [FromQuery] double? longitude,
+            [FromQuery] string search = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(PosService.PosListOrder.Name)] PosService.PosListOrder orderBy = PosService.PosListOrder.Name
         ) {
-            GeoCoords? near = (latitude.HasValue && longitude.HasValue) ?
-                new GeoCoords { Latitude = latitude.Value, Longitude = longitude.Value } :
-                null;
-
-            (var results, var count) = await _posService.ListPos(near, page, pageSize, orderBy);
+            (var results, var count) = await PosService.ListPos(search, page, pageSize, orderBy);
 
             return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results
-                 let picCover = _picturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
+                 let picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
+                 select pos.ToOutput(picCover)).ToArray(),
+                page,
+                pageSize,
+                count
+            ));
+        }
+
+        /// <summary>
+        /// Retrieves a list of POS nearby a geographic point.
+        /// </summary>
+        [HttpGet("nearby")]
+        [ProducesResponseType(typeof(Paged<PosOutput>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> List(
+            [FromQuery] double latitude,
+            [FromQuery] double longitude,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10
+        ) {
+            (var results, var count) = await PosService.ListPosByDistance(latitude, longitude, page, pageSize);
+
+            return Ok(Paged<PosOutput>.FromPage(
+                (from pos in results
+                 let picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
                  select pos.ToOutput(picCover)).ToArray(),
                 page,
                 pageSize,
@@ -160,54 +160,52 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Updates information about an existing POS.
         /// </summary>
-        /// <param name="id">Merchant ID.</param>
+        /// <param name="posId">Merchant ID.</param>
         /// <param name="input">Updated information.</param>
-        [HttpPut("{id}")]
+        [HttpPut("{posId}")]
         [Authorize]
         [ProducesResponseType(typeof(PosOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(
-            [FromRoute] ObjectId id,
+            [FromRoute] ObjectId posId,
             [FromBody] PosUpdateInput input
         ) {
-            var pos = await _posService.GetPosById(id);
+            var pos = await PosService.GetPosById(posId);
             if(pos == null) {
                 return NotFound();
             }
 
-            var merchant = await _merchantService.GetMerchantById(pos.MerchantId);
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
                 Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
                 return NotFound();
             }
 
-            // Forbid if logged user is not in admin list
-            if(!User.GetUserId(out var loggedUserId) || !merchant.AdministratorIds.Contains(loggedUserId)) {
+            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
                 return Forbid();
             }
 
             try {
                 pos.Name = input.Name;
                 pos.Description = input.Description;
-                pos.Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(
-                    new GeoJson2DGeographicCoordinates(
-                        input.Longitude,
-                        input.Latitude
-                    )
-                );
+                pos.Position = (input.Latitude.HasValue && input.Longitude.HasValue) ?
+                    new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(input.Longitude.Value, input.Latitude.Value)) :
+                    null;
                 pos.Url = input.Url;
                 pos.IsActive = input.IsActive;
                 pos.LastUpdate = DateTime.UtcNow;
 
-                await _posService.ReplacePos(pos);
+                await PosService.ReplacePos(pos);
+
+                await OfferService.UpdatePosInformation(pos.Id, pos.Name, pos.Description, pos.Position?.Coordinates.Latitude, pos.Position?.Coordinates.Longitude, pos.Url, pos.IsActive);
             }
             catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update POS {0}", id);
+                Logger.LogError(ex, "Failed to update POS {0}", posId);
                 throw;
             }
 
-            var picPosCover = _picturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+            var picPosCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
 
             return Ok(pos.ToOutput(picPosCover));
         }
@@ -215,7 +213,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Updates the cover of an existing POS.
         /// </summary>
-        [HttpPost("{id}/cover")]
+        [HttpPost("{posId}/cover")]
         [Authorize]
         [DisableRequestSizeLimit]
         [Produces(MediaTypeNames.Application.Json)]
@@ -224,15 +222,15 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateCover(
-            [FromRoute] ObjectId id,
+            [FromRoute] ObjectId posId,
             [FromForm] [Required] IFormFile image
         ) {
-            var pos = await _posService.GetPosById(id);
+            var pos = await PosService.GetPosById(posId);
             if(pos == null) {
                 return NotFound();
             }
 
-            var merchant = await _merchantService.GetMerchantById(pos.MerchantId);
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
                 Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
                 return NotFound();
@@ -256,40 +254,219 @@ namespace WomPlatform.Web.Api.Controllers {
                 // Process and upload image
                 using var stream = new MemoryStream();
                 await image.CopyToAsync(stream);
-                (var picturePath, var pictureBlurHash) = await _picturesService.ProcessAndUploadPicture(stream, posUrl, PicturesService.PictureUsage.PosCover);
+                (var picturePath, var pictureBlurHash) = await PicturesService.ProcessAndUploadPicture(stream, posUrl, PicturesService.PictureUsage.PosCover);
 
-                await _posService.UpdatePosCover(id, picturePath, pictureBlurHash);
-                await _offerService.UpdatePosCovers(id, picturePath, pictureBlurHash);
+                await PosService.UpdatePosCover(posId, picturePath, pictureBlurHash);
+                await OfferService.UpdatePosCovers(posId, picturePath, pictureBlurHash);
 
-                var picPosCover = _picturesService.GetPictureOutput(picturePath, pictureBlurHash);
+                var picPosCover = PicturesService.GetPictureOutput(picturePath, pictureBlurHash);
                 return Ok(pos.ToOutput(picPosCover));
             }
             catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update POS {0}", id);
+                Logger.LogError(ex, "Failed to update POS {0}", posId);
                 throw;
             }
         }
 
         /// <summary>
-        /// Updates the cover of an existing POS.
+        /// Deletes the cover of an existing POS.
         /// </summary>
-        [HttpPost("migrate-pos-covers")]
+        [HttpDelete("{posId}/cover")]
         [Authorize]
-        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
-        public async Task<IActionResult> MigratePosCovers() {
-            if(!await VerifyUserIsAdmin()) {
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(PosOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteCover(
+            [FromRoute] ObjectId posId
+        ) {
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                return NotFound();
+            }
+
+            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
                 return Forbid();
             }
 
-            var posWithOffer = await _offerService.GetOffersWithCover();
-            Logger.LogInformation("Loaded {0} POS", posWithOffer.Count);
+            try {
+                await PosService.UpdatePosCover(posId, null, null);
+                await OfferService.UpdatePosCovers(posId, null, null);
 
-            foreach(var pos in posWithOffer) {
-                Logger.LogDebug("Updating cover for POS {0}", pos.Name);
-                await _posService.UpdatePosCover(pos.Id, pos.CoverPath, pos.CoverBlurHash);
+                return Ok(pos.ToOutput(null));
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to update POS {0}", posId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the offers of a POS.
+        /// </summary>
+        /// <param name="posId">POS ID.</param>
+        [HttpGet("{posId}/offers")]
+        [ProducesResponseType(typeof(PosOfferOutput[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetPosOffers(
+            [FromRoute] ObjectId posId
+        ) {
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                return NotFound();
             }
 
-            return Ok();
+            var results = await OfferService.GetOffersOfPos(pos.Id);
+
+            return Ok((from result in results select result.ToOutput()).ToArray());
+        }
+
+        /// <summary>
+        /// Create a new offer tied to a POS.
+        /// </summary>
+        /// <param name="posId">POS ID.</param>
+        [HttpPost("{posId}/offers")]
+        [Authorize]
+        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> AddNewOffer(
+            [FromRoute] ObjectId posId,
+            [FromBody] OfferRegistrationInput input
+        ) {
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                return NotFound();
+            }
+
+            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
+                return Forbid();
+            }
+
+            try {
+                Filter filter = input.Filter.ToDocument();
+                var paymentRequest = await PaymentService.CreatePaymentRequest(pos, input.Cost, filter, isPersistent: true, isPreVerified: true);
+
+                var offer = new Offer {
+                    Title = input.Title,
+                    Description = input.Description,
+                    PaymentRequestId = paymentRequest.Otc,
+                    Cost = input.Cost,
+                    Filter = filter,
+                    Pos = new Offer.PosInformation {
+                        Id = pos.Id,
+                        Name = pos.Name,
+                        Description = pos.Description,
+                        CoverPath = pos.CoverPath,
+                        CoverBlurHash = pos.CoverBlurHash,
+                        Position = pos.Position,
+                        Url = pos.Url,
+                    },
+                    Merchant = new Offer.MerchantInformation {
+                        Id = merchant.Id,
+                        Name = merchant.Name,
+                        WebsiteUrl = merchant.WebsiteUrl,
+                    },
+                    CreatedOn = DateTime.UtcNow,
+                    LastUpdate = DateTime.UtcNow,
+                    Deactivated = !pos.IsActive,
+                };
+                await OfferService.AddOffer(offer);
+
+                return Ok(offer.ToDetailsOutput(paymentRequest));
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to persist offer");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Overwrites an offer tied to a POS.
+        /// </summary>
+        /// <param name="posId">POS ID.</param>
+        [HttpPut("{posId}/offers/{offerId}")]
+        [Authorize]
+        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> OverwriteOffer(
+            [FromRoute] ObjectId posId,
+            [FromRoute] ObjectId offerId,
+            [FromBody] OfferRegistrationInput input
+        ) {
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                return NotFound();
+            }
+
+            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
+                return Forbid();
+            }
+
+            var existingOffer = await OfferService.GetOfferById(offerId);
+            if(existingOffer == null) {
+                return NotFound();
+            }
+            if(existingOffer.Pos.Id != posId) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: $"Offer {offerId} is not owned by POS {posId}");
+            }
+
+            try {
+                Filter filter = input.Filter.ToDocument();
+                var paymentRequest = await PaymentService.CreatePaymentRequest(pos, input.Cost, filter, isPersistent: true, isPreVerified: true);
+
+                var offer = new Offer {
+                    Id = existingOffer.Id,
+                    Title = input.Title,
+                    Description = input.Description,
+                    PaymentRequestId = paymentRequest.Otc,
+                    Cost = input.Cost,
+                    Filter = filter,
+                    Pos = new Offer.PosInformation {
+                        Id = pos.Id,
+                        Name = pos.Name,
+                        Description = pos.Description,
+                        CoverPath = pos.CoverPath,
+                        CoverBlurHash = pos.CoverBlurHash,
+                        Position = pos.Position,
+                        Url = pos.Url,
+                    },
+                    Merchant = new Offer.MerchantInformation {
+                        Id = merchant.Id,
+                        Name = merchant.Name,
+                        WebsiteUrl = merchant.WebsiteUrl,
+                    },
+                    CreatedOn = existingOffer.CreatedOn,
+                    LastUpdate = DateTime.UtcNow,
+                    Deactivated = !pos.IsActive,
+                };
+                await OfferService.ReplaceOffer(offerId, offer);
+
+                return Ok(offer.ToDetailsOutput(paymentRequest));
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to persist offer");
+                throw;
+            }
         }
     }
 }

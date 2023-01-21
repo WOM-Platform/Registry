@@ -22,7 +22,7 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
         public PictureOutput Cover { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public DateTime? CreateOn { get; init; }
+        public DateTime? CreatedOn { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? LastUpdate { get; init; }
@@ -40,7 +40,7 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
                 Longitude = pos.Position?.Coordinates.Longitude,
                 Cover = posCoverPicture,
                 Url = pos.Url,
-                CreateOn = pos.CreatedOn,
+                CreatedOn = pos.CreatedOn,
                 LastUpdate = pos.LastUpdate,
                 IsActive = pos.IsActive,
             };

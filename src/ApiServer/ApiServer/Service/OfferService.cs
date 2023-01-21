@@ -50,6 +50,14 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.InsertOneAsync(offer);
         }
 
+        public Task ReplaceOffer(ObjectId offerId, Offer offer) {
+            if(offerId != offer.Id) {
+                throw new ArgumentException("Inconsistent offer ID");
+            }
+
+            return OfferCollection.ReplaceOneAsync(Builders<Offer>.Filter.Eq(o => o.Id, offerId), offer);
+        }
+
         public class GroupedOffersByPos {
             [BsonId]
             public ObjectId Id { get; set; }
@@ -112,6 +120,7 @@ namespace WomPlatform.Web.Api.Service {
 
         public Task<List<GroupedOffersByPos>> GetOffersByDistance(double latitude, double longitude, double rangeKms, OfferOrder orderBy) {
             var pipeline = new EmptyPipelineDefinition<Offer>()
+                // The geoNear stage automatically filters out offers without position
                 .AppendStage<Offer, Offer, Offer>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
                     $geoNear: {{
                         key: ""pos.position"",
@@ -156,6 +165,7 @@ namespace WomPlatform.Web.Api.Service {
         public Task<List<GroupedOffersByPos>> GetOffersInBox(double lowerLeftLong, double lowerLeftLat, double upperRightLong, double upperRightLat) {
             var pipeline = new EmptyPipelineDefinition<Offer>()
                 .Match(Builders<Offer>.Filter.Ne(o => o.Deactivated, true))
+                // The geoWithin match automatically filters out offers without position
                 .AppendStage<Offer, Offer, Offer>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
                     $match: {{
                         ""pos.position"": {{
@@ -196,16 +206,6 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.Aggregate(pipeline).ToListAsync();
         }
 
-        /// <summary>
-        /// Sets cover path and blur hash on all offers by a given POS.
-        /// </summary>
-        public Task UpdatePosCovers(ObjectId posId, string coverPath, string coverBlurHash) {
-            return OfferCollection.UpdateManyAsync(
-                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
-                Builders<Offer>.Update.Set(o => o.Pos.CoverPath, coverPath).Set(o => o.Pos.CoverBlurHash, coverBlurHash)
-            );
-        }
-
         [Obsolete]
         public Task<List<GroupedOffersByPos>> GetOffersWithCover() {
             var pipeline = new EmptyPipelineDefinition<Offer>()
@@ -239,6 +239,49 @@ namespace WomPlatform.Web.Api.Service {
                 }"));
 
             return OfferCollection.Aggregate(pipeline).ToListAsync();
+        }
+
+        /// <summary>
+        /// Retrieve all offers of a POS.
+        /// </summary>
+        public Task<List<Offer>> GetOffersOfPos(ObjectId posId) {
+            return OfferCollection.Find(Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId)).ToListAsync();
+        }
+
+        /// <summary>
+        /// Get an offer by its ID.
+        /// </summary>
+        public Task<Offer> GetOfferById(ObjectId offerId) {
+            return OfferCollection.Find(Builders<Offer>.Filter.Eq(o => o.Id, offerId)).SingleOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Bulk updates POS information on all of its offers.
+        /// </summary>
+        public Task UpdatePosInformation(ObjectId posId, string name, string description, double? latitude, double? longitude, string url, bool posActive) {
+            var position = (latitude.HasValue && longitude.HasValue) ?
+                new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(longitude.Value, latitude.Value)) :
+                null;
+
+            return OfferCollection.UpdateManyAsync(
+                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Update
+                    .Set(o => o.Pos.Name, name)
+                    .Set(o => o.Pos.Description, description)
+                    .Set(o => o.Pos.Position, position)
+                    .Set(o => o.Pos.Url, url)
+                    .Set(o => o.Deactivated, !posActive)
+            );
+        }
+
+        /// <summary>
+        /// Bulk updates cover path and blur hash on all offers by a given POS.
+        /// </summary>
+        public Task UpdatePosCovers(ObjectId posId, string coverPath, string coverBlurHash) {
+            return OfferCollection.UpdateManyAsync(
+                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Update.Set(o => o.Pos.CoverPath, coverPath).Set(o => o.Pos.CoverBlurHash, coverBlurHash)
+            );
         }
 
     }

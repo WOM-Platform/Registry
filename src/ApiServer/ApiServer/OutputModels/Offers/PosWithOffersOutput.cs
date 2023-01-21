@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using MongoDB.Bson;
 
 namespace WomPlatform.Web.Api.OutputModels.Offers {
-    public class OfferSearchPosOutput {
+    public class PosWithOffersOutput {
         public string PosId { get; init; }
 
         public string Name { get; init; }
@@ -18,23 +18,23 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
 
         public GeoCoords Position { get; init; }
 
-        public OfferSearchOfferOutput[] Offers { get; init; }
-    }
+        public class OfferOutput {
+            public ObjectId OfferId { get; init; }
 
-    public class OfferSearchOfferOutput {
-        public ObjectId OfferId { get; init; }
+            public string Title { get; init; }
 
-        public string Title { get; init; }
+            public string Description { get; init; }
 
-        public string Description { get; init; }
+            public int Cost { get; init; }
 
-        public int Cost { get; init; }
+            [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            public SimpleFilter Filter { get; init; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public SimpleFilter Filter { get; init; }
+            public DateTime CreatedAt { get; init; }
 
-        public DateTime CreatedAt { get; init; }
+            public DateTime UpdatedAt { get; init; }
+        }
 
-        public DateTime UpdatedAt { get; init; }
+        public OfferOutput[] Offers { get; init; }
     }
 }

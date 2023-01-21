@@ -10,11 +10,12 @@ namespace WomPlatform.Web.Api.InputModels.Pos {
         [StringLength(128, MinimumLength = 4)]
         public string Name { get; set; }
 
-        [Required]
-        public double Latitude { get; set; }
+        [StringLength(4096)]
+        public string Description { get; set; }
 
-        [Required]
-        public double Longitude { get; set; }
+        public double? Latitude { get; set; }
+
+        public double? Longitude { get; set; }
 
         [Url]
         public string Url { get; set; }

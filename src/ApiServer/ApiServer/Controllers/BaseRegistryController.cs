@@ -56,6 +56,36 @@ namespace WomPlatform.Web.Api.Controllers {
 
         protected ILogger<BaseRegistryController> Logger { get; }
 
+        protected MerchantService MerchantService {
+            get {
+                return _serviceProvider.GetRequiredService<MerchantService>();
+            }
+        }
+
+        protected OfferService OfferService {
+            get {
+                return _serviceProvider.GetRequiredService<OfferService>();
+            }
+        }
+
+        protected PaymentService PaymentService {
+            get {
+                return _serviceProvider.GetRequiredService<PaymentService>();
+            }
+        }
+
+        protected PicturesService PicturesService {
+            get {
+                return _serviceProvider.GetRequiredService<PicturesService>();
+            }
+        }
+
+        protected PosService PosService {
+            get {
+                return _serviceProvider.GetRequiredService<PosService>();
+            }
+        }
+
         protected UserService UserService {
             get {
                 return _serviceProvider.GetRequiredService<UserService>();
