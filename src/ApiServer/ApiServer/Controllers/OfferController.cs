@@ -114,6 +114,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("migrate")]
+        [Authorize]
         public async Task<ActionResult> Migrate() {
             if(!await VerifyUserIsAdmin()) {
                 return Forbid();

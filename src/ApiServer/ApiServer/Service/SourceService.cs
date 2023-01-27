@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using Org.BouncyCastle.Crypto;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Service {
@@ -39,14 +40,34 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        public async Task<Source> CreateNewSource(string name, string url, AsymmetricCipherKeyPair keys,
+            GeoCoords? location = null, bool locationIsFixed = false,
+            ObjectId[] administratorUserIds = null
+        ) {
+            var source = new Source {
+                Name = name,
+                PublicKey = keys.Public.ToPemString(),
+                PrivateKey = keys.Private.ToPemString(),
+                Url = url,
+                CreatedOn = DateTime.UtcNow,
+                Aims = null, // TODO: this must be set
+                Location = location.HasValue ?
+                    new Source.SourceLocation {
+                        Position = location.Value.ToGeoJson(),
+                        IsFixed = locationIsFixed,
+                    } :
+                    null,
+                AdministratorUserIds = administratorUserIds,
+            };
+
+            await SourceCollection.InsertOneAsync(source);
+
+            return source;
+        }
+
         public Task<Source> GetSourceById(ObjectId id) {
             var filter = Builders<Source>.Filter.Eq(m => m.Id, id);
             return SourceCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        public class SourcetWithAdmins : Source {
-            [BsonElement("adminUsers")]
-            public User[] Administrators { get; set; }
         }
 
         public class GeneratedVouchersCountBySourceResult {

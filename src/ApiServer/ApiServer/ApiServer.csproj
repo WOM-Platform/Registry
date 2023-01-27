@@ -33,10 +33,4 @@
   <ItemGroup>
     <Content Remove="Properties\launchSettings %28copia%29.json" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Properties\launchSettings_local.json">
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-    </None>
-  </ItemGroup>
 </Project>

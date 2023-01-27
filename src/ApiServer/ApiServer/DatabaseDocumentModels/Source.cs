@@ -31,20 +31,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public DateTime? CreatedOn { get; set; }
 
-        [BsonElement("aims")]
-        public SourceAims Aims { get; set; } = new SourceAims();
-
-        [BsonElement("location")]
-        public SourceLocation Location { get; set; } = new SourceLocation();
-
-        [BsonElement("adminUserIds")]
-        public ObjectId[] AdministratorUserIds { get; set; }
-
-        [BsonExtraElements]
-        public BsonDocument CatchAll { get; set; }
-
         public class SourceAims {
-
             [BsonElement("enableAll")]
             [BsonIgnoreIfDefault]
             [BsonDefaultValue(false)]
@@ -58,11 +45,13 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
             [BsonExtraElements]
             public BsonDocument CatchAll { get; set; }
-
         }
 
-        public class SourceLocation {
+        [BsonElement("aims")]
+        [BsonIgnoreIfNull]
+        public SourceAims Aims { get; set; } = new SourceAims();
 
+        public class SourceLocation {
             [BsonElement("default")]
             [BsonIgnoreIfNull]
             public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
@@ -71,8 +60,18 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
             [BsonIgnoreIfDefault]
             [BsonDefaultValue(false)]
             public bool IsFixed { get; set; } = false;
-
         }
+
+        [BsonElement("location")]
+        [BsonIgnoreIfNull]
+        public SourceLocation Location { get; set; } = new SourceLocation();
+
+        [BsonElement("adminUserIds")]
+        [BsonIgnoreIfNull]
+        public ObjectId[] AdministratorUserIds { get; set; }
+
+        [BsonExtraElements]
+        public BsonDocument CatchAll { get; set; }
 
     }
 

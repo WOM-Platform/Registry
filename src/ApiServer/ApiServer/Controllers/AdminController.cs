@@ -1,9 +1,13 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -12,21 +16,21 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Administration")]
     public class AdminController : BaseRegistryController {
 
-        private readonly MerchantService _merchantService;
-
         public AdminController(
-            MerchantService merchantService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _merchantService = merchantService;
         }
 
         [HttpGet("export/merchants")]
-        [AllowAnonymous]
-        public async Task<IActionResult> ExportMerchantList(
+        [Authorize]
+        public async Task<ActionResult> ExportMerchantList(
         ) {
-            var merchants = await _merchantService.GetAllMerchantsWithUsers();
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
+            var merchants = await MerchantService.GetAllMerchantsWithUsers();
 
             var sb = new StringBuilder();
             sb.AppendLine("Merchant,Fiscal code,Address,ZIP code,City,Country,Website,Admin name,Admin surname,Admin email,");
@@ -53,6 +57,26 @@ namespace WomPlatform.Web.Api.Controllers {
             string csv = sb.ToString();
             var today = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm");
             return File(Encoding.UTF8.GetBytes(csv), "text/csv", $"merchants-{today}.csv");
+        }
+
+        [HttpPost("generate/source")]
+        [Authorize]
+        [ProducesResponseType(typeof(SourceDetailsOutput), StatusCodes.Status200OK)]
+        public async Task<ActionResult> GenerateNewSource(
+            [FromQuery] [Required] [StringLength(64, MinimumLength = 3)] string name,
+            [FromQuery] [Url] string url,
+            [FromQuery] double? latitude,
+            [FromQuery] double? longitude
+        ) {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
+            var keys = CryptoHelper.CreateKeyPair();
+
+            var source = await SourceService.CreateNewSource(name, url, keys);
+
+            return Ok(source.ToDetailsOutput());
         }
 
     }

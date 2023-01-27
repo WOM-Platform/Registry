@@ -86,6 +86,12 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        protected SourceService SourceService {
+            get {
+                return _serviceProvider.GetRequiredService<SourceService>();
+            }
+        }
+
         protected UserService UserService {
             get {
                 return _serviceProvider.GetRequiredService<UserService>();

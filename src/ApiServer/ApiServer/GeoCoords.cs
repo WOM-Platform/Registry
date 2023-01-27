@@ -1,15 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api {
 
-    public struct GeoCoords {
+    public readonly struct GeoCoords {
 
-        public double Latitude;
+        public double Latitude { get; init; }
 
-        public double Longitude;
+        public double Longitude { get; init; }
 
     }
 
@@ -75,6 +73,15 @@ namespace WomPlatform.Web.Api {
         /// <returns>Distance in kilometers.</returns>
         public static double DistanceBetween(GeoCoords a, GeoCoords b) {
             return DistanceBetweenPoints(a.Latitude, a.Longitude, b.Latitude, b.Longitude);
+        }
+
+        /// <summary>
+        /// Convert coordinates to a <see cref="GeoJsonPoint"/> to be used in a document.
+        /// </summary>
+        public static GeoJsonPoint<GeoJson2DGeographicCoordinates> ToGeoJson(this GeoCoords coords) {
+            return new GeoJsonPoint<GeoJson2DGeographicCoordinates>(
+                new GeoJson2DGeographicCoordinates(coords.Longitude, coords.Latitude)
+            );
         }
 
     }
