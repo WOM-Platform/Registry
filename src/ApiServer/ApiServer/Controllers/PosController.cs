@@ -342,17 +342,17 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             var pos = await PosService.GetPosById(posId);
             if(pos == null) {
-                return NotFound();
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found");
             }
 
             var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
                 Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return NotFound();
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found");
             }
 
             if(!await VerifyUserIsAdminOfMerchant(merchant)) {
-                return Forbid();
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not administrator of merchant");
             }
 
             try {
