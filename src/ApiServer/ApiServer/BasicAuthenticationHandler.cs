@@ -14,17 +14,17 @@ namespace WomPlatform.Web.Api {
 
     public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticationSchemeOptions> {
 
-        private readonly MongoDatabase _mongo;
+        private readonly UserService _userService;
 
         public BasicAuthenticationHandler(
-            MongoDatabase mongo,
+            UserService userService,
             IOptionsMonitor<BasicAuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
             ISystemClock clock)
             : base(options, logger, encoder, clock)
         {
-            _mongo = mongo;
+            _userService = userService;
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync() {
@@ -44,7 +44,7 @@ namespace WomPlatform.Web.Api {
             var email = authFields[0];
             var password = authFields[1];
 
-            var userProfile = await _mongo.GetUserByEmail(email);
+            var userProfile = await _userService.GetUserByEmail(email);
             if(userProfile == null) {
                 return AuthenticateResult.Fail("Invalid username or password");
             }

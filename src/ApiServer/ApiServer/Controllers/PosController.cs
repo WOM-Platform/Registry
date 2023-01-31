@@ -342,6 +342,7 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             var pos = await PosService.GetPosById(posId);
             if(pos == null) {
+                Logger.LogDebug("POS {0} not found", posId);
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found");
             }
 
@@ -352,12 +353,15 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             if(!await VerifyUserIsAdminOfMerchant(merchant)) {
+                User.GetUserId(out var userId);
+                Logger.LogDebug("User {0} is not administrator of merchant {1}", userId, merchant.Id);
                 return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not administrator of merchant");
             }
 
             try {
                 Filter filter = input.Filter.ToDocument();
                 var paymentRequest = await PaymentService.CreatePaymentRequest(pos, input.Cost, filter, isPersistent: true, isPreVerified: true);
+                Logger.LogDebug("Created payment request {0} for new offer", paymentRequest.Otc);
 
                 var offer = new Offer {
                     Title = input.Title,
@@ -384,6 +388,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Deactivated = !pos.IsActive,
                 };
                 await OfferService.AddOffer(offer);
+                Logger.LogInformation("Created new offer {0} for POS {1}", offer.Id, posId);
 
                 return Ok(offer.ToDetailsOutput(paymentRequest));
             }
@@ -398,14 +403,14 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpGet("{posId}/offers/{offerId}")]
         [ProducesResponseType(typeof(PosOfferOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPosOffer(
             [FromRoute] ObjectId posId,
             [FromRoute] ObjectId offerId
         ) {
             var offer = await OfferService.GetOfferById(offerId);
             if(offer == null) {
-                return NotFound();
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} does not exist");
             }
             if(offer.Pos.Id != posId) {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
@@ -422,7 +427,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> OverwriteOffer(
             [FromRoute] ObjectId posId,
             [FromRoute] ObjectId offerId,
@@ -430,32 +435,36 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             var pos = await PosService.GetPosById(posId);
             if(pos == null) {
-                return NotFound();
+                Logger.LogDebug("POS {0} not found", posId);
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found");
             }
 
             var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
             if(merchant == null) {
                 Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return NotFound();
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found");
             }
 
             if(!await VerifyUserIsAdminOfMerchant(merchant)) {
-                return Forbid();
+                User.GetUserId(out var userId);
+                Logger.LogDebug("User {0} is not administrator of merchant {1}", userId, merchant.Id);
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not administrator of merchant");
             }
 
             var existingOffer = await OfferService.GetOfferById(offerId);
             if(existingOffer == null) {
-                return NotFound();
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} does not exist");
             }
             if(existingOffer.Pos.Id != posId) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: $"Offer {offerId} is not owned by POS {posId}");
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
             }
 
             try {
                 Filter filter = input.Filter.ToDocument();
                 var paymentRequest = await PaymentService.CreatePaymentRequest(pos, input.Cost, filter, isPersistent: true, isPreVerified: true);
+                Logger.LogDebug("Created new payment request {0} for offer", paymentRequest.Otc);
 
-                var offer = new Offer {
+                var replacementOffer = new Offer {
                     Id = existingOffer.Id,
                     Title = input.Title,
                     Description = input.Description,
@@ -480,9 +489,10 @@ namespace WomPlatform.Web.Api.Controllers {
                     LastUpdate = DateTime.UtcNow,
                     Deactivated = !pos.IsActive,
                 };
-                await OfferService.ReplaceOffer(offerId, offer);
+                await OfferService.ReplaceOffer(offerId, replacementOffer);
+                Logger.LogInformation("Offer {0} for POS {1} has been replaced", replacementOffer.Id, posId);
 
-                return Ok(offer.ToDetailsOutput(paymentRequest));
+                return Ok(replacementOffer.ToDetailsOutput(paymentRequest));
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to persist offer");
