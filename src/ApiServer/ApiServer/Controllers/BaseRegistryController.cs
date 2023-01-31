@@ -150,7 +150,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return true;
             }
 
-            return !merchant.AdministratorIds.Contains(loggedUserId);
+            return merchant.AdministratorIds.Contains(loggedUserId);
         }
 
     }
