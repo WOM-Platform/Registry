@@ -64,14 +64,14 @@ namespace WomPlatform.Web.Api.Controllers {
             var results = await _offerService.GetOffersByDistance(latitude, longitude, range, orderBy);
 
             return Ok(results.Select(go => new PosWithOffersOutput {
-                PosId = go.Id.ToString(),
+                Id = go.Id,
                 Name = go.Name,
                 Description = go.Description,
                 Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new PosWithOffersOutput.OfferOutput {
-                    OfferId = o.Id,
+                    Id = o.Id,
                     Title = o.Title,
                     Description = o.Description,
                     Cost = o.Cost,
@@ -95,14 +95,14 @@ namespace WomPlatform.Web.Api.Controllers {
             var results = await _offerService.GetOffersInBox(llx, lly, urx, ury);
 
             return Ok(results.Select(go => new PosWithOffersOutput {
-                PosId = go.Id.ToString(),
+                Id = go.Id,
                 Name = go.Name,
                 Description = go.Description,
                 Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new PosWithOffersOutput.OfferOutput {
-                    OfferId = o.Id,
+                    Id = o.Id,
                     Title = o.Title,
                     Description = o.Description,
                     Cost = o.Cost,
