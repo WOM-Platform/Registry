@@ -4,7 +4,14 @@ using MongoDB.Bson;
 
 namespace WomPlatform.Web.Api.OutputModels.Offers {
     public class PosWithOffersOutput {
-        public string PosId { get; init; }
+        public ObjectId Id { get; init; }
+
+        [Obsolete]
+        public ObjectId PosId {
+            get {
+                return Id;
+            }
+        }
 
         public string Name { get; init; }
 
@@ -19,7 +26,14 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         public GeoCoords Position { get; init; }
 
         public class OfferOutput {
-            public ObjectId OfferId { get; init; }
+            public ObjectId Id { get; init; }
+
+            [Obsolete]
+            public ObjectId OfferId {
+                get {
+                    return Id;
+                }
+            }
 
             public string Title { get; init; }
 
