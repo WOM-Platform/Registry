@@ -76,7 +76,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = o.Description,
                     Cost = o.Cost,
                     Filter = o.Filter.ToOutput(),
-                    CreatedAt = o.CreatedOn,
+                    CreatedOn = o.CreatedOn,
                     UpdatedAt = o.LastUpdate,
                 }).ToArray(),
             }));
@@ -107,7 +107,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = o.Description,
                     Cost = o.Cost,
                     Filter = o.Filter.ToOutput(),
-                    CreatedAt = o.CreatedOn,
+                    CreatedOn = o.CreatedOn,
                     UpdatedAt = o.LastUpdate,
                 }).ToArray(),
             }));

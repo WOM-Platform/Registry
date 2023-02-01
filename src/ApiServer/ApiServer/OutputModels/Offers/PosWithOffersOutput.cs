@@ -44,7 +44,14 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
             [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
             public SimpleFilter Filter { get; init; }
 
-            public DateTime CreatedAt { get; init; }
+            public DateTime CreatedOn { get; init; }
+
+            [Obsolete]
+            public DateTime CreatedAt {
+                get {
+                    return CreatedOn;
+                }
+            }
 
             public DateTime UpdatedAt { get; init; }
         }
