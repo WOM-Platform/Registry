@@ -53,7 +53,14 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
                 }
             }
 
-            public DateTime UpdatedAt { get; init; }
+            public DateTime LastUpdate { get; init; }
+
+            [Obsolete]
+            public DateTime UpdatedAt {
+                get {
+                    return LastUpdate;
+                }
+            }
         }
 
         public OfferOutput[] Offers { get; init; }
