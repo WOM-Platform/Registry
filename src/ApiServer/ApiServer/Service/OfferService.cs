@@ -50,12 +50,9 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.InsertOneAsync(offer);
         }
 
-        public Task ReplaceOffer(ObjectId offerId, Offer offer) {
-            if(offerId != offer.Id) {
-                throw new ArgumentException("Inconsistent offer ID");
-            }
-
-            return OfferCollection.ReplaceOneAsync(Builders<Offer>.Filter.Eq(o => o.Id, offerId), offer);
+        public Task ReplaceOffer(Offer offer) {
+            var filter = Builders<Offer>.Filter.Eq(o => o.Id, offer.Id);
+            return OfferCollection.ReplaceOneAsync(filter, offer);
         }
 
         public Task UpdateOfferDescription(ObjectId offerId, string title, string description) {

@@ -6,16 +6,16 @@
 
             public string Name { get; init; }
 
-            public GeoCoords Position { get; init; }
+            public GeoCoordsOutput Position { get; init; }
 
             public string Url { get; init; }
         }
 
         public PosEntry[] Pos { get; init; }
 
-        public GeoCoords LowerLeft { get; init; }
+        public GeoCoordsOutput LowerLeft { get; init; }
 
-        public GeoCoords UpperRight { get; init; }
+        public GeoCoordsOutput UpperRight { get; init; }
 
     }
 }

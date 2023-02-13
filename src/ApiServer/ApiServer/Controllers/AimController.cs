@@ -17,17 +17,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Aims")]
     public class AimController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
-        private readonly AimService _aimService;
-
         public AimController(
-            MongoDatabase mongo,
-            AimService aimService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _aimService = aimService;
         }
 
         public record AimShowOutput(
@@ -46,7 +39,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Show(string code) {
             var cleanCode = code.Replace("/", string.Empty);
 
-            var aim = await _aimService.GetAimByCode(code);
+            var aim = await AimService.GetAimByCode(cleanCode);
             if(aim == null) {
                 return NotFound();
             }

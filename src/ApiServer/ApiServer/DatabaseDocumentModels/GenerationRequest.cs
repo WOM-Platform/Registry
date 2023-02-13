@@ -10,9 +10,15 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonId(IdGenerator = typeof(GuidGenerator))]
         public Guid Otc { get; set; }
 
+        /// <summary>
+        /// Number of voucher specifications used for this generation.
+        /// </summary>
         [BsonElement("amount")]
         public int Amount { get; set; }
 
+        /// <summary>
+        /// Total of generated vouchers.
+        /// </summary>
         [BsonElement("totalVoucherCount")]
         [BsonIgnoreIfNull]
         public int? TotalVoucherCount { get; set; }

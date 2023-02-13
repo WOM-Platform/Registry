@@ -11,7 +11,6 @@ using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
-using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -20,17 +19,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Merchant")]
     public class MerchantController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
-        private readonly MerchantService _merchantService;
-
         public MerchantController(
-            MongoDatabase mongo,
-            MerchantService merchantService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _merchantService = merchantService;
         }
 
         /// <summary>
@@ -69,7 +61,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
-            var existingMerchant = await _merchantService.GetMerchantByFiscalCode(input.FiscalCode);
+            var existingMerchant = await MerchantService.GetMerchantByFiscalCode(input.FiscalCode);
             if(existingMerchant != null) {
                 return this.ProblemParameter("Supplied fiscal code is already registered");
             }
@@ -94,7 +86,7 @@ namespace WomPlatform.Web.Api.Controllers {
                         loggedUserId
                     }
                 };
-                await _merchantService.CreateMerchant(merchant);
+                await MerchantService.CreateMerchant(merchant);
 
                 return CreatedAtAction(
                     nameof(GetInformation),
@@ -125,7 +117,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
         ) {
-            var existingMerchant = await _merchantService.GetMerchantById(id);
+            var existingMerchant = await MerchantService.GetMerchantById(id);
             if(existingMerchant == null) {
                 return NotFound();
             }
@@ -176,7 +168,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id,
             MerchantUpdateInput input
         ) {
-            var existingMerchant = await _merchantService.GetMerchantById(id);
+            var existingMerchant = await MerchantService.GetMerchantById(id);
             if(existingMerchant == null) {
                 return NotFound();
             }
@@ -213,7 +205,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 existingMerchant.LastUpdate = DateTime.UtcNow;
                 existingMerchant.Enabled = input.Enabled;
 
-                await _merchantService.ReplaceMerchant(existingMerchant);
+                await MerchantService.ReplaceMerchant(existingMerchant);
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to update merchant {0}", id);

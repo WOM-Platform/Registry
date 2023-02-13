@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.Service;
@@ -56,6 +56,24 @@ namespace WomPlatform.Web.Api.Controllers {
 
         protected ILogger<BaseRegistryController> Logger { get; }
 
+        protected AimService AimService {
+            get {
+                return _serviceProvider.GetRequiredService<AimService>();
+            }
+        }
+
+        protected ApiKeyService ApiKeyService {
+            get {
+                return _serviceProvider.GetRequiredService<ApiKeyService>();
+            }
+        }
+
+        protected GenerationService GenerationService {
+            get {
+                return _serviceProvider.GetRequiredService<GenerationService>();
+            }
+        }
+
         protected MerchantService MerchantService {
             get {
                 return _serviceProvider.GetRequiredService<MerchantService>();
@@ -89,6 +107,12 @@ namespace WomPlatform.Web.Api.Controllers {
         protected SourceService SourceService {
             get {
                 return _serviceProvider.GetRequiredService<SourceService>();
+            }
+        }
+
+        protected StatsService StatsService {
+            get {
+                return _serviceProvider.GetRequiredService<StatsService>();
             }
         }
 
@@ -133,11 +157,69 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             var userProfile = await UserService.GetUserById(loggedUserId);
-            if(userProfile.Role == DatabaseDocumentModels.User.UserRole.Admin) {
+            if(userProfile.Role == PlatformRole.Admin) {
                 return true;
             }
 
             return false;
+        }
+
+        protected async Task<(bool Allowed, ActionResult ErrorResult, Merchant merchant, Pos pos)> VerifyUserIsUserOfPos(ObjectId posId) {
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                Logger.LogDebug("POS {0} not found", posId);
+                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found"), null, null);
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found"), null, pos);
+            }
+
+            if(!await VerifyUserIsUserOfMerchant(merchant)) {
+                return (false, Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not user of merchant"), merchant, pos);
+            }
+
+            return (true, null, merchant, pos);
+        }
+
+        protected async Task<bool> VerifyUserIsUserOfMerchant(Merchant merchant) {
+            if(!User.GetUserId(out var loggedUserId)) {
+                return false;
+            }
+
+            var userProfile = await UserService.GetUserById(loggedUserId);
+            if(userProfile.Role == PlatformRole.Admin) {
+                return true;
+            }
+
+            if(!(merchant.AdministratorIds.Contains(loggedUserId) || merchant.PosUserIds.Contains(loggedUserId))) {
+                Logger.LogDebug("User {0} is not user of merchant {1}", loggedUserId, merchant.Id);
+                return false;
+            }
+
+            return true;
+        }
+
+        protected async Task<(bool Allowed, ActionResult ErrorResult, Merchant merchant, Pos pos)> VerifyUserIsAdminOfPos(ObjectId posId) {
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                Logger.LogDebug("POS {0} not found", posId);
+                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found"), null, null);
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found"), null, pos);
+            }
+
+            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
+                return (false, Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not administrator of merchant"), merchant, pos);
+            }
+
+            return (true, null, merchant, pos);
         }
 
         protected async Task<bool> VerifyUserIsAdminOfMerchant(Merchant merchant) {
@@ -146,11 +228,16 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             var userProfile = await UserService.GetUserById(loggedUserId);
-            if(userProfile.Role == DatabaseDocumentModels.User.UserRole.Admin) {
+            if(userProfile.Role == PlatformRole.Admin) {
                 return true;
             }
 
-            return merchant.AdministratorIds.Contains(loggedUserId);
+            if(!merchant.AdministratorIds.Contains(loggedUserId)) {
+                Logger.LogDebug("User {0} is not administrator of merchant {1}", loggedUserId, merchant.Id);
+                return false;
+            }
+
+            return true;
         }
 
     }

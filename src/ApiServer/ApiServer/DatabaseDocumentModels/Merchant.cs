@@ -53,13 +53,26 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public DateTime? LastUpdate { get; set; }
 
+        [Obsolete]
         [BsonElement("adminUserIds")]
         [BsonIgnoreIfNull]
         public ObjectId[] AdministratorIds { get; set; }
 
+        [Obsolete]
         [BsonElement("posUserIds")]
         [BsonIgnoreIfNull]
         public ObjectId[] PosUserIds { get; set; }
+
+        public class AccessDetails {
+            [BsonElement("role")]
+            public MerchantRole Role { get; set; }
+
+            [BsonExtraElements]
+            public BsonDocument CatchAll { get; set; }
+        }
+
+        [BsonElement("access")]
+        public Dictionary<ObjectId, AccessDetails> Access { get; set; }
 
         [BsonElement("isDummy")]
         [BsonDefaultValue(false)]

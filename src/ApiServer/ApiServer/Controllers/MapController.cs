@@ -44,14 +44,14 @@ namespace WomPlatform.Web.Api.Controllers {
                        select new PosBoxResponse.PosEntry {
                            Id = r.Id.ToString(),
                            Name = r.Name,
-                           Position = new OutputModels.GeoCoords {
+                           Position = new OutputModels.GeoCoordsOutput {
                                Longitude = r.Position.Coordinates.Longitude,
                                Latitude = r.Position.Coordinates.Latitude
                            },
                            Url = r.Url
                        }).ToArray(),
-                LowerLeft = new OutputModels.GeoCoords { Longitude = llx, Latitude = lly },
-                UpperRight = new OutputModels.GeoCoords { Longitude = urx, Latitude = ury }
+                LowerLeft = new OutputModels.GeoCoordsOutput { Longitude = llx, Latitude = lly },
+                UpperRight = new OutputModels.GeoCoordsOutput { Longitude = urx, Latitude = ury }
             });
         }
 

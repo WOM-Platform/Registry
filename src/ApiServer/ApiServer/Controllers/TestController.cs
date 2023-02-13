@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using WomPlatform.Connector.Models;
+using WomPlatform.Web.Api.InputModels;
+using WomPlatform.Web.Api.InputModels.Generation;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -17,25 +18,13 @@ namespace WomPlatform.Web.Api.Controllers {
 
         private readonly ObjectId _testSourceId, _testPosId;
 
-        private readonly MongoDatabase _mongo;
-        private readonly AimService _aimService;
-        private readonly PosService _posService;
-        private readonly Operator _operator;
         private IWebHostEnvironment Hosting { get; init; }
 
         public TestController(
-            MongoDatabase mongo,
-            AimService aimService,
-            PosService posService,
-            Operator @operator,
             IWebHostEnvironment webHostEnvironment,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _aimService = aimService;
-            _posService = posService;
-            _operator = @operator;
             Hosting = webHostEnvironment;
 
             var devSection = Configuration.GetSection("DevelopmentSetup");
@@ -61,34 +50,32 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Creating {0} test vouchers", count);
 
-            var testSource = await _mongo.GetSourceById(_testSourceId);
+            var testSource = await SourceService.GetSourceById(_testSourceId);
             var rnd = new Random();
-            var aim = (await _aimService.GetAllAims()).OrderBy(a => rnd.NextDouble()).First();
+            var aim = (await AimService.GetAllAims()).OrderBy(a => rnd.NextDouble()).First();
 
             Logger.LogTrace("Test source: {0}, random aim '{1}'", testSource.Name, aim.Code);
 
             var now = DateTime.UtcNow;
-            var voucherInfos = new VoucherCreatePayload.VoucherInfo[] {
-                new VoucherCreatePayload.VoucherInfo {
+            var voucherInfos = new VoucherGenerationSpecification[] {
+                new VoucherGenerationSpecification {
                     Aim = aim.Code,
-                    Latitude = rnd.NextBetween(5, 40),
-                    Longitude = rnd.NextBetween(5, 50),
+                    Location = new GeoCoordsInput {
+                        Latitude = rnd.NextBetween(5, 40),
+                        Longitude = rnd.NextBetween(5, 50),
+                    },
                     Timestamp = DateTime.UtcNow,
                     Count = count
                 }
             };
 
-            (var otcGen, var pwd, _) = await _operator.CreateGenerationRequest(testSource, new VoucherCreatePayload.Content {
-                Nonce = Guid.NewGuid().ToString("N"),
-                SourceId = testSource.Id.ToString(),
-                Vouchers = voucherInfos
-            }, isPreVerified: true);
+            (var generation, _) = await GenerationService.CreateGenerationRequest(testSource, voucherInfos, isPreVerified: true);
 
-            Logger.LogDebug("New voucher generation request created with code {0}", otcGen);
+            Logger.LogDebug("New voucher generation request created with code {0}", generation.Otc);
 
             return Ok(new {
-                OtcGen = UrlGenerator.GenerateRedeemUrl(otcGen),
-                Pin = pwd
+                OtcGen = UrlGenerator.GenerateRedeemUrl(generation.Otc),
+                Pin = generation.Password,
             });
         }
 
@@ -96,7 +83,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> CreatePayment(
             string ackUrl,
             int amount = 10,
-            [FromBody] SimpleFilter filter = null
+            [FromBody] SimpleFilterInput filter = null
         ) {
             if (!Hosting.IsDevelopment()) {
                 return Unauthorized();
@@ -111,23 +98,17 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Creating payment for {0} vouchers", amount);
 
-            var testPos = await _posService.GetPosById(_testPosId);
+            var testPos = await PosService.GetPosById(_testPosId);
 
             Logger.LogTrace("Test POS: {0}", testPos.Id);
 
-            (var otcPay, var pwd) = await _operator.CreatePaymentRequest(testPos, new PaymentRegisterPayload.Content {
-                Amount = amount,
-                Nonce = Guid.NewGuid().ToString("N"),
-                SimpleFilter = filter,
-                PosId = testPos.Id.ToString(),
-                PocketAckUrl = ackUrl
-            }, isPreVerified: true);
+            var request = await PaymentService.CreatePaymentRequest(testPos, amount, filter.ToDocument(), null, null, ackUrl, null, false, true);
 
-            Logger.LogDebug("New payment request created with code {0}", otcPay);
+            Logger.LogDebug("New payment request created with code {0}", request.Otc);
 
             return Ok(new {
-                OtcPay = UrlGenerator.GeneratePaymentUrl(otcPay),
-                Pin = pwd
+                OtcPay = UrlGenerator.GeneratePaymentUrl(request.Otc),
+                Pin = request.Password
             });
         }
 
@@ -139,7 +120,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Unauthorized();
             }
 
-            var payment = await _mongo.GetPaymentRequestByOtc(otc);
+            var payment = await PaymentService.GetPaymentRequestByOtc(otc);
             if(payment == null) {
                 return NotFound();
             }

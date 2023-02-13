@@ -13,13 +13,16 @@ namespace WomPlatform.Web.Api.Service {
     public class PosService {
 
         private readonly MongoClient _client;
+        private readonly MerchantService _merchantService;
         private readonly ILogger<PosService> _logger;
 
         public PosService(
             MongoClient client,
+            MerchantService merchantService,
             ILogger<PosService> logger
         ) {
             _client = client;
+            _merchantService = merchantService;
             _logger = logger;
         }
 
@@ -41,17 +44,6 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-        /// <summary>
-        /// Gets a list of merchants that the user controls as a POS user.
-        /// </summary>
-        private Task<List<Merchant>> GetMerchantsWithPosControl(ObjectId userId) {
-            var merchFilter = Builders<Merchant>.Filter.Or(
-                Builders<Merchant>.Filter.AnyEq(m => m.AdministratorIds, userId),
-                Builders<Merchant>.Filter.AnyEq(m => m.PosUserIds, userId)
-            );
-            return MerchantCollection.Find(merchFilter).ToListAsync();
-        }
-
         public Task CreatePos(Pos pos) {
             return PosCollection.InsertOneAsync(pos);
         }
@@ -65,7 +57,7 @@ namespace WomPlatform.Web.Api.Service {
         /// Gets list of POS that the user controls.
         /// </summary>
         public async Task<List<Pos>> GetPosByUser(ObjectId userId) {
-            var merchantIds = from m in await GetMerchantsWithPosControl(userId)
+            var merchantIds = from m in await _merchantService.GetMerchantsWithUserControl(userId)
                               select m.Id;
 
             var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, merchantIds);
@@ -89,7 +81,7 @@ namespace WomPlatform.Web.Api.Service {
         /// </summary>
         public async Task<List<(Merchant, List<Pos>)>> GetMerchantsAndPosByUser(ObjectId userId) {
             // Get all merchants with control
-            var merchants = await GetMerchantsWithPosControl(userId);
+            var merchants = await _merchantService.GetMerchantsWithUserControl(userId);
 
             // Get all matching POS
             var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants select m.Id);

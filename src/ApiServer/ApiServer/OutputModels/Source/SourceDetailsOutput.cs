@@ -18,7 +18,7 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
         public string PrivateKey { get; set; }
 
         public class LocationDetails {
-            public GeoCoords Position { get; set; }
+            public GeoCoordsOutput Position { get; set; }
 
             public bool IsFixed { get; set; }
         }

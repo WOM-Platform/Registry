@@ -59,6 +59,17 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         /// <summary>
+        /// Gets a list of merchants that the user controls as a POS user.
+        /// </summary>
+        public Task<List<Merchant>> GetMerchantsWithUserControl(ObjectId userId) {
+            var merchFilter = Builders<Merchant>.Filter.Or(
+                Builders<Merchant>.Filter.AnyEq(m => m.AdministratorIds, userId),
+                Builders<Merchant>.Filter.AnyEq(m => m.PosUserIds, userId)
+            );
+            return MerchantCollection.Find(merchFilter).ToListAsync();
+        }
+
+        /// <summary>
         /// Replace an existing merchant, by ID.
         /// </summary>
         public Task ReplaceMerchant(Merchant merchant) {

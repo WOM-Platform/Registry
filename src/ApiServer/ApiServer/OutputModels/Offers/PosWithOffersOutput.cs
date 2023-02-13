@@ -23,7 +23,7 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Url { get; init; }
 
-        public GeoCoords Position { get; init; }
+        public GeoCoordsOutput Position { get; init; }
 
         public class OfferOutput {
             public ObjectId Id { get; init; }
