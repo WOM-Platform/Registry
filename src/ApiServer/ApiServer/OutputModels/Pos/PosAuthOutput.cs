@@ -1,31 +1,14 @@
 ﻿using System.Text.Json.Serialization;
 
 namespace WomPlatform.Web.Api.OutputModels.Pos {
-    public class PosAuthOutput {
-        public string Id { get; init; }
-
-        public string Name { get; init; }
-
-        public string Description { get; init; }
-
+    public class PosAuthOutput : PosOutput {
         public string PrivateKey { get; init; }
 
         public string PublicKey { get; init; }
-
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public double? Latitude { get; init; }
-
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public double? Longitude { get; init; }
-
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public string Url { get; init; }
-        
-        public bool IsActive { get; init; }
     }
 
     public static class PosAuthOutputExtensions {
-        public static PosAuthOutput ToAuthOutput(this DatabaseDocumentModels.Pos pos) {
+        public static PosAuthOutput ToAuthOutput(this DatabaseDocumentModels.Pos pos, PictureOutput posCoverPicture) {
             return new PosAuthOutput {
                 Id = pos.Id.ToString(),
                 Name = pos.Name,
@@ -34,7 +17,10 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
                 PublicKey = pos.PublicKey,
                 Latitude = pos.Position.Coordinates.Latitude,
                 Longitude = pos.Position.Coordinates.Longitude,
+                Cover = posCoverPicture,
                 Url = pos.Url,
+                CreatedOn = pos.CreatedOn,
+                LastUpdate = pos.LastUpdate,
                 IsActive = pos.IsActive,
             };
         }

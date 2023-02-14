@@ -81,7 +81,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new AuthPosLoginOutput(
-                pos.Select(p => p.ToAuthOutput()).ToArray()
+                pos.Select(p => p.ToAuthOutput(PicturesService.GetPictureOutput(p.CoverPath, p.CoverBlurHash))).ToArray()
             ));
         }
 
