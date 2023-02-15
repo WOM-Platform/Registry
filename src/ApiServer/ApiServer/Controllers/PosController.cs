@@ -189,7 +189,9 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 pos.Name = input.Name;
                 pos.Description = input.Description;
-                pos.Position = new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(input.Longitude, input.Latitude));
+                pos.Position = (input.Latitude.HasValue && input.Longitude.HasValue) ?
+                    new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(input.Longitude.Value, input.Latitude.Value)) :
+                    null;
                 pos.Url = input.Url;
                 pos.IsActive = input.IsActive;
                 pos.LastUpdate = DateTime.UtcNow;
