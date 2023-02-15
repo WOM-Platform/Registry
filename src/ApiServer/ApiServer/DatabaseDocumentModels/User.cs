@@ -32,6 +32,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("role")]
         [BsonDefaultValue(PlatformRole.User)]
+        [BsonRepresentation(BsonType.String)]
         public PlatformRole Role { get; set; }
 
         [BsonElement("registeredOn")]

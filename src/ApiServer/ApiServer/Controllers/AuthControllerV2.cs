@@ -78,7 +78,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Pos = (from p in d.Item2
                            let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
                            select p.ToAuthOutput(pictureOutput)).ToArray(),
-                    Enabled = d.Item1.Enabled
+                    Enabled = d.Item1.Enabled,
+                    Access = d.Item1.Access.Get(userId).Role,
                 }).ToArray()
             ));
         }

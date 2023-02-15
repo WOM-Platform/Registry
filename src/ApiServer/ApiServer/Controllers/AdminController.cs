@@ -13,6 +13,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/admin")]
     [OperationsTags("Administration")]
+    [RequireHttpsInProd]
     public class AdminController : BaseRegistryController {
 
         public AdminController(
@@ -76,6 +77,17 @@ namespace WomPlatform.Web.Api.Controllers {
             var source = await SourceService.CreateNewSource(name, url, keys);
 
             return Ok(source.ToDetailsOutput());
+        }
+
+        [HttpPost("migrate/merchant-user-access")]
+        public async Task<ActionResult> MigrateMerchantsToNewUserAccessRules() {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
+            await MerchantService.MigrateToNewUserAccessControl();
+
+            return Ok();
         }
 
     }

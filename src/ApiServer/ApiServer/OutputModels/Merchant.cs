@@ -31,6 +31,8 @@ namespace WomPlatform.Web.Api.OutputModels {
 
     public record MerchantAuthOutput : MerchantOutput {
         public PosAuthOutput[] Pos { get; init; }
+
+        public MerchantRole Access { get; init; }
     }
 
     public static class MerchantOutputHelpers {

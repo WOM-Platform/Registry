@@ -194,7 +194,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return true;
             }
 
-            if(!(merchant.AdministratorIds.Contains(loggedUserId) || merchant.PosUserIds.Contains(loggedUserId))) {
+            if(!merchant.Access.IsAtLeast(loggedUserId, MerchantRole.User)) {
                 Logger.LogDebug("User {0} is not user of merchant {1}", loggedUserId, merchant.Id);
                 return false;
             }
@@ -232,7 +232,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return true;
             }
 
-            if(!merchant.AdministratorIds.Contains(loggedUserId)) {
+            if(!merchant.Access.IsAtLeast(loggedUserId, MerchantRole.Admin)) {
                 Logger.LogDebug("User {0} is not administrator of merchant {1}", loggedUserId, merchant.Id);
                 return false;
             }

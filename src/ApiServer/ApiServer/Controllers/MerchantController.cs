@@ -82,8 +82,11 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = input.Description,
                     WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
-                    AdministratorIds = new ObjectId[] {
-                        loggedUserId
+                    Access = new() {
+                        new AccessControlEntry<MerchantRole> {
+                            UserId = loggedUserId,
+                            Role = MerchantRole.Admin,
+                        }
                     }
                 };
                 await MerchantService.CreateMerchant(merchant);
@@ -110,9 +113,8 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Can be accessed only if logged in user is the merchant's administrator or POS user.
         /// </remarks>
         [HttpGet("{id}")]
-        [Authorize]
+        [AllowAnonymous]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
@@ -120,14 +122,6 @@ namespace WomPlatform.Web.Api.Controllers {
             var existingMerchant = await MerchantService.GetMerchantById(id);
             if(existingMerchant == null) {
                 return NotFound();
-            }
-
-            // Forbid if logged user is not in admin list OR POS user list
-            if(!User.GetUserId(out var loggedUserId) ||
-               !(
-                   existingMerchant.AdministratorIds.Contains(loggedUserId) || existingMerchant.PosUserIds.Contains(loggedUserId)
-               )) {
-                return Forbid();
             }
 
             return Ok(existingMerchant.ToOutput());
@@ -166,14 +160,14 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateMerchant(
             [FromRoute] ObjectId id,
-            MerchantUpdateInput input
+            [FromBody] MerchantUpdateInput input
         ) {
             var existingMerchant = await MerchantService.GetMerchantById(id);
             if(existingMerchant == null) {
                 return NotFound();
             }
 
-            if(!User.GetUserId(out var loggedUserId) || !existingMerchant.AdministratorIds.Contains(loggedUserId)) {
+            if(!await VerifyUserIsAdminOfMerchant(existingMerchant)) {
                 return Forbid();
             }
 
