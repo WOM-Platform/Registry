@@ -82,7 +82,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     new {
                         id = pos.Id
                     },
-                    pos.ToOutput(null)
+                    pos.ToOutput(PicturesService.DefaultPosCover)
                 );
             }
             catch(Exception ex) {
@@ -106,7 +106,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+            var picCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash);
 
             return Ok(pos.ToOutput(picCover));
         }
@@ -126,7 +126,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results
-                 let picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
+                 let picCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash)
                  select pos.ToOutput(picCover)).ToArray(),
                 page,
                 pageSize,
@@ -149,7 +149,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results
-                 let picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
+                 let picCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash)
                  select pos.ToOutput(picCover)).ToArray(),
                 page,
                 pageSize,
@@ -205,7 +205,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
 
-            var picPosCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+            var picPosCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash);
 
             return Ok(pos.ToOutput(picPosCover));
         }
@@ -251,7 +251,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 await PosService.UpdatePosCover(posId, picturePath, pictureBlurHash);
                 await OfferService.UpdatePosCovers(posId, picturePath, pictureBlurHash);
 
-                var picPosCover = PicturesService.GetPictureOutput(picturePath, pictureBlurHash);
+                var picPosCover = PicturesService.GetPosCoverOutput(picturePath, pictureBlurHash);
                 return Ok(pos.ToOutput(picPosCover));
             }
             catch(Exception ex) {

@@ -76,7 +76,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = d.Item1.Description,
                     Url = d.Item1.WebsiteUrl,
                     Pos = (from p in d.Item2
-                           let pictureOutput = PicturesService.GetPictureOutput(p.CoverPath, p.CoverBlurHash)
+                           let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
                            select p.ToAuthOutput(pictureOutput)).ToArray(),
                     Enabled = d.Item1.Enabled
                 }).ToArray()

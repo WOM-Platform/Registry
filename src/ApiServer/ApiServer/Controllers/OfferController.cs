@@ -18,28 +18,14 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/offer")]
     [OperationsTags("Offers")]
+    [RequireHttpsInProd]
     public class OfferController : BaseRegistryController {
 
-        private readonly OfferService _offerService;
-        private readonly PaymentService _paymentService;
-        private readonly PosService _posService;
-        private readonly MerchantService _merchantService;
-        private readonly PicturesService _picturesService;
-
         public OfferController(
-            OfferService offerService,
-            PaymentService paymentService,
-            PosService posService,
-            MerchantService merchantService,
-            PicturesService picturesService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _offerService = offerService;
-            _paymentService = paymentService;
-            _posService = posService;
-            _merchantService = merchantService;
-            _picturesService = picturesService;
+
         }
 
         /// <summary>
@@ -61,13 +47,13 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Searching for POS offers at {0} kms from ({1},{2})", range, latitude, longitude);
 
-            var results = await _offerService.GetOffersByDistance(latitude, longitude, range, orderBy);
+            var results = await OfferService.GetOffersByDistance(latitude, longitude, range, orderBy);
 
             return Ok(results.Select(go => new PosWithOffersOutput {
                 Id = go.Id,
                 Name = go.Name,
                 Description = go.Description,
-                Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
+                Cover = PicturesService.GetPosCoverOutput(go.CoverPath, go.CoverBlurHash),
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new PosWithOffersOutput.OfferOutput {
@@ -92,13 +78,13 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             Logger.LogInformation("Searching for POS offers between ({0},{1}) and ({2},{3})", llx, lly, urx, ury);
 
-            var results = await _offerService.GetOffersInBox(llx, lly, urx, ury);
+            var results = await OfferService.GetOffersInBox(llx, lly, urx, ury);
 
             return Ok(results.Select(go => new PosWithOffersOutput {
                 Id = go.Id,
                 Name = go.Name,
                 Description = go.Description,
-                Cover = (go.CoverPath != null) ? _picturesService.GetPictureOutput(go.CoverPath, go.CoverBlurHash) : _picturesService.DefaultPosCover,
+                Cover = PicturesService.GetPosCoverOutput(go.CoverPath, go.CoverBlurHash),
                 Url = go.Url,
                 Position = go.Position.ToOutput(),
                 Offers = go.Offers.Select(o => new PosWithOffersOutput.OfferOutput {
@@ -125,11 +111,11 @@ namespace WomPlatform.Web.Api.Controllers {
             Dictionary<ObjectId, Pos> posMap = new ();
             Dictionary<ObjectId, Merchant> merchantMap = new();
 
-            var payments = await _paymentService.GetPersistentPayments();
+            var payments = await PaymentService.GetPersistentPayments();
             foreach(var payment in payments) {
                 if(!posMap.ContainsKey(payment.PosId)) {
                     Logger.LogDebug("Fetching info for POS {0}", payment.PosId);
-                    posMap.Add(payment.PosId, await _posService.GetPosById(payment.PosId));
+                    posMap.Add(payment.PosId, await PosService.GetPosById(payment.PosId));
                 }
                 var pos = posMap[payment.PosId];
                 if(pos == null) {
@@ -142,7 +128,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 if(!merchantMap.ContainsKey(pos.MerchantId)) {
                     Logger.LogDebug("Fetcing info for merchant {0}", pos.MerchantId);
-                    merchantMap.Add(pos.MerchantId, await _merchantService.GetMerchantById(pos.MerchantId));
+                    merchantMap.Add(pos.MerchantId, await MerchantService.GetMerchantById(pos.MerchantId));
                 }
                 var merchant = merchantMap[pos.MerchantId];
                 if(merchant == null) {
@@ -177,7 +163,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     LastUpdate = DateTime.UtcNow,
                     Deactivated = false,
                 };
-                await _offerService.AddOffer(offer);
+                await OfferService.AddOffer(offer);
 
                 Logger.LogInformation("Migrated payment {0} as offer {1}", payment.Otc, offer.Id);
             }
