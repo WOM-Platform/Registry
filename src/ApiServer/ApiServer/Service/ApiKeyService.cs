@@ -7,30 +7,13 @@ using Org.BouncyCastle.Crypto;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Service {
-    public class ApiKeyService {
-
-        private readonly MongoClient _client;
-        private readonly ILogger<ApiKeyService> _logger;
-        private readonly Random _rnd = new Random();
+    public class ApiKeyService : BaseService {
 
         public ApiKeyService(
             MongoClient client,
-            ILogger<ApiKeyService> logger
-        ) {
-            _client = client;
-            _logger = logger;
-        }
+            ILogger<BaseService> logger
+        ) : base(client, logger) {
 
-        private IMongoDatabase MainDatabase {
-            get {
-                return _client.GetDatabase("Wom");
-            }
-        }
-
-        private IMongoCollection<ApiKey> ApiKeyCollection {
-            get {
-                return MainDatabase.GetCollection<ApiKey>("ApiKeys");
-            }
         }
 
         public Task<ApiKey> RetrieveApiKey(string key) {
@@ -55,7 +38,7 @@ namespace WomPlatform.Web.Api.Service {
                 var keys = CryptoHelper.CreateKeyPair();
 
                 matchingKey = new ApiKey {
-                    Key = _rnd.GenerateCode(16),
+                    Key = Random.GenerateCode(16),
                     ControlledEntityId = controlledEntityId,
                     KeySelector = keySelector,
                     Kind = kind,
@@ -90,12 +73,12 @@ namespace WomPlatform.Web.Api.Service {
             else {
                 var entry = await RetrieveApiKey(apiKey);
                 if(entry == null) {
-                    _logger.LogInformation("API key {0} not registered", apiKey);
+                    Logger.LogInformation("API key {0} not registered", apiKey);
                     return null;
                 }
 
                 if(entry.ControlledEntityId != entityId) {
-                    _logger.LogWarning("API key {0} does not control entity {1}", apiKey, entityId);
+                    Logger.LogWarning("API key {0} does not control entity {1}", apiKey, entityId);
                     return null;
                 }
 

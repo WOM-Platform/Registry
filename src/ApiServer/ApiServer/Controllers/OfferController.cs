@@ -142,9 +142,12 @@ namespace WomPlatform.Web.Api.Controllers {
                 var offer = new Offer {
                     Title = "Offerta",
                     Description = null,
-                    PaymentRequestId = payment.Otc,
-                    Cost = payment.Amount,
-                    Filter = payment.Filter,
+                    Payment = new Offer.PaymentInformation {
+                        Otc = payment.Otc,
+                        Password = payment.Password,
+                        Cost = payment.Amount,
+                        Filter = payment.Filter,
+                    },
                     Pos = new Offer.PosInformation {
                         Id = pos.Id,
                         Name = pos.Name,

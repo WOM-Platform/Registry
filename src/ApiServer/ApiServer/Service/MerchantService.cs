@@ -8,29 +8,13 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Service {
 
-    public class MerchantService {
-
-        private readonly MongoClient _client;
-        private readonly ILogger<MerchantService> _logger;
+    public class MerchantService : BaseService {
 
         public MerchantService(
             MongoClient client,
-            ILogger<MerchantService> logger
-        ) {
-            _client = client;
-            _logger = logger;
-        }
+            ILogger<BaseService> logger
+        ) : base(client, logger) {
 
-        private IMongoDatabase MainDatabase {
-            get {
-                return _client.GetDatabase("Wom");
-            }
-        }
-
-        private IMongoCollection<Merchant> MerchantCollection {
-            get {
-                return MainDatabase.GetCollection<Merchant>("Merchants");
-            }
         }
 
         public Task CreateMerchant(Merchant merchant) {
@@ -126,17 +110,17 @@ namespace WomPlatform.Web.Api.Service {
                 foreach(var id in m.AdministratorIds.ToSafeArray()) {
                     m.Access.Set(id, MerchantRole.Admin);
                 }
-                _logger.LogInformation("Upgrading merchant {0} with {1} access rules", m.Id, m.Access?.Count);
+                Logger.LogInformation("Upgrading merchant {0} with {1} access rules", m.Id, m.Access?.Count);
 
                 writes.Add(
                     new ReplaceOneModel<Merchant>(Builders<Merchant>.Filter.Eq(m => m.Id, m.Id), m)
                 );
             }
 
-            _logger.LogDebug("Performing bulk updates");
+            Logger.LogDebug("Performing bulk updates");
             await MerchantCollection.BulkWriteAsync(writes);
 
-            _logger.LogInformation("Merchant migration to new user access rules performed");
+            Logger.LogInformation("Merchant migration to new user access rules performed");
         }
 
     }

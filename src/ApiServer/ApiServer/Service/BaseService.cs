@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Service {
     public class BaseService {
@@ -21,6 +22,54 @@ namespace WomPlatform.Web.Api.Service {
         protected IMongoDatabase MainDatabase {
             get {
                 return _client.GetDatabase("Wom");
+            }
+        }
+
+        protected IMongoCollection<Aim> AimCollection {
+            get {
+                return MainDatabase.GetCollection<Aim>("Aims");
+            }
+        }
+
+        protected IMongoCollection<ApiKey> ApiKeyCollection {
+            get {
+                return MainDatabase.GetCollection<ApiKey>("ApiKeys");
+            }
+        }
+
+        protected IMongoCollection<GenerationRequest> GenerationRequestCollection {
+            get {
+                return MainDatabase.GetCollection<GenerationRequest>("GenerationRequests");
+            }
+        }
+
+        protected IMongoCollection<LegacyVoucher> LegacyVoucherCollection {
+            get {
+                return MainDatabase.GetCollection<LegacyVoucher>("LegacyVouchers");
+            }
+        }
+
+        protected IMongoCollection<Merchant> MerchantCollection {
+            get {
+                return MainDatabase.GetCollection<Merchant>("Merchants");
+            }
+        }
+
+        protected IMongoCollection<Migration> MigrationCollection {
+            get {
+                return MainDatabase.GetCollection<Migration>("Migrations");
+            }
+        }
+
+        protected IMongoCollection<PaymentRequest> PaymentRequestCollection {
+            get {
+                return MainDatabase.GetCollection<PaymentRequest>("PaymentRequests");
+            }
+        }
+
+        protected IMongoCollection<Voucher> VoucherCollection {
+            get {
+                return MainDatabase.GetCollection<Voucher>("Vouchers");
             }
         }
 

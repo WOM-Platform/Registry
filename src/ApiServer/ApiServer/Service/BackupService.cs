@@ -25,12 +25,6 @@ namespace WomPlatform.Web.Api.Service {
             _storageClient = StorageClient.Create();
         }
 
-        private IMongoCollection<Migration> MigrationCollection {
-            get {
-                return MainDatabase.GetCollection<Migration>("Migrations");
-            }
-        }
-
         public async Task<(Guid id, DateTime expiresOn)> CreateBackup(Stream rawFilePayload, string password) {
             if(string.IsNullOrWhiteSpace(password)) {
                 throw new ArgumentNullException(nameof(password));

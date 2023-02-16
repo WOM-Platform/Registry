@@ -304,7 +304,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="posId">POS ID.</param>
         [HttpGet("{posId}/offers")]
-        [ProducesResponseType(typeof(PosOfferOutput[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput[]), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPosOffers(
             [FromRoute] ObjectId posId
@@ -316,7 +316,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var results = await OfferService.GetOffersOfPos(pos.Id);
 
-            return Ok((from result in results select result.ToOutput()).ToArray());
+            return Ok((from result in results select result.ToDetailsOutput()).ToArray());
         }
 
         /// <summary>
@@ -325,7 +325,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="posId">POS ID.</param>
         [HttpPost("{posId}/offers")]
         [Authorize]
-        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> AddNewOffer(
@@ -345,9 +345,12 @@ namespace WomPlatform.Web.Api.Controllers {
                 var offer = new Offer {
                     Title = input.Title,
                     Description = input.Description,
-                    PaymentRequestId = paymentRequest.Otc,
-                    Cost = input.Cost,
-                    Filter = filter,
+                    Payment = new Offer.PaymentInformation {
+                        Otc = paymentRequest.Otc,
+                        Password = paymentRequest.Password,
+                        Cost = paymentRequest.Amount,
+                        Filter = paymentRequest.Filter,
+                    },
                     Pos = new Offer.PosInformation {
                         Id = pos.Id,
                         Name = pos.Name,
@@ -369,7 +372,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 await OfferService.AddOffer(offer);
                 Logger.LogInformation("Created new offer {0} for POS {1}", offer.Id, posId);
 
-                return Ok(offer.ToDetailsOutput(paymentRequest));
+                return Ok(offer.ToDetailsOutput());
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to persist offer");
@@ -381,7 +384,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieve an offer.
         /// </summary>
         [HttpGet("{posId}/offers/{offerId}")]
-        [ProducesResponseType(typeof(PosOfferOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPosOffer(
             [FromRoute] ObjectId posId,
@@ -395,7 +398,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
             }
 
-            return Ok(offer.ToOutput());
+            return Ok(offer.ToDetailsOutput());
         }
 
         /// <summary>
@@ -404,7 +407,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="posId">POS ID.</param>
         [HttpPut("{posId}/offers/{offerId}")]
         [Authorize]
-        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> OverwriteOffer(
@@ -434,9 +437,12 @@ namespace WomPlatform.Web.Api.Controllers {
                     Id = existingOffer.Id,
                     Title = input.Title,
                     Description = input.Description,
-                    PaymentRequestId = paymentRequest.Otc,
-                    Cost = input.Cost,
-                    Filter = filter,
+                    Payment = new Offer.PaymentInformation {
+                        Otc = paymentRequest.Otc,
+                        Password = paymentRequest.Password,
+                        Cost = paymentRequest.Amount,
+                        Filter = paymentRequest.Filter,
+                    },
                     Pos = new Offer.PosInformation {
                         Id = pos.Id,
                         Name = pos.Name,
@@ -458,7 +464,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 await OfferService.ReplaceOffer(replacementOffer);
                 Logger.LogInformation("Offer {0} for POS {1} has been replaced", replacementOffer.Id, posId);
 
-                return Ok(replacementOffer.ToDetailsOutput(paymentRequest));
+                return Ok(replacementOffer.ToDetailsOutput());
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to persist offer");
@@ -471,7 +477,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpPut("{posId}/offers/{offerId}/title")]
         [Authorize]
-        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> OverwriteOfferTitle(

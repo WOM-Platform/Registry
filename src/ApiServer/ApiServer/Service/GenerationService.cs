@@ -34,18 +34,6 @@ namespace WomPlatform.Web.Api.Service {
             RequestInitialAttempts = Convert.ToInt32(confSection["RequestInitialAttempts"]);
         }
 
-        private IMongoCollection<GenerationRequest> GenerationRequestCollection {
-            get {
-                return MainDatabase.GetCollection<GenerationRequest>("GenerationRequests");
-            }
-        }
-
-        private IMongoCollection<Voucher> VoucherCollection {
-            get {
-                return MainDatabase.GetCollection<Voucher>("Vouchers");
-            }
-        }
-
         public Task<GenerationRequest> GetGenerationRequestByOtc(Guid otc) {
             var filter = Builders<GenerationRequest>.Filter.Eq(r => r.Otc, otc);
             return GenerationRequestCollection.Find(filter).SingleOrDefaultAsync();

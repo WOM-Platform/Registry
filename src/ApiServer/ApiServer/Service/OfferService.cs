@@ -297,6 +297,36 @@ namespace WomPlatform.Web.Api.Service {
             );
         }
 
+        public async Task MigratePaymentInformationInOffers() {
+            List<WriteModel<Offer>> writes = new();
+
+            var offers = await OfferCollection.Find(Builders<Offer>.Filter.Empty).ToListAsync();
+            foreach(var o in offers) {
+                var payment = await PaymentRequestCollection.Find(
+                    Builders<PaymentRequest>.Filter.Eq(pr => pr.Otc, o.PaymentRequestId)
+                ).SingleOrDefaultAsync();
+                if(payment == null) {
+                    Logger.LogError("Offer payment not found");
+                    throw new Exception();
+                }
+
+                o.Payment = new Offer.PaymentInformation {
+                    Otc = payment.Otc,
+                    Password = payment.Password,
+                    Cost = o.Cost,
+                    Filter = o.Filter,
+                };
+                Logger.LogInformation("Upgrading offer {0}", o.Id);
+
+                writes.Add(
+                    new ReplaceOneModel<Offer>(Builders<Offer>.Filter.Eq(o => o.Id, o.Id), o)
+                );
+            }
+
+            Logger.LogDebug("Performing bulk updates");
+            await OfferCollection.BulkWriteAsync(writes);
+        }
+
     }
 
 }

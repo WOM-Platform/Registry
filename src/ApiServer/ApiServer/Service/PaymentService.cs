@@ -30,24 +30,6 @@ namespace WomPlatform.Web.Api.Service {
             RequestInitialAttempts = Convert.ToInt32(confSection["RequestInitialAttempts"]);
         }
 
-        private IMongoCollection<PaymentRequest> PaymentRequestCollection {
-            get {
-                return MainDatabase.GetCollection<PaymentRequest>("PaymentRequests");
-            }
-        }
-
-        private IMongoCollection<Voucher> VoucherCollection {
-            get {
-                return MainDatabase.GetCollection<Voucher>("Vouchers");
-            }
-        }
-
-        private IMongoCollection<LegacyVoucher> LegacyVoucherCollection {
-            get {
-                return MainDatabase.GetCollection<LegacyVoucher>("LegacyVouchers");
-            }
-        }
-
         private Task<List<Voucher>> GetVouchersWithIds(IEnumerable<ObjectId> ids) {
             var filter = Builders<Voucher>.Filter.In(v => v.Id, ids);
             return VoucherCollection.Find(filter).ToListAsync();
