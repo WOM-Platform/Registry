@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(PosWithOffersOutput[]), StatusCodes.Status200OK)]
         public async Task<ActionResult> SearchByDistance(
-            double latitude, double longitude, double range = 10, OfferOrder orderBy = OfferOrder.LastUpdate
+            double latitude, double longitude, double range = 10, OfferOrder orderBy = OfferOrder.Distance
         ) {
             if(range > 30) {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Search range cannot be greater than 30 kms");
@@ -47,7 +47,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Searching for POS offers at {0} kms from ({1},{2})", range, latitude, longitude);
 
-            var results = await OfferService.GetOffersByDistance(latitude, longitude, range, orderBy);
+            var results = await OfferService.GetOffersWithDistance(latitude, longitude, range, orderBy);
 
             return Ok(results.Select(go => new PosWithOffersOutput {
                 Id = go.Id,

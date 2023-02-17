@@ -124,7 +124,7 @@ namespace WomPlatform.Web.Api.Service {
             public Offer[] Offers { get; set; }
         }
 
-        public Task<List<GroupedOffersByPos>> GetOffersByDistance(double latitude, double longitude, double rangeKms, OfferOrder orderBy) {
+        public Task<List<GroupedOffersByPos>> GetOffersWithDistance(double latitude, double longitude, double rangeKms, OfferOrder orderBy) {
             var pipeline = new EmptyPipelineDefinition<Offer>()
                 // The geoNear stage automatically filters out offers without position
                 .AppendStage<Offer, Offer, Offer>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
