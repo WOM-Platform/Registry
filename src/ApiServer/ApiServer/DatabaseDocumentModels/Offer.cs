@@ -36,10 +36,12 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public PaymentInformation Payment { get; set; }
 
         [BsonElement("paymentRequestId")]
+        [BsonIgnoreIfDefault]
         [Obsolete]
         public Guid PaymentRequestId { get; set; }
 
         [BsonElement("cost")]
+        [BsonIgnoreIfDefault]
         [Obsolete]
         public int Cost { get; set; }
 
