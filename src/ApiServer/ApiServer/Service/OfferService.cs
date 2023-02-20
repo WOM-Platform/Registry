@@ -105,11 +105,23 @@ namespace WomPlatform.Web.Api.Service {
                 [BsonElement("description")]
                 public string Description { get; set; }
 
-                [BsonElement("cost")]
-                public int Cost { get; set; }
+                public class PaymentInformation {
+                    [BsonElement("otc")]
+                    public Guid Otc { get; set; }
 
-                [BsonElement("filter")]
-                public Filter Filter { get; set; }
+                    [BsonElement("password")]
+                    public string Password { get; set; }
+
+                    [BsonElement("cost")]
+                    public int Cost { get; set; }
+
+                    [BsonElement("filter")]
+                    [BsonIgnoreIfNull]
+                    public Filter Filter { get; set; }
+                }
+
+                [BsonElement("payment")]
+                public PaymentInformation Payment { get; set; }
 
                 [BsonElement("createdOn")]
                 [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
@@ -154,8 +166,7 @@ namespace WomPlatform.Web.Api.Service {
                                 _id: ""$_id"",
                                 title: ""$title"",
                                 description: ""$description"",
-                                cost: ""$cost"",
-                                filter: ""$filter"",
+                                payment: ""$payment"",
                                 createdOn: ""$createdOn"",
                                 lastUpdate: ""$lastUpdate""
                             }
