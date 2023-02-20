@@ -17,7 +17,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/offer")]
     [OperationsTags("Offers")]
-    [RequireHttpsInProd]
+    // [RequireHttpsInProd]
     public class OfferController : BaseRegistryController {
 
         public OfferController(
