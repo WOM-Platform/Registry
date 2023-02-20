@@ -10,17 +10,6 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
 
         public string Description { get; set; }
 
-        public int Cost { get; set; }
-
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public SimpleFilter Filter { get; set; }
-
-        public DateTime CreatedOn { get; set; }
-
-        public DateTime LastUpdate { get; set; }
-
-        public bool Deactivated { get; set; }
-
         public class PaymentDetails {
             public string RegistryUrl { get; set; }
 
@@ -32,6 +21,17 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         }
 
         public PaymentDetails Payment { get; set; }
+
+        public int Cost { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public SimpleFilter Filter { get; set; }
+
+        public DateTime CreatedOn { get; set; }
+
+        public DateTime LastUpdate { get; set; }
+
+        public bool Deactivated { get; set; }
     }
 
     public static class OfferOutputExtensions {

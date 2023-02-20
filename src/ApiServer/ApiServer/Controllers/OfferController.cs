@@ -12,7 +12,6 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Offers;
 using WomPlatform.Web.Api.Service;
-using static WomPlatform.Web.Api.Service.OfferService;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -39,7 +38,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(PosWithOffersOutput[]), StatusCodes.Status200OK)]
         public async Task<ActionResult> SearchByDistance(
-            double latitude, double longitude, double range = 10, OfferOrder orderBy = OfferOrder.Distance
+            double latitude, double longitude, double range = 10, OfferService.OfferOrder orderBy = OfferService.OfferOrder.Distance
         ) {
             if(range > 30) {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Search range cannot be greater than 30 kms");
@@ -60,8 +59,14 @@ namespace WomPlatform.Web.Api.Controllers {
                     Id = o.Id,
                     Title = o.Title,
                     Description = o.Description,
-                    Cost = o.Cost,
-                    Filter = o.Filter.ToOutput(),
+                    Payment = new PosWithOffersOutput.OfferOutput.PaymentDetails {
+                        RegistryUrl = $"https://{SelfHostDomain}",
+                        Otc = o.Payment.Otc,
+                        Password = o.Payment.Password,
+                        Link = $"https://{SelfLinkDomain}/payment/{o.Payment.Otc:D}",
+                    },
+                    Cost = o.Payment.Cost,
+                    Filter = o.Payment.Filter.ToOutput(),
                     CreatedOn = o.CreatedOn,
                     LastUpdate = o.LastUpdate,
                 }).ToArray(),
@@ -91,8 +96,14 @@ namespace WomPlatform.Web.Api.Controllers {
                     Id = o.Id,
                     Title = o.Title,
                     Description = o.Description,
-                    Cost = o.Cost,
-                    Filter = o.Filter.ToOutput(),
+                    Payment = new PosWithOffersOutput.OfferOutput.PaymentDetails {
+                        RegistryUrl = $"https://{SelfHostDomain}",
+                        Otc = o.Payment.Otc,
+                        Password = o.Payment.Password,
+                        Link = $"https://{SelfLinkDomain}/payment/{o.Payment.Otc:D}",
+                    },
+                    Cost = o.Payment.Cost,
+                    Filter = o.Payment.Filter.ToOutput(),
                     CreatedOn = o.CreatedOn,
                     LastUpdate = o.LastUpdate,
                 }).ToArray(),

@@ -39,6 +39,18 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
 
             public string Description { get; init; }
 
+            public class PaymentDetails {
+                public string RegistryUrl { get; set; }
+
+                public Guid Otc { get; set; }
+
+                public string Password { get; set; }
+
+                public string Link { get; set; }
+            }
+
+            public PaymentDetails Payment { get; set; }
+
             public int Cost { get; init; }
 
             [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
