@@ -9,9 +9,9 @@ using WomPlatform.Web.Api.OutputModels.VersionCheck;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/version-check")]
+    [OperationsTags("Application configuration")]
     [AllowAnonymous]
     [RequireHttpsInProd]
-    [OperationsTags("Application configuration")]
     public class VersionCheckController : BaseRegistryController {
 
         public VersionCheckController(

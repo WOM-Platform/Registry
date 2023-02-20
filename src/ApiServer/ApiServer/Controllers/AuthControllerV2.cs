@@ -20,6 +20,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// </summary>
     [Route("v2/auth")]
     [OperationsTags("Authentication")]
+    [RequireHttpsInProd]
     public class AuthControllerV2 : BaseRegistryController {
 
         public AuthControllerV2(
@@ -40,7 +41,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpPost("merchant")]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
-        [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthV2PosLoginOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
@@ -96,7 +96,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpPost("source")]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
-        [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthV2SourceLoginOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> SourceLoginV2() {
@@ -132,7 +131,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpPost("source/{sourceId}/apikey")]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
-        [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthV2CreateSourceApiKeyOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -178,7 +176,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves the public key used by the WOM Registry.
         /// </summary>
         [HttpGet("key")]
-        [RequireHttpsInProd]
         [Produces("text/plain")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public IActionResult GetPublicKey() {
@@ -194,7 +191,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves the auth information (ID and private key) used by the anonymous POS.
         /// </summary>
         [HttpGet("anonymous")]
-        [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(GetAnonymousCredentialsOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAnonymousCredentials() {
@@ -228,7 +224,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// The API key must be supplied as the "X-WOM-ApiKey" HTTP header.
         /// </remarks>
         [HttpPost("apikey")]
-        [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(GetApiKeyCredentialsOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]

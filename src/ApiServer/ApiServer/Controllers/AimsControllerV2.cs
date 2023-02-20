@@ -15,6 +15,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// </summary>
     [Route("v2/aims")]
     [OperationsTags("Aims")]
+    [RequireHttpsInProd]
     public class AimsControllerV2 : BaseRegistryController {
 
         private readonly AimService _aimService;

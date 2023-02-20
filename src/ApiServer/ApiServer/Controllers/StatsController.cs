@@ -15,6 +15,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/stats")]
     [OperationsTags("Stats and info")]
+    [RequireHttpsInProd]
     public class StatsController : BaseRegistryController {
 
         public StatsController(

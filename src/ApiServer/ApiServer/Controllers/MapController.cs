@@ -11,6 +11,7 @@ using WomPlatform.Web.Api.Service;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/map")]
+    [RequireHttpsInProd]
     public class MapController : BaseRegistryController {
 
         private readonly MapService _mapService;

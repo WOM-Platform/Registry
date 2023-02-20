@@ -24,8 +24,8 @@ using WomPlatform.Web.Api.Service;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/pos")]
-    [RequireHttpsInProd]
     [OperationsTags("Point of service")]
+    // [RequireHttpsInProd] - apply in future
     public class PosController : BaseRegistryController {
 
         public PosController(IServiceProvider serviceProvider, ILogger<AdminController> logger)
