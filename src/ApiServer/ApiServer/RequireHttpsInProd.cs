@@ -1,10 +1,7 @@
 ﻿using System;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace WomPlatform.Web.Api {
     public class RequireHttpsInProd : Attribute, IAuthorizationFilter, IOrderedFilter {
@@ -26,8 +23,8 @@ namespace WomPlatform.Web.Api {
                 throw new ArgumentNullException(nameof(filterContext));
             }
 
-            var env = filterContext.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-            if(!env.IsDevelopment() && !filterContext.HttpContext.Request.IsHttps) {
+            var request = filterContext.HttpContext.Request;
+            if(!filterContext.HttpContext.Request.IsHttps && request.Host.Host != "localhost") {
                 filterContext.Result = new StatusCodeResult(StatusCodes.Status403Forbidden);
             }
         }
