@@ -211,8 +211,7 @@ namespace WomPlatform.Web.Api.Service {
                                 _id: ""$_id"",
                                 title: ""$title"",
                                 description: ""$description"",
-                                cost: ""$cost"",
-                                filter: ""$filter"",
+                                payment: ""$payment"",
                                 createdOn: ""$createdOn"",
                                 lastUpdate: ""$lastUpdate""
                             }
