@@ -50,12 +50,9 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.InsertOneAsync(offer);
         }
 
-        public Task ReplaceOffer(ObjectId offerId, Offer offer) {
-            if(offerId != offer.Id) {
-                throw new ArgumentException("Inconsistent offer ID");
-            }
-
-            return OfferCollection.ReplaceOneAsync(Builders<Offer>.Filter.Eq(o => o.Id, offerId), offer);
+        public Task ReplaceOffer(Offer offer) {
+            var filter = Builders<Offer>.Filter.Eq(o => o.Id, offer.Id);
+            return OfferCollection.ReplaceOneAsync(filter, offer);
         }
 
         public Task UpdateOfferDescription(ObjectId offerId, string title, string description) {
@@ -298,6 +295,36 @@ namespace WomPlatform.Web.Api.Service {
                 Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
                 Builders<Offer>.Update.Set(o => o.Pos.CoverPath, coverPath).Set(o => o.Pos.CoverBlurHash, coverBlurHash)
             );
+        }
+
+        public async Task MigratePaymentInformationInOffers() {
+            List<WriteModel<Offer>> writes = new();
+
+            var offers = await OfferCollection.Find(Builders<Offer>.Filter.Empty).ToListAsync();
+            foreach(var o in offers) {
+                var payment = await PaymentRequestCollection.Find(
+                    Builders<PaymentRequest>.Filter.Eq(pr => pr.Otc, o.PaymentRequestId)
+                ).SingleOrDefaultAsync();
+                if(payment == null) {
+                    Logger.LogError("Offer payment not found");
+                    throw new Exception();
+                }
+
+                o.Payment = new Offer.PaymentInformation {
+                    Otc = payment.Otc,
+                    Password = payment.Password,
+                    Cost = o.Cost,
+                    Filter = o.Filter,
+                };
+                Logger.LogInformation("Upgrading offer {0}", o.Id);
+
+                writes.Add(
+                    new ReplaceOneModel<Offer>(Builders<Offer>.Filter.Eq(o => o.Id, o.Id), o)
+                );
+            }
+
+            Logger.LogDebug("Performing bulk updates");
+            await OfferCollection.BulkWriteAsync(writes);
         }
 
     }

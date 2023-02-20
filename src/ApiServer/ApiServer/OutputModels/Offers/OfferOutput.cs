@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using MongoDB.Bson;
 
 namespace WomPlatform.Web.Api.OutputModels.Offers {
-    public class PosOfferDetailsOutput {
+    public class OfferOutput {
         public ObjectId Id { get; set; }
 
         public string Title { get; set; }
@@ -22,29 +22,38 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         public bool Deactivated { get; set; }
 
         public class PaymentDetails {
+            public string RegistryUrl { get; set; }
+
             public Guid Otc { get; set; }
 
             public string Password { get; set; }
+
+            public string Link { get; set; }
         }
 
         public PaymentDetails Payment { get; set; }
     }
 
-    public static class PosOfferDetailsOutputExtensions {
+    public static class OfferOutputExtensions {
 
-        public static PosOfferDetailsOutput ToDetailsOutput(this DatabaseDocumentModels.Offer offer, DatabaseDocumentModels.PaymentRequest paymentRequest) {
-            return offer == null ? null : new PosOfferDetailsOutput {
+        public static OfferOutput ToDetailsOutput(this DatabaseDocumentModels.Offer offer) {
+            var selfHostDomain = Environment.GetEnvironmentVariable("SELF_HOST");
+            var selfLinkDomain = Environment.GetEnvironmentVariable("LINK_HOST");
+
+            return offer == null ? null : new OfferOutput {
                 Id = offer.Id,
                 Title = offer.Title,
                 Description = offer.Description,
-                Cost = offer.Cost,
-                Filter = offer.Filter.ToOutput(),
+                Cost = offer.Payment.Cost,
+                Filter = offer.Payment.Filter.ToOutput(),
                 CreatedOn = offer.CreatedOn,
                 LastUpdate = offer.LastUpdate,
                 Deactivated = offer.Deactivated,
-                Payment = new PosOfferDetailsOutput.PaymentDetails {
-                    Otc = paymentRequest.Otc,
-                    Password = paymentRequest.Password,
+                Payment = new OfferOutput.PaymentDetails {
+                    RegistryUrl = $"https://{selfHostDomain}",
+                    Otc = offer.Payment.Otc,
+                    Password = offer.Payment.Password,
+                    Link = $"https://{selfLinkDomain}/payment/{offer.Payment.Otc:D}",
                 },
             };
         }

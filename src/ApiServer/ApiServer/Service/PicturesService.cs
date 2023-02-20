@@ -170,6 +170,12 @@ namespace WomPlatform.Web.Api.Service {
             return (picturePath, taskThumbnail.Result.BlurHash);
         }
 
+        public PictureOutput GetPosCoverOutput(string basePath, string blurHash) {
+            return (basePath == null) ?
+                DefaultPosCover :
+                GetPictureOutput(basePath, blurHash);
+        }
+
         public PictureOutput GetPictureOutput(string basePath, string blurHash, string pathSuffix = JpegPathPart) {
             if(string.IsNullOrWhiteSpace(basePath)) {
                 return null;

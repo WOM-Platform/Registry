@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.Service;
 
@@ -14,6 +13,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/admin")]
     [OperationsTags("Administration")]
+    [RequireHttpsInProd]
     public class AdminController : BaseRegistryController {
 
         public AdminController(
@@ -77,6 +77,30 @@ namespace WomPlatform.Web.Api.Controllers {
             var source = await SourceService.CreateNewSource(name, url, keys);
 
             return Ok(source.ToDetailsOutput());
+        }
+
+        [HttpPost("migrate/merchant-user-access")]
+        [Authorize]
+        public async Task<ActionResult> MigrateMerchantsToNewUserAccessRules() {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
+            await MerchantService.MigrateToNewUserAccessControl();
+
+            return Ok();
+        }
+
+        [HttpPost("migrate/offer-payment-information")]
+        [Authorize]
+        public async Task<ActionResult> MigrateOfferPaymentInformation() {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
+            await OfferService.MigratePaymentInformationInOffers();
+
+            return Ok();
         }
 
     }

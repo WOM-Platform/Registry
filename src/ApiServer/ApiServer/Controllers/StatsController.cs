@@ -17,17 +17,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Stats and info")]
     public class StatsController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
-        private readonly StatsService _statsService;
-
         public StatsController(
-            MongoDatabase mongo,
-            StatsService statsService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _statsService = statsService;
         }
 
         /// <summary>
@@ -37,7 +30,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(VouchersGeneralStatsResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetVoucherStats() {
-            var results = await _statsService.GetVoucherCountByAim();
+            var results = await StatsService.GetVoucherCountByAim();
 
             var totalGenerated = results.Sum(a => a.TotalCount);
             var totalAvailable = results.Sum(a => a.AvailableCount);
@@ -71,7 +64,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> GetSourceVoucherStats(
             [FromRoute] ObjectId sourceId
         ) {
-            var source = await _mongo.GetSourceById(sourceId);
+            var source = await SourceService.GetSourceById(sourceId);
             if(source == null) {
                 return NotFound();
             }
@@ -80,7 +73,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var result = await _statsService.GetVoucherCountBySource(sourceId);
+            var result = await StatsService.GetVoucherCountBySource(sourceId);
 
             return Ok(new VoucherSourceStatsResponse {
                 GenerationRequests = result?.GenerationRequests ?? 0,

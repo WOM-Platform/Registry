@@ -15,20 +15,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Payment protocol", "Operations")]
     public class PaymentController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
-        private readonly PosService _posService;
-        private readonly Operator _operator;
-
         public PaymentController(
-            MongoDatabase mongo,
-            PosService posService,
-            Operator @operator,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _posService = posService;
-            _operator = @operator;
         }
 
         /// <summary>
@@ -53,7 +43,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 payload.PosId, payload.Nonce
             );
 
-            var pos = await _posService.GetPosById(new ObjectId(payload.PosId));
+            var pos = await PosService.GetPosById(new ObjectId(payload.PosId));
             if (pos == null) {
                 Logger.LogError(LoggingEvents.PaymentCreation, "Source ID {0} does not exist", payload.PosId);
                 return this.PosNotFound();
@@ -79,17 +69,24 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                (var otc, var password) = await _operator.CreatePaymentRequest(pos, payloadContent);
+                var request = await PaymentService.CreatePaymentRequest(pos, payloadContent.Amount,
+                    payloadContent.SimpleFilter.ToDocument(),
+                    payloadContent.Password,
+                    payloadContent.Nonce,
+                    payloadContent.PocketAckUrl,
+                    payloadContent.PosAckUrl,
+                    payloadContent.Persistent
+                );
 
-                Logger.LogInformation(LoggingEvents.PaymentCreation, "Payment request successfully created with code {0} for POS {1}", otc, payload.PosId);
+                Logger.LogInformation(LoggingEvents.PaymentCreation, "Payment request successfully created with code {0} for POS {1}", request.Otc, payload.PosId);
 
                 return Ok(new PaymentRegisterResponse {
                     Payload = Crypto.Encrypt(new PaymentRegisterResponse.Content {
                         RegistryUrl = $"https://{SelfHostDomain}",
                         Nonce = payloadContent.Nonce,
-                        Otc = otc,
-                        Password = password,
-                        Link = $"https://{SelfLinkDomain}/payment/{otc:D}"
+                        Otc = request.Otc,
+                        Password = request.Password,
+                        Link = $"https://{SelfLinkDomain}/payment/{request.Otc:D}"
                     }, posPublicKey)
                 });
             }
@@ -120,7 +117,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                await _operator.VerifyPaymentRequest(payloadContent.Otc);
+                await PaymentService.VerifyPaymentRequest(payloadContent.Otc);
 
                 Logger.LogInformation(LoggingEvents.PaymentVerification, "Payment creation {0} verified", payloadContent.Otc);
 
@@ -167,13 +164,13 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var payment = await _mongo.GetPaymentRequestByOtc(payloadContent.Otc);
+                var payment = await PaymentService.GetPaymentRequestByOtc(payloadContent.Otc);
                 if(payment == null) {
                     Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
                     return this.OtcNotFound();
                 }
 
-                var pos = await _posService.GetPosById(payment.PosId);
+                var pos = await PosService.GetPosById(payment.PosId);
 
                 Logger.LogInformation("Information request for payment {0} from POS {1} for {2} vouchers", payment.Otc, pos.Id, payment.Amount);
 
@@ -236,7 +233,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var payment = await _operator.ProcessPayment(payloadContent);
+                var payment = await PaymentService.ProcessPayment(payloadContent);
 
                 Logger.LogInformation("Successfully processed payment {0}", payment.Otc);
 
@@ -295,7 +292,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var payment = await _mongo.GetPaymentRequestByOtc(payloadContent.Otc);
+                var payment = await PaymentService.GetPaymentRequestByOtc(payloadContent.Otc);
                 if(payment == null) {
                     Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
                     return this.OtcNotFound();
@@ -305,7 +302,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     return this.OtcNotFound();
                 }
 
-                var pos = await _posService.GetPosById(payment.PosId);
+                var pos = await PosService.GetPosById(payment.PosId);
                 if(pos == null) {
                     Logger.LogWarning(LoggingEvents.PaymentStatus, "POS of payment {0} does not exist", payment.Otc);
                     return this.PosNotFound();

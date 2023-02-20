@@ -18,14 +18,6 @@ namespace WomPlatform.Web.Api {
             return source[r.Next(c)];
         }
 
-        public static string GeneratePassword(this Random r, int length) {
-            var sb = new StringBuilder(length);
-            for(int i = 0; i < length; ++i) {
-                sb.Append(r.Next(10).ToString());
-            }
-            return sb.ToString();
-        }
-
         private static readonly char[] _randomReadableChars = new char[] {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
@@ -57,6 +49,20 @@ namespace WomPlatform.Web.Api {
                 sb.Append(_randomChars[rnd.Next(0, _randomChars.Length)]);
             }
             return sb.ToString();
+        }
+
+        public static string GenerateNumericCode(this Random r, int length) {
+            var sb = new StringBuilder(length);
+            for(int i = 0; i < length; ++i) {
+                sb.Append(r.Next(10).ToString());
+            }
+            return sb.ToString();
+        }
+
+        public static byte[] GenerateSecret(this Random rnd, int secretLength) {
+            byte[] buffer = new byte[secretLength];
+            rnd.NextBytes(buffer);
+            return buffer;
         }
 
     }

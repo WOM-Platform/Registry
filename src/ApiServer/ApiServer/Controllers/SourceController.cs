@@ -19,17 +19,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Instrument")]
     public class SourceController : BaseRegistryController 
     {
-        private readonly MongoDatabase _mongo;
-        private readonly SourceService _sourceService;
-
         public SourceController(
-            MongoDatabase mongo,
-            SourceService sourceService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _sourceService = sourceService;
         }
 
         /// <summary>
@@ -43,7 +36,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetSourceGeneratedVouchersCount([FromRoute] ObjectId sourceId)
         {
-            var source = await _mongo.GetSourceById(sourceId);
+            var source = await SourceService.GetSourceById(sourceId);
             if(source == null) {
                 return NotFound();
             }
@@ -52,7 +45,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
             
-            var result = await _sourceService.GetGeneratedVouchersBySource(sourceId);
+            var result = await SourceService.GetGeneratedVouchersBySource(sourceId);
             return Ok(new SourceGeneratedCountOutput {
                 Total = (int)result?.Total
             });

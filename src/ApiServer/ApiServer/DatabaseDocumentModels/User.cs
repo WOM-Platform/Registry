@@ -7,11 +7,6 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
     public class User {
 
-        public enum UserRole {
-            User,
-            Admin
-        }
-
         [BsonId(IdGenerator = typeof(ObjectIdGenerator))]
         public ObjectId Id { get; set; }
 
@@ -36,8 +31,9 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public string PasswordResetToken { get; set; }
 
         [BsonElement("role")]
-        [BsonDefaultValue(UserRole.User)]
-        public UserRole Role { get; set; }
+        [BsonDefaultValue(PlatformRole.User)]
+        [BsonRepresentation(BsonType.String)]
+        public PlatformRole Role { get; set; }
 
         [BsonElement("registeredOn")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]

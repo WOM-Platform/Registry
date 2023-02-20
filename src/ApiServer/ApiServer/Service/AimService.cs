@@ -15,12 +15,6 @@ namespace WomPlatform.Web.Api.Service {
 
         }
 
-        private IMongoCollection<Aim> AimCollection {
-            get {
-                return MainDatabase.GetCollection<Aim>("Aims");
-            }
-        }
-
         /// <summary>
         /// Get all aims sorted by code.
         /// </summary>

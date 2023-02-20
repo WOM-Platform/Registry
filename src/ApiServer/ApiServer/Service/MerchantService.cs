@@ -8,29 +8,13 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Service {
 
-    public class MerchantService {
-
-        private readonly MongoClient _client;
-        private readonly ILogger<MerchantService> _logger;
+    public class MerchantService : BaseService {
 
         public MerchantService(
             MongoClient client,
-            ILogger<MerchantService> logger
-        ) {
-            _client = client;
-            _logger = logger;
-        }
+            ILogger<BaseService> logger
+        ) : base(client, logger) {
 
-        private IMongoDatabase MainDatabase {
-            get {
-                return _client.GetDatabase("Wom");
-            }
-        }
-
-        private IMongoCollection<Merchant> MerchantCollection {
-            get {
-                return MainDatabase.GetCollection<Merchant>("Merchants");
-            }
         }
 
         public Task CreateMerchant(Merchant merchant) {
@@ -54,8 +38,26 @@ namespace WomPlatform.Web.Api.Service {
         /// Gets a list of merchants that the user controls as an administrator.
         /// </summary>
         public Task<List<Merchant>> GetMerchantsWithAdminControl(ObjectId userId) {
-            var merchFilter = Builders<Merchant>.Filter.AnyEq(m => m.AdministratorIds, userId);
-            return MerchantCollection.Find(merchFilter).ToListAsync();
+            return MerchantCollection.Find(
+                Builders<Merchant>.Filter.And(
+                    Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", userId),
+                    Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.Role)}", MerchantRole.Admin)
+                )
+            ).ToListAsync();            
+        }
+
+        /// <summary>
+        /// Gets a list of merchants that the user controls as a POS user.
+        /// </summary>
+        public Task<List<Merchant>> GetMerchantsWithUserControl(ObjectId userId) {
+            return MerchantCollection.Find(
+                Builders<Merchant>.Filter.And(
+                    Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", userId),
+                    Builders<Merchant>.Filter.In($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.Role)}", new MerchantRole[] {
+                        MerchantRole.User, MerchantRole.Admin
+                    })
+                )
+            ).ToListAsync();
         }
 
         /// <summary>
@@ -95,6 +97,30 @@ namespace WomPlatform.Web.Api.Service {
             ;
 
             return MerchantCollection.Aggregate(pipeline).ToListAsync();
+        }
+
+        public async Task MigrateToNewUserAccessControl() {
+            List<WriteModel<Merchant>> writes = new();
+
+            var merchants = await MerchantCollection.Find(Builders<Merchant>.Filter.Empty).ToListAsync();
+            foreach(var m in merchants) {
+                foreach(var id in m.PosUserIds.ToSafeArray()) {
+                    m.Access.Set(id, MerchantRole.User);
+                }
+                foreach(var id in m.AdministratorIds.ToSafeArray()) {
+                    m.Access.Set(id, MerchantRole.Admin);
+                }
+                Logger.LogInformation("Upgrading merchant {0} with {1} access rules", m.Id, m.Access?.Count);
+
+                writes.Add(
+                    new ReplaceOneModel<Merchant>(Builders<Merchant>.Filter.Eq(m => m.Id, m.Id), m)
+                );
+            }
+
+            Logger.LogDebug("Performing bulk updates");
+            await MerchantCollection.BulkWriteAsync(writes);
+
+            Logger.LogInformation("Merchant migration to new user access rules performed");
         }
 
     }

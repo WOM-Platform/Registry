@@ -11,7 +11,6 @@ using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
-using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -20,17 +19,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Merchant")]
     public class MerchantController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
-        private readonly MerchantService _merchantService;
-
         public MerchantController(
-            MongoDatabase mongo,
-            MerchantService merchantService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _merchantService = merchantService;
         }
 
         /// <summary>
@@ -69,7 +61,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
-            var existingMerchant = await _merchantService.GetMerchantByFiscalCode(input.FiscalCode);
+            var existingMerchant = await MerchantService.GetMerchantByFiscalCode(input.FiscalCode);
             if(existingMerchant != null) {
                 return this.ProblemParameter("Supplied fiscal code is already registered");
             }
@@ -90,11 +82,14 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = input.Description,
                     WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
-                    AdministratorIds = new ObjectId[] {
-                        loggedUserId
+                    Access = new() {
+                        new AccessControlEntry<MerchantRole> {
+                            UserId = loggedUserId,
+                            Role = MerchantRole.Admin,
+                        }
                     }
                 };
-                await _merchantService.CreateMerchant(merchant);
+                await MerchantService.CreateMerchant(merchant);
 
                 return CreatedAtAction(
                     nameof(GetInformation),
@@ -118,24 +113,15 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Can be accessed only if logged in user is the merchant's administrator or POS user.
         /// </remarks>
         [HttpGet("{id}")]
-        [Authorize]
+        [AllowAnonymous]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
         ) {
-            var existingMerchant = await _merchantService.GetMerchantById(id);
+            var existingMerchant = await MerchantService.GetMerchantById(id);
             if(existingMerchant == null) {
                 return NotFound();
-            }
-
-            // Forbid if logged user is not in admin list OR POS user list
-            if(!User.GetUserId(out var loggedUserId) ||
-               !(
-                   existingMerchant.AdministratorIds.Contains(loggedUserId) || existingMerchant.PosUserIds.Contains(loggedUserId)
-               )) {
-                return Forbid();
             }
 
             return Ok(existingMerchant.ToOutput());
@@ -174,14 +160,14 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateMerchant(
             [FromRoute] ObjectId id,
-            MerchantUpdateInput input
+            [FromBody] MerchantUpdateInput input
         ) {
-            var existingMerchant = await _merchantService.GetMerchantById(id);
+            var existingMerchant = await MerchantService.GetMerchantById(id);
             if(existingMerchant == null) {
                 return NotFound();
             }
 
-            if(!User.GetUserId(out var loggedUserId) || !existingMerchant.AdministratorIds.Contains(loggedUserId)) {
+            if(!await VerifyUserIsAdminOfMerchant(existingMerchant)) {
                 return Forbid();
             }
 
@@ -213,7 +199,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 existingMerchant.LastUpdate = DateTime.UtcNow;
                 existingMerchant.Enabled = input.Enabled;
 
-                await _merchantService.ReplaceMerchant(existingMerchant);
+                await MerchantService.ReplaceMerchant(existingMerchant);
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to update merchant {0}", id);

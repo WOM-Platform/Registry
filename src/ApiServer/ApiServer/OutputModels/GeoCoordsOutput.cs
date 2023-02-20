@@ -1,15 +1,15 @@
 ﻿using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api.OutputModels {
-    public class GeoCoords {
+    public class GeoCoordsOutput {
         public double Latitude { get; init; }
 
         public double Longitude { get; init; }
     }
 
     public static class GeoCoordsExtensions {
-        public static GeoCoords ToOutput(this GeoJsonPoint<GeoJson2DGeographicCoordinates> coords) {
-            return new GeoCoords {
+        public static GeoCoordsOutput ToOutput(this GeoJsonPoint<GeoJson2DGeographicCoordinates> coords) {
+            return new GeoCoordsOutput {
                 Latitude = coords.Coordinates.Latitude,
                 Longitude = coords.Coordinates.Longitude,
             };

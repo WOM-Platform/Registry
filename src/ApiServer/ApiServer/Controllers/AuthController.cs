@@ -19,17 +19,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [Obsolete]
     public class AuthController : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
-        private readonly PosService _posService;
-
         public AuthController(
-            MongoDatabase mongo,
-            PosService posService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _posService = posService;
         }
 
         public record AuthSourceLoginOutput(
@@ -51,7 +44,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var sources = await _mongo.GetSourcesByUser(userId);
+            var sources = await SourceService.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} has {1} source entries", userId, sources.Count);
 
             return Ok(new AuthSourceLoginOutput(
@@ -84,11 +77,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var pos = await _posService.GetPosByUser(userId);
+            var pos = await PosService.GetPosByUser(userId);
             Logger.LogInformation("User {0} has {1} POS entries", userId, pos.Count);
 
             return Ok(new AuthPosLoginOutput(
-                pos.Select(p => p.ToAuthOutput()).ToArray()
+                pos.Select(p => p.ToAuthOutput(PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash))).ToArray()
             ));
         }
 

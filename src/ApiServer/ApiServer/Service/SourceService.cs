@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -70,9 +71,15 @@ namespace WomPlatform.Web.Api.Service {
             return SourceCollection.Find(filter).SingleOrDefaultAsync();
         }
 
+        public Task<List<Source>> GetSourcesByUser(ObjectId userId) {
+            var filter = Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, userId);
+            return SourceCollection.Find(filter).ToListAsync();
+        }
+
         public class GeneratedVouchersCountBySourceResult {
             [BsonId]
             public int? Id;
+
             [BsonElement("total")]
             public long Total;
         }

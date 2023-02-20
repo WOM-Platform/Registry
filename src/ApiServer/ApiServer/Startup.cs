@@ -168,21 +168,21 @@ namespace WomPlatform.Web.Api {
             services.AddSingleton<KeyManager>();
             services.AddTransient<CryptoProvider>();
 
-            services.AddScoped<Operator>();
             services.AddScoped<MongoDatabase>();
 
+            services.AddScoped<AimService>();
             services.AddScoped<ApiKeyService>();
-            services.AddScoped<MerchantService>();
-            services.AddScoped<PosService>();
-            services.AddScoped<StatsService>();
-            services.AddScoped<MapService>();
-            services.AddScoped<SetupService>();
-            services.AddScoped<SourceService>();
             services.AddScoped<BackupService>();
+            services.AddScoped<GenerationService>();
+            services.AddScoped<MapService>();
+            services.AddScoped<MerchantService>();
             services.AddScoped<OfferService>();
             services.AddScoped<PaymentService>();
             services.AddScoped<PicturesService>();
-            services.AddScoped<AimService>();
+            services.AddScoped<PosService>();
+            services.AddScoped<SetupService>();
+            services.AddScoped<SourceService>();
+            services.AddScoped<StatsService>();
             services.AddScoped<UserService>();
 
             services.AddMailComposer();
@@ -209,7 +209,7 @@ namespace WomPlatform.Web.Api {
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(devUserSection["Password"]),
                     Name = devUserSection["Name"],
                     Surname = devUserSection["Surname"],
-                    Role = DatabaseDocumentModels.User.UserRole.User,
+                    Role = PlatformRole.User,
                     RegisteredOn = DateTime.UtcNow
                 };
                 setupService.UpsertUserSync(devUserEntity);

@@ -36,54 +36,16 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-        public Task AddGenerationRequest(GenerationRequest request) {
-            return GenerationCollection.InsertOneAsync(request);
-        }
-
-        public Task<GenerationRequest> GetGenerationRequestByOtc(Guid otc) {
-            var filter = Builders<GenerationRequest>.Filter.Eq(r => r.Otc, otc);
-            return GenerationCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        public Task UpdateGenerationRequest(GenerationRequest request) {
-            var filter = Builders<GenerationRequest>.Filter.Eq(r => r.Otc, request.Otc);
-            return GenerationCollection.ReplaceOneAsync(filter, request);
-        }
-
         private IMongoCollection<PaymentRequest> PaymentCollection {
             get {
                 return MainDatabase.GetCollection<PaymentRequest>("PaymentRequests");
             }
         }
 
-        public Task<PaymentRequest> GetPaymentRequestByOtc(Guid otcPay) {
-            var filter = Builders<PaymentRequest>.Filter.Eq(p => p.Otc, otcPay);
-            return PaymentCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        public Task UpdatePaymentRequest(PaymentRequest request) {
-            var filter = Builders<PaymentRequest>.Filter.Eq(r => r.Otc, request.Otc);
-            return PaymentCollection.ReplaceOneAsync(filter, request);
-        }
-
-        public Task AddPaymentRequest(PaymentRequest paymentRequest) {
-            return PaymentCollection.InsertOneAsync(paymentRequest);
-        }
-
         private IMongoCollection<Source> SourceCollection {
             get {
                 return MainDatabase.GetCollection<Source>("Sources");
             }
-        }
-
-        public Task<Source> GetSourceById(ObjectId id) {
-            var filter = Builders<Source>.Filter.Eq(u => u.Id, id);
-            return SourceCollection.Find(filter).SingleOrDefaultAsync();
-        }
-
-        public Task<List<Source>> GetSourcesByUser(ObjectId userId) {
-            var filter = Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, userId);
-            return SourceCollection.Find(filter).ToListAsync();
         }
 
         private IMongoCollection<User> UserCollection {

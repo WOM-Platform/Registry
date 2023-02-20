@@ -22,26 +22,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [OperationsTags("Authentication")]
     public class AuthControllerV2 : BaseRegistryController {
 
-        private readonly MongoDatabase _mongo;
-        private readonly AimService _aimService;
-        private readonly SourceService _sourceService;
-        private readonly PosService _posService;
-        private readonly ApiKeyService _apiKeyService;
-
         public AuthControllerV2(
-            MongoDatabase mongo,
-            AimService aimService,
-            SourceService sourceService,
-            PosService posService,
-            ApiKeyService apiKeyService,
             IServiceProvider serviceProvider,
             ILogger<AdminController> logger)
         : base(serviceProvider, logger) {
-            _mongo = mongo;
-            _aimService = aimService;
-            _sourceService = sourceService;
-            _posService = posService;
-            _apiKeyService = apiKeyService;
         }
 
         public record AuthV2PosLoginOutput(
@@ -59,6 +43,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthV2PosLoginOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> PosLoginV2() {
             Logger.LogDebug("POS login V2");
 
@@ -66,10 +51,14 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var userData = await _mongo.GetUserById(userId);
+            var userData = await UserService.GetUserById(userId);
+            if(userData == null) {
+                Logger.LogError("Logged in user {0} does not have a user profile", userId);
+                return Forbid();
+            }
 
-            var data = await _posService.GetMerchantsAndPosByUser(userId);
-            Logger.LogInformation("User {0} controls POS for {1} merchants", userId, data.Count);
+            var data = await PosService.GetMerchantsAndPosByUser(userId);
+            Logger.LogInformation("User {0} authenticated with access to {1} merchants", userId, data.Count);
 
             return Ok(new AuthV2PosLoginOutput(
                 userData.Name,
@@ -86,8 +75,11 @@ namespace WomPlatform.Web.Api.Controllers {
                     Country = d.Item1.Country,
                     Description = d.Item1.Description,
                     Url = d.Item1.WebsiteUrl,
-                    Pos = d.Item2.Select(p => p.ToAuthOutput()).ToArray(),
-                    Enabled = d.Item1.Enabled
+                    Pos = (from p in d.Item2
+                           let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
+                           select p.ToAuthOutput(pictureOutput)).ToArray(),
+                    Enabled = d.Item1.Enabled,
+                    Access = d.Item1.Access.Get(userId).Role,
                 }).ToArray()
             ));
         }
@@ -114,11 +106,11 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var user = await _mongo.GetUserById(userId);
-            var sources = await _mongo.GetSourcesByUser(userId);
+            var user = await UserService.GetUserById(userId);
+            var sources = await SourceService.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} controls {1} sources", userId, sources.Count);
 
-            var allAims = (from a in await _aimService.GetRootAims() select a.Code).ToArray();
+            var allAims = (from a in await AimService.GetRootAims() select a.Code).ToArray();
 
             return Ok(new AuthV2SourceLoginOutput(
                 user.Name,
@@ -157,7 +149,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var source = await _sourceService.GetSourceById(sourceId);
+            var source = await SourceService.GetSourceById(sourceId);
             if(source == null) {
                 return NotFound();
             }
@@ -172,7 +164,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Problem(statusCode: 400, title: "API key kind is not valid");
             }
 
-            var apiKey = await _apiKeyService.CreateOrGetApiKey(sourceId, selector, kind);
+            var apiKey = await ApiKeyService.CreateOrGetApiKey(sourceId, selector, kind);
 
             return Ok(new AuthV2CreateSourceApiKeyOutput(
                 sourceId.ToString(),
@@ -213,7 +205,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var pos = await _posService.GetPosById(id);
+            var pos = await PosService.GetPosById(id);
             if(pos == null) {
                 return NotFound();
             }
@@ -248,7 +240,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             var apiKey = apiKeyHeader.ToString();
-            var entry = await _apiKeyService.RetrieveApiKey(apiKey);
+            var entry = await ApiKeyService.RetrieveApiKey(apiKey);
             if(entry == null || entry.Expired) {
                 return Problem(statusCode: StatusCodes.Status403Forbidden, title: "API key not valid");
             }
@@ -268,12 +260,12 @@ namespace WomPlatform.Web.Api.Controllers {
         );
 
         private async Task<IActionResult> GetApiKeyCredentialsSource(ApiKey apiKey, ObjectId sourceId) {
-            var source = await _sourceService.GetSourceById(sourceId);
+            var source = await SourceService.GetSourceById(sourceId);
             if(source == null) {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: "Source bound to API key does not exist");
             }
 
-            var allAims = (from a in await _aimService.GetRootAims() select a.Code).ToArray();
+            var allAims = (from a in await AimService.GetRootAims() select a.Code).ToArray();
 
             return Ok(new GetApiKeyCredentialsOutput(
                 "Source", sourceId.ToString(), apiKey.PrivateKey, apiKey.PublicKey,

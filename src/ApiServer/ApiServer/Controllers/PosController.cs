@@ -82,7 +82,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     new {
                         id = pos.Id
                     },
-                    pos.ToOutput(null)
+                    pos.ToOutput(PicturesService.DefaultPosCover)
                 );
             }
             catch(Exception ex) {
@@ -106,7 +106,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+            var picCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash);
 
             return Ok(pos.ToOutput(picCover));
         }
@@ -126,7 +126,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results
-                 let picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
+                 let picCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash)
                  select pos.ToOutput(picCover)).ToArray(),
                 page,
                 pageSize,
@@ -149,7 +149,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results
-                 let picCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash)
+                 let picCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash)
                  select pos.ToOutput(picCover)).ToArray(),
                 page,
                 pageSize,
@@ -205,7 +205,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
 
-            var picPosCover = PicturesService.GetPictureOutput(pos.CoverPath, pos.CoverBlurHash);
+            var picPosCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash);
 
             return Ok(pos.ToOutput(picPosCover));
         }
@@ -225,27 +225,19 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId posId,
             [FromForm] [Required] IFormFile image
         ) {
-            var pos = await PosService.GetPosById(posId);
-            if(pos == null) {
-                return NotFound();
-            }
-
-            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
-            if(merchant == null) {
-                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return NotFound();
-            }
-
-            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
-                return Forbid();
+            (bool allowed, var errorResult, var merchant, var pos) = await VerifyUserIsAdminOfPos(posId);
+            if(!allowed) {
+                return errorResult;
             }
 
             // Safety checks on uploaded file
             if(image == null || image.Length == 0) {
-                return BadRequest();
+                Logger.LogError("Image field null or empty");
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Image field null or empty");
             }
             if(image.Length > 4 * 1024 * 1024) {
-                return BadRequest();
+                Logger.LogError("Image too large ({0} bytes)", image.Length);
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Image too large");
             }
 
             try {
@@ -259,7 +251,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 await PosService.UpdatePosCover(posId, picturePath, pictureBlurHash);
                 await OfferService.UpdatePosCovers(posId, picturePath, pictureBlurHash);
 
-                var picPosCover = PicturesService.GetPictureOutput(picturePath, pictureBlurHash);
+                var picPosCover = PicturesService.GetPosCoverOutput(picturePath, pictureBlurHash);
                 return Ok(pos.ToOutput(picPosCover));
             }
             catch(Exception ex) {
@@ -312,7 +304,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="posId">POS ID.</param>
         [HttpGet("{posId}/offers")]
-        [ProducesResponseType(typeof(PosOfferOutput[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput[]), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPosOffers(
             [FromRoute] ObjectId posId
@@ -324,7 +316,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var results = await OfferService.GetOffersOfPos(pos.Id);
 
-            return Ok((from result in results select result.ToOutput()).ToArray());
+            return Ok((from result in results select result.ToDetailsOutput()).ToArray());
         }
 
         /// <summary>
@@ -333,29 +325,16 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="posId">POS ID.</param>
         [HttpPost("{posId}/offers")]
         [Authorize]
-        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> AddNewOffer(
             [FromRoute] ObjectId posId,
             [FromBody] OfferRegistrationInput input
         ) {
-            var pos = await PosService.GetPosById(posId);
-            if(pos == null) {
-                Logger.LogDebug("POS {0} not found", posId);
-                return Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found");
-            }
-
-            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
-            if(merchant == null) {
-                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found");
-            }
-
-            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
-                User.GetUserId(out var userId);
-                Logger.LogDebug("User {0} is not administrator of merchant {1}", userId, merchant.Id);
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not administrator of merchant");
+            (bool allowed, var errorResult, var merchant, var pos) = await VerifyUserIsAdminOfPos(posId);
+            if(!allowed) {
+                return errorResult;
             }
 
             try {
@@ -366,9 +345,12 @@ namespace WomPlatform.Web.Api.Controllers {
                 var offer = new Offer {
                     Title = input.Title,
                     Description = input.Description,
-                    PaymentRequestId = paymentRequest.Otc,
-                    Cost = input.Cost,
-                    Filter = filter,
+                    Payment = new Offer.PaymentInformation {
+                        Otc = paymentRequest.Otc,
+                        Password = paymentRequest.Password,
+                        Cost = paymentRequest.Amount,
+                        Filter = paymentRequest.Filter,
+                    },
                     Pos = new Offer.PosInformation {
                         Id = pos.Id,
                         Name = pos.Name,
@@ -390,7 +372,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 await OfferService.AddOffer(offer);
                 Logger.LogInformation("Created new offer {0} for POS {1}", offer.Id, posId);
 
-                return Ok(offer.ToDetailsOutput(paymentRequest));
+                return Ok(offer.ToDetailsOutput());
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to persist offer");
@@ -402,7 +384,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieve an offer.
         /// </summary>
         [HttpGet("{posId}/offers/{offerId}")]
-        [ProducesResponseType(typeof(PosOfferOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPosOffer(
             [FromRoute] ObjectId posId,
@@ -416,7 +398,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: $"Offer {offerId} is not owned by POS {posId}");
             }
 
-            return Ok(offer.ToOutput());
+            return Ok(offer.ToDetailsOutput());
         }
 
         /// <summary>
@@ -425,7 +407,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="posId">POS ID.</param>
         [HttpPut("{posId}/offers/{offerId}")]
         [Authorize]
-        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> OverwriteOffer(
@@ -433,22 +415,9 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId offerId,
             [FromBody] OfferRegistrationInput input
         ) {
-            var pos = await PosService.GetPosById(posId);
-            if(pos == null) {
-                Logger.LogDebug("POS {0} not found", posId);
-                return Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found");
-            }
-
-            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
-            if(merchant == null) {
-                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found");
-            }
-
-            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
-                User.GetUserId(out var userId);
-                Logger.LogDebug("User {0} is not administrator of merchant {1}", userId, merchant.Id);
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not administrator of merchant");
+            (bool allowed, var errorResult, var merchant, var pos) = await VerifyUserIsAdminOfPos(posId);
+            if(!allowed) {
+                return errorResult;
             }
 
             var existingOffer = await OfferService.GetOfferById(offerId);
@@ -468,9 +437,12 @@ namespace WomPlatform.Web.Api.Controllers {
                     Id = existingOffer.Id,
                     Title = input.Title,
                     Description = input.Description,
-                    PaymentRequestId = paymentRequest.Otc,
-                    Cost = input.Cost,
-                    Filter = filter,
+                    Payment = new Offer.PaymentInformation {
+                        Otc = paymentRequest.Otc,
+                        Password = paymentRequest.Password,
+                        Cost = paymentRequest.Amount,
+                        Filter = paymentRequest.Filter,
+                    },
                     Pos = new Offer.PosInformation {
                         Id = pos.Id,
                         Name = pos.Name,
@@ -489,10 +461,10 @@ namespace WomPlatform.Web.Api.Controllers {
                     LastUpdate = DateTime.UtcNow,
                     Deactivated = !pos.IsActive,
                 };
-                await OfferService.ReplaceOffer(offerId, replacementOffer);
+                await OfferService.ReplaceOffer(replacementOffer);
                 Logger.LogInformation("Offer {0} for POS {1} has been replaced", replacementOffer.Id, posId);
 
-                return Ok(replacementOffer.ToDetailsOutput(paymentRequest));
+                return Ok(replacementOffer.ToDetailsOutput());
             }
             catch(Exception ex) {
                 Logger.LogError(ex, "Failed to persist offer");
@@ -505,7 +477,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpPut("{posId}/offers/{offerId}/title")]
         [Authorize]
-        [ProducesResponseType(typeof(PosOfferDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OfferOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> OverwriteOfferTitle(
@@ -513,19 +485,9 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId offerId,
             [FromBody] OfferDescriptionInput input
         ) {
-            var pos = await PosService.GetPosById(posId);
-            if(pos == null) {
-                return NotFound();
-            }
-
-            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
-            if(merchant == null) {
-                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return NotFound();
-            }
-
-            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
-                return Forbid();
+            (bool allowed, var result, _, _) = await VerifyUserIsAdminOfPos(posId);
+            if(!allowed) {
+                return result;
             }
 
             var existingOffer = await OfferService.GetOfferById(offerId);
@@ -551,12 +513,18 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Delete an offer.
         /// </summary>
         [HttpDelete("{posId}/offers/{offerId}")]
+        [Authorize]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeletePosOffer(
             [FromRoute] ObjectId posId,
             [FromRoute] ObjectId offerId
         ) {
+            (bool allowed, var result, _, _) = await VerifyUserIsAdminOfPos(posId);
+            if(!allowed) {
+                return result;
+            }
+
             var offer = await OfferService.GetOfferById(offerId);
             if(offer == null) {
                 return NotFound();

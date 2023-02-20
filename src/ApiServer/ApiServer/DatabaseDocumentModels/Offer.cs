@@ -17,14 +17,37 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("description")]
         public string Description { get; set; }
 
+        public class PaymentInformation {
+            [BsonElement("otc")]
+            public Guid Otc { get; set; }
+
+            [BsonElement("password")]
+            public string Password { get; set; }
+
+            [BsonElement("cost")]
+            public int Cost { get; set; }
+
+            [BsonElement("filter")]
+            [BsonIgnoreIfNull]
+            public Filter Filter { get; set; }
+        }
+
+        [BsonElement("payment")]
+        public PaymentInformation Payment { get; set; }
+
         [BsonElement("paymentRequestId")]
+        [BsonIgnoreIfDefault]
+        [Obsolete]
         public Guid PaymentRequestId { get; set; }
 
         [BsonElement("cost")]
+        [BsonIgnoreIfDefault]
+        [Obsolete]
         public int Cost { get; set; }
 
         [BsonElement("filter")]
         [BsonIgnoreIfNull]
+        [Obsolete]
         public Filter Filter { get; set; }
 
         public class PosInformation {
