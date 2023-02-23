@@ -106,10 +106,13 @@ namespace WomPlatform.Web.Api.Service {
             CreatedOn,
         }
 
-        public async Task<(List<Pos>, long Total)> ListPos(string textSearch, int page, int pageSize, PosListOrder orderBy) {
+        public async Task<(List<Pos>, long Total)> ListPos(string textSearch, int page, int pageSize, PosListOrder orderBy, bool? mustHavePosition = null) {
             List<FilterDefinition<Pos>> filters = new() {
                 Builders<Pos>.Filter.Ne(p => p.IsDummy, true)
             };
+            if(mustHavePosition.HasValue) {
+                filters.Add(Builders<Pos>.Filter.Exists(p => p.Position, mustHavePosition.Value));
+            }
             if(!string.IsNullOrWhiteSpace(textSearch)) {
                 filters.Add(Builders<Pos>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
             }

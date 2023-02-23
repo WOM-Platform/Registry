@@ -135,6 +135,29 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
+        /// Retrieves a list of virtual POS.
+        /// </summary>
+        [HttpGet("virtual")]
+        [ProducesResponseType(typeof(Paged<PosOutput>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ListVirtual(
+            [FromQuery] string search = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] [DefaultValue(PosService.PosListOrder.Name)] PosService.PosListOrder orderBy = PosService.PosListOrder.Name
+        ) {
+            (var results, var count) = await PosService.ListPos(search, page, pageSize, orderBy, false);
+
+            return Ok(Paged<PosOutput>.FromPage(
+                (from pos in results
+                 let picCover = PicturesService.GetPosCoverOutput(pos.CoverPath, pos.CoverBlurHash)
+                 select pos.ToOutput(picCover)).ToArray(),
+                page,
+                pageSize,
+                count
+            ));
+        }
+
+        /// <summary>
         /// Retrieves a list of POS nearby a geographic point.
         /// </summary>
         [HttpGet("nearby")]
