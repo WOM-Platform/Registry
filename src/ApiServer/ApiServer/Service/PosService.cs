@@ -38,10 +38,14 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-        private IMongoCollection<Merchant> MerchantCollection {
-            get {
-                return MainDatabase.GetCollection<Merchant>("Merchants");
-            }
+        private IList<FilterDefinition<Pos>> GetBasicPosFilter(bool filterDummy = true, bool filterInactive = true) {
+            List<FilterDefinition<Pos>> filters = new();
+            if(filterDummy)
+                filters.Add(Builders<Pos>.Filter.Ne(p => p.IsDummy, true));
+            if(filterInactive)
+                filters.Add(Builders<Pos>.Filter.Ne(p => p.IsActive, false));
+
+            return filters;
         }
 
         public Task CreatePos(Pos pos) {
@@ -68,12 +72,11 @@ namespace WomPlatform.Web.Api.Service {
         /// Get list of POS with position.
         /// </summary>
         public Task<List<Pos>> GetPosWithPosition() {
-            var filter = Builders<Pos>.Filter.And(
-                Builders<Pos>.Filter.Ne(pos => pos.IsDummy, true),
-                Builders<Pos>.Filter.Exists(pos => pos.Position, true),
-                Builders<Pos>.Filter.Ne(pos => pos.Position, null)
-            );
-            return PosCollection.Find(filter).ToListAsync();
+            var filters = GetBasicPosFilter();
+            filters.Add(Builders<Pos>.Filter.Exists(pos => pos.Position, true));
+            filters.Add(Builders<Pos>.Filter.Ne(pos => pos.Position, null));
+
+            return PosCollection.Find(Builders<Pos>.Filter.And(filters)).ToListAsync();
         }
 
         /// <summary>
@@ -107,9 +110,7 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public async Task<(List<Pos>, long Total)> ListPos(string textSearch, int page, int pageSize, PosListOrder orderBy, bool? mustHavePosition = null) {
-            List<FilterDefinition<Pos>> filters = new() {
-                Builders<Pos>.Filter.Ne(p => p.IsDummy, true)
-            };
+            var filters = GetBasicPosFilter();
             if(mustHavePosition.HasValue) {
                 filters.Add(Builders<Pos>.Filter.Exists(p => p.Position, mustHavePosition.Value));
             }
@@ -133,7 +134,7 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public async Task<(List<Pos> Results, long Total)> ListPosByDistance(double latitude, double longitude, int page, int pageSize) {
-            var basicFilter = Builders<Pos>.Filter.Ne(p => p.IsDummy, true);
+            var basicFilter = Builders<Pos>.Filter.And(GetBasicPosFilter());
 
             var count = await PosCollection.CountDocumentsAsync(basicFilter);
 

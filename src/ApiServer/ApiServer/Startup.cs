@@ -230,6 +230,7 @@ namespace WomPlatform.Web.Api {
                 setupService.UpsertPosSync(new DatabaseDocumentModels.Pos {
                     Id = new ObjectId(devPosId),
                     Name = "Development POS",
+                    Description = "This is a dummy virtual POS which is available only on a development setup.",
                     PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
                     PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub"),
                 });
