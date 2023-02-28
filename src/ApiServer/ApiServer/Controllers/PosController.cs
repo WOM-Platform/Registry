@@ -209,6 +209,10 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
+            if((!input.Latitude.HasValue || !input.Longitude.HasValue) && string.IsNullOrWhiteSpace(input.Url)) {
+                return Problem(statusCode: StatusCodes.Status422UnprocessableEntity, title: "POS without geographic position must have an URL");
+            }
+
             try {
                 pos.Name = input.Name;
                 pos.Description = input.Description;
