@@ -19,6 +19,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
@@ -84,6 +86,13 @@ namespace WomPlatform.Web.Api {
                 });
 
                 options.OperationFilter<ObjectIdOperationFilter>();
+
+                options.MapType<TimeSpan>(() => new OpenApiSchema {
+                    Type = "string",
+                    Example = new OpenApiString("12:34:56"),
+                });
+
+                options.CustomSchemaIds(type => type.ToString().Replace('+', '_'));
 
                 options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
                     Url = $"https://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
