@@ -30,6 +30,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record AuthV2PosLoginOutput(
+            ObjectId Id,
             string Name,
             string Surname,
             string Email,
@@ -61,6 +62,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("User {0} authenticated with access to {1} merchants", userId, data.Count);
 
             return Ok(new AuthV2PosLoginOutput(
+                userData.Id,
                 userData.Name,
                 userData.Surname,
                 userData.Email,
@@ -85,6 +87,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record AuthV2SourceLoginOutput(
+            ObjectId Id,
             string Name,
             string Surname,
             string Email,
@@ -112,6 +115,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var allAims = (from a in await AimService.GetRootAims() select a.Code).ToArray();
 
             return Ok(new AuthV2SourceLoginOutput(
+                user.Id,
                 user.Name,
                 user.Surname,
                 user.Email,
