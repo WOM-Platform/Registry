@@ -67,5 +67,11 @@ namespace WomPlatform.Web.Api.Service {
             return UserCollection.UpdateOneAsync(filter, chain.End());
         }
 
+        public Task DeleteUser(ObjectId userId) {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+
+            return UserCollection.DeleteOneAsync(filter);
+        }
+
     }
 }

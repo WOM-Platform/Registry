@@ -406,6 +406,37 @@ namespace WomPlatform.Web.Api.Controllers {
             ));
         }
 
+        /// <summary>
+        /// Deletes a user profile.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        [HttpDelete("{id}")]
+        [Authorize]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteUser(
+            [FromRoute] ObjectId id
+        ) {
+            if(!User.UserIdEquals(id)) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only user can delete own user profile");
+            }
+
+            var existingUser = await UserService.GetUserById(id);
+            if(existingUser == null) {
+                return Problem(statusCode: StatusCodes.Status404NotFound, title: "User does not exist");
+            }
+
+            var merchantsWithAdminAccess = await MerchantService.GetMerchantsWithAdminControl(existingUser.Id);
+            if(merchantsWithAdminAccess.Count > 0) {
+                Logger.LogWarning("Deleting user {0} with admin access to {1} merchants", existingUser.Id, merchantsWithAdminAccess.Count);
+            }
+
+            await UserService.DeleteUser(existingUser.Id);
+
+            return Ok();
+        }
+
     }
 
 }

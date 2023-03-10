@@ -43,7 +43,7 @@ namespace WomPlatform.Web.Api.Service {
                     Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", userId),
                     Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.Role)}", MerchantRole.Admin)
                 )
-            ).ToListAsync();            
+            ).ToListAsync();
         }
 
         /// <summary>
