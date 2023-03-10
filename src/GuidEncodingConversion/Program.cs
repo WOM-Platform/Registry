@@ -13,6 +13,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     .UseEnvironment("Development")
 #endif
     .ConfigureServices(services => {
+        // services.AddHostedService<ExportService<Voucher>>();
         services.AddHostedService<ImportService<Voucher>>();
     })
     .Build();
