@@ -60,6 +60,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpPost("generate/source")]
+        [Obsolete]
         [Authorize]
         [ProducesResponseType(typeof(SourceDetailsOutput), StatusCodes.Status200OK)]
         public async Task<ActionResult> GenerateNewSource(

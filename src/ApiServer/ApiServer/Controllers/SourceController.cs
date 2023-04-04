@@ -31,6 +31,37 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(serviceProvider, logger) {
         }
 
+        [HttpPost]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> CreateSource(
+            [FromBody] CreateSourceInput input
+        ) {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
+            var keys = CryptoHelper.CreateKeyPair();
+            var source = await SourceService.CreateNewSource(input.Name, input.Url, keys);
+
+            Logger.LogInformation("Source {0} created with ID {1}", input.Name, source.Id);
+
+            return Ok(source.ToOutput());
+        }
+
+        [HttpGet("{sourceId}")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> GetSource(
+            [FromRoute] ObjectId sourceId
+        ) {
+            var source = await SourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return NotFound();
+            }
+
+            return Ok(source.ToOutput());
+        }
+
         /// <summary>
         /// Provides a count of vouchers produced by a given source.
         /// Request must be authorized by a user who is an administrator of the source.
