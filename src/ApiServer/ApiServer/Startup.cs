@@ -94,11 +94,11 @@ namespace WomPlatform.Web.Api {
 
                 options.CustomSchemaIds(type => type.ToString().Replace('+', '_'));
 
-                options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
+                options.AddServer(new OpenApiServer {
                     Url = $"https://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
                     Description = "WOM development server (HTTPS)"
                 });
-                options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer {
+                options.AddServer(new OpenApiServer {
                     Url = $"http://{Environment.GetEnvironmentVariable("SELF_HOST")}{Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH")}",
                     Description = "WOM development server (HTTP)"
                 });

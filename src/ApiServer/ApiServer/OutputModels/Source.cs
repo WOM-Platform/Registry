@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
+using WomPlatform.Web.Api.OutputModels.Source;
 
 namespace WomPlatform.Web.Api.OutputModels {
 
@@ -27,6 +29,8 @@ namespace WomPlatform.Web.Api.OutputModels {
         public Location DefaultLocation { get; init; }
 
         public bool LocationIsFixed { get; init; }
+
+        public SourceCustomGeneratorOutput CustomGenerator { get; init; }
     }
 
     public record SourceBudgetOutput {
@@ -49,7 +53,11 @@ namespace WomPlatform.Web.Api.OutputModels {
             };
         }
 
-        public static SourceLoginV2Output ToLoginV2Output(this DatabaseDocumentModels.Source source, string[] allAims = null) {
+        public static SourceLoginV2Output ToLoginV2Output(
+            this DatabaseDocumentModels.Source source,
+            Func<DatabaseDocumentModels.SourceCustomGenerator, SourceCustomGeneratorOutput> customGeneratorFunc,
+            string[] allAims = null
+        ) {
             return new SourceLoginV2Output {
                 Id = source.Id.ToString(),
                 Name = source.Name,
@@ -62,7 +70,8 @@ namespace WomPlatform.Web.Api.OutputModels {
                     Latitude = source.Location.Position.Coordinates.Latitude,
                     Longitude = source.Location.Position.Coordinates.Longitude
                 },
-                LocationIsFixed = source.Location.IsFixed
+                LocationIsFixed = source.Location.IsFixed,
+                CustomGenerator = customGeneratorFunc(source.CustomGenerator),
             };
         }
 

@@ -76,6 +76,11 @@ namespace WomPlatform.Web.Api.Service {
             return SourceCollection.Find(filter).ToListAsync();
         }
 
+        public Task ReplaceSource(Source source) {
+            var filter = Builders<Source>.Filter.Eq(s => s.Id, source.Id);
+            return SourceCollection.ReplaceOneAsync(filter, source);
+        }
+
         public class GeneratedVouchersCountBySourceResult {
             [BsonId]
             public int? Id;

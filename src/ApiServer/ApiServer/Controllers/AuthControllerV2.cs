@@ -11,6 +11,7 @@ using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Pos;
+using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -119,7 +120,10 @@ namespace WomPlatform.Web.Api.Controllers {
                 user.Name,
                 user.Surname,
                 user.Email,
-                sources.Select(s => s.ToLoginV2Output(allAims)).ToArray()
+                sources.Select(s => s.ToLoginV2Output(
+                    cg => cg?.ToOutput(PicturesService.GetPictureOutput(cg.LogoPath, cg.LogoBlurHash)),
+                    allAims
+                )).ToArray()
             ));
         }
 

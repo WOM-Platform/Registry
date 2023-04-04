@@ -240,6 +240,22 @@ namespace WomPlatform.Web.Api.Controllers {
             return true;
         }
 
+        protected async Task VerifyUserIsAdminOfSource(Source source) {
+            if(!User.GetUserId(out var loggedUserId)) {
+                throw ServiceProblemException.UserIsNotLoggedIn;
+            }
+
+            var userProfile = await UserService.GetUserById(loggedUserId);
+            if(userProfile.Role == PlatformRole.Admin) {
+                return;
+            }
+
+            if(!source.AdministratorUserIds.Contains(loggedUserId)) {
+                Logger.LogDebug("User {0} is not administrator of source {1}", loggedUserId, source.Id);
+                throw ServiceProblemException.UserIsNotAdminOfSource;
+            }
+        }
+
     }
 
 }

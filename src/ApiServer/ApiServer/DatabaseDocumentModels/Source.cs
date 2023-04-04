@@ -70,6 +70,9 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public ObjectId[] AdministratorUserIds { get; set; }
 
+        [BsonElement("customGenerator")]
+        public SourceCustomGenerator CustomGenerator { get; set; }
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 

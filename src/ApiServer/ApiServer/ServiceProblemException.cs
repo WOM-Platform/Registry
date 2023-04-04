@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -73,6 +74,18 @@ namespace WomPlatform.Web.Api {
                 StatusCode = HttpStatus,
             };
         }
+
+        public readonly static ServiceProblemException UserIsNotLoggedIn = new(
+            "https://wom.social/api/problems/user-not-logged-in",
+            "User is not logged in",
+            StatusCodes.Status401Unauthorized
+        );
+
+        public readonly static ServiceProblemException UserIsNotAdminOfSource = new(
+            "https://wom.social/api/problems/user-not-administrator-of-source",
+            "User is not administrator of source",
+            StatusCodes.Status403Forbidden
+        );
 
     }
 }

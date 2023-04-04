@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
@@ -9,7 +11,11 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels;
+using WomPlatform.Web.Api.InputModels.Source;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -49,6 +55,126 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new SourceGeneratedCountOutput {
                 Total = (int)result?.Total
             });
+        }
+
+        [HttpGet("{sourceId}/custom-generator")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> GetCustomGenerator(
+            [FromRoute] ObjectId sourceId
+        ) {
+            var source = await SourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return NotFound();
+            }
+
+            await VerifyUserIsAdminOfSource(source);
+
+            if(source.CustomGenerator == null) {
+                return NoContent();
+            }
+
+            return Ok(source.CustomGenerator.ToOutput(PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash)));
+        }
+
+        [HttpPut("{sourceId}/custom-generator")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> SetCustomGenerator(
+            [FromRoute] ObjectId sourceId,
+            [FromBody] SourceCustomGeneratorInput input
+        ) {
+            var source = await SourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return NotFound();
+            }
+
+            await VerifyUserIsAdminOfSource(source);
+
+            source.CustomGenerator = new DatabaseDocumentModels.SourceCustomGenerator {
+                Title = input.Title,
+                EnableCustomGeneration = input.EnableCustomGeneration,
+                Templates = (from t in input.Templates
+                             select new SourceCustomGenerator.TemplateInfo {
+                                 Name = t.Name,
+                                 Description = t.Description,
+                                 Guide = t.Guide,
+                                 PresetWomCount = t.PresetWomCount,
+                                 PresetWomAim = t.PresetWomAim,
+                                 PresetWomLocation = t.PresetWomLocation.ToGeoJson(),
+                             }).ToArray(),
+            };
+            await SourceService.ReplaceSource(source);
+
+            return Ok(source.CustomGenerator.ToOutput(PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash)));
+        }
+
+        [HttpDelete("{sourceId}/custom-generator")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> DeleteCustomGenerator(
+            [FromRoute] ObjectId sourceId
+        ) {
+            var source = await SourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return NotFound();
+            }
+
+            await VerifyUserIsAdminOfSource(source);
+
+            source.CustomGenerator = null;
+            await SourceService.ReplaceSource(source);
+
+            return NoContent();
+        }
+
+        [HttpPut("{sourceId}/custom-generator/logo")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> SetCustomGeneratorLogo(
+            [FromRoute] ObjectId sourceId,
+            [FromForm] [Required] IFormFile image
+        ) {
+            var source = await SourceService.GetSourceById(sourceId);
+            if(source == null) {
+                return NotFound();
+            }
+
+            await VerifyUserIsAdminOfSource(source);
+
+            if(source.CustomGenerator == null) {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Source has no custom generator");
+            }
+
+            // Safety checks on uploaded file
+            if(image == null || image.Length == 0) {
+                Logger.LogError("Image field null or empty");
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Image field null or empty");
+            }
+            if(image.Length > 4 * 1024 * 1024) {
+                Logger.LogError("Image too large ({0} bytes)", image.Length);
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Image too large");
+            }
+
+            try {
+                var sourceUrl = source.Name.ToCleanUrl();
+
+                // Process and upload image
+                using var stream = new MemoryStream();
+                await image.CopyToAsync(stream);
+                (var picturePath, var pictureBlurHash) = await PicturesService.ProcessAndUploadPicture(stream, sourceUrl, PicturesService.PictureUsage.SourceLogo);
+
+                source.CustomGenerator.LogoPath = picturePath;
+                source.CustomGenerator.LogoBlurHash = pictureBlurHash;
+                await SourceService.ReplaceSource(source);
+
+                var picSourceLogo = PicturesService.GetPosCoverOutput(picturePath, pictureBlurHash);
+                return Ok(picSourceLogo);
+            }
+            catch(Exception ex) {
+                Logger.LogError(ex, "Failed to update source logo");
+                throw;
+            }
         }
     }    
 }

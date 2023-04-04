@@ -133,6 +133,7 @@ namespace WomPlatform.Web.Api.Service {
 
         public enum PictureUsage {
             PosCover,
+            SourceLogo,
         }
 
         private static string GenerateNewPath(string basePath, PictureUsage usage) {
@@ -142,6 +143,7 @@ namespace WomPlatform.Web.Api.Service {
 
             return usage switch {
                 PictureUsage.PosCover => $"pos-covers/{basePath}/{Guid.NewGuid():N}",
+                PictureUsage.SourceLogo => $"source-logos/{basePath}/{Guid.NewGuid():N}",
                 _ => throw new ArgumentException("Unsupported picture usage"),
             };
         }

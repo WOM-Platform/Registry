@@ -5,7 +5,7 @@
         public double[] RightBottom { get; set; }
     }
 
-    public static class GeoBoundsExtensions {
+    public static class GeoBoundsOutputExtensions {
         public static GeoBoundsOutput ToOutput(this DatabaseDocumentModels.Bounds bounds) {
             return (bounds == null) ? null : new GeoBoundsOutput {
                 LeftTop = new double[] {
