@@ -122,8 +122,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
             await VerifyUserIsAdminOfSource(source);
 
-            source.CustomGenerator = new DatabaseDocumentModels.SourceCustomGenerator {
+            source.CustomGenerator = new SourceCustomGenerator {
                 Title = input.Title,
+                LogoPath = source.CustomGenerator?.LogoPath,
+                LogoBlurHash = source.CustomGenerator?.LogoBlurHash,
                 EnableCustomGeneration = input.EnableCustomGeneration,
                 Templates = (from t in input.Templates
                              select new SourceCustomGenerator.TemplateInfo {
