@@ -85,7 +85,8 @@ namespace WomPlatform.Web.Api.Controllers {
                             UserId = loggedUserId,
                             Role = MerchantRole.Admin,
                         }
-                    }
+                    },
+                    Enabled = true // All merchants are automatically enabled for now
                 };
                 await MerchantService.CreateMerchant(merchant);
 
