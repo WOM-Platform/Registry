@@ -8,8 +8,6 @@ networks:
 services:
   api:
     build: ./src/ApiServer
-    depends_on:
-    - mongo
     networks:
     - web
     - backend
