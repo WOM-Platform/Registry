@@ -62,16 +62,26 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(source.ToOutput());
         }
 
-        /// <summary>
-        /// Provides a count of vouchers produced by a given source.
-        /// Request must be authorized by a user who is an administrator of the source.
-        /// </summary>
         [HttpGet("generated/{sourceId}")]
+        [Obsolete]
         [Authorize]
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(SourceGeneratedCountOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetSourceGeneratedVouchersCount([FromRoute] ObjectId sourceId)
+        public Task<ActionResult> GetSourceGeneratedVouchersCountLegacy([FromRoute] ObjectId sourceId) {
+            return GetSourceGeneratedVouchersCount(sourceId);
+        }
+
+        /// <summary>
+        /// Provides a count of vouchers produced by a given source.
+        /// Request must be authorized by a user who is an administrator of the source.
+        /// </summary>
+        [HttpGet("{sourceId}/generated")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceGeneratedCountOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetSourceGeneratedVouchersCount([FromRoute] ObjectId sourceId)
         {
             var source = await SourceService.GetSourceById(sourceId);
             if(source == null) {

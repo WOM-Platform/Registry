@@ -165,12 +165,16 @@ namespace WomPlatform.Web.Api {
                 BsonDefaults.GuidRepresentationMode = GuidRepresentationMode.V3;
                 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
-                var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
-                var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
-                var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
-                var port = Environment.GetEnvironmentVariable("MONGO_CONNECTION_PORT");
+                var connectionString = Environment.GetEnvironmentVariable("MONGO_CONNECTION_URI");
+                if(connectionString == null) {
+                    var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
+                    var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
+                    var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
+                    var port = Environment.GetEnvironmentVariable("MONGO_CONNECTION_PORT");
 
-                string connectionString = string.Format("mongodb://{0}:{1}@{2}:{3}", username, password, host, port);
+                    connectionString = string.Format("mongodb://{0}:{1}@{2}:{3}", username, password, host, port);
+                }
+
                 return new MongoClient(connectionString);
             });
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
