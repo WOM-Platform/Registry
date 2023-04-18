@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -28,6 +29,7 @@ using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.Conversion;
 using WomPlatform.Web.Api.Service;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace WomPlatform.Web.Api {
     public class Startup {
@@ -49,6 +51,7 @@ namespace WomPlatform.Web.Api {
 
         public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
         public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
+
         public void ConfigureServices(IServiceCollection services) {
             services.AddCors(options => {
                 options.AddDefaultPolicy(builder => {
@@ -74,6 +77,7 @@ namespace WomPlatform.Web.Api {
                     options.JsonSerializerOptions.Converters.Add(new JsonObjectIdConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonWomIdentifierConverter());
                 });
+            services.AddProblemDetails();
 
             services.AddSwaggerGen(options => {
                 options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo {
@@ -210,8 +214,6 @@ namespace WomPlatform.Web.Api {
             if (env.IsDevelopment()) {
                 logger.LogInformation("Setup in development mode");
 
-                app.UseDeveloperExceptionPage();
-
                 // Refresh development setup
                 var devSection = Configuration.GetSection("DevelopmentSetup");
 
@@ -249,6 +251,30 @@ namespace WomPlatform.Web.Api {
                 });
                 logger.LogDebug("Configured development POS #{0}", devPosId);
             }
+
+            app.UseStatusCodePages();
+            app.UseExceptionHandler(app => {
+                app.Run(async httpContext => {
+                    httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+                    var exceptionHandlerPathFeature = httpContext.Features.Get<IExceptionHandlerPathFeature>();
+                    if(exceptionHandlerPathFeature?.Error is ServiceProblemException) {
+                        var serviceException = (ServiceProblemException)exceptionHandlerPathFeature.Error;
+
+                        var problemDetailsService = httpContext.RequestServices.GetService<IProblemDetailsService>();
+
+                        httpContext.Response.StatusCode = serviceException.HttpStatus;
+                        await problemDetailsService.WriteAsync(new ProblemDetailsContext {
+                            HttpContext = httpContext,
+                            ProblemDetails = serviceException.ToProblemDetails(),
+                        });
+                    }
+                    else {
+                        httpContext.Response.ContentType = Text.Plain;
+                        await httpContext.Response.WriteAsync(exceptionHandlerPathFeature?.Error?.ToString());
+                    }
+                });
+            });
 
             // Fix incoming base path for hosting behind proxy
             string basePath = Environment.GetEnvironmentVariable("ASPNETCORE_BASEPATH");

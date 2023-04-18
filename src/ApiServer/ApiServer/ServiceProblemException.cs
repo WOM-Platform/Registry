@@ -57,6 +57,12 @@ namespace WomPlatform.Web.Api {
         public IDictionary<string, object?> Extensions { get; init; }
 
         public ActionResult ToActionResult() {
+            return new ObjectResult(ToProblemDetails()) {
+                StatusCode = HttpStatus,
+            };
+        }
+
+        public ProblemDetails ToProblemDetails() {
             var details = new ProblemDetails {
                 Type = Type,
                 Title = Title,
@@ -68,10 +74,7 @@ namespace WomPlatform.Web.Api {
                     details.Extensions.Add(pair.Key, pair.Value);
                 }
             }
-
-            return new ObjectResult(details) {
-                StatusCode = HttpStatus,
-            };
+            return details;
         }
 
         public readonly static ServiceProblemException UserIsNotLoggedIn = new(
