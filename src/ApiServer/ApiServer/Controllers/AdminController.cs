@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using WomPlatform.Web.Api.OutputModels.Source;
+using WomPlatform.Web.Api.OutputModels.User;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -78,6 +80,53 @@ namespace WomPlatform.Web.Api.Controllers {
             var source = await SourceService.CreateNewSource(name, url, keys);
 
             return Ok(source.ToDetailsOutput());
+        }
+
+        [HttpPost("generate/user")]
+        [Authorize]
+        [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult> GenerateNewUser(
+            [FromQuery] [Required] [EmailAddress] string email,
+            [FromQuery] [Required] string name,
+            [FromQuery] [Required] string surname,
+            [FromQuery] string password,
+            [FromQuery] ObjectId? adminOfSource,
+            [FromQuery] ObjectId? adminOfMerchant
+        ) {
+            if(!await VerifyUserIsAdmin()) {
+                return Forbid();
+            }
+
+            string generatedPassword = Crypto.Generator.GenerateCode(16);
+            if(password != null && !CheckUserPassword(password)) {
+                return Problem(title: "Password unacceptable", statusCode: StatusCodes.Status400BadRequest);
+            }
+
+            var session = await CreateMongoSession();
+            var user = await session.WithTransactionAsync(async (session, token) => {
+                var user = await UserService.CreateUser(session, email, name, surname, password ?? generatedPassword, isVerified: true);
+                Logger.LogInformation("New user {0} created for {1}", user.Id, user.Email);
+
+                if(adminOfSource.HasValue) {
+                    await SourceService.AddUserAsAdministrator(session, adminOfSource.Value, user);
+                }
+
+                if(adminOfMerchant.HasValue) {
+                    await MerchantService.AddUserAsManager(session,adminOfMerchant.Value, user, MerchantRole.Admin);
+                }
+
+                return user;
+            });
+
+            return Ok(new UserCreationOutput {
+                Id = user.Id,
+                Email = user.Email,
+                GeneratedPassword = (password == null) ? generatedPassword : null,
+                Name = user.Name,
+                Surname = user.Surname
+            });
         }
 
         [HttpPost("migrate/merchant-user-access")]

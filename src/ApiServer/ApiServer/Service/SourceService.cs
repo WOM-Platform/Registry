@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -79,6 +80,21 @@ namespace WomPlatform.Web.Api.Service {
         public Task ReplaceSource(Source source) {
             var filter = Builders<Source>.Filter.Eq(s => s.Id, source.Id);
             return SourceCollection.ReplaceOneAsync(filter, source);
+        }
+
+        public async Task AddUserAsAdministrator(IClientSessionHandle session, ObjectId sourceId, User user) {
+            var results = await SourceCollection.UpdateOneAsync(
+                session,
+                Builders<Source>.Filter.Eq(s => s.Id, sourceId),
+                Builders<Source>.Update.AddToSet(s => s.AdministratorUserIds, user.Id)
+            );
+
+            if(results.MatchedCount != 1) {
+                throw new ServiceProblemException($"Source with ID {sourceId} not found", statusCode: StatusCodes.Status400BadRequest);
+            }
+            if(results.ModifiedCount != 1) {
+                throw new ServiceProblemException($"Failed to add user as administrator of source {sourceId} (modified {results.ModifiedCount})", statusCode: StatusCodes.Status500InternalServerError);
+            }
         }
 
         public class GeneratedVouchersCountBySourceResult {

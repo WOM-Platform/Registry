@@ -73,6 +73,12 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        protected IMongoCollection<User> UserCollection {
+            get {
+                return MainDatabase.GetCollection<User>("Users");
+            }
+        }
+
         protected ILogger<BaseService> Logger { get { return _logger; } }
 
         protected Random Random { get { return _random; } }

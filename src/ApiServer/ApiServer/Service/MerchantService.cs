@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -97,6 +99,24 @@ namespace WomPlatform.Web.Api.Service {
             ;
 
             return MerchantCollection.Aggregate(pipeline).ToListAsync();
+        }
+
+        public async Task AddUserAsManager(IClientSessionHandle session, ObjectId merchantId, User user, MerchantRole role) {
+            var results = await MerchantCollection.UpdateOneAsync(
+                session,
+                Builders<Merchant>.Filter.Eq(s => s.Id, merchantId),
+                Builders<Merchant>.Update.AddToSet(s => s.Access, new AccessControlEntry<MerchantRole> {
+                    UserId = user.Id,
+                    Role = role,
+                })
+            );
+
+            if(results.MatchedCount != 1) {
+                throw new ServiceProblemException($"Merchant with ID {merchantId} not found", statusCode: StatusCodes.Status400BadRequest);
+            }
+            if(results.ModifiedCount != 1) {
+                throw new ServiceProblemException($"Failed to add user as administrator of merchant {merchantId} (modified {results.ModifiedCount})", statusCode: StatusCodes.Status500InternalServerError);
+            }
         }
 
         public async Task MigrateToNewUserAccessControl() {

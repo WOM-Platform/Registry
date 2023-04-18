@@ -271,41 +271,41 @@ namespace WomPlatform.Web.Api.Service {
             if(payment == null) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not found", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/otc-not-valid",
                     "OTC code does not exist",
-                    StatusCodes.Status404NotFound
+                    StatusCodes.Status404NotFound,
+                    type: "https://wom.social/api/problems/otc-not-valid"
                 );
             }
             if(!payment.Verified) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not verified, cannot be performed", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/otc-not-valid",
                     "OTC code does not exist",
-                    StatusCodes.Status404NotFound
+                    StatusCodes.Status404NotFound,
+                    type: "https://wom.social/api/problems/otc-not-valid"
                 );
             }
             if(!payment.IsPersistent && payment.Confirmations?.Count > 0) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment {0} not persistent and already performed", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/operation-already-performed",
                     "Operation already performed",
-                    StatusCodes.Status400BadRequest
+                    StatusCodes.Status400BadRequest,
+                    type: "https://wom.social/api/problems/operation-already-performed"
                 );
             }
             if(!payment.Password.Equals(request.Password, StringComparison.Ordinal)) {
                 Logger.LogInformation(LoggingEvents.Operations, "Payment password does not match");
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/wrong-password",
                     "Wrong password",
-                    StatusCodes.Status422UnprocessableEntity
+                    StatusCodes.Status422UnprocessableEntity,
+                    type: "https://wom.social/api/problems/wrong-password"
                 );
             }
             if(request.Vouchers.Length != payment.Amount) {
                 Logger.LogInformation(LoggingEvents.Operations, "{0} vouchers given instead of {1}", request.Vouchers.Length, payment.Amount);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/wrong-number-of-vouchers",
                     "Wrong number of vouchers supplied",
                     StatusCodes.Status400BadRequest,
+                    type: "https://wom.social/api/problems/wrong-number-of-vouchers",
                     "required", payment.Amount.ToString(),
                     "supplied", request.Vouchers.Length.ToString()
                 );
@@ -317,9 +317,9 @@ namespace WomPlatform.Web.Api.Service {
             if(v1Count + v2Count < payment.Amount) {
                 Logger.LogInformation(LoggingEvents.Operations, "Found {0} valid vouchers, less than requested ({1})", v2Count + v1Count, payment.Amount);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/insufficient-valid-vouchers",
                     "Insufficient valid vouchers supplied",
                     StatusCodes.Status400BadRequest,
+                    type: "https://wom.social/api/problems/insufficient-valid-vouchers",
                     "required", payment.Amount.ToString(),
                     "supplied", (v2Count + v1Count).ToString()
                 );

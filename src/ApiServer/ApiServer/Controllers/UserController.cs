@@ -33,24 +33,6 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
-        /// Check whether a user password is acceptable.
-        /// </summary>
-        private bool CheckPassword(string password) {
-            var userSecuritySection = Configuration.GetSection("UserSecurity");
-            var minLength = Convert.ToInt32(userSecuritySection["MinimumUserPasswordLength"]);
-
-            if(string.IsNullOrWhiteSpace(password)) {
-                return false;
-            }
-
-            if(password.Length < minLength) {
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
         /// User registration payload.
         /// </summary>
         public record UserRegisterInput(
@@ -72,7 +54,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.ProblemParameter("Supplied email address is already registered");
             }
 
-            if(!CheckPassword(input.Password)) {
+            if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
 
@@ -165,7 +147,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            if(input.Password != null && !CheckPassword(input.Password)) {
+            if(input.Password != null && !CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
 
@@ -306,7 +288,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            if(!CheckPassword(input.Password)) {
+            if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
 

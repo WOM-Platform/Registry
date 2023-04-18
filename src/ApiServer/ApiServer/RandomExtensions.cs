@@ -32,7 +32,8 @@ namespace WomPlatform.Web.Api {
             'U', 'V', 'W', 'X', 'Y', 'Z',
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
             'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-            'u', 'v', 'w', 'x', 'y', 'z'
+            'u', 'v', 'w', 'x', 'y', 'z',
+            '!', '#', '$', '@', '%', '?',
         };
 
         public static string GenerateReadableCode(this Random rnd, int length) {

@@ -154,41 +154,41 @@ namespace WomPlatform.Web.Api.Service {
             if(request == null) {
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} not found", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/otc-not-valid",
                     "OTC code does not exist",
-                    StatusCodes.Status404NotFound
+                    StatusCodes.Status404NotFound,
+                    type: "https://wom.social/api/problems/otc-not-valid"
                 );
             }
             if(!request.Verified) {
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} not verified, cannot be performed", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/otc-not-valid",
                     "OTC code does not exist",
-                    StatusCodes.Status404NotFound
+                    StatusCodes.Status404NotFound,
+                    type: "https://wom.social/api/problems/otc-not-valid"
                 );
             }
             if(request.PerformedAt.HasValue) {
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} already redeemed", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/operation-already-performed",
                     "Operation already performed",
-                    StatusCodes.Status400BadRequest
+                    StatusCodes.Status400BadRequest,
+                    type: "https://wom.social/api/problems/operation-already-performed"
                 );
             }
             if(request.Void) {
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} has been voided", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/request-void",
                     "Request instance is void",
-                    StatusCodes.Status410Gone
+                    StatusCodes.Status410Gone,
+                    type: "https://wom.social/api/problems/request-void"
                 );
             }
             if(request.Attempts <= 0) {
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} has no more attempts available", request.Otc);
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/request-void",
                     "Request instance is void",
-                    StatusCodes.Status410Gone
+                    StatusCodes.Status410Gone,
+                    type: "https://wom.social/api/problems/request-void"
                 );
             }
             if(!request.Password.Equals(password, StringComparison.Ordinal)) {
@@ -199,9 +199,9 @@ namespace WomPlatform.Web.Api.Service {
 
                 Logger.LogInformation(LoggingEvents.Operations, "Voucher generation password does not match");
                 throw new ServiceProblemException(
-                    "https://wom.social/api/problems/wrong-password",
                     "Wrong password",
-                    StatusCodes.Status422UnprocessableEntity
+                    StatusCodes.Status422UnprocessableEntity,
+                    type: "https://wom.social/api/problems/wrong-password"
                 );
             }
 
@@ -215,9 +215,9 @@ namespace WomPlatform.Web.Api.Service {
                 if(!userLocation.HasValue) {
                     Logger.LogInformation(LoggingEvents.Operations, "Vouchers require user location on redemption");
                     throw new ServiceProblemException(
-                        "https://wom.social/api/problems/location-not-provided",
                         "User location not provided",
-                        StatusCodes.Status400BadRequest
+                        StatusCodes.Status400BadRequest,
+                        type: "https://wom.social/api/problems/location-not-provided"
                     );
                 }
 

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.Service;
@@ -52,6 +53,11 @@ namespace WomPlatform.Web.Api.Controllers {
             get {
                 return _serviceProvider.GetRequiredService<KeyManager>();
             }
+        }
+
+        protected Task<IClientSessionHandle> CreateMongoSession() {
+            var client = _serviceProvider.GetRequiredService<MongoClient>();
+            return client.StartSessionAsync();
         }
 
         protected ILogger<BaseRegistryController> Logger { get; }
@@ -130,6 +136,24 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError(loggingKey, ex, "Failed to decrypt payload");
                 return (default(T), ControllerExtensions.PayloadVerificationFailure(null));
             }
+        }
+
+        /// <summary>
+        /// Check whether a user password is acceptable.
+        /// </summary>
+        protected bool CheckUserPassword(string password) {
+            var userSecuritySection = Configuration.GetSection("UserSecurity");
+            var minLength = Convert.ToInt32(userSecuritySection["MinimumUserPasswordLength"]);
+
+            if(string.IsNullOrWhiteSpace(password)) {
+                return false;
+            }
+
+            if(password.Length < minLength) {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>

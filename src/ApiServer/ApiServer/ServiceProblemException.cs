@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,9 +7,9 @@ namespace WomPlatform.Web.Api {
     public class ServiceProblemException : Exception {
 
         public ServiceProblemException(
-            string type,
             string title,
             int statusCode = StatusCodes.Status500InternalServerError,
+            string type = null,
             params string[] extensionPairs
         ) {
             Type = type;
@@ -29,9 +28,9 @@ namespace WomPlatform.Web.Api {
         }
 
         public ServiceProblemException(
-            string type,
             string title,
             int statusCode = StatusCodes.Status500InternalServerError,
+            string type = null,
             string detail = null,
             Dictionary<string, string> extensions = null
         ) {
@@ -47,7 +46,7 @@ namespace WomPlatform.Web.Api {
             }
         }
 
-        public string Type { get; init; }
+        public string? Type { get; init; }
 
         public string Title { get; init; }
 
@@ -76,15 +75,15 @@ namespace WomPlatform.Web.Api {
         }
 
         public readonly static ServiceProblemException UserIsNotLoggedIn = new(
-            "https://wom.social/api/problems/user-not-logged-in",
             "User is not logged in",
-            StatusCodes.Status401Unauthorized
+            StatusCodes.Status401Unauthorized,
+            type: "https://wom.social/api/problems/user-not-logged-in"
         );
 
         public readonly static ServiceProblemException UserIsNotAdminOfSource = new(
-            "https://wom.social/api/problems/user-not-administrator-of-source",
             "User is not administrator of source",
-            StatusCodes.Status403Forbidden
+            StatusCodes.Status403Forbidden,
+            type: "https://wom.social/api/problems/user-not-administrator-of-source"
         );
 
     }
