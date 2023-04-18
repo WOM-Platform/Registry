@@ -77,7 +77,10 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var keys = CryptoHelper.CreateKeyPair();
 
-            var source = await SourceService.CreateNewSource(name, url, keys);
+            var source = await SourceService.CreateNewSource(name, url, keys,
+                location: (latitude.HasValue && longitude.HasValue) ? new GeoCoords { Latitude = latitude.Value, Longitude = longitude.Value } : null,
+                locationIsFixed: (latitude.HasValue && longitude.HasValue)
+            );
 
             return Ok(source.ToDetailsOutput());
         }
