@@ -1,10 +1,6 @@
 # Config override for deployment
 version: '3'
 
-volumes:
-  wom_registry_mongodb_prod:
-    external: true
-
 services:
   api:
     environment:
@@ -24,11 +20,4 @@ services:
     - "traefik.link.frontend.rule=Host:wom.social;PathPrefix:/payment,/vouchers"
     - "traefik.link.frontend.entryPoints=http,https"
     - "traefik.link.redirect.entryPoint=https"
-    restart: unless-stopped
-
-  mongo:
-    volumes:
-    - wom_registry_mongodb_prod:/data/db:rw
-    ports:
-    - "8124:27017"
     restart: unless-stopped

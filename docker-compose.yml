@@ -21,13 +21,3 @@ services:
       options:
         max-size: "30m"
         max-file: "2"
-
-  mongo:
-    image: mongo:4.4.13
-    networks:
-    - backend
-    expose:
-    - "27017"
-    env_file: config.env
-    logging:
-      driver: "none"
