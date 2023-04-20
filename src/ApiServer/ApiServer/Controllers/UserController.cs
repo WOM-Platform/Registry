@@ -201,6 +201,28 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
+        public record RequestVerificationEmail(string Email);
+
+        /// <summary>
+        /// Unauthenticated requests for a new user verification e-mail.
+        /// </summary>
+        [HttpPost("request-verification")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        public async Task<IActionResult> RequestVerificationByEmail(
+            [FromBody] RequestVerificationEmail payload
+        ) {
+            var user = await UserService.GetUserByEmail(payload.Email);
+            if(user == null) {
+                return Ok();
+            }
+
+            if(user.VerificationToken != null) {
+                _composer.SendVerificationMail(user);
+            }
+
+            return Ok();
+        }
+
         public record UserVerifyInput(string Token);
 
         /// <summary>
