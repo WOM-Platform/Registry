@@ -80,7 +80,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return CreatedAtAction(
                     nameof(GetPosInformation),
                     new {
-                        id = pos.Id
+                        posId = pos.Id
                     },
                     pos.ToOutput(PicturesService.DefaultPosCover)
                 );
