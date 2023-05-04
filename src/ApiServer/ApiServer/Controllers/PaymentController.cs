@@ -12,7 +12,7 @@ using WomPlatform.Web.Api.Service;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/payment")]
-    [OperationsTags("Payment protocol", "Operations")]
+    [OperationsTags("Payments", "Operations")]
     public class PaymentController : BaseRegistryController {
 
         public PaymentController(

@@ -109,6 +109,24 @@ namespace WomPlatform.Web.Api {
             }.ToString();
         }
 
+        public void SendVouchers(string email, string activityTitle, string instrumentName, string otcLink, string password) {
+            if(string.IsNullOrEmpty(email)) {
+                _logger.LogError("Cannot send email to empty address");
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.Append("Ciao!\n\n");
+            sb.AppendFormat("Sono stati generati dei voucher WOM per te, da parte di {0} e in virtù dello svolgimento dell’attività “{1}”.\n\n", instrumentName, activityTitle);
+            sb.Append("I WOM sono dei voucher elettronici anonimi, che certificano l’impegno che hai dedicato ad una specifica causa per il bene sociale. Potrai riscattarli semplicemente installando l’applicazione WOM Pocket, cliccando sul seguente link e digitando la password riportata sotto:\n\n");
+            sb.AppendFormat("{0}\n", otcLink);
+            sb.AppendFormat("Password: {0}\n\n", password);
+            sb.Append("Consulta il sito https://wom.social per qualsiasi dubbio o informazione.\n\n");
+            sb.Append("❤ Piattaforma WOM");
+
+            SendMessage(email, "Emissione di voucher WOM", sb.ToString());
+        }
+
         private void SendMessage(string recipientAddress, string subject, string contents) {
             var msg = new MailMessage {
                 From = _mailFrom,

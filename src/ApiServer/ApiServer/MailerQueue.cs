@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Concurrent;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,8 +15,8 @@ namespace WomPlatform.Web.Api {
 
     public class MailerQueue : IMailerQueue {
 
-        private readonly ConcurrentQueue<MailMessage> _logQueue = new ConcurrentQueue<MailMessage>();
-        private readonly SemaphoreSlim _signal = new SemaphoreSlim(0);
+        private readonly ConcurrentQueue<MailMessage> _logQueue = new();
+        private readonly SemaphoreSlim _signal = new(0);
 
         public async Task<MailMessage> DequeueAsync(CancellationToken cancellationToken) {
             await _signal.WaitAsync(cancellationToken);
