@@ -44,6 +44,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
             [BsonIgnoreIfNull]
             public GeoJsonPoint<GeoJson2DGeographicCoordinates> PresetWomLocation { get; set; }
 
+            [BsonElement("batchGeneration")]
+            [BsonDefaultValue(false)]
+            public bool BatchGeneration { get; set; } = false;
+
             [BsonExtraElements]
             public BsonDocument CatchAll { get; set; }
 

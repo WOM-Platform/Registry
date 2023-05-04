@@ -32,6 +32,8 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
             [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
             public GeoCoordsOutput PresetWomLocation { get; init; }
 
+            public bool BatchGeneration { get; init; } = false;
+
         }
 
         public TemplateInfo[] Templates { get; init; }
@@ -56,6 +58,7 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
                                  PresetWomCount = t.PresetWomCount,
                                  PresetWomAim = t.PresetWomAim,
                                  PresetWomLocation = t.PresetWomLocation.ToOutput(),
+                                 BatchGeneration = t.BatchGeneration,
                              }).ToArray()
             };
         }

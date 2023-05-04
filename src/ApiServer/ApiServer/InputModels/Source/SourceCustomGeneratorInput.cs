@@ -29,6 +29,8 @@ namespace WomPlatform.Web.Api.InputModels.Source {
 
             public GeoCoordsInput PresetWomLocation { get; init; }
 
+            public bool BatchGeneration { get; init; } = false;
+
         }
 
         public TemplateInfo[] Templates { get; init; }

@@ -145,6 +145,7 @@ namespace WomPlatform.Web.Api.Controllers {
                                  PresetWomCount = t.PresetWomCount,
                                  PresetWomAim = t.PresetWomAim,
                                  PresetWomLocation = t.PresetWomLocation.ToGeoJson(),
+                                 BatchGeneration = t.BatchGeneration,
                              }).ToArray(),
             };
             await SourceService.ReplaceSource(source);
