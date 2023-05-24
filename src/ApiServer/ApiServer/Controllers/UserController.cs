@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,9 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Pos;
+using WomPlatform.Web.Api.OutputModels.Source;
+using WomPlatform.Web.Api.OutputModels.User;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -45,43 +49,34 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="input">User registration payload.</param>
         [HttpPost("register")]
         [AllowAnonymous]
-        [ProducesResponseType(typeof(UserOutput), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(UserRegisterInput input) {
-            var existingUser = await UserService.GetUserByEmail(input.Email);
-            if(existingUser != null) {
-                return this.ProblemParameter("Supplied email address is already registered");
-            }
-
             if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
 
-            var verificationToken = new Random().GenerateReadableCode(8);
-            Logger.LogDebug("Registering new user for {0} with verification token {1}", input.Email, verificationToken);
+            Logger.LogDebug("Registering new user for {0}", input.Email);
 
             try {
-                var user = new User {
-                    Email = input.Email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
-                    Name = input.Name,
-                    Surname = input.Surname,
-                    VerificationToken = verificationToken,
-                    Role = PlatformRole.User,
-                    RegisteredOn = DateTime.UtcNow
-                };
-                await UserService.CreateUser(user);
+                var session = await CreateMongoSession();
+                var user = await session.WithTransactionAsync(async (session, token) => {
+                    var user = await UserService.CreateUser(session, input.Email, input.Name, input.Surname, input.Password);
+                    Logger.LogInformation("New user {0} created for {1}", user.Id, user.Email);
 
-                _composer.SendVerificationMail(user);
+                    _composer.SendVerificationMail(user);
+
+                    return user;
+                });
 
                 return CreatedAtAction(
                     nameof(GetInformation),
                     new {
                         id = user.Id.ToString()
                     },
-                    new UserOutput {
-                        Id = user.Id.ToString(),
+                    new UserCreationOutput {
+                        Id = user.Id,
                         Email = user.Email,
                         Name = user.Name,
                         Surname = user.Surname
@@ -100,7 +95,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">User ID.</param>
         [HttpGet("{id}")]
         [Authorize]
-        [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(UserDetailedOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
             [FromRoute] ObjectId id
@@ -109,16 +104,43 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Forbid();
             }
 
-            var existingUser = await UserService.GetUserById(id);
-            if(existingUser == null) {
+            var user = await UserService.GetUserById(id);
+            if(user == null) {
                 return NotFound();
             }
 
-            return Ok(new UserOutput {
-                Id = existingUser.Id.ToString(),
-                Email = existingUser.Email,
-                Name = existingUser.Name,
-                Surname = existingUser.Surname
+            var taskAims = AimService.GetRootAimCodes();
+            var taskSources = SourceService.GetSourcesByUser(id);
+            var taskMerchants = PosService.GetMerchantsAndPosByUser(id);
+            await Task.WhenAll(taskAims, taskSources, taskMerchants);
+
+            return Ok(new UserDetailedOutput {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Surname = user.Surname,
+                Verified = user.VerificationToken == null,
+                Merchants = taskMerchants.Result.Select(d => new MerchantAuthOutput {
+                    Id = d.Item1.Id.ToString(),
+                    Name = d.Item1.Name,
+                    FiscalCode = d.Item1.FiscalCode,
+                    PrimaryActivity = d.Item1.PrimaryActivityType,
+                    Address = d.Item1.Address,
+                    ZipCode = d.Item1.ZipCode,
+                    City = d.Item1.City,
+                    Country = d.Item1.Country,
+                    Description = d.Item1.Description,
+                    Url = d.Item1.WebsiteUrl,
+                    Pos = (from p in d.Item2
+                           let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
+                           select p.ToAuthOutput(pictureOutput)).ToArray(),
+                    Enabled = d.Item1.Enabled,
+                    Access = d.Item1.Access.Get(id).Role,
+                }).ToArray(),
+                Sources = taskSources.Result.Select(s => s.ToLoginV2Output(
+                    cg => cg?.ToOutput(PicturesService.GetPictureOutput(cg.LogoPath, cg.LogoBlurHash)),
+                    taskAims.Result
+                )).ToArray()
             });
         }
 

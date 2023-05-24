@@ -42,6 +42,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM Merchants for the authenticated user.
         /// </summary>
         [HttpPost("merchant")]
+        [Obsolete]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthV2PosLoginOutput), StatusCodes.Status200OK)]
@@ -99,6 +100,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM Merchants for the authenticated user.
         /// </summary>
         [HttpPost("source")]
+        [Obsolete]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthV2SourceLoginOutput), StatusCodes.Status200OK)]

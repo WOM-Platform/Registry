@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -48,6 +49,13 @@ namespace WomPlatform.Web.Api.Service {
                 }")
                 .As<Aim>()
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get all root aim codes.
+        /// </summary>
+        public async Task<string[]> GetRootAimCodes() {
+            return (from a in await GetRootAims() select a.Code).ToArray();
         }
 
         public Task<Aim> GetAimByCode(string code) {
