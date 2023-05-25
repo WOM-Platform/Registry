@@ -92,12 +92,26 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Retrieves information about an existing user.
         /// </summary>
+        [HttpGet("me")]
+        [Authorize]
+        [ProducesResponseType(typeof(UserDetailedOutput), StatusCodes.Status200OK)]
+        public Task<ActionResult> GetOwnInformation() {
+            if(!User.GetUserId(out var myself)) {
+                return Task.FromResult<ActionResult>(Forbid());
+            }
+
+            return GetInformation(myself);
+        }
+
+        /// <summary>
+        /// Retrieves information about an existing user.
+        /// </summary>
         /// <param name="id">User ID.</param>
         [HttpGet("{id}")]
         [Authorize]
         [ProducesResponseType(typeof(UserDetailedOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetInformation(
+        public async Task<ActionResult> GetInformation(
             [FromRoute] ObjectId id
         ) {
             if(!User.UserIdEquals(id)) {
