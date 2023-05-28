@@ -34,20 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="Properties\launchSettings %28copia%29.json" />
-  </ItemGroup>
-
-  <ItemGroup>
+	<EmbeddedResource Include="..\..\..\graphics\base-offer.jpg" Link="Resources\base-offer.jpg" />
     <EmbeddedResource Include="..\..\..\graphics\base-offer-bw.jpg" Link="Resources\base-offer-bw.jpg" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="..\..\..\graphics\Raleway-Bold.ttf" Link="Resources\Raleway-Bold.ttf" />
-    <EmbeddedResource Include="..\..\..\graphics\Raleway-Regular.ttf" Link="Resources\Raleway-Regular.ttf" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="..\..\..\graphics\base-offer.jpg" Link="Resources\base-offer.jpg" />
+	<EmbeddedResource Include="..\..\..\graphics\Raleway-Bold.ttf" Link="Resources\Raleway-Bold.ttf" />
+	<EmbeddedResource Include="..\..\..\graphics\Raleway-Regular.ttf" Link="Resources\Raleway-Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
