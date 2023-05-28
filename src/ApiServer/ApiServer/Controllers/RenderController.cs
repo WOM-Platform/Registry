@@ -197,13 +197,16 @@ namespace WomPlatform.Web.Api.Controllers {
                 });
 
                 float descriptionOffsetFromTop = paddingTop + titleHeight + MarginBelowTitle;
-                var descriptionHeight = DrawLeft(ctx, descriptionFont, offer.Description, Color.Black, backgroundImage.Width, descriptionOffsetFromTop);
+                if(!string.IsNullOrEmpty(offer.Description)) {
+                    var descriptionHeight = DrawLeft(ctx, descriptionFont, offer.Description, Color.Black, backgroundImage.Width, descriptionOffsetFromTop);
+                    descriptionOffsetFromTop += descriptionHeight;
+                }
 
                 var passwordHeight = DrawCenteredFromBottom(ctx, descriptionFont, "Password: " + offer.Payment.Password, Color.Black, backgroundImage.Width, backgroundImage.Height - paddingBottom);
 
-                var qrCodeHeight = backgroundImage.Height - descriptionOffsetFromTop - descriptionHeight - paddingBottom - passwordHeight - (QrCodeMargin * 2);
+                var qrCodeHeight = backgroundImage.Height - descriptionOffsetFromTop - paddingBottom - passwordHeight - (QrCodeMargin * 2);
                 float qrCodeX = (backgroundImage.Width - qrCodeHeight) / 2f;
-                float qrCodeY = descriptionOffsetFromTop + descriptionHeight + QrCodeMargin;
+                float qrCodeY = descriptionOffsetFromTop + QrCodeMargin;
                 DrawQrCode(ctx, qrCode, Color.White, Color.Black, new Vector2(qrCodeX, qrCodeY), new Vector2(qrCodeHeight, qrCodeHeight), QrCodePadding);
 
                 var amountString = $"{offer.Payment.Cost}W";
