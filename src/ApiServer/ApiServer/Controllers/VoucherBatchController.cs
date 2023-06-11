@@ -35,12 +35,7 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             Logger.LogInformation("Voucher batch generation for {0} users on behalf of {1}", input.Users.Length, input.SourceId);
 
-            var source = await SourceService.GetSourceById(input.SourceId);
-            if(source == null) {
-                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Source does not exist");
-            }
-
-            await VerifyUserIsAdminOfSource(source);
+            var source = await VerifyUserIsAdminOfSource(input.SourceId);
 
             foreach(var user in input.Users) {
                 (var generation, _) = await GenerationService.CreateGenerationRequest(source, new VoucherGenerationSpecification[] {

@@ -177,6 +177,10 @@ namespace WomPlatform.Web.Api.Service {
             );
         }
 
+        public Task DeletePos(ObjectId posId) {
+            return PosCollection.DeleteOneAsync(Builders<Pos>.Filter.Eq(p => p.Id, posId));
+        }
+
     }
 
 }

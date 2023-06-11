@@ -83,10 +83,58 @@ namespace WomPlatform.Web.Api {
             type: "https://wom.social/api/problems/user-not-logged-in"
         );
 
+        public readonly static ServiceProblemException UserProfileDoesNotExist = new(
+            "User profile does not exist",
+            StatusCodes.Status401Unauthorized,
+            type: "https://wom.social/api/problems/user-profile-not-found"
+        );
+
+        public readonly static ServiceProblemException UserIsNotAdmin = new(
+            "User is not administrator",
+            StatusCodes.Status403Forbidden,
+            type: "https://wom.social/api/problems/user-not-administrator"
+        );
+
         public readonly static ServiceProblemException UserIsNotAdminOfSource = new(
-            "User is not administrator of source",
+            "User is not authorized as source admin",
             StatusCodes.Status403Forbidden,
             type: "https://wom.social/api/problems/user-not-administrator-of-source"
+        );
+
+        public readonly static ServiceProblemException UserIsNotUserOfMerchant = new(
+            "User is not authorized as merchant user",
+            StatusCodes.Status403Forbidden,
+            type: "https://wom.social/api/problems/user-not-user-of-merchant"
+        );
+
+        public readonly static ServiceProblemException UserIsNotAdminOfMerchant = new(
+            "User is not authorized as merchant admin",
+            StatusCodes.Status403Forbidden,
+            type: "https://wom.social/api/problems/user-not-administrator-of-merchant"
+        );
+
+        public readonly static ServiceProblemException SourceNotFound = new(
+            "Source not found",
+            StatusCodes.Status404NotFound,
+            type: "https://wom.social/api/problems/source-not-found"
+        );
+
+        public readonly static ServiceProblemException PosNotFound = new(
+            "POS not found",
+            StatusCodes.Status404NotFound,
+            type: "https://wom.social/api/problems/pos-not-found"
+        );
+
+        public readonly static ServiceProblemException OwningMerchantOfPosNotFound = new(
+            "Owning merchant of POS not found",
+            StatusCodes.Status404NotFound,
+            type: "https://wom.social/api/problems/owning-merchant-of-pos-not-found"
+        );
+
+        public readonly static ServiceProblemException MerchantNotFound = new(
+            "Merchant not found",
+            StatusCodes.Status404NotFound,
+            type: "https://wom.social/api/problems/merchant-not-found"
         );
 
     }

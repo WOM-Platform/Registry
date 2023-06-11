@@ -37,9 +37,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<ActionResult> CreateSource(
             [FromBody] CreateSourceInput input
         ) {
-            if(!await VerifyUserIsAdmin()) {
-                return Forbid();
-            }
+            await VerifyUserIsAdmin();
 
             var keys = CryptoHelper.CreateKeyPair();
             var source = await SourceService.CreateNewSource(input.Name, input.Url, keys);
@@ -104,12 +102,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<ActionResult> GetCustomGenerator(
             [FromRoute] ObjectId sourceId
         ) {
-            var source = await SourceService.GetSourceById(sourceId);
-            if(source == null) {
-                return NotFound();
-            }
-
-            await VerifyUserIsAdminOfSource(source);
+            var source = await VerifyUserIsAdminOfSource(sourceId);
 
             if(source.CustomGenerator == null) {
                 return NoContent();
@@ -125,12 +118,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId sourceId,
             [FromBody] SourceCustomGeneratorInput input
         ) {
-            var source = await SourceService.GetSourceById(sourceId);
-            if(source == null) {
-                return NotFound();
-            }
-
-            await VerifyUserIsAdminOfSource(source);
+            var source = await VerifyUserIsAdminOfSource(sourceId);
 
             source.CustomGenerator = new SourceCustomGenerator {
                 Title = input.Title,
@@ -159,12 +147,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<ActionResult> DeleteCustomGenerator(
             [FromRoute] ObjectId sourceId
         ) {
-            var source = await SourceService.GetSourceById(sourceId);
-            if(source == null) {
-                return NotFound();
-            }
-
-            await VerifyUserIsAdminOfSource(source);
+            var source = await VerifyUserIsAdminOfSource(sourceId);
 
             source.CustomGenerator = null;
             await SourceService.ReplaceSource(source);
@@ -179,12 +162,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId sourceId,
             [FromForm] [Required] IFormFile image
         ) {
-            var source = await SourceService.GetSourceById(sourceId);
-            if(source == null) {
-                return NotFound();
-            }
-
-            await VerifyUserIsAdminOfSource(source);
+            var source = await VerifyUserIsAdminOfSource(sourceId);
 
             if(source.CustomGenerator == null) {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Source has no custom generator");

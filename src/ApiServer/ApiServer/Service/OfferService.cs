@@ -271,11 +271,26 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.Find(Builders<Offer>.Filter.Eq(o => o.Id, offerId)).SingleOrDefaultAsync();
         }
 
+        public Task<long> CountActiveOffersOfPos(ObjectId posId) {
+            return OfferCollection.CountDocumentsAsync(Builders<Offer>.Filter.And(
+                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Filter.Ne(o => o.Deactivated, true)
+            ));
+        }
+
         /// <summary>
         /// Delete an offer by its ID.
         /// </summary>
         public Task DeleteOffer(ObjectId offerId) {
             return OfferCollection.DeleteOneAsync(Builders<Offer>.Filter.Eq(o => o.Id, offerId));
+        }
+
+        /// <summary>
+        /// Delete all offers of a POS.
+        /// </summary>
+        public async Task<long> DeleteOffersByPos(ObjectId posId) {
+            var result = await OfferCollection.DeleteManyAsync(Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId));
+            return result.DeletedCount;
         }
 
         /// <summary>

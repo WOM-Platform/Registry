@@ -143,6 +143,10 @@ namespace WomPlatform.Web.Api.Service {
             Logger.LogInformation("Merchant migration to new user access rules performed");
         }
 
+        public Task DeleteMerchant(ObjectId merchantId) {
+            return MerchantCollection.DeleteOneAsync(Builders<Merchant>.Filter.Eq(m => m.Id, merchantId));
+        }
+
     }
 
 }

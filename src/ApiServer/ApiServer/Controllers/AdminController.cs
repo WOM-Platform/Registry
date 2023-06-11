@@ -28,9 +28,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         public async Task<ActionResult> ExportMerchantList(
         ) {
-            if(!await VerifyUserIsAdmin()) {
-                return Forbid();
-            }
+            await VerifyUserIsAdmin();
 
             var merchants = await MerchantService.GetAllMerchantsWithUsers();
 
@@ -71,9 +69,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] double? latitude,
             [FromQuery] double? longitude
         ) {
-            if(!await VerifyUserIsAdmin()) {
-                return Forbid();
-            }
+            await VerifyUserIsAdmin();
 
             var keys = CryptoHelper.CreateKeyPair();
 
@@ -98,9 +94,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] ObjectId? adminOfSource,
             [FromQuery] ObjectId? adminOfMerchant
         ) {
-            if(!await VerifyUserIsAdmin()) {
-                return Forbid();
-            }
+            await VerifyUserIsAdmin();
 
             string generatedPassword = Crypto.Generator.GenerateCode(16);
             if(password != null && !CheckUserPassword(password)) {
@@ -135,9 +129,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("migrate/merchant-user-access")]
         [Authorize]
         public async Task<ActionResult> MigrateMerchantsToNewUserAccessRules() {
-            if(!await VerifyUserIsAdmin()) {
-                return Forbid();
-            }
+            await VerifyUserIsAdmin();
 
             await MerchantService.MigrateToNewUserAccessControl();
 
@@ -147,9 +139,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("migrate/offer-payment-information")]
         [Authorize]
         public async Task<ActionResult> MigrateOfferPaymentInformation() {
-            if(!await VerifyUserIsAdmin()) {
-                return Forbid();
-            }
+            await VerifyUserIsAdmin();
 
             await OfferService.MigratePaymentInformationInOffers();
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Merchant;
+using WomPlatform.Web.Api.OutputModels.Pos;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -56,6 +59,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost]
         [Authorize]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
@@ -161,14 +165,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id,
             [FromBody] MerchantUpdateInput input
         ) {
-            var existingMerchant = await MerchantService.GetMerchantById(id);
-            if(existingMerchant == null) {
-                return NotFound();
-            }
-
-            if(!await VerifyUserIsAdminOfMerchant(existingMerchant)) {
-                return Forbid();
-            }
+            var existingMerchant = await VerifyUserIsAdminOfMerchant(id);
 
             try {
                 if(input.Name != null) {
@@ -206,6 +203,52 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return Ok(existingMerchant.ToOutput());
+        }
+
+        [HttpDelete("{merchantId}")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(MerchantDeleteOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> Delete(
+            [FromRoute] ObjectId merchantId,
+            [FromQuery] bool dryRun = false
+        ) {
+            Logger.LogInformation("Deleting merchant {0} ({1})", merchantId, dryRun ? "dry run" : "effective run");
+
+            _ = await VerifyUserIsAdminOfMerchant(merchantId);
+
+            var poses = await PosService.GetPosByMerchant(merchantId);
+            if(dryRun) {
+                long countOffers = 0;
+                foreach(var pos in poses) {
+                    countOffers += await OfferService.CountActiveOffersOfPos(pos.Id);
+                }
+
+                return Ok(new MerchantDeleteOutput {
+                    OperationPerformed = false,
+                    CountOfDeletedMerchants = 1,
+                    CountOfDeletedPos = poses.Count,
+                    CountOfDeletedOffers = countOffers,
+                });
+            }
+            else {
+                long countOffers = 0;
+                foreach(var pos in poses) {
+                    countOffers += await OfferService.DeleteOffersByPos(pos.Id);
+                    await PosService.DeletePos(pos.Id);
+                }
+
+                await MerchantService.DeleteMerchant(merchantId);
+
+                return Ok(new MerchantDeleteOutput {
+                    OperationPerformed = true,
+                    CountOfDeletedMerchants = 1,
+                    CountOfDeletedPos = poses.Count,
+                    CountOfDeletedOffers = countOffers,
+                });
+            }
         }
 
     }

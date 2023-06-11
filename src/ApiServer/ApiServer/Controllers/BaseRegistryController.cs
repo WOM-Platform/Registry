@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -175,109 +174,149 @@ namespace WomPlatform.Web.Api.Controllers {
             return true;
         }
 
-        protected async Task<bool> VerifyUserIsAdmin() {
-            if(!User.GetUserId(out var loggedUserId)) {
-                return false;
-            }
-
-            var userProfile = await UserService.GetUserById(loggedUserId);
-            if(userProfile.Role == PlatformRole.Admin) {
-                return true;
-            }
-
-            return false;
-        }
-
-        protected async Task<(bool Allowed, ActionResult ErrorResult, Merchant merchant, Pos pos)> VerifyUserIsUserOfPos(ObjectId posId) {
-            var pos = await PosService.GetPosById(posId);
-            if(pos == null) {
-                Logger.LogDebug("POS {0} not found", posId);
-                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found"), null, null);
-            }
-
-            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
-            if(merchant == null) {
-                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found"), null, pos);
-            }
-
-            if(!await VerifyUserIsUserOfMerchant(merchant)) {
-                return (false, Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not user of merchant"), merchant, pos);
-            }
-
-            return (true, null, merchant, pos);
-        }
-
-        protected async Task<bool> VerifyUserIsUserOfMerchant(Merchant merchant) {
-            if(!User.GetUserId(out var loggedUserId)) {
-                return false;
-            }
-
-            var userProfile = await UserService.GetUserById(loggedUserId);
-            if(userProfile.Role == PlatformRole.Admin) {
-                return true;
-            }
-
-            if(!merchant.Access.IsAtLeast(loggedUserId, MerchantRole.User)) {
-                Logger.LogDebug("User {0} is not user of merchant {1}", loggedUserId, merchant.Id);
-                return false;
-            }
-
-            return true;
-        }
-
-        protected async Task<(bool Allowed, ActionResult ErrorResult, Merchant merchant, Pos pos)> VerifyUserIsAdminOfPos(ObjectId posId) {
-            var pos = await PosService.GetPosById(posId);
-            if(pos == null) {
-                Logger.LogDebug("POS {0} not found", posId);
-                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "POS not found"), null, null);
-            }
-
-            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
-            if(merchant == null) {
-                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
-                return (false, Problem(statusCode: StatusCodes.Status404NotFound, title: "Owning merchant of POS not found"), null, pos);
-            }
-
-            if(!await VerifyUserIsAdminOfMerchant(merchant)) {
-                return (false, Problem(statusCode: StatusCodes.Status403Forbidden, title: "Logged-in user is not administrator of merchant"), merchant, pos);
-            }
-
-            return (true, null, merchant, pos);
-        }
-
-        protected async Task<bool> VerifyUserIsAdminOfMerchant(Merchant merchant) {
-            if(!User.GetUserId(out var loggedUserId)) {
-                return false;
-            }
-
-            var userProfile = await UserService.GetUserById(loggedUserId);
-            if(userProfile.Role == PlatformRole.Admin) {
-                return true;
-            }
-
-            if(!merchant.Access.IsAtLeast(loggedUserId, MerchantRole.Admin)) {
-                Logger.LogDebug("User {0} is not administrator of merchant {1}", loggedUserId, merchant.Id);
-                return false;
-            }
-
-            return true;
-        }
-
-        protected async Task VerifyUserIsAdminOfSource(Source source) {
+        private async Task<(User UserProfile, bool IsAdmin)> CheckLoggedInUser() {
             if(!User.GetUserId(out var loggedUserId)) {
                 throw ServiceProblemException.UserIsNotLoggedIn;
             }
 
             var userProfile = await UserService.GetUserById(loggedUserId);
-            if(userProfile.Role == PlatformRole.Admin) {
-                return;
+            if(userProfile == null) {
+                throw ServiceProblemException.UserProfileDoesNotExist;
             }
 
-            if(!source.AdministratorUserIds.Contains(loggedUserId)) {
-                Logger.LogDebug("User {0} is not administrator of source {1}", loggedUserId, source.Id);
-                throw ServiceProblemException.UserIsNotAdminOfSource;
+            return (userProfile, userProfile.Role == PlatformRole.Admin);
+        }
+
+        /// <summary>
+        /// Verifies that the logged-in user is a platform administrator.
+        /// Returns the logged-in user's profile.
+        /// </summary>
+        protected async Task<User> VerifyUserIsAdmin() {
+            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+            if(!isAdmin) {
+                throw ServiceProblemException.UserIsNotAdmin;
             }
+
+            return userProfile;
+        }
+
+        /// <summary>
+        /// Verifies that the logged-in user is an authorized POS user.
+        /// </summary>
+        protected async Task<(Merchant merchant, Pos pos)> VerifyUserIsUserOfPos(ObjectId posId) {
+            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                Logger.LogDebug("POS {0} not found", posId);
+                throw ServiceProblemException.PosNotFound;
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                throw ServiceProblemException.OwningMerchantOfPosNotFound;
+            }
+
+            if(!isAdmin) {
+                if(!merchant.Access.IsAtLeast(userProfile.Id, MerchantRole.User)) {
+                    Logger.LogDebug("User {0} is not user of merchant {1}", userProfile.Id, merchant.Id);
+                    throw ServiceProblemException.UserIsNotUserOfMerchant;
+                }
+            }
+
+            return (merchant, pos);
+        }
+
+        /// <summary>
+        /// Verifies that the logged-in user is an authorized merchant user.
+        /// </summary>
+        protected async Task<Merchant> VerifyUserIsUserOfMerchant(ObjectId merchantId) {
+            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+
+            var merchant = await MerchantService.GetMerchantById(merchantId);
+            if(merchant == null) {
+                Logger.LogDebug("Merchant {0} not found", merchantId);
+                throw ServiceProblemException.MerchantNotFound;
+            }
+
+            if(!isAdmin) {
+                if(!merchant.Access.IsAtLeast(userProfile.Id, MerchantRole.User)) {
+                    Logger.LogDebug("User {0} is not user of merchant {1}", userProfile.Id, merchant.Id);
+                    throw ServiceProblemException.UserIsNotUserOfMerchant;
+                }
+            }
+
+            return merchant;
+        }
+
+        /// <summary>
+        /// Verifies that the logged-in user is an authorized POS administrator.
+        /// </summary>
+        protected async Task<(Merchant merchant, Pos pos)> VerifyUserIsAdminOfPos(ObjectId posId) {
+            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+
+            var pos = await PosService.GetPosById(posId);
+            if(pos == null) {
+                Logger.LogDebug("POS {0} not found", posId);
+                throw ServiceProblemException.PosNotFound;
+            }
+
+            var merchant = await MerchantService.GetMerchantById(pos.MerchantId);
+            if(merchant == null) {
+                Logger.LogError("Owning merchant {0} for POS {1} does not exist", pos.MerchantId, pos.Id);
+                throw ServiceProblemException.OwningMerchantOfPosNotFound;
+            }
+
+            if(!isAdmin) {
+                if(!merchant.Access.IsAtLeast(userProfile.Id, MerchantRole.Admin)) {
+                    Logger.LogDebug("User {0} is not user of merchant {1}", userProfile.Id, merchant.Id);
+                    throw ServiceProblemException.UserIsNotUserOfMerchant;
+                }
+            }
+
+            return (merchant, pos);
+        }
+
+        /// <summary>
+        /// Verifies that the logged-in user is an authorized merchant administrator.
+        /// </summary>
+        protected async Task<Merchant> VerifyUserIsAdminOfMerchant(ObjectId merchantId) {
+            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+
+            var merchant = await MerchantService.GetMerchantById(merchantId);
+            if(merchant == null) {
+                Logger.LogDebug("Merchant {0} not found", merchantId);
+                throw ServiceProblemException.MerchantNotFound;
+            }
+
+            if(!isAdmin) {
+                if(!merchant.Access.IsAtLeast(userProfile.Id, MerchantRole.Admin)) {
+                    Logger.LogDebug("User {0} is not user of merchant {1}", userProfile.Id, merchant.Id);
+                    throw ServiceProblemException.UserIsNotUserOfMerchant;
+                }
+            }
+
+            return merchant;
+        }
+
+        protected async Task<Source> VerifyUserIsAdminOfSource(ObjectId sourceId) {
+            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+
+            var source = await SourceService.GetSourceById(sourceId);
+            if(source == null) {
+                Logger.LogDebug("Source {0} not found", sourceId);
+                throw ServiceProblemException.SourceNotFound;
+            }
+
+            if(!isAdmin) {
+                if(!source.AdministratorUserIds.Contains(userProfile.Id)) {
+                    Logger.LogDebug("User {0} is not administrator of source {1}", userProfile.Id, sourceId);
+                    throw ServiceProblemException.UserIsNotAdminOfSource;
+                }
+            }
+
+            return source;
         }
 
     }
