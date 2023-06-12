@@ -193,8 +193,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 var picSourceLogo = PicturesService.GetPosCoverOutput(picturePath, pictureBlurHash);
                 return Ok(picSourceLogo);
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update source logo");
+            catch(Exception) {
+                Logger.LogError("Failed to update source logo");
                 throw;
             }
         }

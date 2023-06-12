@@ -102,8 +102,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     merchant.ToOutput()
                 );
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to register new merchant with fiscal code {0}", input.FiscalCode);
+            catch(Exception) {
+                Logger.LogError("Failed to register new merchant with fiscal code {0}", input.FiscalCode);
                 throw;
             }
         }
@@ -197,8 +197,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 await MerchantService.ReplaceMerchant(existingMerchant);
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update merchant {0}", id);
+            catch(Exception) {
+                Logger.LogError("Failed to update merchant {0}", id);
                 throw;
             }
 

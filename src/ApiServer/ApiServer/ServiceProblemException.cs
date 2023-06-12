@@ -83,6 +83,12 @@ namespace WomPlatform.Web.Api {
             type: "https://wom.social/api/problems/user-not-logged-in"
         );
 
+        public readonly static ServiceProblemException EmailAlreadyRegistered = new(
+            "Email already registered",
+            StatusCodes.Status400BadRequest,
+            type: "https://wom.social/api/problems/email-already-registered"
+        );
+
         public readonly static ServiceProblemException UserProfileDoesNotExist = new(
             "User profile does not exist",
             StatusCodes.Status401Unauthorized,

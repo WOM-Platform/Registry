@@ -261,9 +261,11 @@ namespace WomPlatform.Web.Api {
                     if(exceptionHandlerPathFeature?.Error is ServiceProblemException) {
                         var serviceException = (ServiceProblemException)exceptionHandlerPathFeature.Error;
 
-                        var problemDetailsService = httpContext.RequestServices.GetService<IProblemDetailsService>();
+                        logger.LogError(serviceException, "Service problem \"{0}\" with status code {1} (code {2})", serviceException.Title, serviceException.HttpStatus, serviceException.Type);
 
                         httpContext.Response.StatusCode = serviceException.HttpStatus;
+
+                        var problemDetailsService = httpContext.RequestServices.GetService<IProblemDetailsService>();
                         await problemDetailsService.WriteAsync(new ProblemDetailsContext {
                             HttpContext = httpContext,
                             ProblemDetails = serviceException.ToProblemDetails(),

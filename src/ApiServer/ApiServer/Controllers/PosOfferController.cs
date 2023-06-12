@@ -96,8 +96,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 return Ok(offer.ToDetailsOutput());
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to persist offer");
+            catch(Exception) {
+                Logger.LogError("Failed to persist offer");
                 throw;
             }
         }
@@ -185,8 +185,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 return Ok(replacementOffer.ToDetailsOutput());
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to persist offer");
+            catch(Exception) {
+                Logger.LogError("Failed to persist offer");
                 throw;
             }
         }
@@ -219,8 +219,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 return AcceptedAtAction(nameof(GetPosOffer), new { posId = posId, offerId = offerId }, null);
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to persist offer");
+            catch(Exception) {
+                Logger.LogError("Failed to persist offer");
                 throw;
             }
         }

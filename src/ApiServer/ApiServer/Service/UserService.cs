@@ -42,7 +42,7 @@ namespace WomPlatform.Web.Api.Service {
 
             var existingUser = await GetUserByEmail(effectiveEmail);
             if(existingUser != null) {
-                throw new ServiceProblemException("Email already registered", statusCode: StatusCodes.Status400BadRequest);
+                throw ServiceProblemException.EmailAlreadyRegistered;
             }
 
             var user = new User {

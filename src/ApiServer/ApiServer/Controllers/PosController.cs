@@ -75,8 +75,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     pos.ToOutput(PicturesService.DefaultPosCover)
                 );
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to register new POS");
+            catch(Exception) {
+                Logger.LogError("Failed to register new POS");
                 throw;
             }
         }
@@ -204,8 +204,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 await OfferService.UpdatePosInformation(pos.Id, pos.Name, pos.Description, pos.Position?.Coordinates.Latitude, pos.Position?.Coordinates.Longitude, pos.Url, pos.IsActive);
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update POS {0}", posId);
+            catch(Exception) {
+                Logger.LogError("Failed to update POS {0}", posId);
                 throw;
             }
 
@@ -255,8 +255,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 var picPosCover = PicturesService.GetPosCoverOutput(picturePath, pictureBlurHash);
                 return Ok(pos.ToOutput(picPosCover));
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update POS {0}", posId);
+            catch(Exception) {
+                Logger.LogError("Failed to update POS {0}", posId);
                 throw;
             }
         }
@@ -281,8 +281,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 return Ok(pos.ToOutput(null));
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update POS {0}", posId);
+            catch(Exception) {
+                Logger.LogError("Failed to update POS {0}", posId);
                 throw;
             }
         }

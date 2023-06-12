@@ -83,8 +83,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     }
                 );
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to register new user with email {0}", input.Email);
+            catch(Exception) {
+                Logger.LogError("Failed to register new user with email {0}", input.Email);
                 throw;
             }
         }
@@ -201,8 +201,8 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 await UserService.ReplaceUser(existingUser);
             }
-            catch(Exception ex) {
-                Logger.LogError(ex, "Failed to update user {0}", id);
+            catch(Exception) {
+                Logger.LogError("Failed to update user {0}", id);
                 throw;
             }
 
