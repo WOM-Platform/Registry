@@ -18,7 +18,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public VoucherController(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<VoucherController> logger)
         : base(serviceProvider, logger) {
         }
 

@@ -22,7 +22,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public OfferController(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<OfferController> logger)
         : base(serviceProvider, logger) {
 
         }

@@ -19,7 +19,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public MapController(
             MapService mapService,
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<MapController> logger)
         : base(serviceProvider, logger) {
             _mapService = mapService;
         }

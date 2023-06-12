@@ -22,7 +22,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public RenderController(
             IServiceProvider serviceProvider,
-            ILogger<BaseRegistryController> logger
+            ILogger<RenderController> logger
         ) : base(serviceProvider, logger) {
         }
 

@@ -23,7 +23,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public TestController(
             IWebHostEnvironment webHostEnvironment,
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<TestController> logger)
         : base(serviceProvider, logger) {
             Hosting = webHostEnvironment;
 

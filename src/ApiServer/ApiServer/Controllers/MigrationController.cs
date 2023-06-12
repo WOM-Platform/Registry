@@ -18,7 +18,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public MigrationController(
             BackupService backupService,
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<MigrationController> logger)
         : base(serviceProvider, logger) {
             _backupService = backupService;
         }

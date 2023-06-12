@@ -16,7 +16,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public VersionCheckController(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<VersionCheckController> logger)
         : base(serviceProvider, logger) {
 
         }

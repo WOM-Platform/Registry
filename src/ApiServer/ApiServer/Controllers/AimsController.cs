@@ -22,7 +22,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public AimsController(
             AimService aimService,
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<AimsController> logger)
         : base(serviceProvider, logger) {
             _aimService = aimService;
         }

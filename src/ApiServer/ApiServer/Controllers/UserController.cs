@@ -31,7 +31,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public UserController(
             MailComposer composer,
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<UserController> logger)
         : base(serviceProvider, logger) {
             _composer = composer;
         }

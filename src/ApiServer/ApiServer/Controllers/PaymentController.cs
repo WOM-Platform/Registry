@@ -17,7 +17,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public PaymentController(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<PaymentController> logger)
         : base(serviceProvider, logger) {
         }
 

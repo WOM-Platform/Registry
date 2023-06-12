@@ -23,7 +23,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public VoucherBatchController(
             MailComposer composer,
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<VoucherBatchController> logger)
         : base(serviceProvider, logger) {
             _composer = composer;
         }

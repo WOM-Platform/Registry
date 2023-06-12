@@ -26,7 +26,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public AuthControllerV2(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<AuthControllerV2> logger)
         : base(serviceProvider, logger) {
         }
 

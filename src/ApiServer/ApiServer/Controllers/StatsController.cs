@@ -20,7 +20,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public StatsController(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<StatsController> logger)
         : base(serviceProvider, logger) {
         }
 

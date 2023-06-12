@@ -22,7 +22,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public MerchantController(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<MerchantController> logger)
         : base(serviceProvider, logger) {
         }
 

@@ -14,7 +14,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public LandingPageController(
             IServiceProvider serviceProvider,
-            ILogger<AdminController> logger)
+            ILogger<LandingPageController> logger)
         : base(serviceProvider, logger) {
 
         }
