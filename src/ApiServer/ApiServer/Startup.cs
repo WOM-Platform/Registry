@@ -270,8 +270,9 @@ namespace WomPlatform.Web.Api {
             }
 
             app.UseStatusCodePages();
-            app.UseExceptionHandler(app => {
-                app.Run(async httpContext => {
+            app.UseExceptionHandler(new ExceptionHandlerOptions {
+                AllowStatusCode404Response = true,
+                ExceptionHandler = async httpContext => {
                     httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
                     var exceptionHandlerPathFeature = httpContext.Features.Get<IExceptionHandlerPathFeature>();
@@ -292,7 +293,7 @@ namespace WomPlatform.Web.Api {
                         httpContext.Response.ContentType = Text.Plain;
                         await httpContext.Response.WriteAsync(exceptionHandlerPathFeature?.Error?.ToString());
                     }
-                });
+                },
             });
 
             // Fix incoming base path for hosting behind proxy
