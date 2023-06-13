@@ -67,16 +67,33 @@ namespace WomPlatform.Web.Api {
             services.AddRouting();
 
             services.AddControllers()
-                .AddMvcOptions(opts => {
-                    opts.ModelBinderProviders.Insert(0, new ObjectIdModelBinderProvider());
-                    opts.InputFormatters.Add(new PermissiveInputFormatter());
+                .AddMvcOptions(options => {
+                    options.ModelBinderProviders.Insert(0, new ObjectIdModelBinderProvider());
+                    options.InputFormatters.Add(new PermissiveInputFormatter());
                 })
                 .AddJsonOptions(options => {
                     options.JsonSerializerOptions.AllowTrailingCommas = true;
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonObjectIdConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonWomIdentifierConverter());
-                });
+                })
+                .ConfigureApiBehaviorOptions(options => {
+                    var builtInFactory = options.InvalidModelStateResponseFactory;
+
+                    options.InvalidModelStateResponseFactory = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Startup>>();
+                        logger.LogInformation("Model binding error: {0}",
+                            string.Join(", ", from modelState in context.ModelState
+                                              select string.Format("{0} ({1})", modelState.Key, string.Join(", ", from error in modelState.Value.Errors
+                                                                                                                  select error.ErrorMessage)))
+                        );
+
+                        // Proceed with default built-in response factory
+                        return builtInFactory(context);
+                    };
+                })
+            ;
             services.AddProblemDetails();
 
             services.AddSwaggerGen(options => {
