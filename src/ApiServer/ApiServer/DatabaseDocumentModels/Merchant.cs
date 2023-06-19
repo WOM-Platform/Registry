@@ -23,19 +23,26 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("address")]
         [BsonIgnoreIfNull]
-        public string Address { get; set; }
+        [Obsolete]
+        public string LegacyAddress { get; set; }
 
         [BsonElement("zipCode")]
         [BsonIgnoreIfNull]
+        [Obsolete]
         public string ZipCode { get; set; }
 
         [BsonElement("city")]
         [BsonIgnoreIfNull]
+        [Obsolete]
         public string City { get; set; }
 
         [BsonElement("country")]
         [BsonIgnoreIfNull]
+        [Obsolete]
         public string Country { get; set; }
+
+        [BsonElement("addressDetails")]
+        public AddressBlock Address { get; set; }
 
         [BsonElement("description")]
         public string Description { get; set; }

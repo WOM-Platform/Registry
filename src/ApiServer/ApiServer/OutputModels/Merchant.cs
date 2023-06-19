@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 using WomPlatform.Web.Api.OutputModels.Pos;
 
 namespace WomPlatform.Web.Api.OutputModels {
@@ -12,12 +13,18 @@ namespace WomPlatform.Web.Api.OutputModels {
 
         public MerchantActivityType PrimaryActivity { get; init; }
 
+        public AddressInformation AddressDetails { get; init; }
+
+        [Obsolete]
         public string Address { get; init; }
 
+        [Obsolete]
         public string ZipCode { get; init; }
 
+        [Obsolete]
         public string City { get; init; }
 
+        [Obsolete]
         public string Country { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -43,13 +50,50 @@ namespace WomPlatform.Web.Api.OutputModels {
                 Name = merchant.Name,
                 FiscalCode = merchant.FiscalCode,
                 PrimaryActivity = merchant.PrimaryActivityType,
-                Address = merchant.Address,
-                ZipCode = merchant.ZipCode,
-                City = merchant.City,
-                Country = merchant.Country,
+                Address = merchant.Address?.StreetName,
+                ZipCode = merchant.Address?.ZipCode,
+                City = merchant.Address?.City,
+                Country = merchant.Address?.Country,
+                AddressDetails = new AddressInformation {
+                    StreetName = merchant.Address?.StreetName,
+                    StreetNumber = merchant.Address?.StreetNumber,
+                    ZipCode = merchant.Address?.ZipCode,
+                    City = merchant.Address?.City,
+                    Country = merchant.Address?.Country,
+                    FormattedAddress = merchant.Address?.FormattedAddress,
+                    GoogleMapsPlaceId = merchant.Address?.GoogleMapsPlaceId,
+                },
                 Description = merchant.Description,
                 Url = merchant.WebsiteUrl,
                 Enabled = merchant.Enabled
+            };
+        }
+
+        public static MerchantAuthOutput ToAuthOutput(this DatabaseDocumentModels.Merchant merchant, PosAuthOutput[] posAuthOutputs, MerchantRole merchantAccess) {
+            return new MerchantAuthOutput {
+                Id = merchant.Id.ToString(),
+                Name = merchant.Name,
+                FiscalCode = merchant.FiscalCode,
+                PrimaryActivity = merchant.PrimaryActivityType,
+                Address = merchant.Address?.StreetName,
+                ZipCode = merchant.Address?.ZipCode,
+                City = merchant.Address?.City,
+                Country = merchant.Address?.Country,
+                AddressDetails = new AddressInformation {
+                    StreetName = merchant.Address?.StreetName,
+                    StreetNumber = merchant.Address?.StreetNumber,
+                    ZipCode = merchant.Address?.ZipCode,
+                    City = merchant.Address?.City,
+                    Country = merchant.Address?.Country,
+                    FormattedAddress = merchant.Address?.FormattedAddress,
+                    GoogleMapsPlaceId = merchant.Address?.GoogleMapsPlaceId,
+                },
+                Description = merchant.Description,
+                Url = merchant.WebsiteUrl,
+                Enabled = merchant.Enabled,
+
+                Pos = posAuthOutputs,
+                Access = merchantAccess,
             };
         }
 

@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     sb.AppendFormat(@"""{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",",
                         merchant.Name,
                         merchant.FiscalCode,
-                        merchant.Address,
+                        merchant.LegacyAddress,
                         merchant.ZipCode?.ToUpperInvariant(),
                         merchant.City,
                         merchant.Country,
@@ -142,6 +142,20 @@ namespace WomPlatform.Web.Api.Controllers {
             await VerifyUserIsAdmin();
 
             await OfferService.MigratePaymentInformationInOffers();
+
+            return Ok();
+        }
+
+        [HttpPost("migrate/merchant-addresses")]
+        [Authorize]
+        public async Task<ActionResult> MigrateMerchantAddresses() {
+            await VerifyUserIsAdmin();
+
+            var session = await CreateMongoSession();
+            await session.WithTransactionAsync<object>(async (session, token) => {
+                await MerchantService.MigrateToNewAddressBlock(session);
+                return null;
+            });
 
             return Ok();
         }

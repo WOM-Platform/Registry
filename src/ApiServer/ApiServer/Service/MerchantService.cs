@@ -147,6 +147,35 @@ namespace WomPlatform.Web.Api.Service {
             return MerchantCollection.DeleteOneAsync(Builders<Merchant>.Filter.Eq(m => m.Id, merchantId));
         }
 
+        public async Task MigrateToNewAddressBlock(IClientSessionHandle session) {
+            List<WriteModel<Merchant>> writes = new();
+
+            var merchants = await MerchantCollection.Find(Builders<Merchant>.Filter.Empty).ToListAsync();
+            foreach(var m in merchants) {
+                m.Address = new AddressBlock {
+                    StreetName = m.LegacyAddress,
+                    ZipCode = m.ZipCode,
+                    City = m.City,
+                    Country = m.Country,
+                };
+                m.LegacyAddress = null;
+                m.ZipCode = null;
+                m.City = null;
+                m.Country = null;
+
+                Logger.LogInformation("Upgrading merchant {0}", m.Id);
+
+                writes.Add(
+                    new ReplaceOneModel<Merchant>(Builders<Merchant>.Filter.Eq(m => m.Id, m.Id), m)
+                );
+            }
+
+            Logger.LogDebug("Performing bulk updates");
+            await MerchantCollection.BulkWriteAsync(writes);
+
+            Logger.LogInformation("Merchant migration to new address block");
+        }
+
     }
 
 }

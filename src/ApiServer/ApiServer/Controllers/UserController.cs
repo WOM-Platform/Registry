@@ -139,7 +139,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Name = d.Item1.Name,
                     FiscalCode = d.Item1.FiscalCode,
                     PrimaryActivity = d.Item1.PrimaryActivityType,
-                    Address = d.Item1.Address,
+                    Address = d.Item1.LegacyAddress,
                     ZipCode = d.Item1.ZipCode,
                     City = d.Item1.City,
                     Country = d.Item1.Country,

@@ -41,12 +41,15 @@ namespace WomPlatform.Web.Api.Controllers {
             MerchantActivityType PrimaryActivity,
             [Required]
             string Address,
+            string StreetNumber,
             [Required]
             string ZipCode,
             [Required]
             string City,
             [Required]
             string Country,
+            string FormattedAddress,
+            string GoogleMapsPlaceId,
             string Description,
             [Url]
             string Url
@@ -77,10 +80,15 @@ namespace WomPlatform.Web.Api.Controllers {
                     Name = input.Name,
                     FiscalCode = input.FiscalCode.ToUpperInvariant(),
                     PrimaryActivityType = input.PrimaryActivity,
-                    Address = input.Address,
-                    ZipCode = input.ZipCode,
-                    City = input.City,
-                    Country = input.Country,
+                    Address = new AddressBlock {
+                        StreetName = input.Address,
+                        StreetNumber = input.StreetNumber,
+                        ZipCode = input.ZipCode,
+                        City = input.City,
+                        Country = input.Country,
+                        FormattedAddress = input.FormattedAddress,
+                        GoogleMapsPlaceId = input.GoogleMapsPlaceId,
+                    },
                     Description = input.Description,
                     WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
@@ -138,9 +146,12 @@ namespace WomPlatform.Web.Api.Controllers {
             string Name,
             MerchantActivityType? PrimaryActivity,
             string Address,
+            string StreetNumber,
             string ZipCode,
             string City,
             string Country,
+            string FormattedAddress,
+            string GoogleMapsPlaceId,
             string Description,
             [Url]
             string Url,
@@ -174,18 +185,32 @@ namespace WomPlatform.Web.Api.Controllers {
                 if(input.PrimaryActivity.HasValue) {
                     existingMerchant.PrimaryActivityType = input.PrimaryActivity.Value;
                 }
+
+                if(existingMerchant.Address == null) {
+                    existingMerchant.Address = new AddressBlock();
+                }
                 if(input.Address != null) {
-                    existingMerchant.Address = input.Address;
+                    existingMerchant.Address.StreetName = input.Address;
+                }
+                if(input.StreetNumber != null) {
+                    existingMerchant.Address.StreetNumber = input.StreetNumber;
                 }
                 if(input.ZipCode != null) {
-                    existingMerchant.ZipCode = input.ZipCode;
+                    existingMerchant.Address.ZipCode = input.ZipCode;
                 }
                 if(input.City != null) {
-                    existingMerchant.City = input.City;
+                    existingMerchant.Address.City = input.City;
                 }
                 if(input.Country != null) {
-                    existingMerchant.Country = input.Country;
+                    existingMerchant.Address.Country = input.Country;
                 }
+                if(input.FormattedAddress != null) {
+                    existingMerchant.Address.FormattedAddress = input.FormattedAddress;
+                }
+                if(input.GoogleMapsPlaceId != null) {
+                    existingMerchant.Address.GoogleMapsPlaceId = input.GoogleMapsPlaceId;
+                }
+
                 if(input.Description != null) {
                     existingMerchant.Description = input.Description;
                 }

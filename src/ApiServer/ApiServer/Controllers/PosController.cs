@@ -58,6 +58,15 @@ namespace WomPlatform.Web.Api.Controllers {
                     Position = (input.Latitude.HasValue && input.Longitude.HasValue) ?
                         new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(input.Longitude.Value, input.Latitude.Value)) :
                         null,
+                    Address = new AddressBlock {
+                        StreetName = input.Address?.StreetName,
+                        StreetNumber = input.Address?.StreetNumber,
+                        ZipCode = input.Address?.ZipCode,
+                        City = input.Address?.City,
+                        Country = input.Address?.Country,
+                        FormattedAddress = input.Address?.FormattedAddress,
+                        GoogleMapsPlaceId = input.Address?.GoogleMapsPlaceId,
+                    },
                     Url = string.IsNullOrWhiteSpace(input.Url) ? null : input.Url,
                     PrivateKey = posKeys.Private.ToPemString(),
                     PublicKey = posKeys.Public.ToPemString(),

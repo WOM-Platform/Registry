@@ -15,6 +15,8 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? Longitude { get; init; }
 
+        public AddressInformation Address { get; init; }
+
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Url { get; init; }
 
@@ -38,6 +40,15 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
                 Description = pos.Description,
                 Latitude = pos.Position?.Coordinates.Latitude,
                 Longitude = pos.Position?.Coordinates.Longitude,
+                Address = new AddressInformation {
+                    StreetName = pos.Address?.StreetName,
+                    StreetNumber = pos.Address?.StreetNumber,
+                    ZipCode = pos.Address?.ZipCode,
+                    City = pos.Address?.City,
+                    Country = pos.Address?.Country,
+                    FormattedAddress = pos.Address?.FormattedAddress,
+                    GoogleMapsPlaceId = pos.Address?.GoogleMapsPlaceId,
+                },
                 Cover = posCoverPicture,
                 Url = pos.Url,
                 CreatedOn = pos.CreatedOn,
