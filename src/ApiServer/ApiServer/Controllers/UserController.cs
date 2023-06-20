@@ -134,23 +134,12 @@ namespace WomPlatform.Web.Api.Controllers {
                 Name = user.Name,
                 Surname = user.Surname,
                 Verified = user.VerificationToken == null,
-                Merchants = taskMerchants.Result.Select(d => new MerchantAuthOutput {
-                    Id = d.Item1.Id.ToString(),
-                    Name = d.Item1.Name,
-                    FiscalCode = d.Item1.FiscalCode,
-                    PrimaryActivity = d.Item1.PrimaryActivityType,
-                    Address = d.Item1.LegacyAddress,
-                    ZipCode = d.Item1.ZipCode,
-                    City = d.Item1.City,
-                    Country = d.Item1.Country,
-                    Description = d.Item1.Description,
-                    Url = d.Item1.WebsiteUrl,
-                    Pos = (from p in d.Item2
-                           let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
-                           select p.ToAuthOutput(pictureOutput)).ToArray(),
-                    Enabled = d.Item1.Enabled,
-                    Access = d.Item1.Access.Get(id).Role,
-                }).ToArray(),
+                Merchants = taskMerchants.Result.Select(d => d.Item1.ToAuthOutput(
+                    (from p in d.Item2
+                     let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
+                     select p.ToAuthOutput(pictureOutput)).ToArray(),
+                    d.Item1.Access.Get(user.Id).Role
+                )).ToArray(),
                 Sources = taskSources.Result.Select(s => s.ToLoginV2Output(
                     cg => cg?.ToOutput(PicturesService.GetPictureOutput(cg.LogoPath, cg.LogoBlurHash)),
                     taskAims.Result
