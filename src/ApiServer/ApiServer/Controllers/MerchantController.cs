@@ -66,9 +66,17 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
+            Logger.LogInformation("Attempting to register new merchant {0} with fiscal code {1}", input.Name, input.FiscalCode);
+
             var existingMerchant = await MerchantService.GetMerchantByFiscalCode(input.FiscalCode);
             if(existingMerchant != null) {
-                return this.ProblemParameter("Supplied fiscal code is already registered");
+                Logger.LogInformation("Fiscal code {0} already used for merchant {1}", input.FiscalCode, existingMerchant.Id);
+
+                return Problem(
+                    statusCode: StatusCodes.Status422UnprocessableEntity,
+                    title: "Supplied fiscal code is already registered by merchant",
+                    type: "https://wom.social/api/problems/fiscal-code-already-in-use-by-merchant"
+                );
             }
 
             if(!User.GetUserId(out var loggedUserId)) {
@@ -101,6 +109,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Enabled = true // All merchants are automatically enabled for now
                 };
                 await MerchantService.CreateMerchant(merchant);
+
+                Logger.LogInformation("New merchant created {0} by user {1}", merchant.Id, loggedUserId);
 
                 return CreatedAtAction(
                     nameof(GetInformation),
