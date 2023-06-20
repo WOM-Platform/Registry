@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +26,8 @@ namespace WomPlatform.Web.Api.Controllers {
             ILogger<MerchantController> logger)
         : base(serviceProvider, logger) {
         }
+
+        private static readonly Regex AllZerosRegex = new Regex("^0+$", RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Merchant registration payload.
@@ -67,6 +70,16 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
             Logger.LogInformation("Attempting to register new merchant {0} with fiscal code {1}", input.Name, input.FiscalCode);
+
+            if(AllZerosRegex.IsMatch(input.FiscalCode)) {
+                Logger.LogInformation("Fiscal code {0} is not valid", input.FiscalCode);
+
+                return Problem(
+                    statusCode: StatusCodes.Status422UnprocessableEntity,
+                    title: "Supplied fiscal code is not valid",
+                    type: "https://wom.social/api/problems/fiscal-code-not-valid"
+                );
+            }
 
             var existingMerchant = await MerchantService.GetMerchantByFiscalCode(input.FiscalCode);
             if(existingMerchant != null) {
