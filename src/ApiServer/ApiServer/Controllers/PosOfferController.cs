@@ -57,6 +57,8 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId posId,
             [FromBody] OfferRegistrationInput input
         ) {
+            Logger.LogInformation("Adding new offer “{0}” for POS {1}", input.Title, posId);
+
             (var merchant, var pos) = await VerifyUserIsAdminOfPos(posId);
 
             try {
