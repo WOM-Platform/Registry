@@ -10,7 +10,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/migration")]
     [OperationsTags("Voucher migration")]
-    // [RequireHttpsInProd] - apply in future
+    [RequireHttpsInProd]
     public class MigrationController : BaseRegistryController {
 
         private readonly BackupService _backupService;

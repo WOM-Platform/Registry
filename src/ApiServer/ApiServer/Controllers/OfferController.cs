@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
@@ -7,8 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
-using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Offers;
 using WomPlatform.Web.Api.Service;
@@ -17,7 +14,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/offer")]
     [OperationsTags("Offers")]
-    // [RequireHttpsInProd] - apply in future
+    [RequireHttpsInProd]
     public class OfferController : BaseRegistryController {
 
         public OfferController(

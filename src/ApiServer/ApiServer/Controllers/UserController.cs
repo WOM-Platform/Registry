@@ -22,8 +22,8 @@ using WomPlatform.Web.Api.Service;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/user")]
-    [RequireHttpsInProd]
     [OperationsTags("User and session management")]
+    [RequireHttpsInProd]
     public class UserController : BaseRegistryController {
 
         private readonly MailComposer _composer;

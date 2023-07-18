@@ -17,7 +17,6 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 namespace WomPlatform.Web.Api.Controllers {
 
     [Route("render")]
-    [RequireHttpsInProd]
     public class RenderController : BaseRegistryController {
 
         public RenderController(

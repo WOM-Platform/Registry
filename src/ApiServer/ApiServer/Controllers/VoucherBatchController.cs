@@ -1,14 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.InputModels.Generation;
 using WomPlatform.Web.Api.Service;
 
@@ -16,6 +10,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
     [Route("v1/voucher/batch")]
     [OperationsTags("Voucher generation")]
+    [RequireHttpsInProd]
     public class VoucherBatchController : BaseRegistryController {
 
         private readonly MailComposer _composer;
