@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Mail;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
@@ -26,10 +28,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [RequireHttpsInProd]
     public class UserController : BaseRegistryController {
 
-        private readonly MailComposer _composer;
+        private readonly MailerComposer _composer;
 
         public UserController(
-            MailComposer composer,
+            MailerComposer composer,
             IServiceProvider serviceProvider,
             ILogger<UserController> logger)
         : base(serviceProvider, logger) {
@@ -285,7 +287,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserRequestPasswordResetInput(string Email);
+        public record UserRequestPasswordResetInput([Required] string Email);
 
         /// <summary>
         /// Requests a password reset for an existing user.
@@ -295,7 +297,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         public async Task<IActionResult> RequestPasswordReset(
-            UserRequestPasswordResetInput input
+            [Required] UserRequestPasswordResetInput input
         ) {
             var user = await UserService.GetUserByEmail(input.Email);
             if(user != null) {
@@ -310,7 +312,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserExecutePasswordResetInput(string Token, string Password);
+        public record UserExecutePasswordResetInput([Required] string Token, [Required] string Password);
 
         /// <summary>
         /// Performs a password reset for an existing user.
@@ -324,7 +326,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordReset(
             [FromRoute] ObjectId id,
-            UserExecutePasswordResetInput input
+            [Required] UserExecutePasswordResetInput input
         ) {
             var user = await UserService.GetUserById(id);
             if(user == null) {

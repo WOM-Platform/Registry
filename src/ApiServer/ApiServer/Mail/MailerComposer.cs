@@ -5,28 +5,27 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
-namespace WomPlatform.Web.Api {
+namespace WomPlatform.Web.Api.Mail {
 
-    public class MailComposer {
+    public class MailerComposer {
 
         private readonly IMailerQueue _queue;
         private readonly LinkGenerator _linkGenerator;
         private readonly IConfiguration _configuration;
-        private readonly ILogger<MailComposer> _logger;
+        private readonly ILogger<MailerComposer> _logger;
 
         private readonly MailAddress _mailFrom;
         private readonly MailAddress _mailBcc = null;
 
-        public MailComposer(
+        public MailerComposer(
             IMailerQueue queue,
             LinkGenerator linkGenerator,
             IConfiguration configuration,
-            ILogger<MailComposer> logger
+            ILogger<MailerComposer> logger
         ) {
             _queue = queue;
             _linkGenerator = linkGenerator;
@@ -143,18 +142,7 @@ namespace WomPlatform.Web.Api {
                 msg.Bcc.Add(_mailBcc);
             }
 
-            _queue.Enqueue(msg);
-        }
-
-    }
-
-    public static class MailComposerExtensions {
-
-        public static IServiceCollection AddMailComposer(this IServiceCollection services) {
-            services.AddSingleton<IMailerQueue, MailerQueue>();
-            services.AddHostedService<MailerService>();
-            services.AddSingleton<MailComposer>();
-            return services;
+            _queue.Schedule(msg);
         }
 
     }

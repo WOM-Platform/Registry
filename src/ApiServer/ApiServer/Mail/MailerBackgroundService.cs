@@ -1,21 +1,21 @@
-﻿using System;
+﻿using System.Net.Mail;
 using System.Net;
-using System.Net.Mail;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace WomPlatform.Web.Api {
-
-    public class MailerService : BackgroundService {
+namespace WomPlatform.Web.Api.Mail {
+    public class MailerBackgroundService : BackgroundService {
 
         private readonly IMailerQueue _queue;
-        private readonly ILogger<MailerService> _logger;
+        private readonly ILogger<MailerBackgroundService> _logger;
 
-        public MailerService(
+        public MailerBackgroundService(
             IMailerQueue queue,
-            ILogger<MailerService> logger) {
+            ILogger<MailerBackgroundService> logger
+        ) {
             _queue = queue;
             _logger = logger;
         }
@@ -38,23 +38,15 @@ namespace WomPlatform.Web.Api {
 
             // Start e-mail processing loop
             while(!stoppingToken.IsCancellationRequested) {
-                var message = await _queue.DequeueAsync(stoppingToken);
+                await _queue.Process(async (message) => {
+                    await client.SendMailAsync(message, stoppingToken);
+                    return true;
+                }, stoppingToken);
 
-                _logger.LogInformation("Sending mail to {0} '{1}'", message.To, message.Subject);
-
-                try {
-                    await client.SendMailAsync(message);
-                    _logger.LogInformation("Mail to {0} sent", message.To);
-
-                    // Wait 3 seconds to throttle delivery
-                    await Task.Delay(3000);
-                }
-                catch(Exception ex) {
-                    _logger.LogError(ex, "Failed to send email to {0}", message.To);
-                }
+                // Wait 3 seconds to throttle delivery
+                await Task.Delay(3000, stoppingToken);
             }
         }
 
     }
-
 }

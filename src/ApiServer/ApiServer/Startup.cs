@@ -28,6 +28,7 @@ using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.Conversion;
+using WomPlatform.Web.Api.Mail;
 using WomPlatform.Web.Api.Service;
 using static System.Net.Mime.MediaTypeNames;
 

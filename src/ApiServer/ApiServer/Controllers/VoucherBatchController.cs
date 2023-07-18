@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Web.Api.InputModels.Generation;
+using WomPlatform.Web.Api.Mail;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -13,10 +14,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [RequireHttpsInProd]
     public class VoucherBatchController : BaseRegistryController {
 
-        private readonly MailComposer _composer;
+        private readonly MailerComposer _composer;
 
         public VoucherBatchController(
-            MailComposer composer,
+            MailerComposer composer,
             IServiceProvider serviceProvider,
             ILogger<VoucherBatchController> logger)
         : base(serviceProvider, logger) {
