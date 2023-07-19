@@ -14,7 +14,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
-using WomPlatform.Web.Api.Mail;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
@@ -28,14 +27,10 @@ namespace WomPlatform.Web.Api.Controllers {
     [RequireHttpsInProd]
     public class UserController : BaseRegistryController {
 
-        private readonly MailerComposer _composer;
-
         public UserController(
-            MailerComposer composer,
             IServiceProvider serviceProvider,
             ILogger<UserController> logger)
         : base(serviceProvider, logger) {
-            _composer = composer;
         }
 
         /// <summary>
@@ -67,8 +62,6 @@ namespace WomPlatform.Web.Api.Controllers {
                     var user = await UserService.CreateUser(session, input.Email, input.Name, input.Surname, input.Password);
                     Logger.LogInformation("New user {0} created for {1}", user.Id, user.Email);
 
-                    _composer.SendVerificationMail(user);
-
                     return user;
                 });
 
@@ -81,7 +74,8 @@ namespace WomPlatform.Web.Api.Controllers {
                         Id = user.Id,
                         Email = user.Email,
                         Name = user.Name,
-                        Surname = user.Surname
+                        Surname = user.Surname,
+                        Verified = user.VerificationToken == null,
                     }
                 );
             }
@@ -92,42 +86,26 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
-        /// Retrieves information about an existing user.
+        /// Retrieves detailed information about the currently existing user.
         /// </summary>
         [HttpGet("me")]
         [Authorize]
         [ProducesResponseType(typeof(UserDetailedOutput), StatusCodes.Status200OK)]
-        public Task<ActionResult> GetOwnInformation() {
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetOwnInformation() {
             if(!User.GetUserId(out var myself)) {
-                return Task.FromResult<ActionResult>(Forbid());
-            }
-
-            return GetInformation(myself);
-        }
-
-        /// <summary>
-        /// Retrieves information about an existing user.
-        /// </summary>
-        /// <param name="id">User ID.</param>
-        [HttpGet("{id}")]
-        [Authorize]
-        [ProducesResponseType(typeof(UserDetailedOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GetInformation(
-            [FromRoute] ObjectId id
-        ) {
-            if(!User.UserIdEquals(id)) {
                 return Forbid();
             }
 
-            var user = await UserService.GetUserById(id);
+            var user = await UserService.GetUserById(myself);
             if(user == null) {
                 return NotFound();
             }
 
             var taskAims = AimService.GetRootAimCodes();
-            var taskSources = SourceService.GetSourcesByUser(id);
-            var taskMerchants = PosService.GetMerchantsAndPosByUser(id);
+            var taskSources = SourceService.GetSourcesByUser(myself);
+            var taskMerchants = PosService.GetMerchantsAndPosByUser(myself);
             await Task.WhenAll(taskAims, taskSources, taskMerchants);
 
             return Ok(new UserDetailedOutput {
@@ -149,6 +127,30 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
+        /// <summary>
+        /// Retrieves information about an existing user.
+        /// </summary>
+        /// <param name="id">User ID.</param>
+        [HttpGet("{id}")]
+        [Authorize]
+        [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetInformation(
+            [FromRoute] ObjectId id
+        ) {
+            if(!User.GetUserId(out var myself)) {
+                return Forbid();
+            }
+
+            var user = await UserService.GetUserById(id);
+            if(user == null) {
+                return NotFound();
+            }
+
+            return Ok(user.ToOutput(id != myself));
+        }
+
         public record UserUpdateInformationInput(string Email, string Name, string Surname, string Password);
 
         /// <summary>
@@ -158,9 +160,10 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="input">User information payload.</param>
         [HttpPut("{id}")]
         [Authorize]
-        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateInformation(
             [FromRoute] ObjectId id,
             UserUpdateInformationInput input
@@ -179,26 +182,14 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                if(input.Name != null) {
-                    existingUser.Name = input.Name;
-                }
-                if(input.Surname != null) {
-                    existingUser.Surname = input.Surname;
-                }
-                if(input.Password != null) {
-                    existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
-                }
-                existingUser.LastUpdate = DateTime.UtcNow;
+                var updatedUser = await UserService.UpdateUser(id, name: input.Name, surname: input.Surname, password: input.Password);
 
-                await UserService.ReplaceUser(existingUser);
+                return Ok(updatedUser.ToOutput(false));
             }
             catch(Exception) {
                 Logger.LogError("Failed to update user {0}", id);
                 throw;
             }
-
-            // TODO: should return user information
-            return Ok();
         }
 
         /// <summary>
@@ -221,9 +212,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            if(user.VerificationToken != null) {
-                _composer.SendVerificationMail(user);
-            }
+            UserService.RequestVerificationEmail(user);
 
             return Ok();
         }
@@ -238,14 +227,12 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> RequestVerificationByEmail(
             [FromBody] RequestVerificationEmail payload
         ) {
-            var user = await UserService.GetUserByEmail(payload.Email);
+            var user = await UserService.GetUserByEmail(payload?.Email);
             if(user == null) {
                 return Ok();
             }
 
-            if(user.VerificationToken != null) {
-                _composer.SendVerificationMail(user);
-            }
+            UserService.RequestVerificationEmail(user);
 
             return Ok();
         }
@@ -268,21 +255,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id,
             [FromQuery] UserVerifyInput input
         ) {
-            var user = await UserService.GetUserById(id);
-            if(user == null) {
-                return NotFound();
-            }
-
-            if(user.VerificationToken == null) {
-                return Ok();
-            }
-
-            if(user.VerificationToken != input.Token) {
-                return this.ProblemParameter("Token not valid");
-            }
-
-            user.VerificationToken = null;
-            await UserService.ReplaceUser(user);
+            await UserService.PerformVerification(id, input.Token);
 
             return Ok();
         }
@@ -296,18 +269,11 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("password-reset")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RequestPasswordReset(
             [Required] UserRequestPasswordResetInput input
         ) {
-            var user = await UserService.GetUserByEmail(input.Email);
-            if(user != null) {
-                if(user.PasswordResetToken == null) {
-                    user.PasswordResetToken = new Random().GenerateReadableCode(8);
-                    await UserService.ReplaceUser(user);
-                }
-
-                _composer.SendPasswordResetMail(user);
-            }
+            await UserService.RequestPasswordReset(input.Email);
 
             return Ok();
         }
@@ -317,33 +283,22 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Performs a password reset for an existing user.
         /// </summary>
-        /// <param name="id">User ID.</param>
+        /// <param name="userId">User ID.</param>
         /// <param name="input">Password reset payload.</param>
-        [HttpPost("{id}/password-reset")]
+        [HttpPost("{userId}/password-reset")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordReset(
-            [FromRoute] ObjectId id,
+            [FromRoute] ObjectId userId,
             [Required] UserExecutePasswordResetInput input
         ) {
-            var user = await UserService.GetUserById(id);
-            if(user == null) {
-                return NotFound();
-            }
-
-            if(user.PasswordResetToken != input.Token) {
-                return NotFound();
-            }
-
             if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
 
-            user.PasswordResetToken = null;
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
-            await UserService.ReplaceUser(user);
+            await UserService.PerformPasswordReset(userId, input.Token, input.Password);
 
             return Ok();
         }
@@ -370,7 +325,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogTrace("User {0} does not exist", input.Email);
 
                 // Delay response to throttle
-                await Task.Delay(1050);
+                await Task.Delay(1000);
                 return null;
             }
 
@@ -450,7 +405,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId id
         ) {
             if(!User.UserIdEquals(id)) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only user can delete own user profile");
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only user can delete their own user profile");
             }
 
             var existingUser = await UserService.GetUserById(id);

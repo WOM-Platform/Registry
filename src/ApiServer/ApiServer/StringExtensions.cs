@@ -89,6 +89,43 @@ namespace WomPlatform.Web.Api {
             return spacesFixed.ToLowerInvariant().Trim('-');
         }
 
+        public static string ConcealEmail(this string s) {
+            Span<char> concealed = stackalloc char[s.Length];
+
+            int posAt = s.LastIndexOf('@');
+            int posDot = s.LastIndexOf('.');
+            bool userPartiallyConcealed = posAt >= 3;
+            bool domainPartiallyConcealed = (posDot - posAt - 1) > 2;
+
+            for(int i = 0; i < s.Length; ++i) {
+                if(i < posAt) {
+                    if(userPartiallyConcealed && (i == 0 || i >= posAt - 1)) {
+                        concealed[i] = s[i];
+                    }
+                    else {
+                        concealed[i] = '*';
+                    }
+                }
+                else if(i > posAt && i < posDot) {
+                    if(domainPartiallyConcealed && i == posAt + 1) {
+                        concealed[i] = s[i];
+                    }
+                    else {
+                        concealed[i] = '*';
+                    }
+                }
+                else {
+                    concealed[i] = s[i];
+                }
+            }
+
+            return new string(concealed);
+        }
+
+        public static string Conceal(this string s) {
+            return new string('*', s.Length);
+        }
+
     }
 
 }

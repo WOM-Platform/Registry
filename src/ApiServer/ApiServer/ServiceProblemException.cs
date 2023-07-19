@@ -95,6 +95,12 @@ namespace WomPlatform.Web.Api {
             type: "https://wom.social/api/problems/user-profile-not-found"
         );
 
+        public readonly static ServiceProblemException UserNotFound = new(
+            "User not found",
+            StatusCodes.Status404NotFound,
+            type: "https://wom.social/api/problems/user-not-found"
+        );
+
         public readonly static ServiceProblemException UserIsNotAdmin = new(
             "User is not administrator",
             StatusCodes.Status403Forbidden,
@@ -141,6 +147,12 @@ namespace WomPlatform.Web.Api {
             "Merchant not found",
             StatusCodes.Status404NotFound,
             type: "https://wom.social/api/problems/merchant-not-found"
+        );
+
+        public readonly static ServiceProblemException TokenNotValid = new(
+            "Token not valid",
+            StatusCodes.Status422UnprocessableEntity,
+            type: "https://wom.social/api/problems/token-not-valid"
         );
 
     }

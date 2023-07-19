@@ -219,11 +219,11 @@ namespace ApiTester {
             });
 
             var status = await _pos.GetPaymentStatus(otcPay);
-            Assert.AreEqual(false, status.Persistent);
-            Assert.AreEqual(true, status.HasBeenPerformed);
-            Assert.AreEqual(1, status.Confirmations.Count);
-            Assert.LessOrEqual(status.Confirmations[0].PerformedAt, DateTime.UtcNow);
-            Assert.GreaterOrEqual(status.Confirmations[0].PerformedAt, DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(5)));
+            Assert.AreEqual(false, status.Response.Persistent);
+            Assert.AreEqual(true, status.Response.HasBeenPerformed);
+            Assert.AreEqual(1, status.Response.Confirmations.Count);
+            Assert.LessOrEqual(status.Response.Confirmations[0].PerformedAt, DateTime.UtcNow);
+            Assert.GreaterOrEqual(status.Response.Confirmations[0].PerformedAt, DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(5)));
         }
 
         [Test]

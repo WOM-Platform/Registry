@@ -13,5 +13,7 @@ namespace WomPlatform.Web.Api.OutputModels.User {
         public string Name { get; set; }
 
         public string Surname { get; set; }
+
+        public bool Verified { get; set; }
     }
 }

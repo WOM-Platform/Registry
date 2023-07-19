@@ -1,22 +1,26 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Newtonsoft.Json.Linq;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Mail;
 
 namespace WomPlatform.Web.Api.Service {
     public class UserService : BaseService {
 
         private readonly MongoClient _client;
+        private readonly MailerComposer _composer;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
             MongoClient client,
+            MailerComposer composer,
             ILogger<UserService> logger
         ) : base(client, logger) {
             _client = client;
+            _composer = composer;
             _logger = logger;
         }
 
@@ -26,6 +30,10 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public Task<User> GetUserByEmail(string email) {
+            if(string.IsNullOrWhiteSpace(email)) {
+                throw new ArgumentNullException(nameof(email));
+            }
+
             var filter = Builders<User>.Filter.Eq(u => u.Email, email.Trim());
             var options = new FindOptions {
                 Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false)
@@ -33,7 +41,8 @@ namespace WomPlatform.Web.Api.Service {
             return UserCollection.Find(filter, options).SingleOrDefaultAsync();
         }
 
-        public async Task<User> CreateUser(IClientSessionHandle session,
+        public async Task<User> CreateUser(
+            IClientSessionHandle session,
             string email, string name, string surname, string password,
             bool isVerified = false,
             PlatformRole platformRole = PlatformRole.User
@@ -56,32 +65,117 @@ namespace WomPlatform.Web.Api.Service {
             };
             await UserCollection.InsertOneAsync(session, user);
 
+            _composer.SendVerificationMail(user);
+
             return user;
         }
 
-        [Obsolete]
-        public Task CreateUser(User user) {
-            return UserCollection.InsertOneAsync(user);
-        }
-
-        public Task ReplaceUser(User user) {
-            var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
-            return UserCollection.ReplaceOneAsync(filter, user);
-        }
-
-        public Task UpdateUser(ObjectId userId,
+        public Task<User> UpdateUser(
+            ObjectId userId,
             string name = null,
             string surname = null,
-            string email = null
+            string email = null,
+            string password = null
         ) {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
 
             var chain = Builders<User>.Update.Chain();
-            if(name != null) chain.Set(u => u.Name, name);
-            if(surname != null) chain.Set(u => u.Surname, surname);
-            if(email != null) chain.Set(u => u.Email, email);
+            if(name != null)
+                chain.Set(u => u.Name, name);
+            if(surname != null)
+                chain.Set(u => u.Surname, surname);
+            if(email != null)
+                chain.Set(u => u.Email, email);
+            if(password != null)
+                chain.Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(password));
+            chain.Set(u => u.LastUpdate, DateTime.UtcNow);
 
-            return UserCollection.UpdateOneAsync(filter, chain.End());
+            return UserCollection.FindOneAndUpdateAsync(filter, chain.End(), new FindOneAndUpdateOptions<User, User> { ReturnDocument = ReturnDocument.After });
+        }
+
+        /// <summary>
+        /// Requests a new verification e-mail (will be sent if the user is not already verified).
+        /// </summary>
+        public bool RequestVerificationEmail(User user) {
+            if(user.VerificationToken != null) {
+                _composer.SendVerificationMail(user);
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to verify a user.
+        /// </summary>
+        /// <param name="userId">User ID to match.</param>
+        /// <param name="verificationToken">Verification token to match.</param>
+        public async Task PerformVerification(ObjectId userId, string verificationToken) {
+            var user = await UserCollection.Find(Builders<User>.Filter.Eq(u => u.Id, userId)).SingleOrDefaultAsync();
+            if(user == null) {
+                throw ServiceProblemException.UserNotFound;
+            }
+            if(user.VerificationToken == null) {
+                return;
+            }
+
+            if(!user.VerificationToken.Equals(verificationToken, StringComparison.InvariantCultureIgnoreCase)) {
+                throw ServiceProblemException.TokenNotValid;
+            }
+
+            var results = await UserCollection.UpdateOneAsync(
+                Builders<User>.Filter.Eq(u => u.Id, userId),
+                Builders<User>.Update.Set(u => u.VerificationToken, null)
+            );
+            if(results.ModifiedCount != 1) {
+                throw new InvalidOperationException($"Set verification token operation modified {results.ModifiedCount} records instead of 1");
+            }
+        }
+
+        /// <summary>
+        /// Request a new password request token.
+        /// </summary>
+        public async Task<User> RequestPasswordReset(string email) {
+            var user = await UserCollection.FindOneAndUpdateAsync(
+                Builders<User>.Filter.Eq(u => u.Email, email.Trim()),
+                Builders<User>.Update.Set(u => u.PasswordResetToken, Random.GenerateReadableCode(8)),
+                new FindOneAndUpdateOptions<User> {
+                    Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false),
+                    ReturnDocument = ReturnDocument.After,
+                }
+            );
+            if(user == null) {
+                throw ServiceProblemException.UserNotFound;
+            }
+
+            _composer.SendPasswordResetMail(user);
+
+            return user;
+        }
+
+        /// <summary>
+        /// Attempts to perform a password reset.
+        /// </summary>
+        public async Task PerformPasswordReset(ObjectId userId, string passwordResetToken, string newPassword) {
+            var user = await UserCollection.Find(Builders<User>.Filter.Eq(u => u.Id, userId)).SingleOrDefaultAsync();
+            if(user == null) {
+                throw ServiceProblemException.UserNotFound;
+            }
+
+            if(!passwordResetToken.Equals(user.PasswordResetToken, StringComparison.InvariantCultureIgnoreCase)) {
+                throw ServiceProblemException.TokenNotValid;
+            }
+
+            var results = await UserCollection.UpdateOneAsync(
+                Builders<User>.Filter.Eq(u => u.Id, userId),
+                Builders<User>.Update
+                    .Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(newPassword))
+                    .Set(u => u.PasswordResetToken, null)
+            );
+            if(results.ModifiedCount != 1) {
+                throw new InvalidOperationException($"Set new password operation modified {results.ModifiedCount} records instead of 1");
+            }
         }
 
         public Task DeleteUser(ObjectId userId) {

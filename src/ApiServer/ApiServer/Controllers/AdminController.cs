@@ -122,7 +122,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 Email = user.Email,
                 GeneratedPassword = (password == null) ? generatedPassword : null,
                 Name = user.Name,
-                Surname = user.Surname
+                Surname = user.Surname,
+                Verified = user.VerificationToken == null,
             });
         }
 
