@@ -1,9 +1,8 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Net.Mail;
-using System.Threading.Tasks;
 using System.Threading;
-using System;
-using Amazon.Runtime.Internal.Util;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace WomPlatform.Web.Api.Mail {
