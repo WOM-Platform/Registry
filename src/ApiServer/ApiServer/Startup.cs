@@ -246,6 +246,7 @@ namespace WomPlatform.Web.Api {
                     RegisteredOn = DateTime.UtcNow
                 };
                 setupService.UpsertUserSync(devUserEntity);
+                logger.LogDebug("Admin user #{0} created for development/testing purposes", devUserEntity.Id);
 
                 var devSourceSection = devSection.GetSection("Source");
                 var devSourceId = devSourceSection["Id"];
@@ -256,7 +257,7 @@ namespace WomPlatform.Web.Api {
                     PublicKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub"),
                     AdministratorUserIds = new ObjectId[] { devUserEntity.Id },
                 });
-                logger.LogDebug("Configured development source #{0}", devSourceId);
+                logger.LogDebug("Development source #{0} configured", devSourceId);
 
                 var devPosSection = devSection.GetSection("Pos");
                 var devPosId = devPosSection["Id"];
@@ -267,7 +268,7 @@ namespace WomPlatform.Web.Api {
                     PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
                     PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub"),
                 });
-                logger.LogDebug("Configured development POS #{0}", devPosId);
+                logger.LogDebug("Development POS #{0} configured", devPosId);
             }
 
             app.UseStatusCodePages();

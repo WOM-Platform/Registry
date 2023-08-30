@@ -212,7 +212,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var amountString = $"{offer.Payment.Cost}W";
                 MeasureAndDraw(ctx, amountString, Color.Black, new RichTextOptions(amountFont) {
                     Origin = new Vector2(paddingAmount, backgroundImage.Height - paddingAmount - 130),
-                    TextRuns = (IReadOnlyList<RichTextRun>)(new[] { new TextRun { Start = amountString.Length - 1, End = amountString.Length, Font = descriptionFont } })
+                    TextRuns = new[] { new RichTextRun { Start = amountString.Length - 1, End = amountString.Length, Font = descriptionFont } }
                 });
             });
 
