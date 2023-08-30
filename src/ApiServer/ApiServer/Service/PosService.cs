@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -82,7 +83,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Gets list of Merchants and POS that the user controls.
         /// </summary>
-        public async Task<List<(Merchant, List<Pos>)>> GetMerchantsAndPosByUser(ObjectId userId) {
+        public async Task<IReadOnlyDictionary<Merchant, Pos[]>> GetMerchantsAndPosByUser(ObjectId userId) {
             // Get all merchants with control
             var merchants = await _merchantService.GetMerchantsWithUserControl(userId);
 
@@ -90,13 +91,10 @@ namespace WomPlatform.Web.Api.Service {
             var posFilter = Builders<Pos>.Filter.In(p => p.MerchantId, from m in merchants select m.Id);
             var pos = await PosCollection.Find(posFilter).ToListAsync();
 
-            // Build nested list
-            var ret = new List<(Merchant, List<Pos>)>(merchants.Count);
-            foreach(var merchant in merchants) {
-                ret.Add((merchant, pos.Where(p => p.MerchantId == merchant.Id).ToList()));
-            }
-
-            return ret;
+            return merchants.ToImmutableDictionary(
+                m => m,
+                m => pos.Where(p => p.MerchantId == m.Id).ToArray()
+            );
         }
 
         public Task<List<Pos>> GetPosByMerchant(ObjectId merchantId) {

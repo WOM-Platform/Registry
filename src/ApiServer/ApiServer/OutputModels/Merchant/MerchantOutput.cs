@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Text.Json.Serialization;
 using WomPlatform.Web.Api.OutputModels.Pos;
 
-namespace WomPlatform.Web.Api.OutputModels {
-
-    public record MerchantOutput {
+namespace WomPlatform.Web.Api.OutputModels.Merchant {
+    public class MerchantOutput {
         public string Id { get; init; }
 
         public string Name { get; init; }
@@ -36,14 +35,7 @@ namespace WomPlatform.Web.Api.OutputModels {
         public bool Enabled { get; init; }
     }
 
-    public record MerchantAuthOutput : MerchantOutput {
-        public PosAuthOutput[] Pos { get; init; }
-
-        public MerchantRole Access { get; init; }
-    }
-
-    public static class MerchantOutputHelpers {
-
+    public static class MerchantOutputExtensions {
         public static MerchantOutput ToOutput(this DatabaseDocumentModels.Merchant merchant) {
             return new MerchantOutput {
                 Id = merchant.Id.ToString(),
@@ -68,35 +60,5 @@ namespace WomPlatform.Web.Api.OutputModels {
                 Enabled = merchant.Enabled
             };
         }
-
-        public static MerchantAuthOutput ToAuthOutput(this DatabaseDocumentModels.Merchant merchant, PosAuthOutput[] posAuthOutputs, MerchantRole merchantAccess) {
-            return new MerchantAuthOutput {
-                Id = merchant.Id.ToString(),
-                Name = merchant.Name,
-                FiscalCode = merchant.FiscalCode,
-                PrimaryActivity = merchant.PrimaryActivityType,
-                Address = merchant.Address?.StreetName,
-                ZipCode = merchant.Address?.ZipCode,
-                City = merchant.Address?.City,
-                Country = merchant.Address?.Country,
-                AddressDetails = new AddressInformation {
-                    StreetName = merchant.Address?.StreetName,
-                    StreetNumber = merchant.Address?.StreetNumber,
-                    ZipCode = merchant.Address?.ZipCode,
-                    City = merchant.Address?.City,
-                    Country = merchant.Address?.Country,
-                    FormattedAddress = merchant.Address?.FormattedAddress,
-                    GoogleMapsPlaceId = merchant.Address?.GoogleMapsPlaceId,
-                },
-                Description = merchant.Description,
-                Url = merchant.WebsiteUrl,
-                Enabled = merchant.Enabled,
-
-                Pos = posAuthOutputs,
-                Access = merchantAccess,
-            };
-        }
-
     }
-
 }

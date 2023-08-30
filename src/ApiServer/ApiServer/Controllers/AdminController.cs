@@ -62,7 +62,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("generate/source")]
         [Obsolete]
         [Authorize]
-        [ProducesResponseType(typeof(SourceDetailsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(SourceAuthOutput), StatusCodes.Status200OK)]
         public async Task<ActionResult> GenerateNewSource(
             [FromQuery] [Required] [StringLength(64, MinimumLength = 3)] string name,
             [FromQuery] [Url] string url,
@@ -78,7 +78,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 locationIsFixed: (latitude.HasValue && longitude.HasValue)
             );
 
-            return Ok(source.ToDetailsOutput());
+            return Ok(new SourceAuthOutput(source));
         }
 
         [HttpPost("generate/user")]

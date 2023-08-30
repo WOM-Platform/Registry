@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Pos;
+using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -26,7 +27,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record AuthSourceLoginOutput(
-            SourceLoginOutput[] Sources
+            SourceAuthOutput[] Sources
         );
 
         /// <summary>
@@ -48,13 +49,7 @@ namespace WomPlatform.Web.Api.Controllers {
             Logger.LogInformation("User {0} has {1} source entries", userId, sources.Count);
 
             return Ok(new AuthSourceLoginOutput(
-                sources.Select(s => new SourceLoginOutput {
-                    Id = s.Id.ToString(),
-                    Name = s.Name,
-                    Url = s.Url,
-                    PrivateKey = s.PrivateKey,
-                    PublicKey = s.PublicKey
-                }).ToArray()
+                sources.Select(s => new SourceAuthOutput(s)).ToArray()
             ));
         }
 

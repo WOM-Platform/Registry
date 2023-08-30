@@ -15,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.OutputModels.User;
@@ -114,16 +115,18 @@ namespace WomPlatform.Web.Api.Controllers {
                 Name = user.Name,
                 Surname = user.Surname,
                 Verified = user.VerificationToken == null,
-                Merchants = taskMerchants.Result.Select(d => d.Item1.ToAuthOutput(
-                    (from p in d.Item2
-                     let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
-                     select p.ToAuthOutput(pictureOutput)).ToArray(),
-                    d.Item1.Access.Get(user.Id).Role
-                )).ToArray(),
-                Sources = taskSources.Result.Select(s => s.ToLoginV2Output(
-                    cg => cg?.ToOutput(PicturesService.GetPictureOutput(cg.LogoPath, cg.LogoBlurHash)),
-                    taskAims.Result
-                )).ToArray()
+                Merchants = (from m in taskMerchants.Result.Keys
+                             let pos = taskMerchants.Result[m]
+                             orderby m.Id
+                             select m.ToAuthOutput(
+                                 (from p in pos
+                                  let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
+                                  select p.ToAuthOutput(pictureOutput)).ToArray(),
+                                 m.Access.Get(myself).Role
+                             )).ToArray(),
+                Sources = (from s in taskSources.Result
+                           let customGeneratorPic = PicturesService.GetPictureOutput(s.CustomGenerator?.LogoPath, s.CustomGenerator?.LogoBlurHash)
+                           select new SourceAuthDetailsOutput(s, taskAims.Result, customGeneratorPic)).ToArray(),
             });
         }
 

@@ -10,6 +10,8 @@ using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Authentication;
+using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.Service;
@@ -30,14 +32,6 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(serviceProvider, logger) {
         }
 
-        public record AuthV2PosLoginOutput(
-            ObjectId Id,
-            string Name,
-            string Surname,
-            string Email,
-            MerchantAuthOutput[] Merchants
-        );
-
         /// <summary>
         /// Retrieves available WOM Merchants for the authenticated user.
         /// </summary>
@@ -45,10 +39,10 @@ namespace WomPlatform.Web.Api.Controllers {
         [Obsolete]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(AuthV2PosLoginOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(MerchantDashboardOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> PosLoginV2() {
-            Logger.LogDebug("POS login V2");
+        public async Task<IActionResult> MerchantLoginV2() {
+            Logger.LogDebug("Merchant login V2");
 
             if(!User.GetUserId(out var userId)) {
                 return Forbid();
@@ -63,27 +57,21 @@ namespace WomPlatform.Web.Api.Controllers {
             var data = await PosService.GetMerchantsAndPosByUser(userId);
             Logger.LogInformation("User {0} authenticated with access to {1} merchants", userId, data.Count);
 
-            return Ok(new AuthV2PosLoginOutput(
-                userData.Id,
-                userData.Name,
-                userData.Surname,
-                userData.Email,
-                data.Select(d => d.Item1.ToAuthOutput(
-                    (from p in d.Item2
-                     let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
-                     select p.ToAuthOutput(pictureOutput)).ToArray(),
-                    d.Item1.Access.Get(userId).Role
-                )).ToArray()
-            ));
+            return Ok(new MerchantDashboardOutput {
+                Name = userData.Name,
+                Surname = userData.Surname,
+                Email = userData.Email,
+                Merchants = (from m in data.Keys
+                             let pos = data[m]
+                             orderby m.Id
+                             select m.ToAuthOutput(
+                                 (from p in pos
+                                  let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
+                                  select p.ToAuthOutput(pictureOutput)).ToArray(),
+                                 m.Access.Get(userId).Role
+                             )).ToArray()
+            });
         }
-
-        public record AuthV2SourceLoginOutput(
-            ObjectId Id,
-            string Name,
-            string Surname,
-            string Email,
-            SourceLoginV2Output[] Sources
-        );
 
         /// <summary>
         /// Retrieves available WOM Merchants for the authenticated user.
@@ -92,7 +80,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Obsolete]
         [Authorize(Policy = Startup.SimpleAuthPolicy)]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(AuthV2SourceLoginOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(SourceDashboardOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> SourceLoginV2() {
             Logger.LogDebug("Source login V2");
 
@@ -106,16 +94,14 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var allAims = (from a in await AimService.GetRootAims() select a.Code).ToArray();
 
-            return Ok(new AuthV2SourceLoginOutput(
-                user.Id,
-                user.Name,
-                user.Surname,
-                user.Email,
-                sources.Select(s => s.ToLoginV2Output(
-                    cg => cg?.ToOutput(PicturesService.GetPictureOutput(cg.LogoPath, cg.LogoBlurHash)),
-                    allAims
-                )).ToArray()
-            ));
+            return Ok(new SourceDashboardOutput {
+                Name = user.Name,
+                Surname = user.Surname,
+                Email = user.Email,
+                Sources = (from s in sources
+                           let customGeneratorPic = PicturesService.GetPictureOutput(s.CustomGenerator?.LogoPath, s.CustomGenerator?.LogoBlurHash)
+                           select new SourceAuthDetailsOutput(s, allAims, customGeneratorPic)).ToArray(),
+            });
         }
 
         public record AuthV2CreateSourceApiKeyOutput(
@@ -169,43 +155,6 @@ namespace WomPlatform.Web.Api.Controllers {
                 kind,
                 apiKey.Key
             ));
-        }
-
-        /// <summary>
-        /// Retrieves the public key used by the WOM Registry.
-        /// </summary>
-        [HttpGet("key")]
-        [Produces("text/plain")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        public IActionResult GetPublicKey() {
-            return Ok(KeyManager.RegistryPublicKey.ToPemString());
-        }
-
-        public record GetAnonymousCredentialsOutput(
-            string PosId,
-            string PosPrivateKey
-        );
-
-        /// <summary>
-        /// Retrieves the auth information (ID and private key) used by the anonymous POS.
-        /// </summary>
-        [HttpGet("anonymous")]
-        [Produces("application/json")]
-        [ProducesResponseType(typeof(GetAnonymousCredentialsOutput), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAnonymousCredentials() {
-            var anonymousSection = Configuration.GetSection("AnonymousSetup");
-            var posId = anonymousSection["Id"];
-
-            if(!ObjectId.TryParse(posId, out var id)) {
-                return NotFound();
-            }
-
-            var pos = await PosService.GetPosById(id);
-            if(pos == null) {
-                return NotFound();
-            }
-
-            return Ok(new GetAnonymousCredentialsOutput(posId, pos.PrivateKey));
         }
 
         public record GetApiKeyCredentialsOutput(
@@ -274,6 +223,43 @@ namespace WomPlatform.Web.Api.Controllers {
                     source.Location.IsFixed
                 )
             ));
+        }
+
+        /// <summary>
+        /// Retrieves the public key used by the WOM Registry.
+        /// </summary>
+        [HttpGet("key")]
+        [Produces("text/plain")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public IActionResult GetPublicKey() {
+            return Ok(KeyManager.RegistryPublicKey.ToPemString());
+        }
+
+        public record GetAnonymousCredentialsOutput(
+            string PosId,
+            string PosPrivateKey
+        );
+
+        /// <summary>
+        /// Retrieves the auth information (ID and private key) used by the anonymous POS.
+        /// </summary>
+        [HttpGet("anonymous")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(GetAnonymousCredentialsOutput), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAnonymousCredentials() {
+            var anonymousSection = Configuration.GetSection("AnonymousSetup");
+            var posId = anonymousSection["Id"];
+
+            if(!ObjectId.TryParse(posId, out var id)) {
+                return NotFound();
+            }
+
+            var pos = await PosService.GetPosById(id);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            return Ok(new GetAnonymousCredentialsOutput(posId, pos.PrivateKey));
         }
 
     }

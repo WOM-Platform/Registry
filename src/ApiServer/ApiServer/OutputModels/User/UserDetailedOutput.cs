@@ -1,4 +1,6 @@
 ﻿using MongoDB.Bson;
+using WomPlatform.Web.Api.OutputModels.Merchant;
+using WomPlatform.Web.Api.OutputModels.Source;
 
 namespace WomPlatform.Web.Api.OutputModels.User {
     public class UserDetailedOutput {
@@ -14,6 +16,6 @@ namespace WomPlatform.Web.Api.OutputModels.User {
 
         public MerchantAuthOutput[] Merchants { get; set; }
 
-        public SourceLoginV2Output[] Sources { get; set; }
+        public SourceAuthDetailsOutput[] Sources { get; set; }
     }
 }

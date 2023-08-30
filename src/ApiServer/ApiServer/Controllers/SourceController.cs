@@ -16,6 +16,7 @@ using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.InputModels.Source;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Source;
+using WomPlatform.Web.Api.OutputModels.User;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -34,6 +35,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost]
         [Authorize]
         [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status200OK)]
         public async Task<ActionResult> CreateSource(
             [FromBody] CreateSourceInput input
         ) {
@@ -44,11 +46,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
             Logger.LogInformation("Source {0} created with ID {1}", input.Name, source.Id);
 
-            return Ok(source.ToOutput());
+            return Ok(new SourceOutput(source));
         }
 
         [HttpGet("{sourceId}")]
         [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status200OK)]
         public async Task<ActionResult> GetSource(
             [FromRoute] ObjectId sourceId
         ) {
@@ -57,7 +60,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            return Ok(source.ToOutput());
+            return Ok(new SourceOutput(source));
         }
 
         [HttpGet("generated/{sourceId}")]
