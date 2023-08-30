@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
@@ -99,36 +100,36 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        private (float Width, float Height) MeasureAndDraw(IImageProcessingContext ctx, string text, Color color, TextOptions textOptions) {
-            var measures = TextMeasurer.Measure(text, textOptions);
+        private (float Width, float Height) MeasureAndDraw(IImageProcessingContext ctx, string text, Color color, RichTextOptions textOptions) {
+            var measures = TextMeasurer.MeasureSize(text, textOptions);
             ctx.DrawText(textOptions, text, color);
 
             return (measures.Width, measures.Height);
         }
 
         private float DrawLeft(IImageProcessingContext ctx, Font font, string text, Color color, float imageWidth, float originHeight) {
-            var options = new TextOptions(font) {
+            var options = new RichTextOptions(font) {
                 TextAlignment = TextAlignment.Start,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 WrappingLength = imageWidth * (1 - PaddingTopSizeFraction - PaddingTopSizeFraction),
                 Origin = new Vector2(imageWidth * PaddingTopSizeFraction, originHeight),
             };
 
-            var measures = TextMeasurer.Measure(text, options);
+            var measures = TextMeasurer.MeasureSize(text, options);
             ctx.DrawText(options, text, color);
 
             return measures.Height;
         }
 
         private float DrawCenteredFromBottom(IImageProcessingContext ctx, Font font, string text, Color color, float imageWidth, float originHeight) {
-            var options = new TextOptions(font) {
+            var options = new RichTextOptions(font) {
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Origin = new Vector2(imageWidth / 2 , originHeight),
             };
 
             // Shift text up from bottom
-            var measures = TextMeasurer.Measure(text, options);
+            var measures = TextMeasurer.MeasureSize(text, options);
             options.Origin = new Vector2(imageWidth / 2, originHeight - measures.Height);
 
             ctx.DrawText(options, text, color);
@@ -137,14 +138,14 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         private (float Width, float Height) DrawLeftFromBottom(IImageProcessingContext ctx, Font font, string text, Color color, Vector2 origin) {
-            var options = new TextOptions(font) {
+            var options = new RichTextOptions(font) {
                 TextAlignment = TextAlignment.Start,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 Origin = origin,
             };
 
             // Shift text up from bottom
-            var measures = TextMeasurer.Measure(text, options);
+            var measures = TextMeasurer.MeasureSize(text, options);
             options.Origin = new Vector2(origin.X, origin.Y - measures.Height);
 
             ctx.DrawText(options, text, color);
@@ -190,7 +191,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var paddingBottom = backgroundImage.Height * PaddingBottomSizeFraction;
                 var paddingAmount = backgroundImage.Height * PaddingAmountSizeFraction;
 
-                (_, var titleHeight) = MeasureAndDraw(ctx, offer.Title, titleColor, new TextOptions(titleFont) {
+                (_, var titleHeight) = MeasureAndDraw(ctx, offer.Title, titleColor, new RichTextOptions(titleFont) {
                     Origin = new Vector2(paddingTop, paddingTop),
                     WrappingLength = backgroundImage.Width - (paddingTop * 2),
                 });
@@ -209,9 +210,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 DrawQrCode(ctx, qrCode, Color.White, Color.Black, new Vector2(qrCodeX, qrCodeY), new Vector2(qrCodeHeight, qrCodeHeight), QrCodePadding);
 
                 var amountString = $"{offer.Payment.Cost}W";
-                MeasureAndDraw(ctx, amountString, Color.Black, new TextOptions(amountFont) {
+                MeasureAndDraw(ctx, amountString, Color.Black, new RichTextOptions(amountFont) {
                     Origin = new Vector2(paddingAmount, backgroundImage.Height - paddingAmount - 130),
-                    TextRuns = new[] { new TextRun { Start = amountString.Length - 1, End = amountString.Length, Font = descriptionFont } }
+                    TextRuns = (IReadOnlyList<RichTextRun>)(new[] { new TextRun { Start = amountString.Length - 1, End = amountString.Length, Font = descriptionFont } })
                 });
             });
 
