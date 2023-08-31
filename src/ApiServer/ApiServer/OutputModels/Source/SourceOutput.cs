@@ -8,7 +8,7 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
             Name = source.Name;
             Url = source.Url;
             CreatedOn = source.CreatedOn;
-            Location = (source.Location == null) ? null : new SourceOutput.LocationDetails {
+            Location = (source.Location == null) ? null : new LocationDetails {
                 Position = source.Location.Position.ToOutput(),
                 IsFixed = source.Location.IsFixed,
             };
@@ -35,7 +35,6 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
         public LocationDetails Location { get; set; }
 
         [Obsolete]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public GeoCoordsOutput DefaultLocation { get; init; }
 
         [Obsolete]
