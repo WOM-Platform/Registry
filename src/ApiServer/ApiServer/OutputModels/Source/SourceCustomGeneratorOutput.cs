@@ -42,11 +42,7 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
 
     public static class SourceCustomGeneratorOutputExtensions {
         public static SourceCustomGeneratorOutput ToOutput(this SourceCustomGenerator source, PictureOutput logoPicture) {
-            if(source == null) {
-                throw new ArgumentNullException();
-            }
-
-            return new SourceCustomGeneratorOutput {
+            return source == null ? null : new SourceCustomGeneratorOutput {
                 Title = source.Title,
                 Logo = logoPicture,
                 EnableCustomGeneration = source.EnableCustomGeneration,

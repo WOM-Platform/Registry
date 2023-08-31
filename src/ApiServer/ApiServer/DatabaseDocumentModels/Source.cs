@@ -49,11 +49,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("aims")]
         [BsonIgnoreIfNull]
-        public SourceAims Aims { get; set; } = new SourceAims();
+        public SourceAims Aims { get; set; }
 
         public class SourceLocation {
             [BsonElement("default")]
-            [BsonIgnoreIfNull]
             public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
 
             [BsonElement("isFixed")]
@@ -64,13 +63,14 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("location")]
         [BsonIgnoreIfNull]
-        public SourceLocation Location { get; set; } = new SourceLocation();
+        public SourceLocation Location { get; set; }
 
         [BsonElement("adminUserIds")]
         [BsonIgnoreIfNull]
         public ObjectId[] AdministratorUserIds { get; set; }
 
         [BsonElement("customGenerator")]
+        [BsonIgnoreIfNull]
         public SourceCustomGenerator CustomGenerator { get; set; }
 
         [BsonExtraElements]

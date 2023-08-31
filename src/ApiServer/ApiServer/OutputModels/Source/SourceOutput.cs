@@ -13,7 +13,7 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
                 IsFixed = source.Location.IsFixed,
             };
             DefaultLocation = (source.Location == null) ? null : source.Location.Position.ToOutput();
-            LocationIsFixed = source?.Location.IsFixed ?? false;
+            LocationIsFixed = source.Location?.IsFixed ?? false;
         }
 
         public string Id { get; init; }

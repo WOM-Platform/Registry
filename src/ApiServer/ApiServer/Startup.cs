@@ -28,16 +28,12 @@ using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.Conversion;
-using WomPlatform.Web.Api.Mail;
 using WomPlatform.Web.Api.Service;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace WomPlatform.Web.Api {
+
     public class Startup {
-        public Startup(IConfiguration configuration) {
-            Configuration = configuration;
-        }
-        public IConfiguration Configuration { get; }
 
         private static string _selfDomain = null;
         public static string SelfDomain {
@@ -226,51 +222,13 @@ namespace WomPlatform.Web.Api {
         public void Configure(
             IApplicationBuilder app,
             IWebHostEnvironment env,
-            SetupService setupService,
             ILogger<Startup> logger
         ) {
-            if (env.IsDevelopment()) {
-                logger.LogInformation("Setup in development mode");
+            // Registry setup
+            app.SetupDevelopmentEntities();
+            app.SetupKnownEntities();
 
-                // Refresh development setup
-                var devSection = Configuration.GetSection("DevelopmentSetup");
-
-                var devUserSection = devSection.GetSection("AdminUser");
-                var devUserEntity = new DatabaseDocumentModels.User {
-                    Id = new ObjectId(devUserSection["Id"]),
-                    Email = devUserSection["Email"],
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(devUserSection["Password"]),
-                    Name = devUserSection["Name"],
-                    Surname = devUserSection["Surname"],
-                    Role = PlatformRole.User,
-                    RegisteredOn = DateTime.UtcNow
-                };
-                setupService.UpsertUserSync(devUserEntity);
-                logger.LogDebug("Admin user #{0} created for development/testing purposes", devUserEntity.Id);
-
-                var devSourceSection = devSection.GetSection("Source");
-                var devSourceId = devSourceSection["Id"];
-                setupService.UpsertSourceSync(new DatabaseDocumentModels.Source {
-                    Id = new ObjectId(devSourceId),
-                    Name = "Development source",
-                    PrivateKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pem"),
-                    PublicKey = File.ReadAllText(devSourceSection["KeyPathBase"] + ".pub"),
-                    AdministratorUserIds = new ObjectId[] { devUserEntity.Id },
-                });
-                logger.LogDebug("Development source #{0} configured", devSourceId);
-
-                var devPosSection = devSection.GetSection("Pos");
-                var devPosId = devPosSection["Id"];
-                setupService.UpsertPosSync(new DatabaseDocumentModels.Pos {
-                    Id = new ObjectId(devPosId),
-                    Name = "Development POS",
-                    Description = "This is a dummy virtual POS which is available only on a development setup.",
-                    PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
-                    PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub"),
-                });
-                logger.LogDebug("Development POS #{0} configured", devPosId);
-            }
-
+            // Pipeline setup
             app.UseStatusCodePages();
             app.UseExceptionHandler(new ExceptionHandlerOptions {
                 AllowStatusCode404Response = true,

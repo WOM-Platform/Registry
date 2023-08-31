@@ -8,9 +8,10 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
             PictureOutput customGeneratorPicture
         ) : base(source) {
 
-            EnabledAims = (source.Aims.EnableAll ? allAims : source.Aims.Enabled).ToSafeArray();
-            PerAimBudget = source.Aims.CurrentBudget.ToSafeImmutableDictionary();
+            EnabledAims = (source.Aims?.EnableAll ?? false ? allAims : source.Aims?.Enabled).ToSafeArray();
+            PerAimBudget = source.Aims?.CurrentBudget.ToSafeImmutableDictionary();
 
+            //TODO: link to correct generator
             CustomGenerator = source.CustomGenerator.ToOutput(customGeneratorPicture);
         }
 

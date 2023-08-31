@@ -87,7 +87,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
-        /// Retrieves detailed information about the currently existing user.
+        /// Retrieves detailed information about the currently logged-in user.
         /// </summary>
         [HttpGet("me")]
         [Authorize]

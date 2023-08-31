@@ -32,9 +32,12 @@ namespace WomPlatform.Web.Api.Controllers {
         public IActionResult QrCode(
             [FromQuery] string url
         ) {
-            var domain = Environment.GetEnvironmentVariable("SELF_HOST");
-            if(url == null || !url.StartsWith($"https://{domain}/")) {
-                return StatusCode(400);
+            if(url == null) {
+                return BadRequest();
+            }
+
+            if(!(url.StartsWith($"https://{SelfHostDomain}") || url.StartsWith($"https://{SelfLinkDomain}"))) {
+                return Problem(title: "Cannot render QR Code for URL not hosted on same domain", statusCode: StatusCodes.Status400BadRequest);
             }
 
             var qrCodeData = QRCoder.PngByteQRCodeHelper.GetQRCode(url, QRCoder.QRCodeGenerator.ECCLevel.M, 15);

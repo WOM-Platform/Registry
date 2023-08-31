@@ -105,10 +105,10 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         public record AuthV2CreateSourceApiKeyOutput(
-            string sourceId,
-            string selector,
-            ApiKey.KindOfKey kind,
-            string apiKey
+            string SourceId,
+            string Selector,
+            ApiKey.KindOfKey Kind,
+            string ApiKey
         );
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace WomPlatform.Web.Api.Controllers {
             string Name,
             string Url,
             string[] EnabledAims,
-            Location DefaultLocation,
+            GeoCoordsOutput DefaultLocation,
             bool LocationIsFixed
         );
 
@@ -215,12 +215,12 @@ namespace WomPlatform.Web.Api.Controllers {
                 new GetApiKeySourceDetails(
                     source.Name,
                     source.Url,
-                    (source.Aims.EnableAll ? allAims : source.Aims.Enabled).ToSafeArray(),
-                    (source.Location.Position == null) ? null : new Location {
+                    (source.Aims?.EnableAll ?? false ? allAims : source.Aims?.Enabled).ToSafeArray(),
+                    (source.Location?.Position == null) ? null : new GeoCoordsOutput {
                         Latitude = source.Location.Position.Coordinates.Latitude,
                         Longitude = source.Location.Position.Coordinates.Longitude
                     },
-                    source.Location.IsFixed
+                    source.Location?.IsFixed ?? false
                 )
             ));
         }
@@ -235,7 +235,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(KeyManager.RegistryPublicKey.ToPemString());
         }
 
-        public record GetAnonymousCredentialsOutput(
+        public record GetPosCredentialsOutput(
             string PosId,
             string PosPrivateKey
         );
@@ -245,7 +245,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpGet("anonymous")]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(GetAnonymousCredentialsOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GetPosCredentialsOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAnonymousCredentials() {
             var anonymousSection = Configuration.GetSection("AnonymousSetup");
             var posId = anonymousSection["Id"];
@@ -259,7 +259,34 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            return Ok(new GetAnonymousCredentialsOutput(posId, pos.PrivateKey));
+            return Ok(new GetPosCredentialsOutput(posId, pos.PrivateKey));
+        }
+
+        public record GetSourceCredentialsOutput(
+            string SourceId,
+            string SourcePrivateKey
+        );
+
+        /// <summary>
+        /// Retrieves the auth information (ID and private key) used for the voucher transfer protocol.
+        /// </summary>
+        [HttpGet("exchange")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(GetSourceCredentialsOutput), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetExchangeCredentials() {
+            var anonymousSection = Configuration.GetSection("AnonymousSetup");
+            var posId = anonymousSection["Id"];
+
+            if(!ObjectId.TryParse(posId, out var id)) {
+                return NotFound();
+            }
+
+            var pos = await PosService.GetPosById(id);
+            if(pos == null) {
+                return NotFound();
+            }
+
+            return Ok(new GetSourceCredentialsOutput(posId, pos.PrivateKey));
         }
 
     }
