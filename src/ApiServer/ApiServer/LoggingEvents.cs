@@ -25,6 +25,8 @@ namespace WomPlatform.Web.Api {
         public const int VoucherRedemption = 4002;
         public const int VoucherVerification = 4003;
 
+        public const int VoucherTransfer = 4500;
+
         public const int Operations = 5000;
 
         public const int Crypto = 6000;

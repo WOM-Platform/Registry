@@ -32,12 +32,12 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromBody] VoucherCreatePayload payload
         ) {
             if(payload == null || payload.Nonce == null) {
-                Logger.LogDebug(LoggingEvents.VoucherCreation, "Payload or nonce void, aborting");
+                Logger.LogError(LoggingEvents.VoucherCreation, "Payload or nonce void, aborting");
 
                 return BadRequest();
             }
 
-            Logger.LogDebug(LoggingEvents.VoucherCreation, "Received voucher creation from Source ID {0} with nonce {1}",
+            Logger.LogInformation(LoggingEvents.VoucherCreation, "Received voucher creation from Source ID {0} with nonce {1}",
                 payload.SourceId, payload.Nonce
             );
 

@@ -340,6 +340,17 @@ namespace WomPlatform.Web.Api.Service {
             return payment;
         }
 
+        /// <summary>
+        /// Marks vouchers as spent for a voucher transfer.
+        /// </summary>
+        public async Task<int> MarkVouchersForTransfer(VoucherTransferPayload.Content request) {
+            int v1Count = await ProcessPaymentLegacyVouchers(request.Vouchers.Where(v => !v.Id.ToString().Contains('/')).Select(v => new PaymentConfirmPayload.VoucherInfo { Id = v.Id, Secret = v.Secret }), null);
+            int v2Count = await ProcessPaymentVouchers(request.Vouchers.Where(v => v.Id.Id.Contains('/')).Select(v => new PaymentConfirmPayload.VoucherInfo { Id = v.Id, Secret = v.Secret }), null);
+            Logger.LogDebug("V1 vouchers spent {0}, V2 vouchers spent {1}", v1Count, v2Count);
+
+            return v1Count + v2Count;
+        }
+
     }
 
 }

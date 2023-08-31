@@ -34,7 +34,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromBody] PaymentRegisterPayload payload
         ) {
             if(payload == null || payload.Nonce == null) {
-                Logger.LogDebug(LoggingEvents.PaymentCreation, "Payload or nonce void, aborting");
+                Logger.LogError(LoggingEvents.PaymentCreation, "Payload or nonce void, aborting");
 
                 return BadRequest();
             }
@@ -158,7 +158,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             byte[] ks = payloadContent.SessionKey.FromBase64();
-            if (ks.Length != 32) {
+            if (ks.Length < 32) {
                 Logger.LogError(LoggingEvents.PaymentInformationAccess, "Insufficient session key length ({0} bytes)", ks.Length);
                 return this.ProblemParameter($"Length of {nameof(payloadContent.SessionKey)} not valid");
             }
