@@ -126,6 +126,21 @@ namespace WomPlatform.Web.Api {
             return new string('*', s.Length);
         }
 
+        /// <summary>
+        /// Optionally concatenates two strings, if both are not null.
+        /// </summary>
+        public static string OptConcat(this string left, string right, string separator = " ") {
+            if(string.IsNullOrEmpty(left)) {
+                return null;
+            }
+
+            if(string.IsNullOrEmpty(right)) {
+                return left;
+            }
+
+            return string.Concat(left, separator, right);
+        }
+
     }
 
 }

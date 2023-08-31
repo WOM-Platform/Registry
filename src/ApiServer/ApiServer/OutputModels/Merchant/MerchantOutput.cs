@@ -42,7 +42,7 @@ namespace WomPlatform.Web.Api.OutputModels.Merchant {
                 Name = merchant.Name,
                 FiscalCode = merchant.FiscalCode,
                 PrimaryActivity = merchant.PrimaryActivityType,
-                Address = merchant.Address?.StreetName,
+                Address = (merchant.Address?.StreetName).OptConcat(merchant.Address?.StreetNumber),
                 ZipCode = merchant.Address?.ZipCode,
                 City = merchant.Address?.City,
                 Country = merchant.Address?.Country,

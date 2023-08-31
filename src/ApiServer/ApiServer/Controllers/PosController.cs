@@ -251,7 +251,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var posUrl = string.Format("{0}-{1}", merchant.City, pos.Name).ToCleanUrl();
+                var posUrl = string.Format("{0}-{1}", merchant.Address.City, pos.Name).ToCleanUrl();
 
                 // Process and upload image
                 using var stream = new MemoryStream();

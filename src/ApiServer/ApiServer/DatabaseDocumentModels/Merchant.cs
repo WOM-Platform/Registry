@@ -21,26 +21,6 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonRepresentation(BsonType.String)]
         public MerchantActivityType PrimaryActivityType { get; set; }
 
-        [BsonElement("address")]
-        [BsonIgnoreIfNull]
-        [Obsolete]
-        public string LegacyAddress { get; set; }
-
-        [BsonElement("zipCode")]
-        [BsonIgnoreIfNull]
-        [Obsolete]
-        public string ZipCode { get; set; }
-
-        [BsonElement("city")]
-        [BsonIgnoreIfNull]
-        [Obsolete]
-        public string City { get; set; }
-
-        [BsonElement("country")]
-        [BsonIgnoreIfNull]
-        [Obsolete]
-        public string Country { get; set; }
-
         [BsonElement("addressDetails")]
         public AddressBlock Address { get; set; }
 
