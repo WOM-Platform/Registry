@@ -127,16 +127,6 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-        [HttpPost("migrate/merchant-user-access")]
-        [Authorize]
-        public async Task<ActionResult> MigrateMerchantsToNewUserAccessRules() {
-            await VerifyUserIsAdmin();
-
-            await MerchantService.MigrateToNewUserAccessControl();
-
-            return Ok();
-        }
-
         [HttpPost("migrate/offer-payment-information")]
         [Authorize]
         public async Task<ActionResult> MigrateOfferPaymentInformation() {

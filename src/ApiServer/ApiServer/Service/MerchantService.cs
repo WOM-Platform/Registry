@@ -119,30 +119,6 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-        public async Task MigrateToNewUserAccessControl() {
-            List<WriteModel<Merchant>> writes = new();
-
-            var merchants = await MerchantCollection.Find(Builders<Merchant>.Filter.Empty).ToListAsync();
-            foreach(var m in merchants) {
-                foreach(var id in m.PosUserIds.ToSafeArray()) {
-                    m.Access.Set(id, MerchantRole.User);
-                }
-                foreach(var id in m.AdministratorIds.ToSafeArray()) {
-                    m.Access.Set(id, MerchantRole.Admin);
-                }
-                Logger.LogInformation("Upgrading merchant {0} with {1} access rules", m.Id, m.Access?.Count);
-
-                writes.Add(
-                    new ReplaceOneModel<Merchant>(Builders<Merchant>.Filter.Eq(m => m.Id, m.Id), m)
-                );
-            }
-
-            Logger.LogDebug("Performing bulk updates");
-            await MerchantCollection.BulkWriteAsync(writes);
-
-            Logger.LogInformation("Merchant migration to new user access rules performed");
-        }
-
         public Task DeleteMerchant(ObjectId merchantId) {
             return MerchantCollection.DeleteOneAsync(Builders<Merchant>.Filter.Eq(m => m.Id, merchantId));
         }
