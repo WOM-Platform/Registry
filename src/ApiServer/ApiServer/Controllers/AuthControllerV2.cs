@@ -247,8 +247,8 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces("application/json")]
         [ProducesResponseType(typeof(GetPosCredentialsOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAnonymousCredentials() {
-            var anonymousSection = Configuration.GetSection("AnonymousSetup");
-            var posId = anonymousSection["Id"];
+            var anonymousSection = Configuration.GetSection("KnownEntities");
+            var posId = anonymousSection["AnonymousPosId"];
 
             if(!ObjectId.TryParse(posId, out var id)) {
                 return NotFound();
