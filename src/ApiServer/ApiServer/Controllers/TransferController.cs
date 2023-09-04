@@ -52,18 +52,19 @@ namespace WomPlatform.Web.Api.Controllers {
             }
             var sourcePrivateKey = CryptoHelper.LoadKeyFromString<AsymmetricKeyParameter>(source.PrivateKey);
 
-            var content = Crypto.Decrypt<VoucherTransferPayload.Content>(payload.Payload, sourcePrivateKey);
+            try {
+                var content = Crypto.Decrypt<VoucherTransferPayload.Content>(payload.Payload, sourcePrivateKey);
 
-            byte[] ks = content.SessionKey.FromBase64();
-            if(ks.Length < 32) {
-                Logger.LogError(LoggingEvents.VoucherTransfer, "Insufficient session key length ({0} bytes)", ks.Length);
-                return this.ProblemParameter($"Length of {nameof(content.SessionKey)} not valid");
-            }
+                byte[] ks = content.SessionKey.FromBase64();
+                if(ks.Length < 32) {
+                    Logger.LogError(LoggingEvents.VoucherTransfer, "Insufficient session key length ({0} bytes)", ks.Length);
+                    return this.ProblemParameter($"Length of {nameof(content.SessionKey)} not valid");
+                }
 
-            var voucherCount = await PaymentService.MarkVouchersForTransfer(content);
-            Logger.LogDebug("Total amount of {0} vouchers marked as spent for transfer", voucherCount);
+                var voucherCount = await PaymentService.MarkVouchersForTransfer(content);
+                Logger.LogDebug("Total amount of {0} vouchers marked as spent for transfer", voucherCount);
 
-            (var generation, _) = await GenerationService.CreateGenerationRequest(source, new InputModels.Generation.VoucherGenerationSpecification[] {
+                (var generation, _) = await GenerationService.CreateGenerationRequest(source, new InputModels.Generation.VoucherGenerationSpecification[] {
                 new InputModels.Generation.VoucherGenerationSpecification {
                     Aim = "XX",
                     Count = voucherCount,
@@ -72,16 +73,21 @@ namespace WomPlatform.Web.Api.Controllers {
                 }
             }, isPreVerified: true);
 
-            return Ok(new VoucherTransferResponse {
-                Payload = Crypto.Encrypt(new VoucherTransferResponse.Content {
-                    RegistryUrl = $"https://{SelfHostDomain}",
-                    Nonce = payload.Nonce,
-                    Otc = generation.Otc,
-                    Password = generation.Password,
-                    Link = $"https://{SelfLinkDomain}/vouchers/{generation.Otc:D}",
-                    Count = generation.TotalVoucherCount.Value,
-                }, ks),
-            });
+                return Ok(new VoucherTransferResponse {
+                    Payload = Crypto.Encrypt(new VoucherTransferResponse.Content {
+                        RegistryUrl = $"https://{SelfHostDomain}",
+                        Nonce = payload.Nonce,
+                        Otc = generation.Otc,
+                        Password = generation.Password,
+                        Link = $"https://{SelfLinkDomain}/vouchers/{generation.Otc:D}",
+                        Count = generation.TotalVoucherCount.Value,
+                    }, ks),
+                });
+            }
+            catch(Exception ex) {
+                Logger.LogError(LoggingEvents.VoucherTransfer, ex, "Failed to perform transfer");
+                throw;
+            }
         }
 
     }
