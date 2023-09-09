@@ -247,8 +247,8 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces("application/json")]
         [ProducesResponseType(typeof(GetPosCredentialsOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAnonymousCredentials() {
-            var anonymousSection = Configuration.GetSection("AnonymousSetup");
-            var posId = anonymousSection["Id"];
+            var anonymousSection = Configuration.GetSection("KnownEntities");
+            var posId = anonymousSection["AnonymousPosId"];
 
             if(!ObjectId.TryParse(posId, out var id)) {
                 return NotFound();
@@ -264,7 +264,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record GetSourceCredentialsOutput(
             string SourceId,
-            string SourcePrivateKey
+            string SourcePublicKey
         );
 
         /// <summary>
@@ -274,19 +274,19 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces("application/json")]
         [ProducesResponseType(typeof(GetSourceCredentialsOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetExchangeCredentials() {
-            var anonymousSection = Configuration.GetSection("AnonymousSetup");
-            var posId = anonymousSection["Id"];
+            var confKnownEntities = Configuration.GetSection("KnownEntities");
+            var sourceId = confKnownEntities["ExchangeSourceId"];
 
-            if(!ObjectId.TryParse(posId, out var id)) {
+            if(!ObjectId.TryParse(sourceId, out var id)) {
                 return NotFound();
             }
 
-            var pos = await PosService.GetPosById(id);
-            if(pos == null) {
+            var source = await SourceService.GetSourceById(id);
+            if(source == null) {
                 return NotFound();
             }
 
-            return Ok(new GetSourceCredentialsOutput(posId, pos.PrivateKey));
+            return Ok(new GetSourceCredentialsOutput(sourceId, source.PublicKey));
         }
 
     }
