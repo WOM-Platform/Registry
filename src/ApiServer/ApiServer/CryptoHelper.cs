@@ -23,7 +23,12 @@ namespace WomPlatform.Web.Api {
 
             using var sr = new StringReader(pem);
             var reader = new PemReader(sr);
-            return reader.ReadObject() as T;
+            var obj = reader.ReadObject();
+            if(obj is not T) {
+                throw new ArgumentException($"Loaded PEM data is not of expected type {typeof(T).Name}", nameof(pem));
+            }
+
+            return (T)obj;
         }
 
         public static string ToPemString(this AsymmetricKeyParameter keyParameter) {
@@ -36,7 +41,7 @@ namespace WomPlatform.Web.Api {
         }
 
         public static AsymmetricCipherKeyPair CreateKeyPair() {
-            return DotNetUtilities.GetRsaKeyPair(RSA.Create());
+            return DotNetUtilities.GetRsaKeyPair(RSA.Create(4096));
         }
 
     }
