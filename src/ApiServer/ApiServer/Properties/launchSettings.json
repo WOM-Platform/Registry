@@ -2,17 +2,14 @@
   "profiles": {
     "Local Registry": {
       "commandName": "Project",
-      "launchBrowser": false,
       "environmentVariables": {
-        "MONGO_CONNECTION_PORT": "1234",
-        "JWT_USER_TOKEN_SECRET": "",
-        "MONGO_INITDB_ROOT_PASSWORD": "",
-        "MONGO_INITDB_ROOT_USERNAME": "",
-        "MONGO_CONNECTION_HOST": "localhost",
-        "LINK_HOST": "link.wom.social",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "SELF_HOST": "localhost:64421"
+        "ASPNETCORE_BASEPATH": "/api",
+        "LINK_HOST": "link.dev.wom.social",
+        "SELF_HOST": "localhost:64422",
+        "GOOGLE_APPLICATION_CREDENTIALS": "../../../keys/wom-platform-308616-076bc9b1a93d.json"
       },
+      "launchBrowser": false,
       "applicationUrl": "http://localhost:64422/"
     }
   }

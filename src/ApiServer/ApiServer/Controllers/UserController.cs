@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
@@ -355,6 +356,8 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> Login(
             [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] UserLoginInput input
         ) {
+            var securitySection = Configuration.GetRequiredSection("Security");
+
             var user = await GetUserToLogin(input);
             if(user == null) {
                 return NotFound();
@@ -365,7 +368,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var expirationTimestamp = issueTimestamp.AddDays(1);
 
             var securityHandler = new JwtSecurityTokenHandler();
-            var jwtKey = Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"));
+            var jwtKey = Encoding.UTF8.GetBytes(securitySection["JwtTokenSigningKey"]);
             var jwtDescriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(new[] {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),

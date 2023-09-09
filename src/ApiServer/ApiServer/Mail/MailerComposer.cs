@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Net.Mail;
 using System.Text;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using WomPlatform.Web.Api.Controllers;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Mail {
@@ -15,8 +13,6 @@ namespace WomPlatform.Web.Api.Mail {
     public class MailerComposer {
 
         private readonly IMailerQueue _queue;
-        private readonly LinkGenerator _linkGenerator;
-        private readonly IConfiguration _configuration;
         private readonly ILogger<MailerComposer> _logger;
 
         private readonly MailAddress _mailFrom;
@@ -24,24 +20,23 @@ namespace WomPlatform.Web.Api.Mail {
 
         public MailerComposer(
             IMailerQueue queue,
-            LinkGenerator linkGenerator,
             IConfiguration configuration,
             ILogger<MailerComposer> logger
         ) {
             _queue = queue;
-            _linkGenerator = linkGenerator;
-            _configuration = configuration;
             _logger = logger;
 
-            var mailFromAddress = Environment.GetEnvironmentVariable("SENDER_MAIL");
-            var mailFromName = Environment.GetEnvironmentVariable("SENDER_NAME");
-            _mailFrom = new MailAddress(mailFromAddress, mailFromName);
-            _logger.LogDebug("Mails will be sent from {0}", _mailFrom);
+            var conf = configuration.GetRequiredSection("Mail");
 
-            var mailShadowBccAddress = Environment.GetEnvironmentVariable("CONFIRMATION_MAIL_BCC");
+            var mailFromName = conf["SenderName"];
+            var mailFromAddress = conf["SenderMail"];
+            _mailFrom = new MailAddress(mailFromAddress, mailFromName);
+            _logger.LogDebug("Mail will be sent from {0}", _mailFrom);
+
+            var mailShadowBccAddress = conf["ConfirmationBccMail"];
             if(!string.IsNullOrEmpty(mailShadowBccAddress)) {
                 _mailBcc = new MailAddress(mailShadowBccAddress);
-                _logger.LogDebug("Sending shadow copy to {0}", mailShadowBccAddress);
+                _logger.LogDebug("Sending shadow copies to {0}", mailShadowBccAddress);
             }
         }
 

@@ -141,7 +141,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Check whether a user password is acceptable.
         /// </summary>
         protected bool CheckUserPassword(string password) {
-            var userSecuritySection = Configuration.GetSection("UserSecurity");
+            var userSecuritySection = Configuration.GetRequiredSection("Security").GetRequiredSection("Users");
             var minLength = Convert.ToInt32(userSecuritySection["MinimumUserPasswordLength"]);
 
             if(string.IsNullOrWhiteSpace(password)) {
@@ -165,8 +165,8 @@ namespace WomPlatform.Web.Api.Controllers {
                 return true;
             }
 
-            var confSection = Configuration.GetSection("PasswordSecurity");
-            var minLength = Convert.ToInt32(confSection["MinimumLength"]);
+            var voucherSecuritySection = Configuration.GetRequiredSection("Security").GetRequiredSection("Vouchers");
+            var minLength = Convert.ToInt32(voucherSecuritySection["MinimumLength"]);
             if(password.Length < minLength) {
                 return false;
             }

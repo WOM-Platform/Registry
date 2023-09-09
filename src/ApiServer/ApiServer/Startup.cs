@@ -29,11 +29,18 @@ using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.Conversion;
 using WomPlatform.Web.Api.Service;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace WomPlatform.Web.Api {
 
     public class Startup {
+
+        private readonly IConfiguration _configuration;
+
+        public Startup(
+            IConfiguration configuration
+        ) {
+            _configuration = configuration;
+        }
 
         private static string _selfDomain = null;
         public static string SelfDomain {
@@ -94,9 +101,9 @@ namespace WomPlatform.Web.Api {
             services.AddProblemDetails();
 
             services.AddSwaggerGen(options => {
-                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo {
+                options.SwaggerDoc("v1", new OpenApiInfo {
                     Title = "WOM Registry API",
-                    Contact = new Microsoft.OpenApi.Models.OpenApiContact {
+                    Contact = new OpenApiContact {
                         Email = "info@wom.social",
                         Name = "The WOM Platform",
                         Url = new Uri("https://wom.social")
@@ -145,9 +152,11 @@ namespace WomPlatform.Web.Api {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options => {
+                var securitySection = _configuration.GetRequiredSection("Security");
+
                 options.RequireHttpsMetadata = true;
                 options.TokenValidationParameters = new TokenValidationParameters {
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_USER_TOKEN_SECRET"))),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(securitySection["JwtTokenSigningKey"])),
                     ValidateIssuer = true,
                     ValidIssuer = GetJwtIssuerName(),
                     ValidateAudience = false,
@@ -179,16 +188,20 @@ namespace WomPlatform.Web.Api {
 
             // Add services to dependency registry
             services.AddSingleton(provider => {
+                var configuration = provider.GetRequiredService<IConfiguration>();
+
                 BsonDefaults.GuidRepresentation = GuidRepresentation.Standard;
                 BsonDefaults.GuidRepresentationMode = GuidRepresentationMode.V3;
                 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
-                var connectionString = Environment.GetEnvironmentVariable("MONGO_CONNECTION_URI");
+                var confMongo = configuration.GetRequiredSection("Database").GetRequiredSection("Mongo");
+
+                var connectionString = confMongo["ConnectionUri"];
                 if(connectionString == null) {
-                    var username = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_USERNAME");
-                    var password = Environment.GetEnvironmentVariable("MONGO_INITDB_ROOT_PASSWORD");
-                    var host = Environment.GetEnvironmentVariable("MONGO_CONNECTION_HOST");
-                    var port = Environment.GetEnvironmentVariable("MONGO_CONNECTION_PORT");
+                    var username = confMongo["RootUsername"];
+                    var password = confMongo["RootPassword"];
+                    var host = confMongo["ConnectionHost"];
+                    var port = confMongo["ConnectionPort"];
 
                     connectionString = string.Format("mongodb://{0}:{1}@{2}:{3}", username, password, host, port);
                 }
@@ -250,7 +263,7 @@ namespace WomPlatform.Web.Api {
                         });
                     }
                     else {
-                        httpContext.Response.ContentType = Text.Plain;
+                        httpContext.Response.ContentType = System.Net.Mime.MediaTypeNames.Text.Plain;
                         await httpContext.Response.WriteAsync(exceptionHandlerPathFeature?.Error?.ToString());
                     }
                 },
