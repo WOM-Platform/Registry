@@ -7,7 +7,8 @@
         "ASPNETCORE_BASEPATH": "/api",
         "LINK_HOST": "link.dev.wom.social",
         "SELF_HOST": "localhost:64422",
-        "GOOGLE_APPLICATION_CREDENTIALS": "../../../keys/wom-platform-308616-076bc9b1a93d.json"
+        "GOOGLE_APPLICATION_CREDENTIALS": "../../../keys/wom-platform-308616-076bc9b1a93d.json",
+        "GOOGLE_PROJECT_ID": "wom-platform-308616"
       },
       "launchBrowser": false,
       "applicationUrl": "http://localhost:64422/"
