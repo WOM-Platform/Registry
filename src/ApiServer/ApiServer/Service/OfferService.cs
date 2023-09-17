@@ -64,6 +64,13 @@ namespace WomPlatform.Web.Api.Service {
             );
         }
 
+        public Task DeactivateOffer(ObjectId offerId, bool deactivated) {
+            return OfferCollection.UpdateOneAsync(
+                Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+                Builders<Offer>.Update.Set(o => o.Deactivated, deactivated)
+            );
+        }
+
         public class GroupedOffersByPos {
             [BsonId]
             public ObjectId Id { get; set; }

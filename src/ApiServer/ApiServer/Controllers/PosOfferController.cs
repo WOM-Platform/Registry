@@ -227,6 +227,69 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        public record OfferDeactivationStatusOutput(bool Deactivated);
+
+        /// <summary>
+        /// Gets an offer's deactivation status.
+        /// </summary>
+        [HttpGet("{posId}/offers/{offerId}/deactivation")]
+        [Authorize]
+        [ProducesResponseType(typeof(OfferDeactivationStatusOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetOfferDeactivationStatus(
+            [FromRoute] ObjectId posId,
+            [FromRoute] ObjectId offerId
+        ) {
+            (_, _) = await VerifyUserIsAdminOfPos(posId);
+
+            var existingOffer = await OfferService.GetOfferById(offerId);
+            if(existingOffer == null) {
+                return NotFound();
+            }
+            if(existingOffer.Pos.Id != posId) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: $"Offer {offerId} is not owned by POS {posId}");
+            }
+
+            return Ok(new OfferDeactivationStatusOutput(existingOffer.Deactivated));
+        }
+
+        public record OfferDeactivationStatusInput(bool Deactivated);
+
+        /// <summary>
+        /// Sets an offer's deactivation status.
+        /// </summary>
+        [HttpPut("{posId}/offers/{offerId}/deactivation")]
+        [Authorize]
+        [ProducesResponseType(typeof(OfferDeactivationStatusOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> SetOfferDeactivationStatus(
+            [FromRoute] ObjectId posId,
+            [FromRoute] ObjectId offerId,
+            [FromBody] OfferDeactivationStatusInput input
+        ) {
+            (_, _) = await VerifyUserIsAdminOfPos(posId);
+
+            var existingOffer = await OfferService.GetOfferById(offerId);
+            if(existingOffer == null) {
+                return NotFound();
+            }
+            if(existingOffer.Pos.Id != posId) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: $"Offer {offerId} is not owned by POS {posId}");
+            }
+
+            try {
+                await OfferService.DeactivateOffer(offerId, input.Deactivated);
+
+                return Ok(new OfferDeactivationStatusOutput(input.Deactivated));
+            }
+            catch(Exception) {
+                Logger.LogError("Failed to update offer");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Delete an offer.
         /// </summary>
