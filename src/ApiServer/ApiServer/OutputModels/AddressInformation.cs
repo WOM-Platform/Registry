@@ -1,4 +1,5 @@
-﻿using WomPlatform.Web.Api.DatabaseDocumentModels;
+﻿using System.Linq;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.OutputModels {
     public class AddressInformation {
@@ -19,7 +20,14 @@ namespace WomPlatform.Web.Api.OutputModels {
 
     public static class AddressInformationExtensions {
         public static AddressInformation ToOutput(this AddressBlock addressBlock) {
-            return addressBlock == null ? null : new AddressInformation {
+            if(addressBlock == null) {
+                return null;
+            }
+            if(!new string[] { addressBlock.StreetName, addressBlock.ZipCode, addressBlock.City, addressBlock.Country, addressBlock.FormattedAddress }.Any()) {
+                return null;
+            }
+
+            return new AddressInformation {
                 StreetName = addressBlock.StreetName,
                 StreetNumber = addressBlock.StreetNumber,
                 ZipCode = addressBlock.ZipCode,
