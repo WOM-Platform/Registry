@@ -33,7 +33,8 @@ namespace WomPlatform.Web.Api.OutputModels {
                 ZipCode = addressBlock.ZipCode,
                 City = addressBlock.City,
                 Country = addressBlock.Country,
-                FormattedAddress = addressBlock.FormattedAddress,
+                FormattedAddress = addressBlock.FormattedAddress ??
+                    string.Join(", ", new string[] { addressBlock.StreetName, addressBlock.StreetNumber, addressBlock.City, addressBlock.Country }.Where(e => e != null)),
                 GoogleMapsPlaceId = addressBlock.GoogleMapsPlaceId,
             };
         }
