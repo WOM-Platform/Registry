@@ -165,13 +165,19 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Merchant update payload.
         /// </summary>
         public record MerchantUpdateInput(
+            [Required]
             [MinLength(8)]
             string Name,
-            MerchantActivityType? PrimaryActivity,
+            [Required]
+            MerchantActivityType PrimaryActivity,
+            [Required]
             string Address,
             string StreetNumber,
+            [Required]
             string ZipCode,
+            [Required]
             string City,
+            [Required]
             string Country,
             string FormattedAddress,
             string GoogleMapsPlaceId,
@@ -202,46 +208,21 @@ namespace WomPlatform.Web.Api.Controllers {
             var existingMerchant = await VerifyUserIsAdminOfMerchant(id);
 
             try {
-                if(input.Name != null) {
-                    existingMerchant.Name = input.Name;
-                }
-                if(input.PrimaryActivity.HasValue) {
-                    existingMerchant.PrimaryActivityType = input.PrimaryActivity.Value;
-                }
-
-                if(existingMerchant.Address == null) {
-                    existingMerchant.Address = new AddressBlock();
-                }
-                if(input.Address != null) {
-                    existingMerchant.Address.StreetName = input.Address;
-                }
-                if(input.StreetNumber != null) {
-                    existingMerchant.Address.StreetNumber = input.StreetNumber;
-                }
-                if(input.ZipCode != null) {
-                    existingMerchant.Address.ZipCode = input.ZipCode;
-                }
-                if(input.City != null) {
-                    existingMerchant.Address.City = input.City;
-                }
-                if(input.Country != null) {
-                    existingMerchant.Address.Country = input.Country;
-                }
-                if(input.FormattedAddress != null) {
-                    existingMerchant.Address.FormattedAddress = input.FormattedAddress;
-                }
-                if(input.GoogleMapsPlaceId != null) {
-                    existingMerchant.Address.GoogleMapsPlaceId = input.GoogleMapsPlaceId;
-                }
-
-                if(input.Description != null) {
-                    existingMerchant.Description = input.Description;
-                }
-                if(input.Url != null) {
-                    existingMerchant.WebsiteUrl = input.Url;
-                }
-                existingMerchant.LastUpdate = DateTime.UtcNow;
+                existingMerchant.Name = input.Name;
+                existingMerchant.PrimaryActivityType = input.PrimaryActivity;
+                existingMerchant.Address = new AddressBlock {
+                    StreetName = input.Address,
+                    StreetNumber = input.StreetNumber,
+                    ZipCode = input.ZipCode,
+                    City = input.City,
+                    Country = input.Country,
+                    FormattedAddress = input.FormattedAddress,
+                    GoogleMapsPlaceId = input.GoogleMapsPlaceId,
+                };
+                existingMerchant.Description = input.Description;
+                existingMerchant.WebsiteUrl = input.Url;
                 existingMerchant.Enabled = input.Enabled;
+                existingMerchant.LastUpdate = DateTime.UtcNow;
 
                 await MerchantService.ReplaceMerchant(existingMerchant);
             }

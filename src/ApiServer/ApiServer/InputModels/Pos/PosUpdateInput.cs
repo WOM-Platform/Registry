@@ -14,6 +14,8 @@ namespace WomPlatform.Web.Api.InputModels.Pos {
 
         public double? Longitude { get; set; }
 
+        public AddressInformation Address { get; set; }
+
         [Url]
         public string Url { get; set; }
 
