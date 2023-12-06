@@ -64,7 +64,7 @@ mongoimport: confirmation
 
 .PHONY: up
 up:
-	${DC} up -d api
+	${DC} up -d api well-known
 	${DC} ps
 	@echo
 	@echo 'WOM registry service is now up'

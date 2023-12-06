@@ -19,3 +19,15 @@ services:
       options:
         max-size: "30m"
         max-file: "2"
+
+  well-known:
+    image: nginx:1.25-alpine
+    networks:
+    - web
+    expose:
+    - "80"
+    volumes:
+    - ./src/WellKnown/files:/usr/share/nginx/html:ro
+    - ./src/WellKnown/nginx.conf:/etc/nginx/nginx.conf:ro
+    logging:
+      driver: "none"
