@@ -1,0 +1,22 @@
+{
+    "applinks": {
+        "details": [
+            {
+                "appIDs": [
+                    "5QA9U9924L.social.wom.pocket"
+                ],
+                "components": [
+                    {
+                        "/": "/payment/*"
+                    },
+                    {
+                        "/": "/vouchers/*"
+                    },
+                    {
+                        "/": "/migration/*"
+                    }
+                ]
+            }
+        ]
+    }
+}

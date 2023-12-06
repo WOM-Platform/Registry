@@ -21,3 +21,13 @@ services:
     - "traefik.link.frontend.entryPoints=http,https"
     - "traefik.link.redirect.entryPoint=https"
     restart: unless-stopped
+
+  well-known:
+    labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=web"
+    - "traefik.well-known.protocol=http"
+    - "traefik.well-known.port=80"
+    - "traefik.well-known.frontend.rule=Host:wom.social;PathPrefixStrip:/.well-known"
+    - "traefik.well-known.frontend.entryPoints=http,https"
+    restart: unless-stopped
