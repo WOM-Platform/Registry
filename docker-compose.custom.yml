@@ -11,23 +11,17 @@ services:
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
-    - "traefik.api.protocol=http"
-    - "traefik.api.port=8779"
-    - "traefik.api.frontend.rule=Host:wom.social;PathPrefixStrip:/api"
-    - "traefik.api.frontend.entryPoints=http,https"
-    - "traefik.link.protocol=http"
-    - "traefik.link.port=8779"
-    - "traefik.link.frontend.rule=Host:wom.social;PathPrefix:/payment,/vouchers"
-    - "traefik.link.frontend.entryPoints=http,https"
-    - "traefik.link.redirect.entryPoint=https"
+    - "traefik.http.routers.wom-registry-api.rule=Host(`wom.social`) && Path(`/api`)"
+    - "traefik.http.middlewares.wom-registry-api.stripprefix.prefixes=/api"
+    - "traefik.http.middlewares.wom-registry-api.stripprefix.forceslash=false"
+    - "traefik.http.routers.wom-landing-api.rule=Host(`wom.social`) && (Path(`/payment`) || Path(`/vouchers`))"
     restart: unless-stopped
 
   well-known:
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
-    - "traefik.well-known.protocol=http"
-    - "traefik.well-known.port=80"
-    - "traefik.well-known.frontend.rule=Host:wom.social;PathPrefixStrip:/.well-known"
-    - "traefik.well-known.frontend.entryPoints=http,https"
+    - "traefik.http.routers.wom-well-known.rule=Host(`wom.social`) && Path(`/.well-known`)"
+    - "traefik.http.middlewares.wom-well-known.stripprefix.prefixes=/.well-known"
+    - "traefik.http.middlewares.wom-well-known.stripprefix.forceslash=false"
     restart: unless-stopped
