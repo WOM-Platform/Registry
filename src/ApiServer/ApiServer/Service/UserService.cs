@@ -136,7 +136,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Request a new password request token.
         /// </summary>
-        public async Task<User> RequestPasswordReset(string email) {
+        public async Task<User> RequestPasswordReset(string email, bool sendNotification = true) {
             var user = await UserCollection.FindOneAndUpdateAsync(
                 Builders<User>.Filter.Eq(u => u.Email, email.Trim()),
                 Builders<User>.Update.Set(u => u.PasswordResetToken, Random.GenerateReadableCode(8)),
@@ -149,22 +149,35 @@ namespace WomPlatform.Web.Api.Service {
                 throw ServiceProblemException.UserNotFound;
             }
 
-            _composer.SendPasswordResetMail(user);
+            if(sendNotification) {
+                _composer.SendPasswordResetMail(user);
+            }
 
             return user;
+        }
+
+        public enum TokenVerification {
+            Normal,
+            Skip
         }
 
         /// <summary>
         /// Attempts to perform a password reset.
         /// </summary>
-        public async Task PerformPasswordReset(ObjectId userId, string passwordResetToken, string newPassword) {
+        public async Task PerformPasswordReset(ObjectId userId, string passwordResetToken, string newPassword, TokenVerification verification = TokenVerification.Normal) {
+            if(string.IsNullOrWhiteSpace(newPassword)) {
+                throw new ArgumentNullException(nameof(newPassword));
+            }
+
             var user = await UserCollection.Find(Builders<User>.Filter.Eq(u => u.Id, userId)).SingleOrDefaultAsync();
             if(user == null) {
                 throw ServiceProblemException.UserNotFound;
             }
 
-            if(!passwordResetToken.Equals(user.PasswordResetToken, StringComparison.InvariantCultureIgnoreCase)) {
-                throw ServiceProblemException.TokenNotValid;
+            if(verification != TokenVerification.Skip) {
+                if(!passwordResetToken.Equals(user.PasswordResetToken, StringComparison.InvariantCultureIgnoreCase)) {
+                    throw ServiceProblemException.TokenNotValid;
+                }
             }
 
             var results = await UserCollection.UpdateOneAsync(
