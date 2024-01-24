@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.InputModels.Pos;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Pos;
@@ -58,15 +59,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Position = (input.Latitude.HasValue && input.Longitude.HasValue) ?
                         new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(input.Longitude.Value, input.Latitude.Value)) :
                         null,
-                    Address = new AddressBlock {
-                        StreetName = input.Address?.StreetName,
-                        StreetNumber = input.Address?.StreetNumber,
-                        ZipCode = input.Address?.ZipCode,
-                        City = input.Address?.City,
-                        Country = input.Address?.Country,
-                        FormattedAddress = input.Address?.FormattedAddress,
-                        GoogleMapsPlaceId = input.Address?.GoogleMapsPlaceId,
-                    },
+                    Address = input.Address.ToDocument(),
                     Url = string.IsNullOrWhiteSpace(input.Url) ? null : input.Url,
                     PrivateKey = posKeys.Private.ToPemString(),
                     PublicKey = posKeys.Public.ToPemString(),
@@ -205,6 +198,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 pos.Position = (input.Latitude.HasValue && input.Longitude.HasValue) ?
                     new GeoJsonPoint<GeoJson2DGeographicCoordinates>(new GeoJson2DGeographicCoordinates(input.Longitude.Value, input.Latitude.Value)) :
                     null;
+                pos.Address = input.Address.ToDocument();
                 pos.Url = input.Url;
                 pos.IsActive = input.IsActive;
                 pos.LastUpdate = DateTime.UtcNow;

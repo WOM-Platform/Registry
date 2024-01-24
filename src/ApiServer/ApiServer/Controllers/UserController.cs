@@ -264,6 +264,8 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
+        #region Password reset process
+
         public record UserRequestPasswordResetInput([Required] string Email);
 
         /// <summary>
@@ -271,6 +273,23 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="input">Password request payload.</param>
         [HttpPost("password-reset")]
+        [Obsolete]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RequestPasswordResetLegacy(
+            [Required] UserRequestPasswordResetInput input
+        ) {
+            await UserService.RequestPasswordReset(input.Email);
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Requests a password reset for an existing user.
+        /// </summary>
+        /// <param name="input">Password request payload.</param>
+        [HttpPost("password/reset")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -282,7 +301,35 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserExecutePasswordResetInput([Required] string Token, [Required] string Password);
+        public record UserEmailExecutePasswordResetInput([Required] string Email, [Required] string Token, [Required] string Password);
+
+        /// <summary>
+        /// Performs a password reset for an existing user.
+        /// </summary>
+        /// <param name="input">Password reset payload.</param>
+        [HttpPut("password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> ExecutePasswordReset(
+            [FromBody] [Required] UserEmailExecutePasswordResetInput input
+        ) {
+            var user = await UserService.GetUserByEmail(input.Email);
+            if(user == null) {
+                return NotFound();
+            }
+
+            if(!CheckUserPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
+            }
+
+            await UserService.PerformPasswordReset(user.Id, input.Token, input.Password);
+
+            return Ok();
+        }
+
+        public record UserIdExecutePasswordResetInput([Required] string Token, [Required] string Password);
 
         /// <summary>
         /// Performs a password reset for an existing user.
@@ -290,13 +337,14 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="userId">User ID.</param>
         /// <param name="input">Password reset payload.</param>
         [HttpPost("{userId}/password-reset")]
+        [Obsolete]
         [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> ExecutePasswordReset(
+        public async Task<IActionResult> ExecutePasswordResetLegacy(
             [FromRoute] ObjectId userId,
-            [Required] UserExecutePasswordResetInput input
+            [FromBody] [Required] UserIdExecutePasswordResetInput input
         ) {
             if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
@@ -306,6 +354,31 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok();
         }
+
+        /// <summary>
+        /// Performs a password reset for an existing user.
+        /// </summary>
+        /// <param name="userId">User ID.</param>
+        /// <param name="input">Password reset payload.</param>
+        [HttpPut("{userId}/password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> ExecutePasswordReset(
+            [FromRoute] ObjectId userId,
+            [FromBody] [Required] UserIdExecutePasswordResetInput input
+        ) {
+            if(!CheckUserPassword(input.Password)) {
+                return this.ProblemParameter("Password is not secure");
+            }
+
+            await UserService.PerformPasswordReset(userId, input.Token, input.Password);
+
+            return Ok();
+        }
+
+        #endregion
 
         public record UserLoginInput(string Email, string Password, string ClientName);
 

@@ -43,7 +43,7 @@ namespace WomPlatform.Web.Api.Mail {
         public async Task Process(Func<MailMessage, Task<bool>> processor, CancellationToken cancellationToken) {
             await _signal.WaitAsync(cancellationToken);
 
-            if(_mailQueue.TryDequeue(out var scheduledMessage)) {
+            while(_mailQueue.TryDequeue(out var scheduledMessage)) {
                 _logger.LogInformation("Processing mail to {0} with subject “{1}” (try {2})", scheduledMessage.Message.To, scheduledMessage.Message.Subject, scheduledMessage.Retries + 1);
 
                 try {

@@ -46,15 +46,7 @@ namespace WomPlatform.Web.Api.OutputModels.Merchant {
                 ZipCode = merchant.Address?.ZipCode,
                 City = merchant.Address?.City,
                 Country = merchant.Address?.Country,
-                AddressDetails = new AddressInformation {
-                    StreetName = merchant.Address?.StreetName,
-                    StreetNumber = merchant.Address?.StreetNumber,
-                    ZipCode = merchant.Address?.ZipCode,
-                    City = merchant.Address?.City,
-                    Country = merchant.Address?.Country,
-                    FormattedAddress = merchant.Address?.FormattedAddress,
-                    GoogleMapsPlaceId = merchant.Address?.GoogleMapsPlaceId,
-                },
+                AddressDetails = merchant.Address.ToOutput(),
                 Description = merchant.Description,
                 Url = merchant.WebsiteUrl,
                 Enabled = merchant.Enabled

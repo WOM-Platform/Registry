@@ -9,21 +9,14 @@
         public static PosAuthOutput ToAuthOutput(this DatabaseDocumentModels.Pos pos, PictureOutput posCoverPicture) {
             return new PosAuthOutput {
                 Id = pos.Id.ToString(),
+                MerchantId = pos.MerchantId.ToString(),
                 Name = pos.Name,
                 Description = pos.Description,
                 PrivateKey = pos.PrivateKey,
                 PublicKey = pos.PublicKey,
                 Latitude = pos.Position?.Coordinates.Latitude,
                 Longitude = pos.Position?.Coordinates.Longitude,
-                Address = new AddressInformation {
-                    StreetName = pos.Address?.StreetName,
-                    StreetNumber = pos.Address?.StreetNumber,
-                    ZipCode = pos.Address?.ZipCode,
-                    City = pos.Address?.City,
-                    Country = pos.Address?.Country,
-                    FormattedAddress = pos.Address?.FormattedAddress,
-                    GoogleMapsPlaceId = pos.Address?.GoogleMapsPlaceId,
-                },
+                Address = pos.Address.ToOutput(),
                 Cover = posCoverPicture,
                 Url = pos.Url,
                 CreatedOn = pos.CreatedOn,
