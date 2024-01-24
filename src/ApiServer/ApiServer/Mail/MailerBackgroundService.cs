@@ -50,7 +50,7 @@ namespace WomPlatform.Web.Api.Mail {
                 }, stoppingToken);
 
                 // Wait 3 seconds to throttle delivery
-                await Task.Delay(3000, stoppingToken);
+                await Task.Delay(1000, stoppingToken);
             }
         }
 

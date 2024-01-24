@@ -5,6 +5,8 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
     public class PosOutput {
         public string Id { get; init; }
 
+        public string MerchantId { get; init; }
+
         public string Name { get; init; }
 
         public string Description { get; init; }
@@ -36,19 +38,12 @@ namespace WomPlatform.Web.Api.OutputModels.Pos {
         public static PosOutput ToOutput(this DatabaseDocumentModels.Pos pos, PictureOutput posCoverPicture) {
             return new PosOutput {
                 Id = pos.Id.ToString(),
+                MerchantId = pos.MerchantId.ToString(),
                 Name = pos.Name,
                 Description = pos.Description,
                 Latitude = pos.Position?.Coordinates.Latitude,
                 Longitude = pos.Position?.Coordinates.Longitude,
-                Address = new AddressInformation {
-                    StreetName = pos.Address?.StreetName,
-                    StreetNumber = pos.Address?.StreetNumber,
-                    ZipCode = pos.Address?.ZipCode,
-                    City = pos.Address?.City,
-                    Country = pos.Address?.Country,
-                    FormattedAddress = pos.Address?.FormattedAddress,
-                    GoogleMapsPlaceId = pos.Address?.GoogleMapsPlaceId,
-                },
+                Address = pos.Address.ToOutput(),
                 Cover = posCoverPicture,
                 Url = pos.Url,
                 CreatedOn = pos.CreatedOn,

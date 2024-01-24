@@ -127,6 +127,24 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
+        [HttpPut("users/password")]
+        [Authorize]
+        public async Task<ActionResult> ResetUserPassword(
+            [FromQuery] [Required] [EmailAddress] string email,
+            [FromQuery] [Required] string password
+        ) {
+            await VerifyUserIsAdmin();
+
+            var user = await UserService.GetUserByEmail(email);
+            if(user == null) {
+                return NotFound();
+            }
+
+            await UserService.PerformPasswordReset(user.Id, null, password, UserService.TokenVerification.Skip);
+
+            return Ok(user.ToOutput(false));
+        }
+
         [HttpPost("migrate/offer-payment-information")]
         [Authorize]
         public async Task<ActionResult> MigrateOfferPaymentInformation() {

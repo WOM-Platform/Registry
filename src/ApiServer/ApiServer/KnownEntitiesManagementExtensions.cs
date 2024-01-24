@@ -57,6 +57,7 @@ namespace WomPlatform.Web.Api {
                     Description = "This is a dummy virtual POS which is available only on a development setup.",
                     PrivateKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pem"),
                     PublicKey = File.ReadAllText(devPosSection["KeyPathBase"] + ".pub"),
+                    Url = "https://example.org/store"
                 });
                 logger.LogDebug("Configured development POS #{0}", devPosId);
             }

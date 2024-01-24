@@ -1,25 +1,26 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Newtonsoft.Json.Linq;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.Mail;
 
 namespace WomPlatform.Web.Api.Service {
     public class UserService : BaseService {
 
-        private readonly MongoClient _client;
+        private readonly IConfiguration _configuration;
         private readonly MailerComposer _composer;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
+            IConfiguration configuration,
             MongoClient client,
             MailerComposer composer,
             ILogger<UserService> logger
         ) : base(client, logger) {
-            _client = client;
+            _configuration = configuration;
             _composer = composer;
             _logger = logger;
         }
@@ -47,6 +48,8 @@ namespace WomPlatform.Web.Api.Service {
             bool isVerified = false,
             PlatformRole platformRole = PlatformRole.User
         ) {
+            var tokenLength = _configuration.GetSection("Security").GetSection("Users").GetValue<int>("EmailVerificationTokenLength", 8);
+
             var effectiveEmail = email.Trim();
 
             var existingUser = await GetUserByEmail(effectiveEmail);
@@ -59,7 +62,7 @@ namespace WomPlatform.Web.Api.Service {
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 Name = name.Trim(),
                 Surname = surname.Trim(),
-                VerificationToken = isVerified ? null : Random.GenerateReadableCode(8),
+                VerificationToken = isVerified ? null : Random.GenerateReadableCode(tokenLength),
                 Role = platformRole,
                 RegisteredOn = DateTime.UtcNow,
             };
@@ -80,14 +83,18 @@ namespace WomPlatform.Web.Api.Service {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
 
             var chain = Builders<User>.Update.Chain();
-            if(name != null)
+            if(name != null) {
                 chain.Set(u => u.Name, name);
-            if(surname != null)
+            }
+            if(surname != null) {
                 chain.Set(u => u.Surname, surname);
-            if(email != null)
+            }
+            if(email != null) {
                 chain.Set(u => u.Email, email);
-            if(password != null)
+            }
+            if(password != null) {
                 chain.Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(password));
+            }
             chain.Set(u => u.LastUpdate, DateTime.UtcNow);
 
             return UserCollection.FindOneAndUpdateAsync(filter, chain.End(), new FindOneAndUpdateOptions<User, User> { ReturnDocument = ReturnDocument.After });
@@ -136,10 +143,12 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Request a new password request token.
         /// </summary>
-        public async Task<User> RequestPasswordReset(string email) {
+        public async Task<User> RequestPasswordReset(string email, bool sendNotification = true) {
+            var tokenLength = _configuration.GetSection("Security").GetSection("Users").GetValue<int>("PasswordResetTokenLength", 8);
+
             var user = await UserCollection.FindOneAndUpdateAsync(
                 Builders<User>.Filter.Eq(u => u.Email, email.Trim()),
-                Builders<User>.Update.Set(u => u.PasswordResetToken, Random.GenerateReadableCode(8)),
+                Builders<User>.Update.Set(u => u.PasswordResetToken, Random.GenerateReadableCode(tokenLength)),
                 new FindOneAndUpdateOptions<User> {
                     Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false),
                     ReturnDocument = ReturnDocument.After,
@@ -149,22 +158,35 @@ namespace WomPlatform.Web.Api.Service {
                 throw ServiceProblemException.UserNotFound;
             }
 
-            _composer.SendPasswordResetMail(user);
+            if(sendNotification) {
+                _composer.SendPasswordResetMail(user);
+            }
 
             return user;
+        }
+
+        public enum TokenVerification {
+            Normal,
+            Skip
         }
 
         /// <summary>
         /// Attempts to perform a password reset.
         /// </summary>
-        public async Task PerformPasswordReset(ObjectId userId, string passwordResetToken, string newPassword) {
+        public async Task PerformPasswordReset(ObjectId userId, string passwordResetToken, string newPassword, TokenVerification verification = TokenVerification.Normal) {
+            if(string.IsNullOrWhiteSpace(newPassword)) {
+                throw new ArgumentNullException(nameof(newPassword));
+            }
+
             var user = await UserCollection.Find(Builders<User>.Filter.Eq(u => u.Id, userId)).SingleOrDefaultAsync();
             if(user == null) {
                 throw ServiceProblemException.UserNotFound;
             }
 
-            if(!passwordResetToken.Equals(user.PasswordResetToken, StringComparison.InvariantCultureIgnoreCase)) {
-                throw ServiceProblemException.TokenNotValid;
+            if(verification != TokenVerification.Skip) {
+                if(!passwordResetToken.Equals(user.PasswordResetToken, StringComparison.InvariantCultureIgnoreCase)) {
+                    throw ServiceProblemException.TokenNotValid;
+                }
             }
 
             var results = await UserCollection.UpdateOneAsync(
@@ -172,6 +194,7 @@ namespace WomPlatform.Web.Api.Service {
                 Builders<User>.Update
                     .Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(newPassword))
                     .Set(u => u.PasswordResetToken, null)
+                    .Set(u => u.VerificationToken, null) // Set to verified as well, since we have confirmation through the password reset token
             );
             if(results.ModifiedCount != 1) {
                 throw new InvalidOperationException($"Set new password operation modified {results.ModifiedCount} records instead of 1");
