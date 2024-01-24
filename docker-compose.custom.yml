@@ -11,17 +11,25 @@ services:
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
-    - "traefik.http.routers.wom-registry-api.rule=Host(`wom.social`) && Path(`/api`)"
-    - "traefik.http.middlewares.wom-registry-api.stripprefix.prefixes=/api"
-    - "traefik.http.middlewares.wom-registry-api.stripprefix.forceslash=false"
-    - "traefik.http.routers.wom-landing-api.rule=Host(`wom.social`) && (Path(`/payment`) || Path(`/vouchers`))"
+
+    - "traefik.http.routers.wom-registry-api.rule=Host(`wom.social`) && PathPrefix(`/api`)"
+    - "traefik.http.routers.wom-registry-api.entrypoints=web,websecure"
+    - "traefik.http.routers.wom-registry-api.middlewares=wom-registry-api-strip"
+    - "traefik.http.middlewares.wom-registry-api-strip.stripprefix.prefixes=/api"
+    - "traefik.http.middlewares.wom-registry-api-strip.stripprefix.forceslash=false"
+
+    - "traefik.http.routers.wom-landing-api.rule=Host(`wom.social`) && (PathPrefix(`/payment`) || PathPrefix(`/vouchers`) || PathPrefix(`/migration`))"
+    - "traefik.http.routers.wom-landing-api.entrypoints=websecure"
     restart: unless-stopped
 
   well-known:
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=web"
-    - "traefik.http.routers.wom-well-known.rule=Host(`wom.social`) && Path(`/.well-known`)"
-    - "traefik.http.middlewares.wom-well-known.stripprefix.prefixes=/.well-known"
-    - "traefik.http.middlewares.wom-well-known.stripprefix.forceslash=false"
+
+    - "traefik.http.routers.wom-registry-wellknown.rule=Host(`wom.social`) && PathPrefix(`/.well-known`)"
+    - "traefik.http.routers.wom-registry-wellknown.entrypoints=websecure"
+    - "traefik.http.routers.wom-registry-wellknown.middlewares=wom-registry-wellknown-strip"
+    - "traefik.http.middlewares.wom-registry-wellknown-strip.stripprefix.prefixes=/.well-known"
+    - "traefik.http.middlewares.wom-registry-wellknown-strip.stripprefix.forceslash=false"
     restart: unless-stopped

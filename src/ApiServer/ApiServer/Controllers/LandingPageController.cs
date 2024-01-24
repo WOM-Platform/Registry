@@ -9,6 +9,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// Backwards compatibility controller that redirects to new voucher/payment landing pages.
     /// </summary>
     [Route("")]
+    [Obsolete]
     [OperationsTags("Landing pages")]
     public class LandingPageController : BaseRegistryController {
 
