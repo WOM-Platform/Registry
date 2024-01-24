@@ -79,13 +79,18 @@ namespace WomPlatform.Web.Api.Mail {
             }
 
             var sb = new StringBuilder();
-            sb.AppendFormat("Hello {0}!\n\n", user.Name);
-            sb.Append("A password reset link was requested for your account. Please click on the following link to set a new password:\n");
-            sb.Append(GetPasswordResetLink(user.Id.ToString(), user.PasswordResetToken));
-            sb.Append("\n\nIf you didn’t request a password reset, please ignore this e-mail.\n\n❤ The WOM Platform");
+            sb.Append("<html><body>");
+            sb.AppendFormat("<p><b>Ciao {0}!</b></p>", user.Name);
+            sb.Append("<p>È stata avviata la procedura di <b>reimpostazione della password</b> per il tuo profilo. Apri l’applicazione WOM POS da cui hai fatto la richiesta ed inserisci il seguente codice:</p>");
+            sb.AppendFormat("<p style=\"text-align: center\"><b style=\"font-family: monospace; font-size: 1.6rem; letter-spacing: .2rem\">{0}</b></p>", user.PasswordResetToken);
+            sb.Append("<p>In alternativa, se stai leggendo l’e-mail dallo stesso dispositivo su cui è installata l’app WOM POS, puoi cliccare su questo collegamento:</p>");
+            sb.AppendFormat("<p style=\"text-align: center\"><a href=\"{0}\">Reimposta la tua password nell’app</a></p>", GetPasswordResetPosDeepLink(user.Email, user.PasswordResetToken));
+            sb.Append("<p>Se non hai richiesto la reimpostazione della password oppure riscontri altri problemi, contattaci all’indirizzo <a href=\"mailto:info@wom.social\">info@wom.social</a>.</p>");
+            sb.Append("<p>❤&nbsp;<i>Il team della piattaforma WOM</i></p>");
+            sb.Append("</body></html>");
 
             SendMessage(user.Email,
-                $"WOM Platform password reset",
+                $"Reimpostazione password",
                 sb.ToString()
             );
         }
@@ -98,6 +103,20 @@ namespace WomPlatform.Web.Api.Mail {
                 Query = QueryString.Create(
                     new KeyValuePair<string, StringValues>[] {
                         new KeyValuePair<string, StringValues>("userId", new StringValues(id)),
+                        new KeyValuePair<string, StringValues>("token", new StringValues(token)),
+                    }
+                ).ToString()
+            }.ToString();
+        }
+
+        private static string GetPasswordResetPosDeepLink(string email, string token) {
+            return new UriBuilder {
+                Scheme = "wompos",
+                Host = "process",
+                Path = "/reset-password",
+                Query = QueryString.Create(
+                    new KeyValuePair<string, StringValues>[] {
+                        new KeyValuePair<string, StringValues>("email", new StringValues(email)),
                         new KeyValuePair<string, StringValues>("token", new StringValues(token)),
                     }
                 ).ToString()
@@ -126,7 +145,7 @@ namespace WomPlatform.Web.Api.Mail {
             var msg = new MailMessage {
                 From = _mailFrom,
                 Sender = _mailFrom,
-                IsBodyHtml = false,
+                IsBodyHtml = true,
                 Subject = subject,
                 SubjectEncoding = Encoding.UTF8,
                 Body = contents,
