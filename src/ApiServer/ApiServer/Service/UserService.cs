@@ -1,25 +1,26 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Newtonsoft.Json.Linq;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.Mail;
 
 namespace WomPlatform.Web.Api.Service {
     public class UserService : BaseService {
 
-        private readonly MongoClient _client;
+        private readonly IConfiguration _configuration;
         private readonly MailerComposer _composer;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
+            IConfiguration configuration,
             MongoClient client,
             MailerComposer composer,
             ILogger<UserService> logger
         ) : base(client, logger) {
-            _client = client;
+            _configuration = configuration;
             _composer = composer;
             _logger = logger;
         }
@@ -47,6 +48,8 @@ namespace WomPlatform.Web.Api.Service {
             bool isVerified = false,
             PlatformRole platformRole = PlatformRole.User
         ) {
+            var tokenLength = _configuration.GetSection("Security").GetSection("Users").GetValue<int>("EmailVerificationTokenLength", 8);
+
             var effectiveEmail = email.Trim();
 
             var existingUser = await GetUserByEmail(effectiveEmail);
@@ -59,7 +62,7 @@ namespace WomPlatform.Web.Api.Service {
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 Name = name.Trim(),
                 Surname = surname.Trim(),
-                VerificationToken = isVerified ? null : Random.GenerateReadableCode(8),
+                VerificationToken = isVerified ? null : Random.GenerateReadableCode(tokenLength),
                 Role = platformRole,
                 RegisteredOn = DateTime.UtcNow,
             };
@@ -137,9 +140,11 @@ namespace WomPlatform.Web.Api.Service {
         /// Request a new password request token.
         /// </summary>
         public async Task<User> RequestPasswordReset(string email, bool sendNotification = true) {
+            var tokenLength = _configuration.GetSection("Security").GetSection("Users").GetValue<int>("PasswordResetTokenLength", 8);
+
             var user = await UserCollection.FindOneAndUpdateAsync(
                 Builders<User>.Filter.Eq(u => u.Email, email.Trim()),
-                Builders<User>.Update.Set(u => u.PasswordResetToken, Random.GenerateReadableCode(8)),
+                Builders<User>.Update.Set(u => u.PasswordResetToken, Random.GenerateReadableCode(tokenLength)),
                 new FindOneAndUpdateOptions<User> {
                     Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false),
                     ReturnDocument = ReturnDocument.After,
