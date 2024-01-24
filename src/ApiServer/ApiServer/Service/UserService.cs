@@ -83,14 +83,18 @@ namespace WomPlatform.Web.Api.Service {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
 
             var chain = Builders<User>.Update.Chain();
-            if(name != null)
+            if(name != null) {
                 chain.Set(u => u.Name, name);
-            if(surname != null)
+            }
+            if(surname != null) {
                 chain.Set(u => u.Surname, surname);
-            if(email != null)
+            }
+            if(email != null) {
                 chain.Set(u => u.Email, email);
-            if(password != null)
+            }
+            if(password != null) {
                 chain.Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(password));
+            }
             chain.Set(u => u.LastUpdate, DateTime.UtcNow);
 
             return UserCollection.FindOneAndUpdateAsync(filter, chain.End(), new FindOneAndUpdateOptions<User, User> { ReturnDocument = ReturnDocument.After });
@@ -190,6 +194,7 @@ namespace WomPlatform.Web.Api.Service {
                 Builders<User>.Update
                     .Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(newPassword))
                     .Set(u => u.PasswordResetToken, null)
+                    .Set(u => u.VerificationToken, null) // Set to verified as well, since we have confirmation through the password reset token
             );
             if(results.ModifiedCount != 1) {
                 throw new InvalidOperationException($"Set new password operation modified {results.ModifiedCount} records instead of 1");
