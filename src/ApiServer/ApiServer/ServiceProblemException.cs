@@ -95,10 +95,12 @@ namespace WomPlatform.Web.Api {
             type: "https://wom.social/api/problems/user-profile-not-found"
         );
 
+        public const string UserNotFoundType = "https://wom.social/api/problems/user-not-found";
+
         public readonly static ServiceProblemException UserNotFound = new(
             "User not found",
             StatusCodes.Status404NotFound,
-            type: "https://wom.social/api/problems/user-not-found"
+            type: UserNotFoundType
         );
 
         public readonly static ServiceProblemException UserIsNotAdmin = new(

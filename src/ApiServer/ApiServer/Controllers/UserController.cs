@@ -280,7 +280,12 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> RequestPasswordResetLegacy(
             [Required] UserRequestPasswordResetInput input
         ) {
-            await UserService.RequestPasswordReset(input.Email);
+            try {
+                await UserService.RequestPasswordReset(input.Email);
+            }
+            catch(ServiceProblemException ex) when(ex.Type == ServiceProblemException.UserNotFoundType) {
+                // Ignore error to prevent data leakage to user
+            }
 
             return Ok();
         }
@@ -296,7 +301,12 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<IActionResult> RequestPasswordReset(
             [Required] UserRequestPasswordResetInput input
         ) {
-            await UserService.RequestPasswordReset(input.Email);
+            try {
+                await UserService.RequestPasswordReset(input.Email);
+            }
+            catch(ServiceProblemException ex) when (ex.Type == ServiceProblemException.UserNotFoundType) {
+                // Ignore error to prevent data leakage to user
+            }
 
             return Ok();
         }
