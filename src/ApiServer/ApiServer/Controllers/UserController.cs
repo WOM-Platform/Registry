@@ -201,6 +201,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="id">User ID.</param>
         [HttpPost("{id}/request-verification")]
+        [Obsolete]
         [Authorize]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
@@ -227,6 +228,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Unauthenticated requests for a new user verification e-mail.
         /// </summary>
         [HttpPost("request-verification")]
+        [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         public async Task<IActionResult> RequestVerificationByEmail(
             [FromBody] RequestVerificationEmail payload
@@ -252,14 +254,45 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="id">User ID.</param>
         /// <param name="input">User verification payload.</param>
         [HttpPost("{id}/verify")]
+        [Obsolete]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Verify(
+        public async Task<IActionResult> VerifyLegacy(
             [FromRoute] ObjectId id,
             [FromQuery] UserVerifyInput input
         ) {
             await UserService.PerformVerification(id, input.Token);
+
+            return Ok();
+        }
+
+        public record UserEmailVerifyInput([Required] [EmailAddress] string Email, [Required] string Token);
+
+        /// <summary>
+        /// Verifies a user account.
+        /// </summary>
+        /// <remarks>
+        /// Must be authenticated as the same user that is being verified.
+        /// </remarks>
+        /// <param name="input">User verification payload.</param>
+        [HttpPost("verify-email")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> Verify(
+            [FromQuery] UserEmailVerifyInput input
+        ) {
+            var user = await UserService.GetUserByEmail(input.Email);
+            if(user == null) {
+                return NotFound();
+            }
+            if(user.VerificationToken == null) {
+                return Ok();
+            }
+
+            await UserService.PerformVerification(user.Id, input.Token);
 
             return Ok();
         }
