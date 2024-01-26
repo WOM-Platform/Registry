@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Mail;
+using System.Net.Mime;
+using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -47,13 +49,19 @@ namespace WomPlatform.Web.Api.Mail {
             }
 
             var sb = new StringBuilder();
-            sb.AppendFormat("Welcome to the WOM Platform, {0}!\n\n", user.Name);
-            sb.Append("Please verify your e-mail address by clicking on the following link:\n");
-            sb.Append(GetVerificatonLink(user.Id.ToString(), user.VerificationToken));
-            sb.Append("\n\n❤ The WOM Platform");
+            sb.Append("<html><body>");
+            sb.Append("<p><img src=\"cid:wom-logo.jpg\" width=\"160\" alt=\"WOM logo\" /></p>");
+            sb.AppendFormat("<p><b>Ciao {0}, ti diamo il benvenuto sulla piattaforma&nbsp;WOM!</b></p>", user.Name);
+            sb.Append("<p>Per <b>verificare il tuo indirizzo e-mail</b>, ti chiediamo di aprire l’applicazione WOM POS da cui hai registrato il tuo profilo e di inserire il seguente codice:</p>");
+            sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><b style=\"font-family: monospace; font-size: 2rem; letter-spacing: 0.3rem\">{0}</b></p>", user.VerificationToken);
+            sb.Append("<p>In alternativa, se stai leggendo l’e-mail dallo stesso dispositivo su cui è installata l’app WOM POS, puoi cliccare su questo collegamento:</p>");
+            sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><a href=\"{0}\" style=\"display: inline-block; background: #2969FF; background-color: #2969FF; color: white; font-weight: bold; text-decoration: none; margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 0.5rem\">Verifica il tuo indirizzo e-mail</a></p>", GetVerificationPosDeepLink(user.Email, user.VerificationToken));
+            sb.Append("<p>Se riscontri dei problemi, contattaci all’indirizzo <a href=\"mailto:info@wom.social\">info@wom.social</a>.</p>");
+            sb.Append("<p>❤&nbsp;<i>Il team della piattaforma WOM</i></p>");
+            sb.Append("</body></html>");
 
             SendMessage(user.Email,
-                $"WOM Platform e-mail verification",
+                $"Verifica del tuo indirizzo e-mail",
                 sb.ToString()
             );
         }
@@ -72,6 +80,20 @@ namespace WomPlatform.Web.Api.Mail {
             }.ToString();
         }
 
+        private static string GetVerificationPosDeepLink(string email, string token) {
+            return new UriBuilder {
+                Scheme = "wompos",
+                Host = "process",
+                Path = "/verify",
+                Query = QueryString.Create(
+                    new KeyValuePair<string, StringValues>[] {
+                        new KeyValuePair<string, StringValues>("email", new StringValues(email)),
+                        new KeyValuePair<string, StringValues>("token", new StringValues(token)),
+                    }
+                ).ToString()
+            }.ToString();
+        }
+
         public void SendPasswordResetMail(User user) {
             if(user.Email == null) {
                 _logger.LogError("Cannot send email to user #{0}, no email given", user.Id);
@@ -80,11 +102,12 @@ namespace WomPlatform.Web.Api.Mail {
 
             var sb = new StringBuilder();
             sb.Append("<html><body>");
+            sb.Append("<p><img src=\"cid:wom-logo.jpg\" width=\"160\" alt=\"WOM logo\" /></p>");
             sb.AppendFormat("<p><b>Ciao {0}!</b></p>", user.Name);
             sb.Append("<p>È stata avviata la procedura di <b>reimpostazione della password</b> per il tuo profilo. Apri l’applicazione WOM POS da cui hai fatto la richiesta ed inserisci il seguente codice:</p>");
-            sb.AppendFormat("<p style=\"text-align: center\"><b style=\"font-family: monospace; font-size: 1.6rem; letter-spacing: .2rem\">{0}</b></p>", user.PasswordResetToken);
+            sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><b style=\"font-family: monospace; font-size: 2rem; letter-spacing: 0.3rem\">{0}</b></p>", user.PasswordResetToken);
             sb.Append("<p>In alternativa, se stai leggendo l’e-mail dallo stesso dispositivo su cui è installata l’app WOM POS, puoi cliccare su questo collegamento:</p>");
-            sb.AppendFormat("<p style=\"text-align: center\"><a href=\"{0}\">Reimposta la tua password nell’app</a></p>", GetPasswordResetPosDeepLink(user.Email, user.PasswordResetToken));
+            sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><a href=\"{0}\" style=\"display: inline-block; background: #2969FF; background-color: #2969FF; color: white; font-weight: bold; text-decoration: none; margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 0.5rem\">Reimposta la tua password nell’app</a></p>", GetPasswordResetPosDeepLink(user.Email, user.PasswordResetToken));
             sb.Append("<p>Se non hai richiesto la reimpostazione della password oppure riscontri altri problemi, contattaci all’indirizzo <a href=\"mailto:info@wom.social\">info@wom.social</a>.</p>");
             sb.Append("<p>❤&nbsp;<i>Il team della piattaforma WOM</i></p>");
             sb.Append("</body></html>");
@@ -152,6 +175,15 @@ namespace WomPlatform.Web.Api.Mail {
                 BodyEncoding = Encoding.UTF8
             };
             msg.To.Add(recipientAddress);
+
+            msg.Attachments.Add(new Attachment(
+                Assembly.GetExecutingAssembly().GetManifestResourceStream("WomPlatform.Web.Api.Resources.wom-logo-240w.jpg"),
+                "wom-logo.jpg",
+                "image/jpeg"
+            ) {
+                ContentType = new ContentType("image/jpeg"),
+                ContentId = "wom-logo.jpg",
+            });
 
             if(_mailBcc != null) {
                 msg.Bcc.Add(_mailBcc);

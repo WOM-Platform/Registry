@@ -17,10 +17,19 @@
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Local Registry' " />
 
   <ItemGroup>
+    <None Remove="Resources\wom-logo-1024w.jpg" />
+    <None Remove="Resources\wom-logo-240w.jpg" />
+    <None Remove="Resources\wom-logo-540w.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Resources\base-offer-bw.jpg" />
     <EmbeddedResource Include="Resources\base-offer.jpg" />
     <EmbeddedResource Include="Resources\Raleway-Bold.ttf" />
     <EmbeddedResource Include="Resources\Raleway-Regular.ttf" />
+    <EmbeddedResource Include="Resources\wom-logo-1024w.jpg" />
+    <EmbeddedResource Include="Resources\wom-logo-240w.jpg" />
+    <EmbeddedResource Include="Resources\wom-logo-540w.jpg" />
   </ItemGroup>
 
   <ItemGroup>
