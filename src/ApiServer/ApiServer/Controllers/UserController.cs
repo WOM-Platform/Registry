@@ -170,7 +170,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateInformation(
             [FromRoute] ObjectId id,
-            UserUpdateInformationInput input
+            [FromBody] UserUpdateInformationInput input
         ) {
             if(!User.UserIdEquals(id)) {
                 return Forbid();
@@ -282,7 +282,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Verify(
-            [FromQuery] UserEmailVerifyInput input
+            [FromBody] [Required] UserEmailVerifyInput input
         ) {
             var user = await UserService.GetUserByEmail(input.Email);
             if(user == null) {
@@ -344,7 +344,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserEmailExecutePasswordResetInput([Required] string Email, [Required] string Token, [Required] string Password);
+        public record UserEmailExecutePasswordResetInput([Required] [EmailAddress] string Email, [Required] string Token, [Required] string Password);
 
         /// <summary>
         /// Performs a password reset for an existing user.
