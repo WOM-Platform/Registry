@@ -285,7 +285,7 @@ namespace WomPlatform.Web.Api {
             var forwardOptions = new ForwardedHeadersOptions {
                 ForwardedHeaders = ForwardedHeaders.XForwardedProto
             };
-            forwardOptions.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.20.0.1"), 2));
+            forwardOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("172.20.0.1"), 2));
             app.UseForwardedHeaders(forwardOptions);
 
             // Use Swagger for documentation
