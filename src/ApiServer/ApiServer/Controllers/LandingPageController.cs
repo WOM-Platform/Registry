@@ -9,6 +9,7 @@ namespace WomPlatform.Web.Api.Controllers {
     /// Backwards compatibility controller that redirects to new voucher/payment landing pages.
     /// </summary>
     [Route("")]
+    [Obsolete]
     [OperationsTags("Landing pages")]
     public class LandingPageController : BaseRegistryController {
 
@@ -33,6 +34,14 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] Guid otc
         ) {
             return RedirectPermanent($"https://{SelfLinkDomain}/vouchers/{otc:D}");
+        }
+
+        [HttpGet("migration/{otc}")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status301MovedPermanently)]
+        public IActionResult ShowMigrationLandingPage(
+            [FromRoute] Guid otc
+        ) {
+            return RedirectPermanent($"https://{SelfLinkDomain}/migration/{otc:D}");
         }
 
     }

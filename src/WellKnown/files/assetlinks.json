@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "social.wom.pocket",
+            "sha256_cert_fingerprints": [
+                "D1:40:B7:A2:D3:F6:89:54:78:2D:41:93:0E:A4:51:48:B5:44:83:87:F3:37:5E:EA:E2:96:0C:27:DA:27:5A:00"
+            ]
+        }
+    }
+]

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-DC := docker-compose -f docker-compose.yml -f docker-compose.custom.yml
+DC := docker compose -f docker-compose.yml -f docker-compose.custom.yml
 DC_RUN := ${DC} run --rm
 
 include config.env
@@ -64,7 +64,7 @@ mongoimport: confirmation
 
 .PHONY: up
 up:
-	${DC} up -d api
+	${DC} up -d api well-known
 	${DC} ps
 	@echo
 	@echo 'WOM registry service is now up'
