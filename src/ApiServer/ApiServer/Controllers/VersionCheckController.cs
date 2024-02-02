@@ -21,10 +21,15 @@ namespace WomPlatform.Web.Api.Controllers {
 
         }
 
-        private readonly string[] SupportedPlatforms = new string[] {
+        private readonly string[] SupportedApplications = [
+            "pocket",
+            "pos"
+        ];
+
+        private readonly string[] SupportedPlatforms = [
             "ios",
             "android"
-        };
+        ];
 
         /// <summary>
         /// Check application version.
@@ -48,16 +53,22 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
         public IActionResult Index(
             [FromQuery] string platform,
-            [FromQuery] string currentVersion
+            [FromQuery] string currentVersion,
+            [FromQuery] string application = "pocket"
         ) {
-            platform = platform?.ToLowerInvariant() ?? string.Empty;
+            application = application?.ToLowerInvariant() ?? string.Empty;
+            if(!SupportedApplications.Any(p => p.Equals(application))) {
+                return BadRequest();
+            }
 
+            platform = platform?.ToLowerInvariant() ?? string.Empty;
             if(!SupportedPlatforms.Any(p => p.Equals(platform)) || !Version.TryParse(currentVersion, out Version inputVersion)) {
                 return BadRequest();
             }
 
             var versionCheckSection = Configuration.GetSection("VersionCheck");
-            var platformSection = versionCheckSection.GetSection(platform);
+            var applicationSection = versionCheckSection.GetSection(application);
+            var platformSection = applicationSection.GetSection(platform);
 
             var latestVersion = Version.Parse(platformSection["LatestVersion"]);
             var minimumVersion = Version.Parse(platformSection["MinimumVersion"]);
