@@ -24,8 +24,7 @@ namespace WomPlatform.Web.Api.Controllers {
     [Route("v1/source")]
     [OperationsTags("Instrument")]
     [RequireHttpsInProd]
-    public class SourceController : BaseRegistryController 
-    {
+    public class SourceController : BaseRegistryController {
         public SourceController(
             IServiceProvider serviceProvider,
             ILogger<SourceController> logger)
@@ -63,16 +62,6 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new SourceOutput(source));
         }
 
-        [HttpGet("generated/{sourceId}")]
-        [Obsolete]
-        [Authorize]
-        [Produces(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(typeof(SourceGeneratedCountOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public Task<ActionResult> GetSourceGeneratedVouchersCountLegacy([FromRoute] ObjectId sourceId) {
-            return GetSourceGeneratedVouchersCount(sourceId);
-        }
-
         /// <summary>
         /// Provides a count of vouchers produced by a given source.
         /// Request must be authorized by a user who is an administrator of the source.
@@ -82,8 +71,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(SourceGeneratedCountOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GetSourceGeneratedVouchersCount([FromRoute] ObjectId sourceId)
-        {
+        public async Task<ActionResult> GetSourceGeneratedVouchersCount([FromRoute] ObjectId sourceId) {
             var source = await SourceService.GetSourceById(sourceId);
             if(source == null) {
                 return NotFound();
@@ -92,7 +80,7 @@ namespace WomPlatform.Web.Api.Controllers {
             if(!User.GetUserId(out var loggedUserId) || !source.AdministratorUserIds.Contains(loggedUserId)) {
                 return Forbid();
             }
-            
+
             var result = await SourceService.GetGeneratedVouchersBySource(sourceId);
             return Ok(new SourceGeneratedCountOutput {
                 Total = (int)result?.Total
@@ -201,5 +189,5 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
         }
-    }    
+    }
 }

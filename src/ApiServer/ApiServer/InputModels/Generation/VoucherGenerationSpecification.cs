@@ -12,7 +12,7 @@ namespace WomPlatform.Web.Api.InputModels.Generation {
 
         public DateTime Timestamp { get; set; }
 
-        public VoucherCreationMode CreationMode { get; set; }
+        public VoucherCreationMode CreationMode { get; set; } = VoucherCreationMode.Standard;
     }
 
     public static class VoucherGenerationSpecificationExtensions {
