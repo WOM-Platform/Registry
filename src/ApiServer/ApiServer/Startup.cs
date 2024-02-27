@@ -111,6 +111,7 @@ namespace WomPlatform.Web.Api {
                 });
 
                 options.OperationFilter<ObjectIdOperationFilter>();
+                options.SchemaFilter<ObjectIdSchemaFilter>();
 
                 options.MapType<TimeSpan>(() => new OpenApiSchema {
                     Type = "string",
