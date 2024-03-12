@@ -84,8 +84,7 @@ namespace WomPlatform.Web.Api {
                 .ConfigureApiBehaviorOptions(options => {
                     var builtInFactory = options.InvalidModelStateResponseFactory;
 
-                    options.InvalidModelStateResponseFactory = context =>
-                    {
+                    options.InvalidModelStateResponseFactory = context => {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Startup>>();
                         logger.LogInformation("Model binding error: {0}",
                             string.Join(", ", from modelState in context.ModelState
