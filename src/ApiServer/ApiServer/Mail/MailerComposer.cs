@@ -161,7 +161,7 @@ namespace WomPlatform.Web.Api.Mail {
             sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><a href=\"{0}\" style=\"display: inline-block; background: #2969FF; background-color: #2969FF; color: white; font-weight: bold; text-decoration: none; margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 0.5rem\">Riscatta i tuoi WOM</a></p>", otcLink);
             sb.Append("<p>Quando te lo chiederà, fornisci la seguente password all’applicazione:");
             sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><b style=\"font-family: monospace; font-size: 2rem; letter-spacing: 0.3rem\">{0}</b></p>", password);
-            sb.Append("<p>Consulta il sito https://wom.social oppure <a href=\"mailto:info@wom.social\">scrivici</a> per qualsiasi dubbio o informazione.</p>");
+            sb.Append("<p>Consulta il <a href=\"https://wom.social\">nostro sito web</a> oppure <a href=\"mailto:info@wom.social\">scrivici</a> per qualsiasi dubbio o informazione.</p>");
             sb.Append("<p>❤&nbsp;<i>Il team della piattaforma WOM</i></p>");
             sb.Append("</body></html>");
 
