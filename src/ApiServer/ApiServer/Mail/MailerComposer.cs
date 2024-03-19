@@ -96,7 +96,7 @@ namespace WomPlatform.Web.Api.Mail {
 
         public void SendPasswordResetMail(User user) {
             if(user.Email == null) {
-                _logger.LogError("Cannot send email to user #{0}, no email given", user.Id);
+                _logger.LogError("Cannot send email to user #{0}, no e-mail given", user.Id);
                 return;
             }
 
@@ -153,13 +153,17 @@ namespace WomPlatform.Web.Api.Mail {
             }
 
             var sb = new StringBuilder();
-            sb.Append("Ciao!\n\n");
-            sb.AppendFormat("Sono stati generati dei voucher WOM per te, da parte di {0} e in virtù dello svolgimento dell’attività “{1}”.\n\n", instrumentName, activityTitle);
-            sb.Append("I WOM sono dei voucher elettronici anonimi, che certificano l’impegno che hai dedicato ad una specifica causa per il bene sociale. Potrai riscattarli semplicemente installando l’applicazione WOM Pocket, cliccando sul seguente link e digitando la password riportata sotto:\n\n");
-            sb.AppendFormat("{0}\n", otcLink);
-            sb.AppendFormat("Password: {0}\n\n", password);
-            sb.Append("Consulta il sito https://wom.social per qualsiasi dubbio o informazione.\n\n");
-            sb.Append("❤ Piattaforma WOM");
+            sb.Append("<html><body>");
+            sb.Append("<p><img src=\"cid:wom-logo.jpg\" width=\"160\" alt=\"WOM logo\" /></p>");
+            sb.Append("<p><b>Ciao !</b></p>");
+            sb.AppendFormat("<p>Sono stati generati dei voucher WOM per te, da parte di <b>{0}</b>, in virtù dello svolgimento dell’attività “{1}”.</p>", instrumentName, activityTitle);
+            sb.Append("<p>I WOM sono dei voucher elettronici anonimi, che certificano l’impegno che hai dedicato ad una specifica causa per il bene sociale. Potrai riscattarli semplicemente installando l’<a href=\"https://wom.social/volunteer\">applicazione WOM Pocket</a> e cliccando sul seguente link:</p>");
+            sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><a href=\"{0}\" style=\"display: inline-block; background: #2969FF; background-color: #2969FF; color: white; font-weight: bold; text-decoration: none; margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 0.5rem\">Riscatta i tuoi WOM</a></p>", otcLink);
+            sb.Append("<p>Quando te lo chiederà, fornisci la seguente password all’applicazione:");
+            sb.AppendFormat("<p style=\"text-align: center; margin-bottom: 2rem\"><b style=\"font-family: monospace; font-size: 2rem; letter-spacing: 0.3rem\">{0}</b></p>", password);
+            sb.Append("<p>Consulta il <a href=\"https://wom.social\">nostro sito web</a> oppure <a href=\"mailto:info@wom.social\">scrivici</a> per qualsiasi dubbio o informazione.</p>");
+            sb.Append("<p>❤&nbsp;<i>Il team della piattaforma WOM</i></p>");
+            sb.Append("</body></html>");
 
             SendMessage(email, "Emissione di voucher WOM", sb.ToString());
         }
