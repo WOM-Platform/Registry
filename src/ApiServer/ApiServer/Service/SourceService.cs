@@ -42,6 +42,12 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        private IList<FilterDefinition<Source>> GetBasicSourceFilter() {
+            List<FilterDefinition<Source>> filters = [];
+
+            return filters;
+        }
+
         public async Task<Source> CreateNewSource(string name, string url, AsymmetricCipherKeyPair keys,
             GeoCoords? location = null, bool locationIsFixed = false,
             ObjectId[] administratorUserIds = null
@@ -65,6 +71,34 @@ namespace WomPlatform.Web.Api.Service {
             await SourceCollection.InsertOneAsync(source);
 
             return source;
+        }
+
+        public enum SourceListOrder {
+            Name,
+            CreatedOn,
+        }
+
+        public async Task<(List<Source>, long Total)> ListSources(string textSearch, int page, int pageSize, SourceListOrder orderBy) {
+            var filters = GetBasicSourceFilter();
+            if(!string.IsNullOrWhiteSpace(textSearch)) {
+                filters.Add(Builders<Source>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
+            }
+
+            var effectiveFilter = filters.Count > 0 ? Builders<Source>.Filter.And(filters) : Builders<Source>.Filter.Empty;
+
+            var count = await SourceCollection.CountDocumentsAsync(effectiveFilter);
+
+            var query = SourceCollection.Find(effectiveFilter);
+            query = orderBy switch {
+                SourceListOrder.Name => query.SortBy(p => p.Name),
+                SourceListOrder.CreatedOn => query.SortByDescending(p => p.CreatedOn),
+                _ => throw new ArgumentException("Unsupported order clause"),
+            };
+            query = query.Skip((page, pageSize).GetSkip()).Limit(pageSize);
+
+            var results = await query.ToListAsync();
+
+            return (results, count);
         }
 
         public Task<Source> GetSourceById(ObjectId id) {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
@@ -15,6 +16,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.InputModels.Source;
 using WomPlatform.Web.Api.OutputModels;
+using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.OutputModels.User;
 using WomPlatform.Web.Api.Service;
@@ -31,6 +33,9 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(serviceProvider, logger) {
         }
 
+        /// <summary>
+        /// Creates a new source.
+        /// </summary>
         [HttpPost]
         [Authorize]
         [Produces(MediaTypeNames.Application.Json)]
@@ -48,6 +53,32 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new SourceOutput(source));
         }
 
+        /// <summary>
+        /// Retrieves a list of sources.
+        /// </summary>
+        [HttpGet]
+        [ProducesResponseType(typeof(Paged<SourceOutput>), StatusCodes.Status200OK)]
+        public async Task<ActionResult> List(
+            [FromQuery] string search = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] [DefaultValue(SourceService.SourceListOrder.Name)] SourceService.SourceListOrder orderBy = SourceService.SourceListOrder.Name
+        ) {
+            await VerifyUserIsAdmin();
+
+            (var results, var count) = await SourceService.ListSources(search, page, pageSize, orderBy);
+
+            return Ok(Paged<SourceOutput>.FromPage(
+                (from s in results select new SourceOutput(s)).ToArray(),
+                page,
+                pageSize,
+                count
+            ));
+        }
+
+        /// <summary>
+        /// Retrieves information about a given source.
+        /// </summary>
         [HttpGet("{sourceId}")]
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status200OK)]
