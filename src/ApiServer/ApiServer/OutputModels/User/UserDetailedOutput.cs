@@ -14,6 +14,8 @@ namespace WomPlatform.Web.Api.OutputModels.User {
 
         public bool Verified { get; set; }
 
+        public PlatformRole Role { get; set; }
+
         public MerchantAuthOutput[] Merchants { get; set; }
 
         public SourceAuthDetailsOutput[] Sources { get; set; }

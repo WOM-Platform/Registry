@@ -116,6 +116,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Name = user.Name,
                 Surname = user.Surname,
                 Verified = user.VerificationToken == null,
+                Role = user.Role,
                 Merchants = (from m in taskMerchants.Result.Keys
                              let pos = taskMerchants.Result[m]
                              orderby m.Id
