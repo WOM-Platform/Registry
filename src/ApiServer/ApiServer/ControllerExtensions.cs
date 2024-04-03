@@ -85,6 +85,16 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public static ActionResult DeleteFailed(this ControllerBase c, string title = null) {
+            return new ObjectResult(
+                new ProblemDetails {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://wom.social/api/problems/delete-failed",
+                    Title = title ?? "Delete operation has failed"
+                }
+            );
+        }
+
     }
 
 }

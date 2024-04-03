@@ -116,6 +116,12 @@ namespace WomPlatform.Web.Api.Service {
             return SourceCollection.ReplaceOneAsync(filter, source);
         }
 
+        public async Task<bool> DeleteSource(ObjectId sourceId) {
+            var filter = Builders<Source>.Filter.Eq(s => s.Id, sourceId);
+            var result = await SourceCollection.DeleteOneAsync(filter);
+            return (result.DeletedCount == 1);
+        }
+
         public async Task AddUserAsAdministrator(IClientSessionHandle session, ObjectId sourceId, User user) {
             var results = await SourceCollection.UpdateOneAsync(
                 session,

@@ -94,6 +94,23 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
+        /// Deletes a source.
+        /// </summary>
+        [HttpDelete("{sourceId}")]
+        [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status204NoContent)]
+        public async Task<ActionResult> DeleteSource(
+            [FromRoute] ObjectId sourceId
+        ) {
+            await VerifyUserIsAdminOfSource(sourceId);
+
+            if(!await SourceService.DeleteSource(sourceId)) {
+                return this.DeleteFailed();
+            }
+
+            return this.NoContent();
+        }
+
+        /// <summary>
         /// Provides a count of vouchers produced by a given source.
         /// Request must be authorized by a user who is an administrator of the source.
         /// </summary>
