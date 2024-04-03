@@ -239,5 +239,96 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw;
             }
         }
+
+        private async Task<SourceAccessOutput.UserAccessInformation> GetInfo(ObjectId id) {
+            var user = await UserService.GetUserById(id);
+            return new SourceAccessOutput.UserAccessInformation {
+                UserId = user.Id,
+                Email = user.Email.ConcealEmail(),
+                Name = user.Name.Conceal(),
+                Surname = user.Surname.Conceal(),
+                Role = SourceRole.Admin,
+            };
+        }
+
+        [HttpGet("{sourceId}/access")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceAccessOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetSourceAccess(
+            [FromRoute] ObjectId sourceId
+        ) {
+            var source = await VerifyUserIsAdminOfSource(sourceId);
+
+            var userTasks = source.AdministratorUserIds.Select(async (ObjectId id) => {
+                var user = await UserService.GetUserById(id);
+                return new SourceAccessOutput.UserAccessInformation {
+                    UserId = user.Id,
+                    Email = user.Email,
+                    Name = user.Name,
+                    Surname = user.Surname,
+                    Role = SourceRole.Admin,
+                };
+            });
+            var users = await Task.WhenAll(userTasks);
+
+            return Ok(new SourceAccessOutput {
+                SourceId = source.Id,
+                Users = users,
+            });
+        }
+
+        [HttpPost("{sourceId}/access")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceAccessOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GrantSourceAccess(
+            [FromRoute] ObjectId sourceId,
+            [FromQuery] ObjectId userId
+        ) {
+            var source = await VerifyUserIsAdminOfSource(sourceId);
+
+            var user = await UserService.GetUserById(userId);
+            if(user == null) {
+                return this.UserNotFound();
+            }
+
+            source.AdministratorUserIds = (from accessUserId in source.AdministratorUserIds
+                                           where accessUserId != userId
+                                           select accessUserId)
+                                           .Concat([userId])
+                                           .ToArray();
+
+            if(!await SourceService.ReplaceSource(source)) {
+                return this.WriteFailed("Failed to update source");
+            }
+
+            return this.NoContent();
+        }
+
+        [HttpDelete("{sourceId}/access/{userId}")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceAccessOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> RevokeSourceAccess(
+            [FromRoute] ObjectId sourceId,
+            [FromRoute] ObjectId userId
+        ) {
+            var source = await VerifyUserIsAdminOfSource(sourceId);
+
+            source.AdministratorUserIds = (from accessUserId in source.AdministratorUserIds
+                                           where accessUserId != userId
+                                           select accessUserId)
+                                           .ToArray();
+
+            if(!await SourceService.ReplaceSource(source)) {
+                return this.WriteFailed("Failed to update source");
+            }
+
+            return this.NoContent();
+        }
     }
 }

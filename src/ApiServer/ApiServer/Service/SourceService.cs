@@ -111,9 +111,10 @@ namespace WomPlatform.Web.Api.Service {
             return SourceCollection.Find(filter).ToListAsync();
         }
 
-        public Task ReplaceSource(Source source) {
+        public async Task<bool> ReplaceSource(Source source) {
             var filter = Builders<Source>.Filter.Eq(s => s.Id, source.Id);
-            return SourceCollection.ReplaceOneAsync(filter, source);
+            var result = await SourceCollection.ReplaceOneAsync(filter, source);
+            return (result.ModifiedCount == 1);
         }
 
         public async Task<bool> DeleteSource(ObjectId sourceId) {

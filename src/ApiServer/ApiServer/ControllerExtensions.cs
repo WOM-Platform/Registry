@@ -35,6 +35,16 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public static ActionResult UserNotFound(this ControllerBase c) {
+            return new ObjectResult(
+                new ProblemDetails {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://wom.social/api/problems/user-not-found",
+                    Title = "User with the specified ID does not exist"
+                }
+            );
+        }
+
         public static ActionResult SourceNotFound(this ControllerBase c) {
             return new ObjectResult(
                 new ProblemDetails {
@@ -91,6 +101,16 @@ namespace WomPlatform.Web.Api {
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://wom.social/api/problems/delete-failed",
                     Title = title ?? "Delete operation has failed"
+                }
+            );
+        }
+
+        public static ActionResult WriteFailed(this ControllerBase c, string title = null) {
+            return new ObjectResult(
+                new ProblemDetails {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://wom.social/api/problems/write-failed",
+                    Title = title ?? "Write operation has failed"
                 }
             );
         }
