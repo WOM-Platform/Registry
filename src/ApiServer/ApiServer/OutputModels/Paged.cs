@@ -35,7 +35,7 @@ namespace WomPlatform.Web.Api.OutputModels {
                 Page = page,
                 PageSize = pageSize,
                 PageCount = pageCount,
-                HasPrevious = page > 0,
+                HasPrevious = page > 1,
                 HasNext = page < pageCount,
             };
         }
