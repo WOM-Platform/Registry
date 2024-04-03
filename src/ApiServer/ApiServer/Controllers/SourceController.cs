@@ -57,8 +57,9 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves a list of sources.
         /// </summary>
         [HttpGet]
+        [Authorize]
         [ProducesResponseType(typeof(Paged<SourceOutput>), StatusCodes.Status200OK)]
-        public async Task<ActionResult> List(
+        public async Task<ActionResult> ListSources(
             [FromQuery] string search = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -97,6 +98,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Deletes a source.
         /// </summary>
         [HttpDelete("{sourceId}")]
+        [Authorize]
         [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status204NoContent)]
         public async Task<ActionResult> DeleteSource(
             [FromRoute] ObjectId sourceId
