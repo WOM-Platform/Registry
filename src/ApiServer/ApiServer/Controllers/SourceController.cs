@@ -286,7 +286,8 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GrantSourceAccess(
             [FromRoute] ObjectId sourceId,
-            [FromQuery] ObjectId userId
+            [FromQuery] ObjectId userId,
+            [FromQuery] SourceRole role = SourceRole.Admin
         ) {
             var source = await VerifyUserIsAdminOfSource(sourceId);
 
@@ -295,7 +296,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.UserNotFound();
             }
 
-            source.AdministratorUserIds = (from accessUserId in source.AdministratorUserIds
+            source.AdministratorUserIds = (from accessUserId in source.AdministratorUserIds.ToSafeList()
                                            where accessUserId != userId
                                            select accessUserId)
                                            .Concat([userId])
