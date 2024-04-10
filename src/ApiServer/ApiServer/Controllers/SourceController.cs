@@ -261,7 +261,7 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             var source = await VerifyUserIsAdminOfSource(sourceId);
 
-            var userTasks = source.AdministratorUserIds.Select(async (ObjectId id) => {
+            var userTasks = source.AdministratorUserIds.ToSafeList().Select(async (ObjectId id) => {
                 var user = await UserService.GetUserById(id);
                 return new SourceAccessOutput.UserAccessInformation {
                     UserId = user.Id,
