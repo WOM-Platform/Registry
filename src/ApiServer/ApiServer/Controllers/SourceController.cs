@@ -320,7 +320,7 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             var source = await VerifyUserIsAdminOfSource(sourceId);
 
-            source.AdministratorUserIds = (from accessUserId in source.AdministratorUserIds
+            source.AdministratorUserIds = (from accessUserId in source.AdministratorUserIds.ToSafeList()
                                            where accessUserId != userId
                                            select accessUserId)
                                            .ToArray();
