@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Net.Mime;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels.Pos;
+using WomPlatform.Web.Api.OutputModels.Source;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -278,6 +280,89 @@ namespace WomPlatform.Web.Api.Controllers {
                     CountOfDeletedOffers = countOffers,
                 });
             }
+        }
+
+        [HttpGet("{merchantId}/access")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(MerchantAccessOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetMerchantAccess(
+            [FromRoute] ObjectId merchantId
+        ) {
+            var merchant = await VerifyUserIsAdminOfMerchant(merchantId);
+
+            var userTasks = merchant.Access.ToSafeList().Select(async (AccessControlEntry<MerchantRole> entry) => {
+                var user = await UserService.GetUserById(entry.UserId);
+                return new MerchantAccessOutput.UserAccessInformation {
+                    UserId = user.Id,
+                    Email = user.Email,
+                    Name = user.Name,
+                    Surname = user.Surname,
+                    Role = entry.Role,
+                };
+            });
+            var users = await Task.WhenAll(userTasks);
+
+            return Ok(new MerchantAccessOutput {
+                MerchantId = merchant.Id,
+                Users = users,
+            });
+        }
+
+        [HttpPost("{merchantId}/access")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceAccessOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GrantSourceAccess(
+            [FromRoute] ObjectId merchantId,
+            [FromQuery] ObjectId userId,
+            [FromQuery] MerchantRole role = MerchantRole.Admin
+        ) {
+            var merchant = await VerifyUserIsAdminOfMerchant(merchantId);
+
+            var user = await UserService.GetUserById(userId);
+            if(user == null) {
+                return this.UserNotFound();
+            }
+
+            merchant.Access = (from accessEntry in merchant.Access.ToSafeList()
+                               where accessEntry.UserId != userId
+                               select accessEntry)
+                                .Concat([new AccessControlEntry<MerchantRole> {
+                                    UserId = userId,
+                                    Role = role,
+                                }]).ToList();
+
+            if(!await MerchantService.ReplaceMerchant(merchant)) {
+                return this.WriteFailed("Failed to update merchant");
+            }
+
+            return this.NoContent();
+        }
+
+        [HttpDelete("{merchantId}/access/{userId}")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceAccessOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> RevokeSourceAccess(
+            [FromRoute] ObjectId merchantId,
+            [FromRoute] ObjectId userId
+        ) {
+            var merchant = await VerifyUserIsAdminOfMerchant(merchantId);
+
+            merchant.Access = (from accessEntry in merchant.Access.ToSafeList()
+                             where accessEntry.UserId != userId
+                             select accessEntry)
+                            .ToList();
+
+            if(!await MerchantService.ReplaceMerchant(merchant)) {
+                return this.WriteFailed("Failed to update merchant");
+            }
+
+            return this.NoContent();
         }
 
     }

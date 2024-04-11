@@ -65,9 +65,10 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Replace an existing merchant, by ID.
         /// </summary>
-        public Task ReplaceMerchant(Merchant merchant) {
+        public async Task<bool> ReplaceMerchant(Merchant merchant) {
             var filter = Builders<Merchant>.Filter.Eq(u => u.Id, merchant.Id);
-            return MerchantCollection.ReplaceOneAsync(filter, merchant);
+            var result = await MerchantCollection.ReplaceOneAsync(filter, merchant);
+            return (result.ModifiedCount == 1);
         }
 
         public class MerchantWithAdmins : Merchant {
