@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,28 @@ namespace WomPlatform.Web.Api.Service {
                 Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false)
             };
             return UserCollection.Find(filter, options).SingleOrDefaultAsync();
+        }
+
+        public async Task<(List<User>, long Total)> Search(string name, string email, int page, int pageSize) {
+            var filters = new List<FilterDefinition<User>>();
+            if(!string.IsNullOrWhiteSpace(name)) {
+                filters.Add(Builders<User>.Filter.Regex(u => u.Name, new BsonRegularExpression(name, "i")));
+                filters.Add(Builders<User>.Filter.Regex(u => u.Surname, new BsonRegularExpression(name, "i")));
+            }
+            if(!string.IsNullOrWhiteSpace(email)) {
+                filters.Add(Builders<User>.Filter.Regex(u => u.Email, new BsonRegularExpression(email, "i")));
+            }
+
+            var effectiveFilter = filters.Count > 0 ? Builders<User>.Filter.Or(filters) : Builders<User>.Filter.Empty;
+
+            var count = await UserCollection.CountDocumentsAsync(effectiveFilter);
+
+            var query = UserCollection.Find(effectiveFilter).SortByDescending(u => u.RegisteredOn)
+                .Skip((page, pageSize).GetSkip()).Limit(pageSize);
+
+            var results = await query.ToListAsync();
+
+            return (results, count);
         }
 
         public async Task<User> CreateUser(

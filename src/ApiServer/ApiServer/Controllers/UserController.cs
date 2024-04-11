@@ -46,7 +46,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Register a new user to the service.
         /// </summary>
         /// <param name="input">User registration payload.</param>
-        [HttpPost("register")]
+        [HttpPost]
         [AllowAnonymous]
         [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -85,6 +85,40 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError("Failed to register new user with email {0}", input.Email);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Register a new user to the service.
+        /// </summary>
+        /// <param name="input">User registration payload.</param>
+        [HttpPost("register")]
+        [Obsolete]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        public Task<IActionResult> RegisterLegacy(UserRegisterInput input) {
+            return Register(input);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<ActionResult> SearchUsers(
+            [FromQuery] string name,
+            [FromQuery] string email,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10
+        ) {
+            await VerifyUserIsAdmin();
+
+            (var results, var count) = await UserService.Search(name, email, page, pageSize);
+
+            return Ok(Paged<UserOutput>.FromPage(
+                (from u in results select u.ToOutput(false)).ToArray(),
+                page,
+                pageSize,
+                count
+            ));
         }
 
         /// <summary>
