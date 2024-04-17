@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// User registration payload.
         /// </summary>
         public record UserRegisterInput(
-            string Email, string Password, string Name, string Surname
+            string Email, string Password, string Name, string Surname, bool Verified = false, PlatformRole Role = PlatformRole.User
         );
 
         /// <summary>
@@ -47,6 +47,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         /// <param name="input">User registration payload.</param>
         [HttpPost]
+        [Authorize]
         [AllowAnonymous]
         [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -55,13 +56,16 @@ namespace WomPlatform.Web.Api.Controllers {
             if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
+            if(input.Verified || input.Role > PlatformRole.User) {
+                await this.VerifyUserIsAdmin();
+            }
 
-            Logger.LogDebug("Registering new user for {0}", input.Email);
+            Logger.LogInformation("Registering new user for {0} and role {1}", input.Email, input.Role);
 
             try {
                 var session = await CreateMongoSession();
                 var user = await session.WithTransactionAsync(async (session, token) => {
-                    var user = await UserService.CreateUser(session, input.Email, input.Name, input.Surname, input.Password);
+                    var user = await UserService.CreateUser(session, input.Email, input.Name, input.Surname, input.Password, input.Verified, input.Role);
                     Logger.LogInformation("New user {0} created for {1}", user.Id, user.Email);
 
                     return user;
@@ -302,7 +306,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserEmailVerifyInput([Required] [EmailAddress] string Email, [Required] string Token);
+        public record UserEmailVerifyInput([Required][EmailAddress] string Email, [Required] string Token);
 
         /// <summary>
         /// Verifies a user account.
@@ -317,7 +321,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Verify(
-            [FromBody] [Required] UserEmailVerifyInput input
+            [FromBody][Required] UserEmailVerifyInput input
         ) {
             var user = await UserService.GetUserByEmail(input.Email);
             if(user == null) {
@@ -372,14 +376,14 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 await UserService.RequestPasswordReset(input.Email);
             }
-            catch(ServiceProblemException ex) when (ex.Type == ServiceProblemException.UserNotFoundType) {
+            catch(ServiceProblemException ex) when(ex.Type == ServiceProblemException.UserNotFoundType) {
                 // Ignore error to prevent data leakage to user
             }
 
             return Ok();
         }
 
-        public record UserEmailExecutePasswordResetInput([Required] [EmailAddress] string Email, [Required] string Token, [Required] string Password);
+        public record UserEmailExecutePasswordResetInput([Required][EmailAddress] string Email, [Required] string Token, [Required] string Password);
 
         /// <summary>
         /// Performs a password reset for an existing user.
@@ -391,7 +395,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordReset(
-            [FromBody] [Required] UserEmailExecutePasswordResetInput input
+            [FromBody][Required] UserEmailExecutePasswordResetInput input
         ) {
             var user = await UserService.GetUserByEmail(input.Email);
             if(user == null) {
@@ -422,7 +426,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordResetLegacy(
             [FromRoute] ObjectId userId,
-            [FromBody] [Required] UserIdExecutePasswordResetInput input
+            [FromBody][Required] UserIdExecutePasswordResetInput input
         ) {
             if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
@@ -445,7 +449,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> ExecutePasswordReset(
             [FromRoute] ObjectId userId,
-            [FromBody] [Required] UserIdExecutePasswordResetInput input
+            [FromBody][Required] UserIdExecutePasswordResetInput input
         ) {
             if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
