@@ -91,7 +91,9 @@ namespace WomPlatform.Web.Api.Service {
             };
             await UserCollection.InsertOneAsync(session, user);
 
-            _composer.SendVerificationMail(user);
+            if(!isVerified) {
+                _composer.SendVerificationMail(user);
+            }
 
             return user;
         }
