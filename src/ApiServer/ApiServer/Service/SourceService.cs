@@ -78,13 +78,19 @@ namespace WomPlatform.Web.Api.Service {
             CreatedOn,
         }
 
-        public async Task<(List<Source>, long Total)> ListSources(string textSearch, ObjectId? controlledBy, int page, int pageSize, SourceListOrder orderBy) {
+        public async Task<(List<Source>, long Total)> ListSources(ObjectId? controlledBy, string textSearch, string aim, int page, int pageSize, SourceListOrder orderBy) {
             var filters = GetBasicSourceFilter();
             if(!string.IsNullOrWhiteSpace(textSearch)) {
                 filters.Add(Builders<Source>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
             }
             if(controlledBy.HasValue) {
                 filters.Add(Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, controlledBy.Value));
+            }
+            if(!string.IsNullOrWhiteSpace(aim)) {
+                filters.Add(Builders<Source>.Filter.Or(
+                    Builders<Source>.Filter.Eq(s => s.Aims.EnableAll, true),
+                    Builders<Source>.Filter.AnyEq(s => s.Aims.Enabled, aim.Trim().ToUpperInvariant())
+                ));
             }
 
             var effectiveFilter = filters.Count > 0 ? Builders<Source>.Filter.And(filters) : Builders<Source>.Filter.Empty;

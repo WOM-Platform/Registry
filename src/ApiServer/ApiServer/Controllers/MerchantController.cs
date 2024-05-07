@@ -158,7 +158,7 @@ namespace WomPlatform.Web.Api.Controllers {
             (var user, var isAdmin) = await this.CheckLoggedInUser();
             ObjectId? userFilter = isAdmin ? null : user.Id;
 
-            (var results, var count) = await MerchantService.ListMerchants(search, userFilter, page, pageSize, orderBy);
+            (var results, var count) = await MerchantService.ListMerchants(userFilter, search, page, pageSize, orderBy);
 
             return Ok(Paged<MerchantOutput>.FromPage(
                 (from m in results select m.ToOutput()).ToArray(),

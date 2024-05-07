@@ -34,7 +34,7 @@ namespace WomPlatform.Web.Api.Service {
             CreatedOn,
         }
 
-        public async Task<(List<Merchant>, long Total)> ListMerchants(string textSearch, ObjectId? controlledBy, int page, int pageSize, MerchantListOrder orderBy) {
+        public async Task<(List<Merchant>, long Total)> ListMerchants(ObjectId? controlledBy, string textSearch, int page, int pageSize, MerchantListOrder orderBy) {
             var filters = GetBasicMerchantFilter();
             if(!string.IsNullOrWhiteSpace(textSearch)) {
                 filters.Add(Builders<Merchant>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));

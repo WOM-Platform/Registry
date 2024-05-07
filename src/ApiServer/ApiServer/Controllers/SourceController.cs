@@ -61,6 +61,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(Paged<SourceOutput>), StatusCodes.Status200OK)]
         public async Task<ActionResult> ListSources(
             [FromQuery] string search = null,
+            [FromQuery] string aim = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(SourceService.SourceListOrder.Name)] SourceService.SourceListOrder orderBy = SourceService.SourceListOrder.Name
@@ -68,7 +69,7 @@ namespace WomPlatform.Web.Api.Controllers {
             (var user, var isAdmin) = await this.CheckLoggedInUser();
             ObjectId? userFilter = isAdmin ? null : user.Id;
 
-            (var results, var count) = await SourceService.ListSources(search, userFilter, page, pageSize, orderBy);
+            (var results, var count) = await SourceService.ListSources(userFilter, search, aim, page, pageSize, orderBy);
 
             return Ok(Paged<SourceOutput>.FromPage(
                 (from s in results select new SourceOutput(s)).ToArray(),
