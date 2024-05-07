@@ -23,6 +23,43 @@ namespace WomPlatform.Web.Api.Service {
             return MerchantCollection.InsertOneAsync(merchant);
         }
 
+        private IList<FilterDefinition<Merchant>> GetBasicMerchantFilter() {
+            List<FilterDefinition<Merchant>> filters = [];
+
+            return filters;
+        }
+
+        public enum MerchantListOrder {
+            Name,
+            CreatedOn,
+        }
+
+        public async Task<(List<Merchant>, long Total)> ListMerchants(string textSearch, ObjectId? controlledBy, int page, int pageSize, MerchantListOrder orderBy) {
+            var filters = GetBasicMerchantFilter();
+            if(!string.IsNullOrWhiteSpace(textSearch)) {
+                filters.Add(Builders<Merchant>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
+            }
+            if(controlledBy.HasValue) {
+                filters.Add(Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", controlledBy.Value));
+            }
+
+            var effectiveFilter = filters.Count > 0 ? Builders<Merchant>.Filter.And(filters) : Builders<Merchant>.Filter.Empty;
+
+            var count = await MerchantCollection.CountDocumentsAsync(effectiveFilter);
+
+            var query = MerchantCollection.Find(effectiveFilter);
+            query = orderBy switch {
+                MerchantListOrder.Name => query.SortBy(p => p.Name),
+                MerchantListOrder.CreatedOn => query.SortByDescending(p => p.CreatedOn),
+                _ => throw new ArgumentException("Unsupported order clause"),
+            };
+            query = query.Skip((page, pageSize).GetSkip()).Limit(pageSize);
+
+            var results = await query.ToListAsync();
+
+            return (results, count);
+        }
+
         public Task<Merchant> GetMerchantById(ObjectId id) {
             var filter = Builders<Merchant>.Filter.Eq(m => m.Id, id);
             return MerchantCollection.Find(filter).SingleOrDefaultAsync();

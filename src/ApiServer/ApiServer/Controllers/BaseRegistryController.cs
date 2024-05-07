@@ -174,7 +174,10 @@ namespace WomPlatform.Web.Api.Controllers {
             return true;
         }
 
-        private async Task<(User UserProfile, bool IsAdmin)> CheckLoggedInUser() {
+        /// <summary>
+        /// Checks whether the user is logged-in and whether they are an administrator.
+        /// </summary>
+        protected async Task<(User UserProfile, bool IsAdmin)> CheckLoggedInUser() {
             if(!User.GetUserId(out var loggedUserId)) {
                 throw ServiceProblemException.UserIsNotLoggedIn;
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Mime;
@@ -15,6 +16,7 @@ using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -139,6 +141,31 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError("Failed to register new merchant with fiscal code {0}", input.FiscalCode);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// List merchants.
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        [ProducesResponseType(typeof(Paged<MerchantOutput>), StatusCodes.Status200OK)]
+        public async Task<ActionResult> ListMerchants(
+            [FromQuery] string search = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] [DefaultValue(MerchantService.MerchantListOrder.Name)] MerchantService.MerchantListOrder orderBy = MerchantService.MerchantListOrder.Name
+        ) {
+            (var user, var isAdmin) = await this.CheckLoggedInUser();
+            ObjectId? userFilter = isAdmin ? null : user.Id;
+
+            (var results, var count) = await MerchantService.ListMerchants(search, userFilter, page, pageSize, orderBy);
+
+            return Ok(Paged<MerchantOutput>.FromPage(
+                (from m in results select m.ToOutput()).ToArray(),
+                page,
+                pageSize,
+                count
+            ));
         }
 
         /// <summary>
