@@ -65,9 +65,10 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(SourceService.SourceListOrder.Name)] SourceService.SourceListOrder orderBy = SourceService.SourceListOrder.Name
         ) {
-            await VerifyUserIsAdmin();
+            (var user, var isAdmin) = await this.CheckLoggedInUser();
+            ObjectId? userFilter = isAdmin ? null : user.Id;
 
-            (var results, var count) = await SourceService.ListSources(search, page, pageSize, orderBy);
+            (var results, var count) = await SourceService.ListSources(search, userFilter, page, pageSize, orderBy);
 
             return Ok(Paged<SourceOutput>.FromPage(
                 (from s in results select new SourceOutput(s)).ToArray(),
