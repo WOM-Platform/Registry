@@ -25,12 +25,6 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-        protected IMongoCollection<Aim> AimCollection {
-            get {
-                return MainDatabase.GetCollection<Aim>("Aims");
-            }
-        }
-
         protected IMongoCollection<ApiKey> ApiKeyCollection {
             get {
                 return MainDatabase.GetCollection<ApiKey>("ApiKeys");
