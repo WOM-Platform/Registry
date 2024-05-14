@@ -100,6 +100,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves detailed information about a given source.
         /// </summary>
         [HttpGet("{sourceId}/details")]
+        [Authorize]
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status200OK)]
         public async Task<ActionResult> GetSourceDetails(
