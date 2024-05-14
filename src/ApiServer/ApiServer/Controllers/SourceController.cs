@@ -242,17 +242,6 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        private async Task<SourceAccessOutput.UserAccessInformation> GetInfo(ObjectId id) {
-            var user = await UserService.GetUserById(id);
-            return new SourceAccessOutput.UserAccessInformation {
-                UserId = user.Id,
-                Email = user.Email.ConcealEmail(),
-                Name = user.Name.Conceal(),
-                Surname = user.Surname.Conceal(),
-                Role = SourceRole.Admin,
-            };
-        }
-
         [HttpGet("{sourceId}/access")]
         [Authorize]
         [Produces(MediaTypeNames.Application.Json)]

@@ -171,18 +171,18 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Retrieves information about an existing merchant.
         /// </summary>
-        /// <param name="id">Merchant ID.</param>
+        /// <param name="merchantId">Merchant ID.</param>
         /// <remarks>
         /// Can be accessed only if logged in user is the merchant's administrator or POS user.
         /// </remarks>
-        [HttpGet("{id}")]
+        [HttpGet("{merchantId}")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
-            [FromRoute] ObjectId id
+            [FromRoute] ObjectId merchantId
         ) {
-            var existingMerchant = await MerchantService.GetMerchantById(id);
+            var existingMerchant = await MerchantService.GetMerchantById(merchantId);
             if(existingMerchant == null) {
                 return NotFound();
             }
@@ -219,22 +219,22 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Updates information about an existing merchant.
         /// </summary>
-        /// <param name="id">Merchant ID.</param>
+        /// <param name="merchantId">Merchant ID.</param>
         /// <param name="input">Updated information.</param>
         /// <remarks>
         /// Can be accessed only if logged in user is the merchant's administrator.
         /// </remarks>
-        [HttpPut("{id}")]
+        [HttpPut("{merchantId}")]
         [Authorize]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateMerchant(
-            [FromRoute] ObjectId id,
+            [FromRoute] ObjectId merchantId,
             [FromBody] MerchantUpdateInput input
         ) {
-            var existingMerchant = await VerifyUserIsAdminOfMerchant(id);
+            var existingMerchant = await VerifyUserIsAdminOfMerchant(merchantId);
 
             try {
                 existingMerchant.Name = input.Name;
@@ -256,7 +256,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 await MerchantService.ReplaceMerchant(existingMerchant);
             }
             catch(Exception) {
-                Logger.LogError("Failed to update merchant {0}", id);
+                Logger.LogError("Failed to update merchant {0}", merchantId);
                 throw;
             }
 
@@ -333,6 +333,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(new MerchantAccessOutput {
                 MerchantId = merchant.Id,
+                MerchantName = merchant.Name,
                 Users = users,
             });
         }
@@ -390,6 +391,32 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return this.NoContent();
+        }
+
+        /// <summary>
+        /// Retrieves the list of POS of the merchant.
+        /// </summary>
+        /// <param name="id">Merchant ID.</param>
+        /// <remarks>
+        /// Can be accessed only if logged in user is the merchant's administrator or user.
+        /// </remarks>
+        [HttpGet("{merchantId}/pos")]
+        [Authorize]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetPos(
+            [FromRoute] ObjectId merchantId
+        ) {
+            var merchant = await this.VerifyUserIsUserOfMerchant(merchantId);
+
+            var pos = await PosService.GetPosByMerchant(merchantId);
+
+            return Ok(new MerchantPosOutput {
+                MerchantId = merchant.Id,
+                MerchantName = merchant.Name,
+                Pos = (from p in pos
+                       let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
+                       select p.ToAuthOutput(pictureOutput)).ToArray(),
+            });
         }
 
     }

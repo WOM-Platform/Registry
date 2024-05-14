@@ -268,7 +268,7 @@ namespace WomPlatform.Web.Api.Controllers {
         );
 
         /// <summary>
-        /// Retrieves the auth information (ID and private key) used for the voucher transfer protocol.
+        /// Retrieves the auth information (ID and private key) used for the voucher exchange protocol.
         /// </summary>
         [HttpGet("exchange")]
         [Produces("application/json")]

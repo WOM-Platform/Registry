@@ -16,6 +16,8 @@ namespace WomPlatform.Web.Api.OutputModels.Merchant {
 
         public ObjectId MerchantId { get; set; }
 
+        public string MerchantName { get; set; }
+
         public UserAccessInformation[] Users { get; set; }
     }
 }
