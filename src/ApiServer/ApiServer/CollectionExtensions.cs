@@ -37,6 +37,19 @@ namespace WomPlatform.Web.Api {
             return d.ToImmutableDictionary();
         }
 
+        /// <summary>
+        /// Returns true if all elements of an enumeration are contained in a list of elements.
+        /// </summary>
+        public static bool AreAllContainedIn<T>(this IEnumerable<T> source, T[] reference) {
+            foreach(var element in source) {
+                if(!reference.Contains(element)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
     }
 
 }

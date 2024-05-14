@@ -112,6 +112,39 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(new SourceAuthDetailsOutput(source, AimService.GetAllAimCodes(), customGeneratorOutput));
         }
 
+        [HttpPut("{sourceId}")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> UpdateSource(
+            [FromRoute] ObjectId sourceId,
+            [FromBody] UpdateSourceInput input
+        ) {
+            var source = await this.VerifyUserIsAdminOfSource(sourceId);
+
+            source.Name = input.Name.Trim();
+            source.Url = input.Url;
+
+            // Verify admin powers if details are changed
+            if(input.Aims != null) {
+                await this.VerifyUserIsAdmin();
+
+                if(!input.Aims.Enabled.AreAllContainedIn(AimService.GetAllAimCodes())) {
+                    ModelState.AddModelError(nameof(input.Aims.Enabled), "One or more aim codes are not valid");
+                    throw new Exception("One or more aim codes are not valid");
+                }
+
+                source.Aims = new Source.SourceAims {
+                    Enabled = input.Aims.Enabled,
+                    EnableAll = input.Aims.EnableAll,
+                };
+            }
+
+            if(!await SourceService.ReplaceSource(source)) {
+                throw new Exception("Failed to update source");
+            }
+
+            return Accepted();
+        }
+
         /// <summary>
         /// Deletes a source.
         /// </summary>
