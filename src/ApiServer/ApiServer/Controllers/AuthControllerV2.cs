@@ -92,7 +92,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var sources = await SourceService.GetSourcesByUser(userId);
             Logger.LogInformation("User {0} controls {1} sources", userId, sources.Count);
 
-            var allAims = (from a in await AimService.GetRootAims() select a.Code).ToArray();
+            var allAims = AimService.GetAllAimCodes();
 
             return Ok(new SourceDashboardOutput {
                 Name = user.Name,
@@ -208,14 +208,14 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: "Source bound to API key does not exist");
             }
 
-            var allAims = (from a in await AimService.GetRootAims() select a.Code).ToArray();
+            var allAims = AimService.GetAllAimCodes();
 
             return Ok(new GetApiKeyCredentialsOutput(
                 "Source", sourceId.ToString(), apiKey.PrivateKey, apiKey.PublicKey,
                 new GetApiKeySourceDetails(
                     source.Name,
                     source.Url,
-                    (source.Aims?.EnableAll ?? false ? allAims : source.Aims?.Enabled).ToSafeArray(),
+                    ((source.Aims?.EnableAll ?? false) ? allAims : source.Aims?.Enabled).ToSafeArray(),
                     (source.Location?.Position == null) ? null : new GeoCoordsOutput {
                         Latitude = source.Location.Position.Coordinates.Latitude,
                         Longitude = source.Location.Position.Coordinates.Longitude

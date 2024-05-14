@@ -143,10 +143,10 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var taskAims = AimService.GetRootAimCodes();
+            var aims = AimService.GetAllAimCodes();
             var taskSources = SourceService.GetSourcesByUser(myself);
             var taskMerchants = PosService.GetMerchantsAndPosByUser(myself);
-            await Task.WhenAll(taskAims, taskSources, taskMerchants);
+            await Task.WhenAll(taskSources, taskMerchants);
 
             return Ok(new UserDetailedOutput {
                 Id = user.Id,
@@ -166,7 +166,7 @@ namespace WomPlatform.Web.Api.Controllers {
                              )).ToArray(),
                 Sources = (from s in taskSources.Result
                            let customGeneratorPic = PicturesService.GetPictureOutput(s.CustomGenerator?.LogoPath, s.CustomGenerator?.LogoBlurHash)
-                           select new SourceAuthDetailsOutput(s, taskAims.Result, customGeneratorPic)).ToArray(),
+                           select new SourceAuthDetailsOutput(s, aims, customGeneratorPic)).ToArray(),
             });
         }
 

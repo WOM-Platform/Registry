@@ -52,14 +52,14 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var testSource = await SourceService.GetSourceById(_testSourceId);
             var rnd = new Random();
-            var aim = (await AimService.GetAllAims()).OrderBy(a => rnd.NextDouble()).First();
+            var aimCode = (AimService.GetAllAimCodes()).OrderBy(a => rnd.NextDouble()).First();
 
-            Logger.LogTrace("Test source: {0}, random aim '{1}'", testSource.Name, aim.Code);
+            Logger.LogTrace("Test source: {0}, random aim '{1}'", testSource.Name, aimCode);
 
             var now = DateTime.UtcNow;
             var voucherInfos = new VoucherGenerationSpecification[] {
                 new VoucherGenerationSpecification {
-                    Aim = aim.Code,
+                    Aim = aimCode,
                     Location = new GeoCoordsInput {
                         Latitude = rnd.NextBetween(5, 40),
                         Longitude = rnd.NextBetween(5, 50),

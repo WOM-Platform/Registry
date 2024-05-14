@@ -39,5 +39,12 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
 
         [Obsolete]
         public bool LocationIsFixed { get; init; }
+
+        public class AimDetails {
+            public string[] Enabled { get; init; }
+        }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public AimDetails Aims { get; init; }
     }
 }
