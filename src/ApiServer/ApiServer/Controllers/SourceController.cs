@@ -97,6 +97,22 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
+        /// Retrieves detailed information about a given source.
+        /// </summary>
+        [HttpGet("{sourceId}/details")]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status200OK)]
+        public async Task<ActionResult> GetSourceDetails(
+            [FromRoute] ObjectId sourceId
+        ) {
+            var source = await this.VerifyUserIsAdminOfSource(sourceId);
+
+            var customGeneratorOutput = source.CustomGenerator != null ? PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash) : null;
+
+            return Ok(new SourceAuthDetailsOutput(source, AimService.GetAllAimCodes(), customGeneratorOutput));
+        }
+
+        /// <summary>
         /// Deletes a source.
         /// </summary>
         [HttpDelete("{sourceId}")]
@@ -150,8 +166,9 @@ namespace WomPlatform.Web.Api.Controllers {
             if(source.CustomGenerator == null) {
                 return NoContent();
             }
+            var customGeneratorOutput = PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash);
 
-            return Ok(source.CustomGenerator.ToOutput(PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash)));
+            return Ok(source.CustomGenerator.ToOutput(customGeneratorOutput));
         }
 
         [HttpPut("{sourceId}/custom-generator")]
