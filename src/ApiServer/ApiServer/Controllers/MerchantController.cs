@@ -132,7 +132,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return CreatedAtAction(
                     nameof(GetInformation),
                     new {
-                        id = merchant.Id
+                        merchantId = merchant.Id
                     },
                     merchant.ToOutput()
                 );
