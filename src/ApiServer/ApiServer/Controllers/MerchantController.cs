@@ -155,7 +155,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(MerchantService.MerchantListOrder.Name)] MerchantService.MerchantListOrder orderBy = MerchantService.MerchantListOrder.Name
         ) {
-            (var user, var isAdmin) = await this.CheckLoggedInUser();
+            (var user, var isAdmin) = await this.RetrieveUserProfile();
             ObjectId? userFilter = isAdmin ? null : user.Id;
 
             (var results, var count) = await MerchantService.ListMerchants(userFilter, search, page, pageSize, orderBy);
@@ -235,6 +235,10 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromBody] MerchantUpdateInput input
         ) {
             var existingMerchant = await VerifyUserIsAdminOfMerchant(merchantId);
+
+            if(existingMerchant.Enabled != input.Enabled && !await IsUserAdmin()) {
+                return Forbid();
+            }
 
             try {
                 existingMerchant.Name = input.Name;
