@@ -130,7 +130,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 if(!input.Aims.Enabled.AreAllContainedIn(AimService.GetAllAimCodes())) {
                     ModelState.AddModelError(nameof(input.Aims.Enabled), "One or more aim codes are not valid");
-                    throw new Exception("One or more aim codes are not valid");
+                    return ValidationProblem();
                 }
 
                 source.Aims = new Source.SourceAims {
@@ -140,7 +140,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             if(!await SourceService.ReplaceSource(source)) {
-                throw new Exception("Failed to update source");
+                return this.WriteFailed("Failed to update source");
             }
 
             return Accepted();
