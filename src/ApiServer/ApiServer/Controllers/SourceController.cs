@@ -124,7 +124,7 @@ namespace WomPlatform.Web.Api.Controllers {
             source.Name = input.Name.Trim();
             source.Url = input.Url;
 
-            // Verify admin powers if details are changed
+            // Verify if admin-only details are changed
             if(input.Aims != null) {
                 await this.VerifyUserIsAdmin();
 
