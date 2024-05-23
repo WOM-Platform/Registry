@@ -10,11 +10,15 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
             PictureOutput customGeneratorPicture
         ) : base(source) {
 
-            EnabledAims = (source.Aims?.EnableAll ?? false ? allAims : source.Aims?.Enabled).ToSafeArray();
+            string[] enabledAims = (source.Aims?.EnableAll ?? false || (source.Aims?.Enabled ?? []).Length == 0) ?
+                allAims :
+                source.Aims?.Enabled;
+
+            EnabledAims = enabledAims.ToSafeArray();
             PerAimBudget = (source.Aims?.CurrentBudget).ToSafeImmutableDictionary();
 
             Aims = new AimDetails {
-                Enabled = ((source.Aims?.EnableAll ?? false) ? allAims : source.Aims?.Enabled).ToSafeArray(),
+                Enabled = enabledAims.ToSafeArray(),
                 Budget = (source.Aims?.CurrentBudget).ToSafeImmutableDictionary(),
             };
 
