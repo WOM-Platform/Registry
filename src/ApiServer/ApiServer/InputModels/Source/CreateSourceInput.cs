@@ -8,5 +8,17 @@ namespace WomPlatform.Web.Api.InputModels.Source {
 
         [Url]
         public string Url { get; set; }
+
+        public class AimDetails {
+            public string[] Enabled { get; set; }
+
+            public bool EnableAll { get; set; }
+
+            // TODO: aim budget
+        }
+
+        public AimDetails Aims { get; set; }
+
+        // TODO: source location stuff
     }
 }

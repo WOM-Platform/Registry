@@ -51,8 +51,8 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public async Task<Source> CreateNewSource(string name, string url, AsymmetricCipherKeyPair keys,
-            GeoCoords? location = null, bool locationIsFixed = false,
-            ObjectId[] administratorUserIds = null
+            string[] enabledAimCodes = null, bool enableAllAims = true,
+            GeoCoords? location = null, bool locationIsFixed = false
         ) {
             var source = new Source {
                 Name = name,
@@ -61,14 +61,16 @@ namespace WomPlatform.Web.Api.Service {
                 Url = url,
                 CreatedOn = DateTime.UtcNow,
                 IsDeleted = false,
-                Aims = null, // TODO: this must be set
+                Aims = new Source.SourceAims {
+                    EnableAll = enableAllAims,
+                    Enabled = enableAllAims ? null : (enabledAimCodes ?? []),
+                },
                 Location = location.HasValue ?
                     new Source.SourceLocation {
                         Position = location.Value.ToGeoJson(),
                         IsFixed = locationIsFixed,
                     } :
                     null,
-                AdministratorUserIds = administratorUserIds,
             };
 
             await SourceCollection.InsertOneAsync(source);

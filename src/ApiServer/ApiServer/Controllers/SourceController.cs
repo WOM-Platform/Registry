@@ -46,7 +46,8 @@ namespace WomPlatform.Web.Api.Controllers {
             await VerifyUserIsAdmin();
 
             var keys = CryptoHelper.CreateKeyPair();
-            var source = await SourceService.CreateNewSource(input.Name, input.Url, keys);
+            var source = await SourceService.CreateNewSource(input.Name, input.Url, keys,
+                input.Aims.Enabled, input.Aims.EnableAll);
 
             Logger.LogInformation("Source {0} created with ID {1}", input.Name, source.Id);
 
