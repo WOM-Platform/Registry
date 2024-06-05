@@ -140,6 +140,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             if(!await SourceService.ReplaceSource(source)) {
+                Logger.LogError("Source replace failed");
                 return this.WriteFailed("Failed to update source");
             }
 
