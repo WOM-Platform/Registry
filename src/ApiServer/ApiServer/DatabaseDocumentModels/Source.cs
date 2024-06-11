@@ -31,6 +31,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public DateTime? CreatedOn { get; set; }
 
+        [BsonElement("isDeleted")]
+        [BsonDefaultValue(false)]
+        [BsonIgnoreIfDefault]
+        public bool IsDeleted { get; set; }
+
         public class SourceAims {
             [BsonElement("enableAll")]
             [BsonIgnoreIfDefault]

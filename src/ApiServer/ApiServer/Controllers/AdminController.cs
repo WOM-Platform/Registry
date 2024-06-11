@@ -59,28 +59,6 @@ namespace WomPlatform.Web.Api.Controllers {
             return File(Encoding.UTF8.GetBytes(csv), "text/csv", $"merchants-{today}.csv");
         }
 
-        [HttpPost("generate/source")]
-        [Obsolete]
-        [Authorize]
-        [ProducesResponseType(typeof(SourceAuthOutput), StatusCodes.Status200OK)]
-        public async Task<ActionResult> GenerateNewSource(
-            [FromQuery] [Required] [StringLength(64, MinimumLength = 3)] string name,
-            [FromQuery] [Url] string url,
-            [FromQuery] double? latitude,
-            [FromQuery] double? longitude
-        ) {
-            await VerifyUserIsAdmin();
-
-            var keys = CryptoHelper.CreateKeyPair();
-
-            var source = await SourceService.CreateNewSource(name, url, keys,
-                location: (latitude.HasValue && longitude.HasValue) ? new GeoCoords { Latitude = latitude.Value, Longitude = longitude.Value } : null,
-                locationIsFixed: (latitude.HasValue && longitude.HasValue)
-            );
-
-            return Ok(new SourceAuthOutput(source));
-        }
-
         [HttpPost("generate/user")]
         [Authorize]
         [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status200OK)]

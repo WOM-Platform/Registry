@@ -249,6 +249,10 @@ namespace WomPlatform.Web.Api {
                     httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
                     var exceptionHandlerPathFeature = httpContext.Features.Get<IExceptionHandlerPathFeature>();
+                    if(exceptionHandlerPathFeature?.Error != null) {
+                        logger.LogError(exceptionHandlerPathFeature.Error, "Unhandled exception");
+                    }
+
                     if(exceptionHandlerPathFeature?.Error is ServiceProblemException) {
                         var serviceException = (ServiceProblemException)exceptionHandlerPathFeature.Error;
 
@@ -262,9 +266,12 @@ namespace WomPlatform.Web.Api {
                             ProblemDetails = serviceException.ToProblemDetails(),
                         });
                     }
-                    else {
+                    else if(env.IsDevelopment()) {
                         httpContext.Response.ContentType = System.Net.Mime.MediaTypeNames.Text.Plain;
                         await httpContext.Response.WriteAsync(exceptionHandlerPathFeature?.Error?.ToString());
+                    }
+                    else {
+                        // Write nothing
                     }
                 },
             });

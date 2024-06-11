@@ -46,7 +46,8 @@ namespace WomPlatform.Web.Api.Controllers {
             await VerifyUserIsAdmin();
 
             var keys = CryptoHelper.CreateKeyPair();
-            var source = await SourceService.CreateNewSource(input.Name, input.Url, keys);
+            var source = await SourceService.CreateNewSource(input.Name, input.Url, keys,
+                input.Aims.Enabled, input.Aims.EnableAll);
 
             Logger.LogInformation("Source {0} created with ID {1}", input.Name, source.Id);
 
@@ -61,13 +62,15 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(Paged<SourceOutput>), StatusCodes.Status200OK)]
         public async Task<ActionResult> ListSources(
             [FromQuery] string search = null,
+            [FromQuery] string aim = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(SourceService.SourceListOrder.Name)] SourceService.SourceListOrder orderBy = SourceService.SourceListOrder.Name
         ) {
-            await VerifyUserIsAdmin();
+            (var user, var isAdmin) = await this.RetrieveUserProfile();
+            ObjectId? userFilter = isAdmin ? null : user.Id;
 
-            (var results, var count) = await SourceService.ListSources(search, page, pageSize, orderBy);
+            (var results, var count) = await SourceService.ListSources(userFilter, search, aim, page, pageSize, orderBy);
 
             return Ok(Paged<SourceOutput>.FromPage(
                 (from s in results select new SourceOutput(s)).ToArray(),
@@ -92,6 +95,57 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return Ok(new SourceOutput(source));
+        }
+
+        /// <summary>
+        /// Retrieves detailed information about a given source.
+        /// </summary>
+        [HttpGet("{sourceId}/details")]
+        [Authorize]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status200OK)]
+        public async Task<ActionResult> GetSourceDetails(
+            [FromRoute] ObjectId sourceId
+        ) {
+            var source = await this.VerifyUserIsAdminOfSource(sourceId);
+
+            var customGeneratorOutput = source.CustomGenerator != null ? PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash) : null;
+
+            return Ok(new SourceAuthDetailsOutput(source, AimService.GetAllAimCodes(), customGeneratorOutput));
+        }
+
+        [HttpPut("{sourceId}")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult> UpdateSource(
+            [FromRoute] ObjectId sourceId,
+            [FromBody] UpdateSourceInput input
+        ) {
+            var source = await this.VerifyUserIsAdminOfSource(sourceId);
+
+            source.Name = input.Name.Trim();
+            source.Url = input.Url;
+
+            // Verify if admin-only details are changed
+            if(input.Aims != null) {
+                await this.VerifyUserIsAdmin();
+
+                if(!input.Aims.Enabled.AreAllContainedIn(AimService.GetAllAimCodes())) {
+                    ModelState.AddModelError(nameof(input.Aims.Enabled), "One or more aim codes are not valid");
+                    return ValidationProblem();
+                }
+
+                source.Aims = new Source.SourceAims {
+                    Enabled = input.Aims.Enabled,
+                    EnableAll = input.Aims.EnableAll,
+                };
+            }
+
+            if(!await SourceService.ReplaceSource(source)) {
+                Logger.LogError("Source replace failed");
+                return this.WriteFailed("Failed to update source");
+            }
+
+            return Accepted();
         }
 
         /// <summary>
@@ -148,8 +202,9 @@ namespace WomPlatform.Web.Api.Controllers {
             if(source.CustomGenerator == null) {
                 return NoContent();
             }
+            var customGeneratorOutput = PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash);
 
-            return Ok(source.CustomGenerator.ToOutput(PicturesService.GetPictureOutput(source.CustomGenerator.LogoPath, source.CustomGenerator.LogoBlurHash)));
+            return Ok(source.CustomGenerator.ToOutput(customGeneratorOutput));
         }
 
         [HttpPut("{sourceId}/custom-generator")]
@@ -238,17 +293,6 @@ namespace WomPlatform.Web.Api.Controllers {
                 Logger.LogError("Failed to update source logo");
                 throw;
             }
-        }
-
-        private async Task<SourceAccessOutput.UserAccessInformation> GetInfo(ObjectId id) {
-            var user = await UserService.GetUserById(id);
-            return new SourceAccessOutput.UserAccessInformation {
-                UserId = user.Id,
-                Email = user.Email.ConcealEmail(),
-                Name = user.Name.Conceal(),
-                Surname = user.Surname.Conceal(),
-                Role = SourceRole.Admin,
-            };
         }
 
         [HttpGet("{sourceId}/access")]

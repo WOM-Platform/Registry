@@ -174,7 +174,10 @@ namespace WomPlatform.Web.Api.Controllers {
             return true;
         }
 
-        private async Task<(User UserProfile, bool IsAdmin)> CheckLoggedInUser() {
+        /// <summary>
+        /// Checks whether the user is logged-in and whether they are an administrator.
+        /// </summary>
+        protected async Task<(User UserProfile, bool IsAdmin)> RequireLoggedUser() {
             if(!User.GetUserId(out var loggedUserId)) {
                 throw ServiceProblemException.UserIsNotLoggedIn;
             }
@@ -188,11 +191,20 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
+        /// Determines whether the logged-in user is a platform administrator.
+        /// </summary>
+        protected async Task<bool> IsUserAdmin() {
+            (_, bool isAdmin) = await RequireLoggedUser();
+
+            return isAdmin;
+        }
+
+        /// <summary>
         /// Verifies that the logged-in user is a platform administrator.
         /// Returns the logged-in user's profile.
         /// </summary>
         protected async Task<User> VerifyUserIsAdmin() {
-            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+            (var userProfile, bool isAdmin) = await RequireLoggedUser();
             if(!isAdmin) {
                 throw ServiceProblemException.UserIsNotAdmin;
             }
@@ -204,7 +216,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Verifies that the logged-in user is an authorized POS user.
         /// </summary>
         protected async Task<(Merchant merchant, Pos pos)> VerifyUserIsUserOfPos(ObjectId posId) {
-            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+            (var userProfile, bool isAdmin) = await RequireLoggedUser();
 
             var pos = await PosService.GetPosById(posId);
             if(pos == null) {
@@ -232,7 +244,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Verifies that the logged-in user is an authorized merchant user.
         /// </summary>
         protected async Task<Merchant> VerifyUserIsUserOfMerchant(ObjectId merchantId) {
-            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+            (var userProfile, bool isAdmin) = await RequireLoggedUser();
 
             var merchant = await MerchantService.GetMerchantById(merchantId);
             if(merchant == null) {
@@ -254,7 +266,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Verifies that the logged-in user is an authorized POS administrator.
         /// </summary>
         protected async Task<(Merchant merchant, Pos pos)> VerifyUserIsAdminOfPos(ObjectId posId) {
-            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+            (var userProfile, bool isAdmin) = await RequireLoggedUser();
 
             var pos = await PosService.GetPosById(posId);
             if(pos == null) {
@@ -282,7 +294,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Verifies that the logged-in user is an authorized merchant administrator.
         /// </summary>
         protected async Task<Merchant> VerifyUserIsAdminOfMerchant(ObjectId merchantId) {
-            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+            (var userProfile, bool isAdmin) = await RequireLoggedUser();
 
             var merchant = await MerchantService.GetMerchantById(merchantId);
             if(merchant == null) {
@@ -301,7 +313,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         protected async Task<Source> VerifyUserIsAdminOfSource(ObjectId sourceId) {
-            (var userProfile, bool isAdmin) = await CheckLoggedInUser();
+            (var userProfile, bool isAdmin) = await RequireLoggedUser();
 
             var source = await SourceService.GetSourceById(sourceId);
             if(source == null) {

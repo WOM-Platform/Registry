@@ -31,7 +31,6 @@ namespace WomPlatform.Web.Api.OutputModels.Source {
             public bool IsFixed { get; set; }
         }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public LocationDetails Location { get; set; }
 
         [Obsolete]

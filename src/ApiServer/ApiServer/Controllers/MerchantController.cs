@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Mime;
@@ -16,6 +17,7 @@ using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -30,7 +32,7 @@ namespace WomPlatform.Web.Api.Controllers {
         : base(serviceProvider, logger) {
         }
 
-        private static readonly Regex AllZerosRegex = new Regex("^0+$", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex AllZerosRegex = new("^0+$", RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Registers a new merchant to the service.
@@ -40,7 +42,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(CreateMerchantInput input) {
             Logger.LogInformation("Attempting to register new merchant {0} with fiscal code {1}", input.Name, input.FiscalCode);
@@ -66,9 +68,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 );
             }
 
-            if(!User.GetUserId(out var loggedUserId)) {
-                return Forbid();
-            }
+            (User user, bool isAdmin) = await RequireLoggedUser();
 
             try {
                 var merchant = new Merchant {
@@ -87,23 +87,27 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = input.Description,
                     WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
-                    Access = new() {
-                        new AccessControlEntry<MerchantRole> {
-                            UserId = loggedUserId,
-                            Role = MerchantRole.Admin,
-                        }
-                    },
+                    Access = new(),
                     Enabled = true, // All merchants are automatically enabled for now
                     ActivationCode = input.ActivationCode.NormalizeCode(),
                 };
+
+                // Add user as Merchant administrator only if user is not platform administrator
+                if(!isAdmin) {
+                    merchant.Access.Add(new AccessControlEntry<MerchantRole> {
+                        UserId = user.Id,
+                        Role = MerchantRole.Admin,
+                    });
+                }
+
                 await MerchantService.CreateMerchant(merchant);
 
-                Logger.LogInformation("New merchant created {0} by user {1}", merchant.Id, loggedUserId);
+                Logger.LogInformation("New merchant created {0} by user {1}", merchant.Id, user.Id);
 
                 return CreatedAtAction(
                     nameof(GetInformation),
                     new {
-                        id = merchant.Id
+                        merchantId = merchant.Id
                     },
                     merchant.ToOutput()
                 );
@@ -115,20 +119,45 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
+        /// List merchants.
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        [ProducesResponseType(typeof(Paged<MerchantOutput>), StatusCodes.Status200OK)]
+        public async Task<ActionResult> ListMerchants(
+            [FromQuery] string search = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] [DefaultValue(MerchantService.MerchantListOrder.Name)] MerchantService.MerchantListOrder orderBy = MerchantService.MerchantListOrder.Name
+        ) {
+            (var user, bool isAdmin) = await RequireLoggedUser();
+            ObjectId? userFilter = isAdmin ? null : user.Id;
+
+            (var results, var count) = await MerchantService.ListMerchants(userFilter, search, page, pageSize, orderBy);
+
+            return Ok(Paged<MerchantOutput>.FromPage(
+                (from m in results select m.ToOutput()).ToArray(),
+                page,
+                pageSize,
+                count
+            ));
+        }
+
+        /// <summary>
         /// Retrieves information about an existing merchant.
         /// </summary>
-        /// <param name="id">Merchant ID.</param>
+        /// <param name="merchantId">Merchant ID.</param>
         /// <remarks>
         /// Can be accessed only if logged in user is the merchant's administrator or POS user.
         /// </remarks>
-        [HttpGet("{id}")]
+        [HttpGet("{merchantId}")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInformation(
-            [FromRoute] ObjectId id
+            [FromRoute] ObjectId merchantId
         ) {
-            var existingMerchant = await MerchantService.GetMerchantById(id);
+            var existingMerchant = await MerchantService.GetMerchantById(merchantId);
             if(existingMerchant == null) {
                 return NotFound();
             }
@@ -165,22 +194,26 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Updates information about an existing merchant.
         /// </summary>
-        /// <param name="id">Merchant ID.</param>
+        /// <param name="merchantId">Merchant ID.</param>
         /// <param name="input">Updated information.</param>
         /// <remarks>
         /// Can be accessed only if logged in user is the merchant's administrator.
         /// </remarks>
-        [HttpPut("{id}")]
+        [HttpPut("{merchantId}")]
         [Authorize]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> UpdateMerchant(
-            [FromRoute] ObjectId id,
+            [FromRoute] ObjectId merchantId,
             [FromBody] MerchantUpdateInput input
         ) {
-            var existingMerchant = await VerifyUserIsAdminOfMerchant(id);
+            var existingMerchant = await VerifyUserIsAdminOfMerchant(merchantId);
+
+            if(existingMerchant.Enabled != input.Enabled && !await IsUserAdmin()) {
+                return Forbid();
+            }
 
             try {
                 existingMerchant.Name = input.Name;
@@ -202,7 +235,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 await MerchantService.ReplaceMerchant(existingMerchant);
             }
             catch(Exception) {
-                Logger.LogError("Failed to update merchant {0}", id);
+                Logger.LogError("Failed to update merchant {0}", merchantId);
                 throw;
             }
 
@@ -279,6 +312,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(new MerchantAccessOutput {
                 MerchantId = merchant.Id,
+                MerchantName = merchant.Name,
                 Users = users,
             });
         }
@@ -336,6 +370,32 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return this.NoContent();
+        }
+
+        /// <summary>
+        /// Retrieves the list of POS of the merchant.
+        /// </summary>
+        /// <param name="id">Merchant ID.</param>
+        /// <remarks>
+        /// Can be accessed only if logged in user is the merchant's administrator or user.
+        /// </remarks>
+        [HttpGet("{merchantId}/pos")]
+        [Authorize]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetPos(
+            [FromRoute] ObjectId merchantId
+        ) {
+            var merchant = await this.VerifyUserIsUserOfMerchant(merchantId);
+
+            var pos = await PosService.GetPosByMerchant(merchantId);
+
+            return Ok(new MerchantPosOutput {
+                MerchantId = merchant.Id,
+                MerchantName = merchant.Name,
+                Pos = (from p in pos
+                       let pictureOutput = PicturesService.GetPosCoverOutput(p.CoverPath, p.CoverBlurHash)
+                       select p.ToAuthOutput(pictureOutput)).ToArray(),
+            });
         }
 
     }
