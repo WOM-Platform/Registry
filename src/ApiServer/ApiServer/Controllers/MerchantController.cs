@@ -70,7 +70,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         [ProducesResponseType(typeof(MerchantOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(MerchantRegisterInput input) {
             Logger.LogInformation("Attempting to register new merchant {0} with fiscal code {1}", input.Name, input.FiscalCode);
@@ -96,9 +96,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 );
             }
 
-            if(!User.GetUserId(out var loggedUserId)) {
-                return Forbid();
-            }
+            (User user, bool isAdmin) = await RequireLoggedUser();
 
             try {
                 var merchant = new Merchant {
@@ -117,17 +115,21 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = input.Description,
                     WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
-                    Access = new() {
-                        new AccessControlEntry<MerchantRole> {
-                            UserId = loggedUserId,
-                            Role = MerchantRole.Admin,
-                        }
-                    },
+                    Access = new(),
                     Enabled = true // All merchants are automatically enabled for now
                 };
+
+                // Add user as Merchant administrator only if user is not platform administrator
+                if(!isAdmin) {
+                    merchant.Access.Add(new AccessControlEntry<MerchantRole> {
+                        UserId = user.Id,
+                        Role = MerchantRole.Admin,
+                    });
+                }
+
                 await MerchantService.CreateMerchant(merchant);
 
-                Logger.LogInformation("New merchant created {0} by user {1}", merchant.Id, loggedUserId);
+                Logger.LogInformation("New merchant created {0} by user {1}", merchant.Id, user.Id);
 
                 return CreatedAtAction(
                     nameof(GetInformation),
