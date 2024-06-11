@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.InputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels;
 using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels.Pos;
@@ -32,35 +33,6 @@ namespace WomPlatform.Web.Api.Controllers {
         private static readonly Regex AllZerosRegex = new Regex("^0+$", RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
-        /// Merchant registration payload.
-        /// </summary>
-        public record MerchantRegisterInput(
-            [Required]
-            [MinLength(8)]
-            string Name,
-            [Required]
-            [MinLength(11)] // Length of Partita IVA
-            [MaxLength(16)] // Length of Codice Fiscale
-            string FiscalCode,
-            [Required]
-            MerchantActivityType PrimaryActivity,
-            [Required]
-            string Address,
-            string StreetNumber,
-            [Required]
-            string ZipCode,
-            [Required]
-            string City,
-            [Required]
-            string Country,
-            string FormattedAddress,
-            string GoogleMapsPlaceId,
-            string Description,
-            [Url]
-            string Url
-        );
-
-        /// <summary>
         /// Registers a new merchant to the service.
         /// </summary>
         /// <param name="input">Merchant registration payload.</param>
@@ -70,7 +42,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Register(MerchantRegisterInput input) {
+        public async Task<IActionResult> Register(CreateMerchantInput input) {
             Logger.LogInformation("Attempting to register new merchant {0} with fiscal code {1}", input.Name, input.FiscalCode);
 
             if(AllZerosRegex.IsMatch(input.FiscalCode)) {
@@ -121,7 +93,8 @@ namespace WomPlatform.Web.Api.Controllers {
                             Role = MerchantRole.Admin,
                         }
                     },
-                    Enabled = true // All merchants are automatically enabled for now
+                    Enabled = true, // All merchants are automatically enabled for now
+                    ActivationCode = input.ActivationCode.NormalizeCode(),
                 };
                 await MerchantService.CreateMerchant(merchant);
 

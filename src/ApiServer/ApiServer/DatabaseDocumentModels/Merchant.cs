@@ -52,6 +52,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonDefaultValue(false)]
         public bool Enabled { get; set; } = false;
 
+        [BsonElement("activationCode")]
+        [BsonIgnoreIfNull]
+        public string ActivationCode { get; set; }
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
 

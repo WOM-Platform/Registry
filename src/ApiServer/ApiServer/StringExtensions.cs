@@ -141,6 +141,26 @@ namespace WomPlatform.Web.Api {
             return string.Concat(left, separator, right);
         }
 
+        /// <summary>
+        /// Checks whether a string equals another string with lax comparison for user-supplied codes.
+        /// </summary>
+        public static bool EqualsToCode(this string s, string code) {
+            return (s ?? string.Empty).Trim().Equals((code ?? string.Empty).Trim(), StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        private static Regex RegexCodeCleaner = new("[^\\da-zA-Z]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        /// <summary>
+        /// Normalizes a user-supplied code.
+        /// </summary>
+        public static string NormalizeCode(this string s) {
+            if(string.IsNullOrWhiteSpace(s)) {
+                return null;
+            }
+
+            return RegexCodeCleaner.Replace(s ?? string.Empty, string.Empty).ToUpperInvariant();
+        }
+
     }
 
 }
