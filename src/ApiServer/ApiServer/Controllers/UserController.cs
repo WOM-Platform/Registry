@@ -105,9 +105,12 @@ namespace WomPlatform.Web.Api.Controllers {
             return Register(input);
         }
 
+        /// <summary>
+        /// Retrieves a list of users.
+        /// </summary>
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult> SearchUsers(
+        public async Task<ActionResult> ListUsers(
             [FromQuery] string name,
             [FromQuery] string email,
             [FromQuery] int page = 1,
