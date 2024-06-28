@@ -39,7 +39,9 @@ namespace WomPlatform.Web.Api.Service {
 
         private static Aim[] Aims = [
             new Aim("0", Titles("Demo"), hidden: true),
-            new Aim("C", Titles("Culture", "Cultura")),
+            new Aim("C", Titles("Culture", "Cultura"), [
+                new Aim("CI", Titles("Information", "Informazione")),
+            ]),
             new Aim("E", Titles("Education", "Istruzione")),
             new Aim("H", Titles("Health and Wellbeing", "Salute e benessere"), [
                 new Aim("HE", Titles("Epidemic Containment", "Contenimento di epidemia")),
