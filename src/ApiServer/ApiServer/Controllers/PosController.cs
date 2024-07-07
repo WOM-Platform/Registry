@@ -114,7 +114,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(PosService.PosListOrder.Name)] PosService.PosListOrder orderBy = PosService.PosListOrder.Name
         ) {
-            (var results, var count) = await PosService.ListPos(search, page, pageSize, orderBy);
+            (var results, var count) = await PosService.ListPos(search, null, true, page, pageSize, orderBy);
 
             return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results
@@ -137,7 +137,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] int pageSize = 10,
             [FromQuery] [DefaultValue(PosService.PosListOrder.Name)] PosService.PosListOrder orderBy = PosService.PosListOrder.Name
         ) {
-            (var results, var count) = await PosService.ListPos(search, page, pageSize, orderBy, false);
+            (var results, var count) = await PosService.ListPos(search, false, true, page, pageSize, orderBy);
 
             return Ok(Paged<PosOutput>.FromPage(
                 (from pos in results

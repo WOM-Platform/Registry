@@ -43,7 +43,7 @@ namespace WomPlatform.Web.Api.Service {
             return UserCollection.Find(filter, options).SingleOrDefaultAsync();
         }
 
-        public async Task<(List<User>, long Total)> Search(string name, string email, int page, int pageSize) {
+        public Task<(List<User>, long Total)> Search(string name, string email, int page, int pageSize) {
             var filters = new List<FilterDefinition<User>>();
             if(!string.IsNullOrWhiteSpace(name)) {
                 filters.Add(Builders<User>.Filter.Regex(u => u.Name, new BsonRegularExpression(name, "i")));
@@ -53,16 +53,11 @@ namespace WomPlatform.Web.Api.Service {
                 filters.Add(Builders<User>.Filter.Regex(u => u.Email, new BsonRegularExpression(email, "i")));
             }
 
-            var effectiveFilter = filters.Count > 0 ? Builders<User>.Filter.Or(filters) : Builders<User>.Filter.Empty;
-
-            var count = await UserCollection.CountDocumentsAsync(effectiveFilter);
-
-            var query = UserCollection.Find(effectiveFilter).SortByDescending(u => u.RegisteredOn)
-                .Skip((page, pageSize).GetSkip()).Limit(pageSize);
-
-            var results = await query.ToListAsync();
-
-            return (results, count);
+            return UserCollection.FilteredPagedListAsync(
+                filters,
+                Builders<User>.Sort.Descending(u => u.RegisteredOn),
+                page, pageSize
+            );
         }
 
         public async Task<User> CreateUser(

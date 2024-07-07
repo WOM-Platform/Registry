@@ -83,13 +83,13 @@ namespace WomPlatform.Web.Api.Service {
             CreatedOn,
         }
 
-        public async Task<(List<Source>, long Total)> ListSources(ObjectId? controlledBy, string textSearch, string aim, int page, int pageSize, SourceListOrder orderBy) {
+        public Task<(List<Source>, long Total)> ListSources(ObjectId? controlledBy, string textSearch, string aim, int page, int pageSize, SourceListOrder orderBy) {
             var filters = GetBasicSourceFilter();
-            if(!string.IsNullOrWhiteSpace(textSearch)) {
-                filters.Add(Builders<Source>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
-            }
             if(controlledBy.HasValue) {
                 filters.Add(Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, controlledBy.Value));
+            }
+            if(!string.IsNullOrWhiteSpace(textSearch)) {
+                filters.Add(Builders<Source>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
             }
             if(!string.IsNullOrWhiteSpace(aim)) {
                 filters.Add(Builders<Source>.Filter.Or(
@@ -98,21 +98,15 @@ namespace WomPlatform.Web.Api.Service {
                 ));
             }
 
-            var effectiveFilter = filters.Count > 0 ? Builders<Source>.Filter.And(filters) : Builders<Source>.Filter.Empty;
-
-            var count = await SourceCollection.CountDocumentsAsync(effectiveFilter);
-
-            var query = SourceCollection.Find(effectiveFilter);
-            query = orderBy switch {
-                SourceListOrder.Name => query.SortBy(p => p.Name),
-                SourceListOrder.CreatedOn => query.SortByDescending(p => p.CreatedOn),
-                _ => throw new ArgumentException("Unsupported order clause"),
-            };
-            query = query.Skip((page, pageSize).GetSkip()).Limit(pageSize);
-
-            var results = await query.ToListAsync();
-
-            return (results, count);
+            return SourceCollection.FilteredPagedListAsync(
+                filters,
+                orderBy switch {
+                    SourceListOrder.Name => Builders<Source>.Sort.Ascending(p => p.Name),
+                    SourceListOrder.CreatedOn => Builders<Source>.Sort.Descending(p => p.CreatedOn),
+                    _ => throw new ArgumentException("Unsupported order clause"),
+                },
+                page, pageSize
+            );
         }
 
         public Task<Source> GetSourceById(ObjectId id) {

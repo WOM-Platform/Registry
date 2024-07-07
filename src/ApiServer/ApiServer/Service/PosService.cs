@@ -40,7 +40,7 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         private IList<FilterDefinition<Pos>> GetBasicPosFilter(bool filterDummy = true, bool filterInactive = true) {
-            List<FilterDefinition<Pos>> filters = new();
+            List<FilterDefinition<Pos>> filters = [];
             if(filterDummy)
                 filters.Add(Builders<Pos>.Filter.Ne(p => p.IsDummy, true));
             if(filterInactive)
@@ -70,17 +70,6 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         /// <summary>
-        /// Get list of POS with position.
-        /// </summary>
-        public Task<List<Pos>> GetPosWithPosition() {
-            var filters = GetBasicPosFilter();
-            filters.Add(Builders<Pos>.Filter.Exists(pos => pos.Position, true));
-            filters.Add(Builders<Pos>.Filter.Ne(pos => pos.Position, null));
-
-            return PosCollection.Find(Builders<Pos>.Filter.And(filters)).ToListAsync();
-        }
-
-        /// <summary>
         /// Gets list of Merchants and POS that the user controls.
         /// </summary>
         public async Task<IReadOnlyDictionary<Merchant, Pos[]>> GetMerchantsAndPosByUser(ObjectId userId) {
@@ -107,28 +96,33 @@ namespace WomPlatform.Web.Api.Service {
             CreatedOn,
         }
 
-        public async Task<(List<Pos>, long Total)> ListPos(string textSearch, int page, int pageSize, PosListOrder orderBy, bool? mustHavePosition = null) {
+        /// <summary>
+        /// Retrieves a list of paged POS.
+        /// </summary>
+        /// <param name="textSearch">Search by text in title or description.</param>
+        /// <param name="hasPosition">If not null, filters for POS having (or not having) a geographical position.</param>
+        /// <param name="applyDefaultFilters">Apply default filters.</param>
+        public Task<(List<Pos>, long Total)> ListPos(
+            string textSearch, bool? hasPosition, bool applyDefaultFilters,
+            int page, int pageSize, PosListOrder orderBy
+        ) {
             var filters = GetBasicPosFilter();
-            if(mustHavePosition.HasValue) {
-                filters.Add(Builders<Pos>.Filter.Exists(p => p.Position, mustHavePosition.Value));
-            }
             if(!string.IsNullOrWhiteSpace(textSearch)) {
                 filters.Add(Builders<Pos>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
             }
+            if(hasPosition.Value) {
+                filters.Add(Builders<Pos>.Filter.Exists(p => p.Position, hasPosition.Value));
+            }
 
-            var count = await PosCollection.CountDocumentsAsync(Builders<Pos>.Filter.And(filters));
-
-            var query = PosCollection.Find(Builders<Pos>.Filter.And(filters));
-            query = orderBy switch {
-                PosListOrder.Name => query.SortBy(p => p.Name),
-                PosListOrder.CreatedOn => query.SortByDescending(p => p.CreatedOn),
-                _ => throw new ArgumentException("Unsupported order clause"),
-            };
-            query = query.Skip((page, pageSize).GetSkip()).Limit(pageSize);
-
-            var results = await query.ToListAsync();
-
-            return (results, count);
+            return PosCollection.FilteredPagedListAsync(
+                filters,
+                orderBy switch {
+                    PosListOrder.Name => Builders<Pos>.Sort.Ascending(p => p.Name),
+                    PosListOrder.CreatedOn => Builders<Pos>.Sort.Descending(p => p.CreatedOn),
+                    _ => throw new ArgumentException("Unsupported order clause"),
+                },
+                page, pageSize
+            );
         }
 
         public async Task<(List<Pos> Results, long Total)> ListPosByDistance(double latitude, double longitude, int page, int pageSize) {

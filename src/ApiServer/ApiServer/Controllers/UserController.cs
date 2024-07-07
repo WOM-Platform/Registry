@@ -52,7 +52,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Register(UserRegisterInput input) {
+        public async Task<ActionResult> Register(UserRegisterInput input) {
             if(!CheckUserPassword(input.Password)) {
                 return this.ProblemParameter("Password is not secure");
             }
@@ -74,7 +74,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return CreatedAtAction(
                     nameof(GetInformation),
                     new {
-                        id = user.Id.ToString()
+                        userId = user.Id.ToString()
                     },
                     new UserCreationOutput {
                         Id = user.Id,
@@ -101,13 +101,16 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(UserCreationOutput), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-        public Task<IActionResult> RegisterLegacy(UserRegisterInput input) {
+        public Task<ActionResult> RegisterLegacy(UserRegisterInput input) {
             return Register(input);
         }
 
+        /// <summary>
+        /// Retrieves a list of users.
+        /// </summary>
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult> SearchUsers(
+        public async Task<ActionResult> ListUsers(
             [FromQuery] string name,
             [FromQuery] string email,
             [FromQuery] int page = 1,
@@ -173,25 +176,25 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Retrieves information about an existing user.
         /// </summary>
-        /// <param name="id">User ID.</param>
-        [HttpGet("{id}")]
+        /// <param name="userId">User ID.</param>
+        [HttpGet("{userId}")]
         [Authorize]
         [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetInformation(
-            [FromRoute] ObjectId id
+            [FromRoute] ObjectId userId
         ) {
             if(!User.GetUserId(out var myself)) {
                 return Forbid();
             }
 
-            var user = await UserService.GetUserById(id);
+            var user = await UserService.GetUserById(userId);
             if(user == null) {
                 return NotFound();
             }
 
-            return Ok(user.ToOutput(id != myself));
+            return Ok(user.ToOutput(userId != myself));
         }
 
         public record UserUpdateInformationInput(string Email, string Name, string Surname, string Password);
@@ -199,23 +202,23 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Updates information about an existing user.
         /// </summary>
-        /// <param name="id">User ID.</param>
+        /// <param name="userId">User ID.</param>
         /// <param name="input">User information payload.</param>
-        [HttpPut("{id}")]
+        [HttpPut("{userId}")]
         [Authorize]
         [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(void), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> UpdateInformation(
-            [FromRoute] ObjectId id,
+        public async Task<ActionResult> UpdateInformation(
+            [FromRoute] ObjectId userId,
             [FromBody] UserUpdateInformationInput input
         ) {
-            if(!User.UserIdEquals(id)) {
+            if(!User.UserIdEquals(userId)) {
                 return Forbid();
             }
 
-            var existingUser = await UserService.GetUserById(id);
+            var existingUser = await UserService.GetUserById(userId);
             if(existingUser == null) {
                 return NotFound();
             }
@@ -225,12 +228,12 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var updatedUser = await UserService.UpdateUser(id, name: input.Name, surname: input.Surname, password: input.Password);
+                var updatedUser = await UserService.UpdateUser(userId, name: input.Name, surname: input.Surname, password: input.Password);
 
                 return Ok(updatedUser.ToOutput(false));
             }
             catch(Exception) {
-                Logger.LogError("Failed to update user {0}", id);
+                Logger.LogError("Failed to update user {0}", userId);
                 throw;
             }
         }
@@ -238,20 +241,20 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Requests a user verification e-mail.
         /// </summary>
-        /// <param name="id">User ID.</param>
-        [HttpPost("{id}/request-verification")]
+        /// <param name="userId">User ID.</param>
+        [HttpPost("{userId}/request-verification")]
         [Obsolete]
         [Authorize]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> RequestVerification(
-            [FromRoute] ObjectId id
+        public async Task<ActionResult> RequestVerification(
+            [FromRoute] ObjectId userId
         ) {
-            if(!User.UserIdEquals(id)) {
+            if(!User.UserIdEquals(userId)) {
                 return Forbid();
             }
 
-            var user = await UserService.GetUserById(id);
+            var user = await UserService.GetUserById(userId);
             if(user == null) {
                 return NotFound();
             }
@@ -269,7 +272,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPost("request-verification")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
-        public async Task<IActionResult> RequestVerificationByEmail(
+        public async Task<ActionResult> RequestVerificationByEmail(
             [FromBody] RequestVerificationEmail payload
         ) {
             var user = await UserService.GetUserByEmail(payload?.Email);
@@ -290,18 +293,18 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <remarks>
         /// Must be authenticated as the same user that is being verified.
         /// </remarks>
-        /// <param name="id">User ID.</param>
+        /// <param name="userId">User ID.</param>
         /// <param name="input">User verification payload.</param>
-        [HttpPost("{id}/verify")]
+        [HttpPost("{userId}/verify")]
         [Obsolete]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> VerifyLegacy(
-            [FromRoute] ObjectId id,
+        public async Task<ActionResult> VerifyLegacy(
+            [FromRoute] ObjectId userId,
             [FromQuery] UserVerifyInput input
         ) {
-            await UserService.PerformVerification(id, input.Token);
+            await UserService.PerformVerification(userId, input.Token);
 
             return Ok();
         }
@@ -556,20 +559,20 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Deletes a user profile.
         /// </summary>
-        /// <param name="id">User ID.</param>
-        [HttpDelete("{id}")]
+        /// <param name="userId">User ID.</param>
+        [HttpDelete("{userId}")]
         [Authorize]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteUser(
-            [FromRoute] ObjectId id
+        public async Task<ActionResult> DeleteUser(
+            [FromRoute] ObjectId userId
         ) {
-            if(!User.UserIdEquals(id)) {
+            if(!User.UserIdEquals(userId)) {
                 return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only user can delete their own user profile");
             }
 
-            var existingUser = await UserService.GetUserById(id);
+            var existingUser = await UserService.GetUserById(userId);
             if(existingUser == null) {
                 return Problem(statusCode: StatusCodes.Status404NotFound, title: "User does not exist");
             }

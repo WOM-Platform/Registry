@@ -34,30 +34,29 @@ namespace WomPlatform.Web.Api.Service {
             CreatedOn,
         }
 
-        public async Task<(List<Merchant>, long Total)> ListMerchants(ObjectId? controlledBy, string textSearch, int page, int pageSize, MerchantListOrder orderBy) {
+        /// <summary>
+        /// Retrieves a list of paged merchants.
+        /// </summary>
+        /// <param name="controlledBy">Search for merchants controlled by user ID.</param>
+        /// <param name="textSearch">Search by text in name or description.</param>
+        public Task<(List<Merchant>, long Total)> ListMerchants(ObjectId? controlledBy, string textSearch, int page, int pageSize, MerchantListOrder orderBy) {
             var filters = GetBasicMerchantFilter();
-            if(!string.IsNullOrWhiteSpace(textSearch)) {
-                filters.Add(Builders<Merchant>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
-            }
             if(controlledBy.HasValue) {
                 filters.Add(Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", controlledBy.Value));
             }
+            if(!string.IsNullOrWhiteSpace(textSearch)) {
+                filters.Add(Builders<Merchant>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
+            }
 
-            var effectiveFilter = filters.Count > 0 ? Builders<Merchant>.Filter.And(filters) : Builders<Merchant>.Filter.Empty;
-
-            var count = await MerchantCollection.CountDocumentsAsync(effectiveFilter);
-
-            var query = MerchantCollection.Find(effectiveFilter);
-            query = orderBy switch {
-                MerchantListOrder.Name => query.SortBy(p => p.Name),
-                MerchantListOrder.CreatedOn => query.SortByDescending(p => p.CreatedOn),
-                _ => throw new ArgumentException("Unsupported order clause"),
-            };
-            query = query.Skip((page, pageSize).GetSkip()).Limit(pageSize);
-
-            var results = await query.ToListAsync();
-
-            return (results, count);
+            return MerchantCollection.FilteredPagedListAsync(
+                filters,
+                orderBy switch {
+                    MerchantListOrder.Name => Builders<Merchant>.Sort.Ascending(p => p.Name),
+                    MerchantListOrder.CreatedOn => Builders<Merchant>.Sort.Descending(p => p.CreatedOn),
+                    _ => throw new ArgumentException("Unsupported order clause"),
+                },
+                page, pageSize
+            );
         }
 
         public Task<Merchant> GetMerchantById(ObjectId id) {
