@@ -98,7 +98,8 @@ namespace WomPlatform.Web.Api.Service {
             string name = null,
             string surname = null,
             string email = null,
-            string password = null
+            string password = null,
+            PlatformRole? role = null
         ) {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
 
@@ -114,6 +115,9 @@ namespace WomPlatform.Web.Api.Service {
             }
             if(password != null) {
                 chain.Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(password));
+            }
+            if(role.HasValue) {
+                chain.Set(u => u.Role, role.Value);
             }
             chain.Set(u => u.LastUpdate, DateTime.UtcNow);
 

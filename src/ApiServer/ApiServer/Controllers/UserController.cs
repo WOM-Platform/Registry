@@ -197,7 +197,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(user.ToOutput(userId != myself));
         }
 
-        public record UserUpdateInformationInput(string Email, string Name, string Surname, string Password);
+        public record UserUpdateInformationInput(string Email, string Password, string Name, string Surname, PlatformRole? Role);
 
         /// <summary>
         /// Updates information about an existing user.
@@ -207,6 +207,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpPut("{userId}")]
         [Authorize]
         [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(void), StatusCodes.Status422UnprocessableEntity)]
@@ -214,8 +215,9 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId userId,
             [FromBody] UserUpdateInformationInput input
         ) {
-            if(!User.UserIdEquals(userId)) {
-                return Forbid();
+            bool isAdmin = await this.IsUserAdmin();
+            if(!(User.UserIdEquals(userId) || isAdmin)) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Users can only update their own profile");
             }
 
             var existingUser = await UserService.GetUserById(userId);
@@ -227,8 +229,13 @@ namespace WomPlatform.Web.Api.Controllers {
                 return this.ProblemParameter("Password is not secure");
             }
 
+            if(input.Role.HasValue && input.Role.Value > PlatformRole.User && !isAdmin) {
+                // Disallow non-admins to change user roles to non-user level
+                throw ServiceProblemException.UserIsNotAdmin;
+            }
+
             try {
-                var updatedUser = await UserService.UpdateUser(userId, name: input.Name, surname: input.Surname, password: input.Password);
+                var updatedUser = await UserService.UpdateUser(userId, name: input.Name, surname: input.Surname, password: input.Password, role: input.Role);
 
                 return Ok(updatedUser.ToOutput(false));
             }
@@ -568,8 +575,9 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<ActionResult> DeleteUser(
             [FromRoute] ObjectId userId
         ) {
-            if(!User.UserIdEquals(userId)) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only user can delete their own user profile");
+            bool isAdmin = await this.IsUserAdmin();
+            if(!(User.UserIdEquals(userId) || isAdmin)) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Users can only delete their own profile");
             }
 
             var existingUser = await UserService.GetUserById(userId);
