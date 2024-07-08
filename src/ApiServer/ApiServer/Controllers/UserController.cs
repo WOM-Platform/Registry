@@ -535,13 +535,14 @@ namespace WomPlatform.Web.Api.Controllers {
             var securityHandler = new JwtSecurityTokenHandler();
             var jwtKey = Encoding.UTF8.GetBytes(securitySection["JwtTokenSigningKey"]);
             var jwtDescriptor = new SecurityTokenDescriptor {
-                Subject = new ClaimsIdentity(new[] {
+                Subject = new ClaimsIdentity([
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.GivenName, user.Name),
                     new Claim(ClaimTypes.Surname, user.Surname),
-                    new Claim(JwtRegisteredClaimNames.Jti, sessionId)
-                }),
+                    new Claim(JwtRegisteredClaimNames.Jti, sessionId),
+                    new Claim(RegistryClaims.Role, user.Role.ToString()),
+                ]),
                 Issuer = Startup.GetJwtIssuerName(),
                 IssuedAt = issueTimestamp,
                 Expires = expirationTimestamp,
