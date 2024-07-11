@@ -30,7 +30,7 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             await VerifyUserIsAdmin();
 
-            var merchants = await MerchantService.GetAllMerchantsWithUsers();
+            var merchants = await MerchantService.GetAllMerchantsAndUsers();
 
             var sb = new StringBuilder();
             sb.AppendLine("Merchant,Fiscal code,Address,ZIP code,City,Country,Website,Admin name,Admin surname,Admin email,");

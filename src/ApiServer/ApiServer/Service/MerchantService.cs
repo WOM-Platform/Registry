@@ -115,21 +115,14 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Fetches a list of all merchants with associated admin users.
         /// </summary>
-        public Task<List<MerchantWithAdmins>> GetAllMerchantsWithUsers() {
+        public Task<List<MerchantWithAdmins>> GetAllMerchantsAndUsers() {
             var pipeline = new EmptyPipelineDefinition<Merchant>()
                 .AppendStage<Merchant, Merchant, MerchantWithAdmins>(BsonDocument.Parse(@"{
                     $lookup: {
                         from: 'Users',
-                        localField: 'adminUserIds',
+                        localField: 'access.userId',
                         foreignField: '_id',
                         as: 'adminUsers'
-                    }
-                }"))
-                .AppendStage<Merchant, MerchantWithAdmins, MerchantWithAdmins>(BsonDocument.Parse(@"{
-                    $match: {
-                        'adminUsers.0': {
-                            $exists: true
-                        }
                     }
                 }"))
                 .Sort(Builders<MerchantWithAdmins>.Sort.Ascending(m => m.Name))
