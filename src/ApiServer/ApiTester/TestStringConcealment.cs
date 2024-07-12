@@ -6,12 +6,12 @@ namespace ApiTester {
 
         [Test]
         public void TestEmails() {
-            Assert.AreEqual("l*k@k***********.net", "lck@klopfenstein.net".ConcealEmail());
-            Assert.AreEqual("**@e******.org", "io@example.org".ConcealEmail());
-            Assert.AreEqual("p***o@d*****.com", "pippo@disney.com".ConcealEmail());
-            Assert.AreEqual("p***o@*.com", "pippo@a.com".ConcealEmail());
-            Assert.AreEqual("p***o@**.com", "pippo@ab.com".ConcealEmail());
-            Assert.AreEqual("p***o@a**.com", "pippo@abc.com".ConcealEmail());
+            Assert.That("lck@klopfenstein.net".ConcealEmail().Equals("l*k@k***********.net", System.StringComparison.Ordinal));
+            Assert.That("io@example.org".ConcealEmail().Equals("**@e******.org", System.StringComparison.Ordinal));
+            Assert.That("pippo@disney.com".ConcealEmail().Equals("p***o@d*****.com", System.StringComparison.Ordinal));
+            Assert.That("pippo@a.com".ConcealEmail().Equals("p***o@*.com", System.StringComparison.Ordinal));
+            Assert.That("pippo@ab.com".ConcealEmail().Equals("p***o@**.com", System.StringComparison.Ordinal));
+            Assert.That("pippo@abc.com".ConcealEmail().Equals("p***o@a**.com", System.StringComparison.Ordinal));
         }
 
     }

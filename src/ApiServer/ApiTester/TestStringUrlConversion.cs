@@ -6,21 +6,21 @@ namespace ApiTester {
 
         [Test]
         public void TestNormalPosNames() {
-            Assert.AreEqual("digit-srl", "DIGIT srl".ToCleanUrl());
-            Assert.AreEqual("libreria-montefeltro", "Libreria Montefeltro".ToCleanUrl());
-            Assert.AreEqual("edicola-il-chiosco", "Edicola “Il Chiosco”".ToCleanUrl());
-            Assert.AreEqual("piadineria-l-aquilone", "Piadineria “L’Aquilone”".ToCleanUrl());
-            Assert.AreEqual("caffe-dell-accademia", "Caffè dell’Accademia".ToCleanUrl());
-            Assert.AreEqual("la-cucina-di-taty", "La Cucina di Taty".ToCleanUrl());
+            Assert.That("DIGIT srl".ToCleanUrl().Equals("digit-srl", System.StringComparison.Ordinal));
+            Assert.That("Libreria Montefeltro".ToCleanUrl().Equals("libreria-montefeltro", System.StringComparison.Ordinal));
+            Assert.That("Edicola “Il Chiosco”".ToCleanUrl().Equals("edicola-il-chiosco", System.StringComparison.Ordinal));
+            Assert.That("Piadineria “L’Aquilone”".ToCleanUrl().Equals("piadineria-l-aquilone", System.StringComparison.Ordinal));
+            Assert.That("Caffè dell’Accademia".ToCleanUrl().Equals("caffe-dell-accademia", System.StringComparison.Ordinal));
+            Assert.That("La Cucina di Taty".ToCleanUrl().Equals("la-cucina-di-taty", System.StringComparison.Ordinal));
         }
 
         [Test]
         public void TestMalformattedPosNames() {
-            Assert.AreEqual("digit-srl", " DIGIT srl ".ToCleanUrl());
-            Assert.AreEqual("libreria-montefeltro", "'Libreria _Möntefeltro--".ToCleanUrl());
-            Assert.AreEqual("edicola-il-chiosco", "Èdicola  “Íl Chiósco” ".ToCleanUrl());
-            Assert.AreEqual("piadineria-l-aquilone", "  Piadineria  “L’ Aquilone” ".ToCleanUrl());
-            Assert.AreEqual("caffe-dell-accademia", "☕ Caffè dell’Accademia".ToCleanUrl());
+            Assert.That(" DIGIT srl ".ToCleanUrl().Equals("digit-srl", System.StringComparison.Ordinal));
+            Assert.That("'Libreria _Möntefeltro--".ToCleanUrl().Equals("libreria-montefeltro", System.StringComparison.Ordinal));
+            Assert.That("Èdicola  “Íl Chiósco” ".ToCleanUrl().Equals("edicola-il-chiosco", System.StringComparison.Ordinal));
+            Assert.That("  Piadineria  “L’ Aquilone” ".ToCleanUrl().Equals("piadineria-l-aquilone", System.StringComparison.Ordinal));
+            Assert.That("☕ Caffè dell’Accademia".ToCleanUrl().Equals("caffe-dell-accademia", System.StringComparison.Ordinal));
         }
 
     }

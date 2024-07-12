@@ -74,7 +74,7 @@ namespace ApiTester {
             var response = await _instrument.RequestVouchers(vi);
             await p.CollectVouchers(response.OtcGen, response.Password);
 
-            Assert.AreEqual(beforeCount + requestCount, p.VoucherCount);
+            Assert.That(beforeCount + requestCount == p.VoucherCount);
 
             return (response.OtcGen, response.Password);
         }
@@ -85,7 +85,7 @@ namespace ApiTester {
             var response = await _pos.RequestPayment(amount, pocketAckUrl, "https://example.org", filter, false);
             var ret = await p.PayWithRandomVouchers(response.OtcPay, response.Password);
 
-            Assert.AreEqual(beforeCount - amount, p.VoucherCount);
+            Assert.That(beforeCount - amount == p.VoucherCount);
             return (ret, response.OtcPay, response.Password);
         }
 
@@ -94,9 +94,9 @@ namespace ApiTester {
             var p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherRequests(10, "E"));
 
-            Assert.AreEqual(10, p.VoucherCount);
+            Assert.That(10 == p.VoucherCount);
             foreach(var v in p.Vouchers) {
-                Assert.AreEqual("E", v.Aim);
+                Assert.That("E".Equals(v.Aim, StringComparison.Ordinal));
             }
         }
 
@@ -105,9 +105,9 @@ namespace ApiTester {
             var p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherBlocks(3, 10, "H"));
 
-            Assert.AreEqual(30, p.VoucherCount);
+            Assert.That(30 == p.VoucherCount);
             foreach(var v in p.Vouchers) {
-                Assert.AreEqual("H", v.Aim);
+                Assert.That("H".Equals(v.Aim, StringComparison.Ordinal));
             }
         }
 
@@ -134,18 +134,18 @@ namespace ApiTester {
             var p = _womClient.CreatePocket();
             await Collect(p, voucherInfos);
 
-            Assert.AreEqual(3, p.VoucherCount);
+            Assert.That(3 == p.VoucherCount);
             foreach(var v in p.Vouchers) {
-                Assert.AreEqual("I", v.Aim);
-                Assert.AreEqual(now.ToSecondPrecision(), v.Timestamp.ToSecondPrecision());
+                Assert.That("I".Equals(v.Aim, StringComparison.Ordinal));
+                Assert.That(now.ToSecondPrecision() == v.Timestamp.ToSecondPrecision());
             }
 
-            Assert.AreEqual(voucherInfos[0].Latitude, p.Vouchers[0].Latitude);
-            Assert.AreEqual(voucherInfos[0].Longitude, p.Vouchers[0].Longitude);
-            Assert.AreEqual(voucherInfos[1].Latitude, p.Vouchers[1].Latitude);
-            Assert.AreEqual(voucherInfos[1].Longitude, p.Vouchers[1].Longitude);
-            Assert.AreEqual(voucherInfos[1].Latitude, p.Vouchers[2].Latitude);
-            Assert.AreEqual(voucherInfos[1].Longitude, p.Vouchers[2].Longitude);
+            Assert.That(voucherInfos[0].Latitude == p.Vouchers[0].Latitude);
+            Assert.That(voucherInfos[0].Longitude == p.Vouchers[0].Longitude);
+            Assert.That(voucherInfos[1].Latitude == p.Vouchers[1].Latitude);
+            Assert.That(voucherInfos[1].Longitude == p.Vouchers[1].Longitude);
+            Assert.That(voucherInfos[1].Latitude == p.Vouchers[2].Latitude);
+            Assert.That(voucherInfos[1].Longitude == p.Vouchers[2].Longitude);
         }
 
         [Test]
@@ -202,11 +202,11 @@ namespace ApiTester {
         public async Task CreateVouchersAndProcessSimplePayment() {
             var p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherRequests(5, "E"));
-            Assert.AreEqual(5, p.VoucherCount);
+            Assert.That(5 == p.VoucherCount);
 
             var ackUrl = string.Format("http://www.example.org/confirmation/{0:N}", Guid.NewGuid());
             (var respUrl, var otcPay, var pwdPay) = await Pay(p, 5, ackUrl, null);
-            Assert.AreEqual(ackUrl, respUrl);
+            Assert.That(ackUrl.Equals(respUrl, StringComparison.Ordinal));
 
             // Try repeated payment
             Assert.ThrowsAsync<InvalidOperationException>(async () => {
@@ -219,11 +219,11 @@ namespace ApiTester {
             });
 
             var status = await _pos.GetPaymentStatus(otcPay);
-            Assert.AreEqual(false, status.Response.Persistent);
-            Assert.AreEqual(true, status.Response.HasBeenPerformed);
-            Assert.AreEqual(1, status.Response.Confirmations.Count);
-            Assert.LessOrEqual(status.Response.Confirmations[0].PerformedAt, DateTime.UtcNow);
-            Assert.GreaterOrEqual(status.Response.Confirmations[0].PerformedAt, DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(5)));
+            Assert.That(!status.Response.Persistent);
+            Assert.That(status.Response.HasBeenPerformed);
+            Assert.That(status.Response.Confirmations.Count == 1);
+            Assert.That(status.Response.Confirmations[0].PerformedAt <= DateTime.UtcNow);
+            Assert.That(status.Response.Confirmations[0].PerformedAt >= DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(5)));
         }
 
         [Test]
@@ -237,7 +237,7 @@ namespace ApiTester {
                     Aim = "0"
                 });
             });
-            Assert.AreEqual(5, p.VoucherCount);
+            Assert.That(5 == p.VoucherCount);
 
             p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherBlocks(1, 5, "0"));
@@ -246,37 +246,37 @@ namespace ApiTester {
             Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await Pay(p, 5, "https://ciao.com");
             });
-            Assert.AreEqual(5, p.VoucherCount);
+            Assert.That(5 == p.VoucherCount);
 
             // Demo payment succeeds
             (var ackUrl, _, _) = await Pay(p, 5, "https://ciao.com", new SimpleFilter {
                 Aim = "0"
             });
-            Assert.AreEqual(0, p.VoucherCount);
-            Assert.AreEqual(ackUrl, "https://ciao.com");
+            Assert.That(0 == p.VoucherCount);
+            Assert.That("https://ciao.com".Equals(ackUrl, StringComparison.Ordinal));
         }
 
         [Test]
         public async Task CreateVouchersAndProcessMultiplePayment() {
             var p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherBlocks(1, 5));
-            Assert.AreEqual(5, p.VoucherCount);
+            Assert.That(5 == p.VoucherCount);
 
             await Pay(p, 2, "https://ciao.com");
-            Assert.AreEqual(3, p.VoucherCount);
+            Assert.That(3 == p.VoucherCount);
 
             await Pay(p, 2, "https://ciao.com");
-            Assert.AreEqual(1, p.VoucherCount);
+            Assert.That(1 == p.VoucherCount);
 
             await Pay(p, 1, "https://ciao.com");
-            Assert.AreEqual(0, p.VoucherCount);
+            Assert.That(0 == p.VoucherCount);
         }
 
         [Test]
         public async Task FailedPaymentInsufficientVouchers() {
             var p = _womClient.CreatePocket();
             await Collect(p, CreateRandomVoucherBlocks(1, 10, "H"));
-            Assert.AreEqual(10, p.VoucherCount);
+            Assert.That(10 == p.VoucherCount);
 
             Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await Pay(p, 20, "https://pay.com");
@@ -331,24 +331,24 @@ namespace ApiTester {
                     Timestamp = DateTime.UtcNow
                 }
             );
-            Assert.AreEqual(3, p.VoucherCount);
+            Assert.That(3 == p.VoucherCount);
 
             // Correct payment with voucher 1
             var ackUrl = string.Format("http://www.example.org/geo-test/{0:N}", Guid.NewGuid());
             (var respUrl, _, _) = await Pay(p, 1, ackUrl, new SimpleFilter {
                 Bounds = new Bounds {
-                    LeftTop = new double[] { 15, 5 },
-                    RightBottom = new double[] { 5, 15 }
+                    LeftTop = [15, 5],
+                    RightBottom = [5, 15]
                 }
             });
-            Assert.AreEqual(2, p.VoucherCount);
-            Assert.AreEqual(ackUrl, respUrl);
+            Assert.That(2 == p.VoucherCount);
+            Assert.That(respUrl.Equals(ackUrl, StringComparison.Ordinal));
 
             Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await Pay(p, 1, ackUrl, new SimpleFilter {
                     Bounds = new Bounds {
-                        LeftTop = new double[] { 30, 25 },
-                        RightBottom = new double[] { 10, 35 }
+                        LeftTop = [30, 25],
+                        RightBottom = [10, 35]
                     }
                 });
             });
