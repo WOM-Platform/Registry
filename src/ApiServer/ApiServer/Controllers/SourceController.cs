@@ -317,8 +317,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Surname = user.Surname,
                     Role = SourceRole.Admin,
                 };
-            }).Where(u => u != null);
-            var users = await Task.WhenAll(userTasks);
+            });
+            var users = (await Task.WhenAll(userTasks)).Where(u => u != null).ToArray();
 
             return Ok(new SourceAccessOutput {
                 SourceId = source.Id,
