@@ -47,6 +47,6 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
     <PackageReference Include="WomPlatform.Connector" Version="4.4.5" />
     <PackageReference Include="Blurhash.ImageSharp" Version="3.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
   </ItemGroup>
 </Project>
