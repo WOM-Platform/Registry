@@ -307,6 +307,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var userTasks = source.AdministratorUserIds.ToSafeList().Select(async (ObjectId id) => {
                 var user = await UserService.GetUserById(id);
+                if(user == null) {
+                    return null;
+                }
                 return new SourceAccessOutput.UserAccessInformation {
                     UserId = user.Id,
                     Email = user.Email,
@@ -314,7 +317,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Surname = user.Surname,
                     Role = SourceRole.Admin,
                 };
-            });
+            }).Where(u => u != null);
             var users = await Task.WhenAll(userTasks);
 
             return Ok(new SourceAccessOutput {

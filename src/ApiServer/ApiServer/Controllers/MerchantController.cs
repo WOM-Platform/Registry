@@ -300,6 +300,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var userTasks = merchant.Access.ToSafeList().Select(async (AccessControlEntry<MerchantRole> entry) => {
                 var user = await UserService.GetUserById(entry.UserId);
+                if(user == null) {
+                    return null;
+                }
                 return new MerchantAccessOutput.UserAccessInformation {
                     UserId = user.Id,
                     Email = user.Email,
@@ -307,7 +310,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Surname = user.Surname,
                     Role = entry.Role,
                 };
-            });
+            }).Where(u => u != null);
             var users = await Task.WhenAll(userTasks);
 
             return Ok(new MerchantAccessOutput {
