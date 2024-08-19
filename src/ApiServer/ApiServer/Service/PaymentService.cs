@@ -9,6 +9,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Service {
 
@@ -351,6 +352,302 @@ namespace WomPlatform.Web.Api.Service {
             return v1Count + v2Count;
         }
 
-    }
 
+         /// <summary>
+        /// Get total amount of vouchers consumed from all the merchants in a period of time
+        /// </summary>
+        public async Task<List<BsonDocument>> GetTotalAmountOfConsumedVouchers(DateTime startDate, DateTime endDate) {
+            string dateFormat = DateRangeHelper.GetDateFormatForRange(startDate, endDate);
+            var pipeline = new BsonDocument[]
+            {
+
+                    new BsonDocument("$match",
+                        new BsonDocument("createdAt",
+                            new BsonDocument
+                            {
+                                { "$gte",
+                                    startDate},
+                                { "$lte",
+                                    endDate}
+                            })),
+                    new BsonDocument("$group",
+                        new BsonDocument
+                        {
+                            { "_id",
+                                new BsonDocument("$dateToString",
+                                    new BsonDocument
+                                    {
+                                        { "format", dateFormat },
+                                        { "date", "$createdAt" }
+                                    }) },
+                            { "totalAmount",
+                                new BsonDocument("$sum",
+                                    new BsonDocument("$multiply",
+                                        new BsonArray
+                                        {
+                                            "$amount",
+                                            new BsonDocument("$cond",
+                                                new BsonDocument
+                                                {
+                                                    { "if",
+                                                        new BsonDocument("$isArray", "$confirmations") },
+                                                    { "then",
+                                                        new BsonDocument("$size", "$confirmations") },
+                                                    { "else", 0 }
+                                                })
+                                        })) }
+                        }),
+                    new BsonDocument("$sort",
+                        new BsonDocument("_id", -1))
+
+            };
+            var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
+            return await result.ToListAsync();
+        }
+
+        /// <summary>
+        /// Get the consumed aim list from most used to least in a period of time
+        /// </summary>
+        public async Task<List<BsonDocument>> GetListConsumedByAims(DateTime startDate, DateTime endDate) {
+            var pipeline = new BsonDocument[]
+            {
+                new BsonDocument("$match",
+                    new BsonDocument("createdAt",
+                        new BsonDocument
+                        {
+                            { "$gte", startDate},
+                            { "$lte", endDate}
+                        })),
+                new BsonDocument("$group",
+                    new BsonDocument
+                    {
+                        { "_id",
+                            new BsonDocument("aim",
+                                new BsonDocument("$ifNull",
+                                    new BsonArray
+                                    {
+                                        "$filter.aims",
+                                        "NoAim"
+                                    })) },
+                        { "totalAmount",
+                            new BsonDocument("$sum", "$amount") }
+                    }),
+                new BsonDocument("$project",
+                    new BsonDocument
+                    {
+                        { "_id", 0 },
+                        { "aimCode", "$_id.aim" },
+                        { "totalAmount", 1 }
+                    }),
+                new BsonDocument("$sort",
+                    new BsonDocument("totalAmount", -1))
+
+            };
+            var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
+            return await result.ToListAsync();
+        }
+
+        /// <summary>
+        /// Get total amount of voucher consumed by a merchant in a period of time
+        /// </summary>
+        public async Task<List<BsonDocument>> GetListConsumedByMerchants(DateTime startDate, DateTime endDate) {
+            string dateFormat = DateRangeHelper.GetDateFormatForRange(startDate, endDate);
+            var pipeline = new BsonDocument[]
+            {
+
+            new BsonDocument("$match",
+                new BsonDocument("createdAt",
+                    new BsonDocument
+                    {
+                        { "$gte", startDate },
+                        { "$lte", endDate }
+                    })),
+            new BsonDocument("$lookup",
+                new BsonDocument
+                {
+                    { "from", "Pos" },
+                    { "localField", "posId" },
+                    { "foreignField", "_id" },
+                    { "as", "pos" }
+                }),
+            new BsonDocument("$addFields",
+                new BsonDocument("pos",
+                    new BsonDocument("$arrayElemAt",
+                        new BsonArray
+                        {
+                            "$pos",
+                            0
+                        }))),
+            new BsonDocument("$match",
+                new BsonDocument("pos.merchantId",
+                    new ObjectId("62c40526417384a7fc1ccbdf"))),
+            new BsonDocument("$group",
+                new BsonDocument
+                {
+                    { "_id",
+                        new BsonDocument("$dateToString",
+                            new BsonDocument
+                            {
+                                { "format", dateFormat },
+                                { "date", "$createdAt" }
+                            }) },
+                    { "totalAmount",
+                        new BsonDocument("$sum",
+                            new BsonDocument("$multiply",
+                                new BsonArray
+                                {
+                                    "$amount",
+                                    new BsonDocument("$cond",
+                                        new BsonDocument
+                                        {
+                                            { "if",
+                                                new BsonDocument("$isArray", "$confirmations") },
+                                            { "then",
+                                                new BsonDocument("$size", "$confirmations") },
+                                            { "else", 0 }
+                                        })
+                                })) }
+                }),
+            new BsonDocument("$sort",
+                new BsonDocument("_id", -1))
+
+            };
+            var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
+            return await result.ToListAsync();
+        }
+
+        /// <summary>
+        /// Get list of voucher consumed by merchant's offers
+        /// </summary>
+        public async Task<List<BsonDocument>> GetListConsumedByOffer(string merchantId) {
+            var pipeline = new BsonDocument[]
+            {new BsonDocument("$match",
+                    new BsonDocument("merchant._id",
+                        new ObjectId("5fb24fe93922fa0001766b3c"))),
+                new BsonDocument("$lookup",
+                    new BsonDocument
+                    {
+                        { "from", "PaymentRequests" },
+                        { "localField", "paymentRequestId" },
+                        { "foreignField", "_id" },
+                        { "as", "payments" }
+                    }),
+                new BsonDocument("$match",
+                    new BsonDocument("payments",
+                        new BsonDocument("$ne",
+                            new BsonArray()))),
+                new BsonDocument("$addFields",
+                    new BsonDocument("totalAmount",
+                        new BsonDocument("$multiply",
+                            new BsonArray
+                            {
+                                new BsonDocument("$size", "$payments"),
+                                "$cost"
+                            }))),
+                new BsonDocument("$sort",
+                    new BsonDocument("totalAmount", -1)),
+                new BsonDocument("$project",
+                    new BsonDocument
+                    {
+                        { "offerId", 1 },
+                        { "title", 1 },
+                        { "description", 1 },
+                        { "filter", 1 },
+                        { "cost", 1 },
+                        { "totalAmount", 1 }
+                    })
+            };
+            var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
+            return await result.ToListAsync();
+        }
+
+        /// <summary>
+        /// Get merchant rank in a period of time
+        /// </summary>
+        public async Task<List<BsonDocument>> GetMerchantRank(string merchantId, DateTime startDate, DateTime endDate) {
+            var pipeline = new BsonDocument[] {
+                new BsonDocument("$match",
+                    new BsonDocument("createdAt",
+                        new BsonDocument {
+                            { "$gte", startDate },
+                            { "$lte", endDate }
+                        })),
+                new BsonDocument("$lookup",
+                    new BsonDocument {
+                        { "from", "Pos" },
+                        { "localField", "posId" },
+                        { "foreignField", "_id" },
+                        { "as", "posData" }
+                    }),
+                new BsonDocument("$addFields",
+                    new BsonDocument("merchantId",
+                        new BsonDocument("$arrayElemAt",
+                            new BsonArray {
+                                "$posData.merchantId",
+                                0
+                            }))),
+                new BsonDocument("$lookup",
+                    new BsonDocument {
+                        { "from", "Merchants" },
+                        { "localField", "merchantId" },
+                        { "foreignField", "_id" },
+                        { "as", "merchant" }
+                    }),
+                new BsonDocument("$group",
+                    new BsonDocument {
+                        { "_id", "$merchantId" }, {
+                            "totalAmount",
+                            new BsonDocument("$sum",
+                                new BsonDocument("$multiply",
+                                    new BsonArray {
+                                        "$amount",
+                                        new BsonDocument("$cond",
+                                            new BsonDocument {
+                                                {
+                                                    "if",
+                                                    new BsonDocument("$isArray", "$confirmations")
+                                                }, {
+                                                    "then",
+                                                    new BsonDocument("$size", "$confirmations")
+                                                },
+                                                { "else", 0 }
+                                            })
+                                    }))
+                        }, {
+                            "name",
+                            new BsonDocument("$first", "$merchant.name")
+                        }
+                    }),
+                new BsonDocument("$project",
+                    new BsonDocument {
+                        {
+                            "name",
+                            new BsonDocument("$arrayElemAt",
+                                new BsonArray {
+                                    "$name",
+                                    0
+                                })
+                        },
+                        { "totalAmount", 1 }
+                    }),
+                new BsonDocument("$setWindowFields",
+                    new BsonDocument {
+                        {
+                            "sortBy",
+                            new BsonDocument("totalAmount", -1)
+                        }, {
+                            "output",
+                            new BsonDocument("rank",
+                                new BsonDocument("$rank",
+                                    new BsonDocument()))
+                        }
+                    }),
+                new BsonDocument("$match",
+                    new BsonDocument("_id",
+                        new ObjectId(merchantId)))
+            };
+            var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
+            return await result.ToListAsync();
+        }
+    }
 }

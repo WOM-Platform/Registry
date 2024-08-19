@@ -31,6 +31,5 @@ namespace WomPlatform.Web.Api {
                 })
                 .Build();
         }
-
     }
 }

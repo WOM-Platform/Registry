@@ -10,18 +10,17 @@ using MongoDB.Bson;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.OutputModels.Stats;
 using WomPlatform.Web.Api.Service;
+using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Controllers {
-
     [Route("v1/stats")]
     [OperationsTags("Stats and info")]
     [RequireHttpsInProd]
     public class StatsController : BaseRegistryController {
-
         public StatsController(
             IServiceProvider serviceProvider,
             ILogger<StatsController> logger)
-        : base(serviceProvider, logger) {
+            : base(serviceProvider, logger) {
         }
 
         /// <summary>
@@ -83,6 +82,362 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
-    }
 
+        /// <summary>
+        /// Gets the total amount of generated vouchers within the specified date range.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is restricted to admin users. If the user is not an admin, a 403 Forbidden status is returned.
+        /// The date range can be modified to take parameters from the query string.
+        /// </remarks>
+        /// <returns>
+        /// Returns a 200 OK status with the total number of generated vouchers.
+        /// If the user is not authorized, a 403 Forbidden status is returned.
+        /// </returns>
+        [HttpGet("total-generated-vouchers")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetTotalVouchersGenerated(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Check if the user is an admin
+            bool isAdmin = await this.IsUserAdmin();
+            if(!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden,
+                    title: "Only administrators can access this resource.");
+            }
+            // Fetch the total amount of generated vouchers
+            var generatedVouchers = await GenerationService.GetTotalAmountOfGeneratedVouchers(startDate, endDate);
+
+
+            // If no vouchers are found, consider returning a 404 status
+            if(generatedVouchers == null || !generatedVouchers.Any()) {
+                return NotFound("No vouchers found for the given date range.");
+            }
+
+            //Console.WriteLine("Generated");
+            //foreach(var doc in generatedVouchers) {
+                //Console.WriteLine(doc.ToJson());
+                //}
+            //Console.WriteLine("Voucher");
+
+            // Return generated vouchers divided for period
+            return Ok(generatedVouchers);
+        }
+
+        /// <summary>
+        /// Gets the total amount of redeemed vouchers within the specified date range.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is restricted to admin users. If the user is not an admin, a 403 Forbidden status is returned.
+        /// The date range can be modified to take parameters from the query string.
+        /// </remarks>
+        /// <returns>
+        /// Returns a 200 OK status with the total number of redeemed vouchers.
+        /// If the user is not authorized, a 403 Forbidden status is returned.
+        /// </returns>
+        [HttpGet("total-redeemed-vouchers")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetTotalVouchersRedeemed(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Check if the user is an admin
+            bool isAdmin = await this.IsUserAdmin();
+            if(!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden,
+                    title: "Only administrators can access this resource.");
+            }
+
+            // Fetch the total amount of redeemed vouchers
+            var redeemedVouchers = await GenerationService.GetTotalAmountOfRedeemedVouchers(startDate, endDate);
+
+            // If no vouchers are found, consider returning a 404 status
+            if(redeemedVouchers == null || !redeemedVouchers.Any()) {
+                return NotFound("No vouchers found for the given date range.");
+            }
+
+            // Return generated vouchers divided for period
+            return Ok(redeemedVouchers);
+        }
+
+        /// <summary>
+        /// Gets the total amount of consumed vouchers within the specified date range.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is restricted to admin users. If the user is not an admin, a 403 Forbidden status is returned.
+        /// The date range can be modified to take parameters from the query string.
+        /// </remarks>
+        /// <returns>
+        /// Returns a 200 OK status with the total number of consumed vouchers.
+        /// If the user is not authorized, a 403 Forbidden status is returned.
+        /// </returns>
+        [HttpGet("total-consumed-vouchers")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetTotalAmountOfConsumedVouchers(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Check if the user is an admin
+            bool isAdmin = await this.IsUserAdmin();
+            if(!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden,
+                    title: "Only administrators can access this resource.");
+            }
+
+            //DateTime startDate = new DateTime(2022, 07, 01);
+            //DateTime endDate = new DateTime(2024, 07, 01);
+
+            // Fetch the total amount of consumed vouchers
+            var consumedVouchers = await PaymentService.GetTotalAmountOfConsumedVouchers(startDate, endDate);
+
+
+            // If no vouchers are found, consider returning a 404 status
+            if(consumedVouchers == null || !consumedVouchers.Any()) {
+                return NotFound("No vouchers found for the given date range.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(consumedVouchers);
+        }
+
+        /// <summary>
+        /// Gets the list of consumed vouchers grouped by aim
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is restricted to admin users. If the user is not an admin, a 403 Forbidden status is returned.
+        /// The date range can be modified to take parameters from the query string.
+        /// </remarks>
+        /// <returns>
+        /// Returns a 200 OK status with the list.
+        /// If the user is not authorized, a 403 Forbidden status is returned.
+        /// </returns>
+        [HttpGet("consumed-vouchers-aims")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetListConsumedVouchersByAim(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Check if the user is an admin
+            bool isAdmin = await this.IsUserAdmin();
+            if(!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden,
+                    title: "Only administrators can access this resource.");
+            }
+
+            // Fetch the list of consumed vouchers based on aim
+            var listConsumedByAims = await PaymentService.GetListConsumedByAims(startDate, endDate);
+
+
+            // If no vouchers are found, consider returning a 404 status
+            if(listConsumedByAims == null || !listConsumedByAims.Any()) {
+                return NotFound("No vouchers found for the given date range.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(listConsumedByAims);
+        }
+
+        /// <summary>
+        /// Gets the list of consumed vouchers grouped by merchant
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is restricted to admin users. If the user is not an admin, a 403 Forbidden status is returned.
+        /// The date range can be modified to take parameters from the query string.
+        /// </remarks>
+        /// <returns>
+        /// Returns a 200 OK status with the list.
+        /// If the user is not authorized, a 403 Forbidden status is returned.
+        /// </returns>
+        [HttpGet("consumed-vouchers-merchants")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetListConsumedVouchersByMerchant(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Check if the user is an admin
+            bool isAdmin = await this.IsUserAdmin();
+            if(!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden,
+                    title: "Only administrators can access this resource.");
+            }
+
+            //DateTime startDate = new DateTime(2022, 07, 01);
+            //DateTime endDate = new DateTime(2024, 07, 01);
+
+            // Fetch the list of consumed vouchers for merchant
+            var listConsumedByMerchant = await PaymentService.GetListConsumedByMerchants(startDate, endDate);
+
+
+            // If no vouchers are found, consider returning a 404 status
+            if(listConsumedByMerchant == null || !listConsumedByMerchant.Any()) {
+                return NotFound("No vouchers found for the given date range.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(listConsumedByMerchant);
+        }
+
+        /// <summary>
+        /// Gets the list of consumed vouchers grouped by offer
+        /// </summary>
+        /// for merchant to know how offers are going
+        [HttpGet("consumed-vouchers-offer")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetListConsumedVouchersByOffer(
+            [FromQuery] string merchantId
+        ) {
+            // Fetch the list of consumed vouchers based on the merchant offer
+            var listConsumedByOffer = await PaymentService.GetListConsumedByOffer(merchantId);
+
+
+            // If no vouchers are found, consider returning a 404 status
+            if(listConsumedByOffer == null || !listConsumedByOffer.Any()) {
+                return NotFound("No vouchers found for the given date range.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(listConsumedByOffer);
+        }
+
+        /// <summary>
+        /// Gets the position of the merchant based on total amount of vouchers consumed in a period of time
+        /// </summary>
+        [HttpGet("consumed-merchant-rank")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetMerchantRank(
+            [FromQuery] string merchantId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Fetch the merchant position based on the others
+            var merchantRank = await PaymentService.GetMerchantRank(merchantId, startDate, endDate);
+
+            // If no vouchers are found, consider returning a 404 status
+            if(merchantRank == null || !merchantRank.Any()) {
+                return NotFound("Merchant was not found for the given date range.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(merchantRank);
+        }
+
+        /// <summary>
+        /// Get total amount of vouchers redeemed from all the sources
+        /// </summary>
+        [HttpGet("total-redeemed")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetVoucherRedemptions(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Fetch the total amount of redeemed vouchers
+            var totalAmountOfRedeemedVouchers = await GenerationService.GetTotalAmountOfRedeemedVouchers(startDate, endDate);
+
+            // If no vouchers are found, consider returning a 404 status
+            if(totalAmountOfRedeemedVouchers == null || !totalAmountOfRedeemedVouchers.Any()) {
+                return NotFound("No data found.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(totalAmountOfRedeemedVouchers);
+        }
+
+        /// <summary>
+        /// Get total amount of vouchers redeemed from all the sources
+        /// </summary>
+        [HttpGet("redeemed-aims")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetRedeemedAimList(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate
+        ) {
+            // Check if start date is before end date
+            DateRangeHelper.CheckDateValidity(startDate, endDate);
+
+            // Fetch the total amount of redeemed vouchers
+            var totalAmountOfRedeemedVouchers = await GenerationService.GetRedeemedAimList(startDate, endDate);
+
+            // If no vouchers are found, consider returning a 404 status
+            if(totalAmountOfRedeemedVouchers == null || !totalAmountOfRedeemedVouchers.Any()) {
+                return NotFound("No data found.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(totalAmountOfRedeemedVouchers);
+        }
+
+        /// <summary>
+        /// Get the total number of unused vouchers by position
+        /// </summary>
+        [HttpGet("unused-vouchers")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetNumberOfUnusedVouchers(
+            [FromQuery] double latitude,
+            [FromQuery] double longitude,
+            [FromQuery] int radius
+        ) {
+            // Fetch the number of unused vouchers
+            var numberUnusedVouchers = await GenerationService.GetNumberUnusedVouchers(latitude, longitude, radius);
+
+            // If no vouchers are found, consider returning a 404 status
+            if(numberUnusedVouchers == null || !numberUnusedVouchers.Any()) {
+                return NotFound("No data found.");
+            }
+
+            // Return consumed vouchers divided for period
+            return Ok(numberUnusedVouchers);
+        }
+    }
 }
