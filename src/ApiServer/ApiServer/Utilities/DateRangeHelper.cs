@@ -1,12 +1,18 @@
 using System;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 
 namespace WomPlatform.Web.Api.Utilities;
 
 public class DateRangeHelper {
+    // format the data based on the range length
     public static string GetDateFormatForRange(DateTime startDate, DateTime endDate)
     {
+        CheckDateValidity(startDate, endDate);
+
         var totalDays = (endDate - startDate).TotalDays;
 
         if (totalDays <= 7)
@@ -23,10 +29,10 @@ public class DateRangeHelper {
         }
     }
 
-    public static IActionResult CheckDateValidity(DateTime startDate, DateTime endDate) {
+    // check if start date is earlier or equal than endDate
+    public static void CheckDateValidity(DateTime startDate, DateTime endDate) {
         if (endDate < startDate) {
-            return new BadRequestObjectResult("End date cannot be earlier than start date.");
+            throw new ServiceProblemException("End date cannot be earlier than start date", StatusCodes.Status400BadRequest);
         }
-        return new OkObjectResult("Date is valid");
     }
 }

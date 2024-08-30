@@ -6,11 +6,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
-using WomPlatform.Connector;
+using MongoDB.Bson.IO;
 using WomPlatform.Web.Api.OutputModels.Stats;
-using WomPlatform.Web.Api.Service;
 using WomPlatform.Web.Api.Utilities;
+using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
     [Route("v1/stats")]
@@ -94,42 +95,66 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Returns a 200 OK status with the total number of generated vouchers.
         /// If the user is not authorized, a 403 Forbidden status is returned.
         /// </returns>
-        [HttpGet("total-generated-vouchers")]
+        [HttpGet("vouchers/total-generated")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetTotalVouchersGenerated(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate
+            [FromQuery] String startDate = null,
+            [FromQuery] String endDate = null,
+            [FromQuery] String instrumentName = null
         ) {
-            // Check if start date is before end date
-            DateRangeHelper.CheckDateValidity(startDate, endDate);
+            DateTime? parsedStartDate = null;
+            DateTime? parsedEndDate = null;
+
+            // Check if the dates are provided and valid
+            if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate)) {
+                string format = "yyyy-MM-dd";
+
+                // Try parsing the dates
+                if (!DateTime.TryParseExact(startDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempStartDate) ||
+                    !DateTime.TryParseExact(endDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempEndDate)) {
+                    return BadRequest("Invalid date format. Please use 'yyyy-MM-dd'.");
+                }
+
+                // Check if start date is before end date
+                DateRangeHelper.CheckDateValidity(tempStartDate, tempEndDate);
+
+                parsedStartDate = tempStartDate;
+                parsedEndDate = tempEndDate;
+            }
 
             // Check if the user is an admin
             bool isAdmin = await this.IsUserAdmin();
-            if(!isAdmin) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden,
-                    title: "Only administrators can access this resource.");
+            if (!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only administrators can access this resource.");
             }
-            // Fetch the total amount of generated vouchers
-            var generatedVouchers = await GenerationService.GetTotalAmountOfGeneratedVouchers(startDate, endDate);
+            /*
+            ObjectId? instrumentId = null;
 
+           if (!instrumentName.IsNullOrEmpty()) {
+                Source instrument = await SourceService.GetInstrumentByNameAsync(instrumentName);
+                instrumentId = instrument.Id;
+            }*/
 
-            // If no vouchers are found, consider returning a 404 status
-            if(generatedVouchers == null || !generatedVouchers.Any()) {
+            // Fetch the total amount of generated vouchers, passing the optional date range
+            var generatedVouchers = await GenerationService.GetTotalAmountOfGeneratedVouchers(parsedStartDate, parsedEndDate, instrumentName);
+
+            // Check if the result is null or does not contain the expected field
+            if (generatedVouchers == null || !generatedVouchers.Contains("totalCount")) {
                 return NotFound("No vouchers found for the given date range.");
             }
 
-            //Console.WriteLine("Generated");
-            //foreach(var doc in generatedVouchers) {
-                //Console.WriteLine(doc.ToJson());
-                //}
-            //Console.WriteLine("Voucher");
+            // Extract the totalAmountGenerated value
+            var totalCount = generatedVouchers["totalCount"].AsInt32;
+            var redeemedCount = generatedVouchers["redeemedCount"].AsInt32;
 
-            // Return generated vouchers divided for period
-            return Ok(generatedVouchers);
+            // Return the JSON response
+            return Ok(new { totalCount, redeemedCount });
         }
+
+        public BsonDocument BsonDocument { get; set; }
 
         /// <summary>
         /// Gets the total amount of redeemed vouchers within the specified date range.
@@ -142,35 +167,55 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Returns a 200 OK status with the total number of redeemed vouchers.
         /// If the user is not authorized, a 403 Forbidden status is returned.
         /// </returns>
-        [HttpGet("total-redeemed-vouchers")]
+        [HttpGet("vouchers/total-redeemed")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetTotalVouchersRedeemed(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate
+            [FromQuery] String startDate = null,
+            [FromQuery] String endDate = null,
+            [FromQuery] String instrumentName = null
         ) {
-            // Check if start date is before end date
-            DateRangeHelper.CheckDateValidity(startDate, endDate);
+            DateTime? parsedStartDate = null;
+            DateTime? parsedEndDate = null;
+
+            // Check if the dates are provided and valid
+            if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate)) {
+                string format = "yyyy-MM-dd";
+
+                // Try parsing the dates
+                if (!DateTime.TryParseExact(startDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempStartDate) ||
+                    !DateTime.TryParseExact(endDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempEndDate)) {
+                    return BadRequest("Invalid date format. Please use 'yyyy-MM-dd'.");
+                }
+
+                // Check if start date is before end date
+                DateRangeHelper.CheckDateValidity(tempStartDate, tempEndDate);
+
+                parsedStartDate = tempStartDate;
+                parsedEndDate = tempEndDate;
+            }
 
             // Check if the user is an admin
             bool isAdmin = await this.IsUserAdmin();
-            if(!isAdmin) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden,
-                    title: "Only administrators can access this resource.");
+            if (!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only administrators can access this resource.");
             }
 
-            // Fetch the total amount of redeemed vouchers
-            var redeemedVouchers = await GenerationService.GetTotalAmountOfRedeemedVouchers(startDate, endDate);
+            // Fetch the total amount of generated vouchers, passing the optional date range
+            var redeemedVouchers = await GenerationService.GetTotalAmountOfRedeemedVouchers(parsedStartDate, parsedEndDate);
 
-            // If no vouchers are found, consider returning a 404 status
-            if(redeemedVouchers == null || !redeemedVouchers.Any()) {
+            // Check if the result is null or does not contain the expected field
+            if (redeemedVouchers == null || !redeemedVouchers.Contains("totalAmountRedeemed")) {
                 return NotFound("No vouchers found for the given date range.");
             }
 
-            // Return generated vouchers divided for period
-            return Ok(redeemedVouchers);
+            // Extract the totalAmount redeemed value
+            var totalAmountRedeemed = redeemedVouchers["totalAmountRedeemed"].AsInt32;
+
+            // Return the JSON response
+            return Ok(new { totalAmountRedeemed });
         }
 
         /// <summary>
@@ -184,17 +229,34 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Returns a 200 OK status with the total number of consumed vouchers.
         /// If the user is not authorized, a 403 Forbidden status is returned.
         /// </returns>
-        [HttpGet("total-consumed-vouchers")]
+        [HttpGet("vouchers/total-consumed")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetTotalAmountOfConsumedVouchers(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate
+            [FromQuery] String startDate = null,
+            [FromQuery] String endDate = null,
+            [FromQuery] String merchantName = null
         ) {
-            // Check if start date is before end date
-            DateRangeHelper.CheckDateValidity(startDate, endDate);
+            DateTime? parsedStartDate = null;
+            DateTime? parsedEndDate = null;
+
+            if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate)) {
+                string format = "yyyy-MM-dd";
+
+                // Try parsing the dates
+                if (!DateTime.TryParseExact(startDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempStartDate) ||
+                    !DateTime.TryParseExact(endDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempEndDate)) {
+                    return BadRequest("Invalid date format. Please use 'yyyy-MM-dd'.");
+                }
+
+                // Check if start date is before end date
+                DateRangeHelper.CheckDateValidity(tempStartDate, tempEndDate);
+
+                parsedStartDate = tempStartDate;
+                parsedEndDate = tempEndDate;
+            }
 
             // Check if the user is an admin
             bool isAdmin = await this.IsUserAdmin();
@@ -203,20 +265,61 @@ namespace WomPlatform.Web.Api.Controllers {
                     title: "Only administrators can access this resource.");
             }
 
-            //DateTime startDate = new DateTime(2022, 07, 01);
-            //DateTime endDate = new DateTime(2024, 07, 01);
-
             // Fetch the total amount of consumed vouchers
-            var consumedVouchers = await PaymentService.GetTotalAmountOfConsumedVouchers(startDate, endDate);
+            var consumedVouchers = await PaymentService.GetTotalAmountOfConsumedVouchers(parsedStartDate, parsedEndDate, merchantName);
 
-
-            // If no vouchers are found, consider returning a 404 status
-            if(consumedVouchers == null || !consumedVouchers.Any()) {
+            // Check if the result is null or does not contain the expected field
+            if(consumedVouchers == null || !consumedVouchers.Contains("totalAmount")) {
                 return NotFound("No vouchers found for the given date range.");
             }
 
-            // Return consumed vouchers divided for period
-            return Ok(consumedVouchers);
+            // Extract the totalAmountGenerated value
+            var totalAmountConsumed = consumedVouchers["totalAmount"].AsInt32;
+
+            // Return the JSON response
+            return Ok(new { totalAmountConsumed });
+        }
+
+        [HttpGet("vouchers/total-generated-by-aim")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetGeneratedVouchersByAim(
+            [FromQuery] String startDate = null,
+            [FromQuery] String endDate = null,
+            [FromQuery] String instrumentName = null
+            ) {
+
+            DateTime? parsedStartDate = null;
+            DateTime? parsedEndDate = null;
+
+            // Check if the dates are provided and valid
+            if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate)) {
+                string format = "yyyy-MM-dd";
+
+                // Try parsing the dates
+                if (!DateTime.TryParseExact(startDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempStartDate) ||
+                    !DateTime.TryParseExact(endDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempEndDate)) {
+                    return BadRequest("Invalid date format. Please use 'yyyy-MM-dd'.");
+                }
+
+                // Check if start date is before end date
+                DateRangeHelper.CheckDateValidity(tempStartDate, tempEndDate);
+
+                parsedStartDate = tempStartDate;
+                parsedEndDate = tempEndDate;
+            }
+
+            // Check if the user is an admin
+            bool isAdmin = await this.IsUserAdmin();
+            if(!isAdmin) {
+                return Problem(statusCode: StatusCodes.Status403Forbidden,
+                    title: "Only administrators can access this resource.");
+            }
+
+            var generatedVouchersByAim = await GenerationService.GetVoucherTotalsByAimAsync(parsedStartDate, parsedEndDate, instrumentName);
+            return Ok(generatedVouchersByAim);
         }
 
         /// <summary>
@@ -230,7 +333,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Returns a 200 OK status with the list.
         /// If the user is not authorized, a 403 Forbidden status is returned.
         /// </returns>
-        [HttpGet("consumed-vouchers-aims")]
+        [HttpGet("vouchers/consumed-aims")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]

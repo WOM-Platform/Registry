@@ -217,6 +217,20 @@ namespace WomPlatform.Web.Api.Service {
 
             return await GenerationRequestCollection.Aggregate(pipeline).SingleOrDefaultAsync();
         }
+
+        public async Task<Source> GetInstrumentByNameAsync(string instrumentName)
+        {
+
+            var filter = Builders<Source>.Filter.Eq(s => s.Name, instrumentName);
+            var source = await SourceCollection.Find(filter).FirstOrDefaultAsync();
+
+            if (source == null)
+            {
+                throw new ApplicationException($"Instrument with name '{instrumentName}' not found.");
+            }
+
+            return source;
+        }
     }
 
 }
