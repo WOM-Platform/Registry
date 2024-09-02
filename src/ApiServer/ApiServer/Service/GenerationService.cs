@@ -266,7 +266,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers generated from all the sources in a period of time
         /// </summary>
-        public async Task<BsonDocument> GetTotalAmountOfGeneratedVouchers(DateTime? startDate, DateTime? endDate,
+        public async Task<BsonDocument> GetTotalAmountOfGeneratedRedeemedVouchers(DateTime? startDate, DateTime? endDate,
             string? instrumentName) {
             // Create match condition based on data range existence or not
             var matchConditions = MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp");
@@ -322,17 +322,6 @@ namespace WomPlatform.Web.Api.Service {
             var totalAmountGeneratedDoc = await result.FirstOrDefaultAsync();
 
 
-            if(totalAmountGeneratedDoc != null) {
-                // Print the entire document as JSON
-                Console.WriteLine("Total Amount Generated Document: " + totalAmountGeneratedDoc.ToJson());
-
-                // Optionally, print specific fields
-                Console.WriteLine("Total Count: " + totalAmountGeneratedDoc.GetValue("totalCount", 0).ToInt32());
-            }
-            else {
-                Console.WriteLine("No data found.");
-            }
-
             // If no data was found
             if(totalAmountGeneratedDoc == null) {
                 return new BsonDocument {
@@ -344,41 +333,6 @@ namespace WomPlatform.Web.Api.Service {
             return new BsonDocument {
                 { "totalCount", totalAmountGeneratedDoc["totalCount"].AsInt32 },
                 { "redeemedCount", totalAmountGeneratedDoc["redeemedCount"].AsInt32 }
-            };
-        }
-
-        /// <summary>
-        /// Get total amount of vouchers redeemed from all the sources in a period of time
-        /// </summary>
-        public async Task<BsonDocument>
-            GetTotalAmountOfRedeemedVouchers(DateTime? startDate, DateTime? endDate) {
-            // Create match condition based on data range existence or not
-            var matchConditions = MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp");
-
-            var pipeline = new BsonDocument[] {
-                new BsonDocument("$match", new BsonDocument("$and", new BsonArray(matchConditions))),
-                new BsonDocument("$group",
-                    new BsonDocument {
-                        { "_id", BsonNull.Value }, {
-                            "totalAmount",
-                            new BsonDocument("$sum", "$initialCount")
-                        }
-                    }),
-            };
-
-            var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
-            var totalAmountRedeemedDoc = await result.FirstOrDefaultAsync();
-
-            // If no data was found
-            if(totalAmountRedeemedDoc == null) {
-                return new BsonDocument {
-                    { "totalAmountRedeemed", 0 }
-                };
-            }
-
-            // if data found
-            return new BsonDocument {
-                { "totalAmountRedeemed", totalAmountRedeemedDoc["totalAmount"].AsInt32 }
             };
         }
 

@@ -9,20 +9,20 @@ public class MongoQueryHelper {
     // Create the match condition if the user have specified the data range or not
     public static List<BsonDocument> DateMatchCondition(DateTime? startDateTime, DateTime? endDateTime, string key) {
         var matchConditions = new List<BsonDocument>();
-        // Check if the user want to filter for date or not
-        if(startDateTime.HasValue && endDateTime.HasValue) {
+        // Check if the user wants to filter by date
+        if (startDateTime.HasValue && endDateTime.HasValue) {
             // Ensure the dates are valid
             DateRangeHelper.CheckDateValidity(startDateTime.Value, endDateTime.Value);
-            // If both startDate and endDate are provided, apply the date range filter
+
+            // Apply the date range filter
             matchConditions.Add(
                 new BsonDocument(key, new BsonDocument {
                     { "$gte", startDateTime.Value },
                     { "$lte", endDateTime.Value }
                 })
             );
-        }
-        else {
-            // If dates are not provided, just ensure that createdAt field exists
+        } else {
+            // Ensure that the field exists if no dates are provided
             matchConditions.Add(new BsonDocument(key, new BsonDocument("$exists", true)));
         }
 

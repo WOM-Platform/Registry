@@ -393,7 +393,6 @@ namespace WomPlatform.Web.Api.Service {
             // execute a different aggregation pipeline if the user is filtering or not for date
             // if date filter
             if(startDate.HasValue && endDate.HasValue) {
-                Console.WriteLine("yes date");
                 pipeline.Add(
                     new BsonDocument("$unwind",
                         new BsonDocument {
@@ -409,9 +408,9 @@ namespace WomPlatform.Web.Api.Service {
                                 { "$gte",
                                     startDate},
                                 { "$lte",
-                                   endDate}
+                                    endDate}
                             }))
-                    );
+                );
                 /*pipeline.AddRange(MongoQueryHelper.DateMatchCondition(startDate, endDate, "confirmations.performedAt"));*/
                 // check if user is filtering for merchant name
                 pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantName));
@@ -455,16 +454,6 @@ namespace WomPlatform.Web.Api.Service {
             var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
             var totalAmountConsumedDoc = await result.FirstOrDefaultAsync();
 
-            if(totalAmountConsumedDoc != null) {
-                // Print the entire document as JSON
-                Console.WriteLine("Total Amount Generated Document: " + totalAmountConsumedDoc.ToJson());
-
-                // Optionally, print specific fields
-                Console.WriteLine("Total Count: " + totalAmountConsumedDoc.GetValue("totalCount", 0).ToInt32());
-            }
-            else {
-                Console.WriteLine("No data found.");
-            }
             // If no data was found
             if(totalAmountConsumedDoc == null) {
                 return new BsonDocument {
@@ -482,40 +471,79 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get the consumed aim list from most used to least in a period of time
         /// </summary>
-        public async Task<List<BsonDocument>> GetListConsumedByAims(DateTime startDate, DateTime endDate) {
-            var pipeline = new BsonDocument[] {
-                new BsonDocument("$match",
-                    new BsonDocument("createdAt",
-                        new BsonDocument {
-                            { "$gte", startDate },
-                            { "$lte", endDate }
-                        })),
-                new BsonDocument("$group",
-                    new BsonDocument {
-                        {
-                            "_id",
-                            new BsonDocument("aim",
-                                new BsonDocument("$ifNull",
-                                    new BsonArray {
-                                        "$filter.aims",
-                                        "NoAim"
-                                    }))
-                        }, {
-                            "totalAmount",
-                            new BsonDocument("$sum", "$amount")
-                        }
-                    }),
+        public async Task<List<GenerationService.VoucherByAim>> GetConsumedVouchersByAims(DateTime? startDate, DateTime? endDate, String? merchantName) {
+            var pipeline = new List<BsonDocument>();
+
+
+            pipeline.Add(new BsonDocument("$unwind",
+                    new BsonDocument
+                    {
+                        { "path", "$confirmations" },
+                        { "includeArrayIndex", "string" },
+                        { "preserveNullAndEmptyArrays", false }
+                    }));
+
+                  // check if user is filtering for merchant name
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantName));
+            pipeline.Add(
                 new BsonDocument("$project",
                     new BsonDocument {
-                        { "_id", 0 },
-                        { "aimCode", "$_id.aim" },
-                        { "totalAmount", 1 }
-                    }),
-                new BsonDocument("$sort",
-                    new BsonDocument("totalAmount", -1))
-            };
+                        { "_id", 1 },
+                        { "performedAt", "$confirmations.performedAt" },
+                        { "posId", 1 },
+                        { "amount", 1 }
+                    }));
+            if(startDate.HasValue && endDate.HasValue) {
+                pipeline.Add(
+                    new BsonDocument("$match",
+                        new BsonDocument("confirmations.performedAt",
+                            new BsonDocument {
+                                {
+                                    "$gte",
+                                    startDate
+                                }, {
+                                    "$lte",
+                                    endDate
+                                }
+                            }))
+                );
+            }
+
+            pipeline.Add( new BsonDocument("$group",
+                        new BsonDocument
+                        {
+                            { "_id",
+                                new BsonDocument("aim",
+                                    new BsonDocument("$ifNull",
+                                        new BsonArray
+                                        {
+                                            "$filter.aims",
+                                            "NoAim"
+                                        })) },
+                            { "totalAmount",
+                                new BsonDocument("$sum", "$amount") }
+                        }));
+
+               pipeline.Add( new BsonDocument("$project",
+                   new BsonDocument
+                   {
+                       { "_id", 0 },
+                       { "aimCode", "$_id.aim" },
+                       { "totalAmount", 1 }
+                   }));
+               pipeline.Add(new BsonDocument("$sort",
+                   new BsonDocument("totalAmount", -1)));
+
             var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
-            return await result.ToListAsync();
+            var consumedVouchersByAim = await result.ToListAsync();
+
+            // Map to a strongly-typed model
+            var vouchersByAim = consumedVouchersByAim.Select(doc => new GenerationService.VoucherByAim {
+                AimCode = doc["aimCode"].AsString,
+                Amount = doc["totalAmount"].AsInt32
+            }).ToList();
+
+            return vouchersByAim;
         }
 
         /// <summary>
