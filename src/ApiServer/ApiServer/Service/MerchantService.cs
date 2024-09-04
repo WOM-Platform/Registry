@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -45,7 +46,7 @@ namespace WomPlatform.Web.Api.Service {
                 filters.Add(Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", controlledBy.Value));
             }
             if(!string.IsNullOrWhiteSpace(textSearch)) {
-                filters.Add(Builders<Merchant>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
+                filters.Add(Builders<Merchant>.Filter.Regex(m => m.Name, regex: new BsonRegularExpression(Regex.Escape(textSearch), "i")));
             }
 
             return MerchantCollection.FilteredPagedListAsync(
@@ -70,6 +71,18 @@ namespace WomPlatform.Web.Api.Service {
                 Collation = new Collation("en", strength: CollationStrength.Secondary, caseLevel: false)
             };
             return MerchantCollection.Find(filter, options).SingleOrDefaultAsync();
+        }
+
+        public async Task<Merchant> GetMerchantByName(string merchantName) {
+            var filter = Builders<Merchant>.Filter.Eq(m => m.Name, merchantName);
+            var merchant = await MerchantCollection.Find(filter).FirstOrDefaultAsync();
+
+            if (merchant == null)
+            {
+                throw new ApplicationException($"Merchant with name '{merchantName}' not found.");
+            }
+
+            return merchant;
         }
 
         /// <summary>
