@@ -10,7 +10,7 @@ public class MongoQueryHelper {
     public static List<BsonDocument> DateMatchCondition(DateTime? startDateTime, DateTime? endDateTime, string key) {
         var matchConditions = new List<BsonDocument>();
         // Check if the user wants to filter by date
-        if (startDateTime.HasValue && endDateTime.HasValue) {
+        if(startDateTime.HasValue && endDateTime.HasValue) {
             // Ensure the dates are valid
             DateRangeHelper.CheckDateValidity(startDateTime.Value, endDateTime.Value);
 
@@ -21,7 +21,8 @@ public class MongoQueryHelper {
                     { "$lte", endDateTime.Value }
                 })
             );
-        } else {
+        }
+        else {
             // Ensure that the field exists if no dates are provided
             matchConditions.Add(new BsonDocument(key, new BsonDocument("$exists", true)));
         }
@@ -31,31 +32,18 @@ public class MongoQueryHelper {
 
     // Creates a list of MongoDB aggregation stages that filter documents based on a specified source name.
     // If a source is provided, the function filter the instrument
-    public static List<BsonDocument> SourceMatchFromVouchersCondition(string? source) {
+    public static List<BsonDocument> SourceMatchFromVouchersCondition(ObjectId? sourceId) {
         var matchConditions = new List<BsonDocument>();
-        if(source != null) {
-            matchConditions.Add(
-                new BsonDocument("$lookup",
-                    new BsonDocument {
-                        { "from", "Sources" },
-                        { "localField", "generationRequest.sourceId" },
-                        { "foreignField", "_id" },
-                        { "as", "source" }
-                    })
-            );
-            matchConditions.Add(
-                new BsonDocument("$unwind",
-                    new BsonDocument {
-                        { "path", "$source" },
-                        { "includeArrayIndex", "string" },
-                        { "preserveNullAndEmptyArrays", true }
-                    })
-            );
+        if(sourceId.HasValue) {
             matchConditions.Add(
                 new BsonDocument("$match",
-                    new BsonDocument("source.name",
-                        new BsonDocument("$eq", source))
-                ));
+                    new BsonDocument("generationRequest.sourceId",
+                        new BsonDocument("$eq",
+                            new ObjectId(sourceId.ToString())
+                        )
+                    )
+                )
+            );
         }
 
         return matchConditions;
@@ -63,39 +51,33 @@ public class MongoQueryHelper {
 
     // Creates a list of MongoDB aggregation stages that filter documents based on a specified merchant name.
     // If a source is provided, the function filter the instrument
-    public static List<BsonDocument> MerchantMatchFromPaymentRequestsCondition(string? merchantName) {
+    public static List<BsonDocument> MerchantMatchFromPaymentRequestsCondition(ObjectId? merchantId) {
         var matchConditions = new List<BsonDocument>();
+        if(merchantId.HasValue) {
+            matchConditions.Add(
+                new BsonDocument("$lookup",
+                    new BsonDocument {
+                        { "from", "Pos" },
+                        { "localField", "posId" },
+                        { "foreignField", "_id" },
+                        { "as", "pos" }
+                    }));
+            matchConditions.Add(
+                new BsonDocument("$unwind",
+                    new BsonDocument {
+                        { "path", "$pos" },
+                        { "includeArrayIndex", "string" },
+                        { "preserveNullAndEmptyArrays", false }
+                    }));
 
-        if(merchantName.HasValue()) {
-            matchConditions.Add(new BsonDocument("$lookup",
-                new BsonDocument {
-                    { "from", "Pos" },
-                    { "localField", "posId" },
-                    { "foreignField", "_id" },
-                    { "as", "pos" }, {
-                        "pipeline",
-                        new BsonArray {
-                            new BsonDocument("$lookup",
-                                new BsonDocument {
-                                    { "from", "Merchants" },
-                                    { "localField", "merchantId" },
-                                    { "foreignField", "_id" },
-                                    { "as", "merchant" }
-                                }),
-                            new BsonDocument("$unwind", "$merchant"),
-                            new BsonDocument("$match",
-                                new BsonDocument("merchant.name", merchantName))
-                        }
-                    }
-                }));
-
-            matchConditions.Add(new BsonDocument("$unwind",
-                new BsonDocument {
-                    { "path", "$pos" },
-                    { "includeArrayIndex", "string" },
-                    { "preserveNullAndEmptyArrays", false }
-                }));
+            matchConditions.Add(
+                new BsonDocument("$match",
+                    new BsonDocument("pos.merchantId",
+                        new BsonDocument("$eq",
+                            new ObjectId(merchantId.ToString()))))
+            );
         }
+
         return matchConditions;
     }
 }

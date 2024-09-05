@@ -266,15 +266,15 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers generated from all the sources in a period of time
         /// </summary>
-        public async Task<BsonDocument> GetTotalAmountOfGeneratedRedeemedVouchers(DateTime? startDate, DateTime? endDate,
-            string? instrumentName) {
-            // Create match condition based on data range existence or not
-            var matchConditions = MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp");
+        public async Task<BsonDocument> GetTotalAmountOfGeneratedRedeemedVouchers(DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? sourceId) {
 
             var pipeline = new List<BsonDocument>();
 
-            pipeline.Add(new BsonDocument("$match", new BsonDocument("$and", new BsonArray(matchConditions))));
-
+            pipeline.Add(new BsonDocument("$match",
+                new BsonDocument("$and",
+                    new BsonArray(MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp")))));
             pipeline.Add(
                 new BsonDocument("$lookup",
                     new BsonDocument {
@@ -294,9 +294,14 @@ namespace WomPlatform.Web.Api.Service {
             );
 
             // Add the instrumentName condition if filter applied
-            var sourceMatchConditions = MongoQueryHelper.SourceMatchFromVouchersCondition(instrumentName);
-            pipeline.AddRange(sourceMatchConditions);
+            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
 
+            pipeline.Add(new BsonDocument("$project",
+                new BsonDocument {
+                    { "source", 1 },
+                    { "initialCount", 1 },
+                    { "generationRequest.performedAt", 1 }
+                }));
 
             // Add the $group stage
             pipeline.Add(
@@ -325,7 +330,8 @@ namespace WomPlatform.Web.Api.Service {
             // If no data was found
             if(totalAmountGeneratedDoc == null) {
                 return new BsonDocument {
-                    { "totalCount", 0 }
+                    { "totalCount", 0 },
+                    {"redeemedCount", 0}
                 };
             }
 
@@ -340,7 +346,7 @@ namespace WomPlatform.Web.Api.Service {
         /// Get total amount of vouchers generated grouped by aims
         /// </summary>
         public async Task<List<VoucherByAim>> GetVoucherTotalsByAimAsync(DateTime? startDate, DateTime? endDate,
-            String? instrumentName) {
+            ObjectId? sourceId) {
             try {
                 // Create the list to hold match conditions for the voucher collection
                 List<BsonDocument> matchConditions =
@@ -355,7 +361,7 @@ namespace WomPlatform.Web.Api.Service {
                     pipeline.Add(new BsonDocument("$match", new BsonDocument("$and", new BsonArray(matchConditions))));
                 }
 
-                if(!instrumentName.IsNullOrEmpty()) {
+                if(sourceId.HasValue) {
                     pipeline.Add(
                         new BsonDocument("$lookup",
                             new BsonDocument {
@@ -374,7 +380,7 @@ namespace WomPlatform.Web.Api.Service {
                             })
                     );
                     // If instrumentName is provided, add the lookup and match conditions
-                    var sourceMatchConditions = MongoQueryHelper.SourceMatchFromVouchersCondition(instrumentName);
+                    var sourceMatchConditions = MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId);
                     pipeline.AddRange(sourceMatchConditions);
                 }
 

@@ -66,6 +66,13 @@
       }
   },
   {
+    $project: {
+      source: 1,
+      initialCount: 1,
+      "generationRequest.performedAt": 1
+    }
+  },
+  {
     $group: {
       _id: null,
       generatedCount: {

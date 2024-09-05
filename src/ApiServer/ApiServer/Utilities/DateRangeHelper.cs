@@ -29,6 +29,32 @@ public class DateRangeHelper {
         }
     }
 
+    public static (DateTime? parsedStartDate, DateTime? parsedEndDate) ParseAndValidateDates(string startDate, string endDate)
+    {
+        DateTime? parsedStartDate = null;
+        DateTime? parsedEndDate = null;
+
+        if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
+        {
+            string format = "yyyy-MM-dd";
+
+            // Try parsing the dates
+            if (!DateTime.TryParseExact(startDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempStartDate) ||
+                !DateTime.TryParseExact(endDate, format, null, System.Globalization.DateTimeStyles.None, out DateTime tempEndDate))
+            {
+                throw new ServiceProblemException("Invalid date format. Please use 'yyyy-MM-dd'.", StatusCodes.Status400BadRequest);
+            }
+
+            // Check if start date is before end date
+            CheckDateValidity(tempStartDate, tempEndDate);
+
+            parsedStartDate = tempStartDate;
+            parsedEndDate = tempEndDate;
+        }
+
+        return (parsedStartDate, parsedEndDate);
+    }
+
     // check if start date is earlier or equal than endDate
     public static void CheckDateValidity(DateTime startDate, DateTime endDate) {
         if (endDate < startDate) {

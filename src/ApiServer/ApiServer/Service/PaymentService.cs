@@ -387,7 +387,7 @@ namespace WomPlatform.Web.Api.Service {
         /// Get total amount of vouchers consumed from all the merchants in a period of time
         /// </summary>
         public async Task<BsonDocument> GetTotalAmountOfConsumedVouchers(DateTime? startDate,
-            DateTime? endDate, string? merchantName) {
+            DateTime? endDate, ObjectId? merchantId) {
             var pipeline = new List<BsonDocument>();
 
             // execute a different aggregation pipeline if the user is filtering or not for date
@@ -403,17 +403,19 @@ namespace WomPlatform.Web.Api.Service {
                 pipeline.Add(
                     new BsonDocument("$match",
                         new BsonDocument("confirmations.performedAt",
-                            new BsonDocument
-                            {
-                                { "$gte",
-                                    startDate},
-                                { "$lte",
-                                    endDate}
+                            new BsonDocument {
+                                {
+                                    "$gte",
+                                    startDate
+                                }, {
+                                    "$lte",
+                                    endDate
+                                }
                             }))
                 );
                 /*pipeline.AddRange(MongoQueryHelper.DateMatchCondition(startDate, endDate, "confirmations.performedAt"));*/
                 // check if user is filtering for merchant name
-                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantName));
+                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantId));
                 pipeline.Add(new BsonDocument("$group",
                     new BsonDocument {
                         { "_id", BsonNull.Value }, {
@@ -433,8 +435,9 @@ namespace WomPlatform.Web.Api.Service {
                                 }
                             }))
                 );
+
                 // check if user is filtering for merchant name
-                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantName));
+                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantId));
                 pipeline.Add(
                     new BsonDocument("$group",
                         new BsonDocument {
@@ -471,20 +474,20 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get the consumed aim list from most used to least in a period of time
         /// </summary>
-        public async Task<List<GenerationService.VoucherByAim>> GetConsumedVouchersByAims(DateTime? startDate, DateTime? endDate, String? merchantName) {
+        public async Task<List<GenerationService.VoucherByAim>> GetConsumedVouchersByAims(DateTime? startDate,
+            DateTime? endDate, ObjectId? merchantId) {
             var pipeline = new List<BsonDocument>();
 
-
             pipeline.Add(new BsonDocument("$unwind",
-                    new BsonDocument
-                    {
-                        { "path", "$confirmations" },
-                        { "includeArrayIndex", "string" },
-                        { "preserveNullAndEmptyArrays", false }
-                    }));
+                new BsonDocument {
+                    { "path", "$confirmations" },
+                    { "includeArrayIndex", "string" },
+                    { "preserveNullAndEmptyArrays", false }
+                }));
 
-                  // check if user is filtering for merchant name
-            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantName));
+
+            // check if user is filtering for merchant name
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantId));
             pipeline.Add(
                 new BsonDocument("$project",
                     new BsonDocument {
@@ -509,30 +512,30 @@ namespace WomPlatform.Web.Api.Service {
                 );
             }
 
-            pipeline.Add( new BsonDocument("$group",
-                        new BsonDocument
-                        {
-                            { "_id",
-                                new BsonDocument("aim",
-                                    new BsonDocument("$ifNull",
-                                        new BsonArray
-                                        {
-                                            "$filter.aims",
-                                            "NoAim"
-                                        })) },
-                            { "totalAmount",
-                                new BsonDocument("$sum", "$amount") }
-                        }));
+            pipeline.Add(new BsonDocument("$group",
+                new BsonDocument {
+                    {
+                        "_id",
+                        new BsonDocument("aim",
+                            new BsonDocument("$ifNull",
+                                new BsonArray {
+                                    "$filter.aims",
+                                    "NoAim"
+                                }))
+                    }, {
+                        "totalAmount",
+                        new BsonDocument("$sum", "$amount")
+                    }
+                }));
 
-               pipeline.Add( new BsonDocument("$project",
-                   new BsonDocument
-                   {
-                       { "_id", 0 },
-                       { "aimCode", "$_id.aim" },
-                       { "totalAmount", 1 }
-                   }));
-               pipeline.Add(new BsonDocument("$sort",
-                   new BsonDocument("totalAmount", -1)));
+            pipeline.Add(new BsonDocument("$project",
+                new BsonDocument {
+                    { "_id", 0 },
+                    { "aimCode", "$_id.aim" },
+                    { "totalAmount", 1 }
+                }));
+            pipeline.Add(new BsonDocument("$sort",
+                new BsonDocument("totalAmount", -1)));
 
             var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
             var consumedVouchersByAim = await result.ToListAsync();
@@ -614,7 +617,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get list of voucher consumed by merchant's offers
         /// </summary>
-        public async Task<List<BsonDocument>> GetListConsumedByOffer(string merchantId) {
+        public async Task<List<BsonDocument>> GetListConsumedByOffer(ObjectId merchantId) {
             var pipeline = new BsonDocument[] {
                 new BsonDocument("$match",
                     new BsonDocument("merchant._id",
