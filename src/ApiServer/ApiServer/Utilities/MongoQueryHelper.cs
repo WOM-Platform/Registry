@@ -7,12 +7,19 @@ namespace WomPlatform.Web.Api.Utilities;
 
 public class MongoQueryHelper {
     // Create the match condition if the user have specified the data range or not
-    public static List<BsonDocument> DateMatchCondition(DateTime? startDateTime, DateTime? endDateTime, string key) {
+    public static List<BsonDocument> DateMatchCondition(DateTime? startDateTime, DateTime? endDateTime, string key, string unwindKey = null ) {
         var matchConditions = new List<BsonDocument>();
-        // Check if the user wants to filter by date
+        // Check if filter by date
         if(startDateTime.HasValue && endDateTime.HasValue) {
-            // Ensure the dates are valid
-            DateRangeHelper.CheckDateValidity(startDateTime.Value, endDateTime.Value);
+            if(unwindKey != null) {
+                matchConditions.Add(
+                    new BsonDocument("$unwind",
+                        new BsonDocument {
+                            { "path", unwindKey },
+                            { "includeArrayIndex", "string" },
+                            { "preserveNullAndEmptyArrays", false }
+                        }));
+            }
 
             // Apply the date range filter
             matchConditions.Add(
@@ -49,8 +56,6 @@ public class MongoQueryHelper {
         return matchConditions;
     }
 
-    // Creates a list of MongoDB aggregation stages that filter documents based on a specified merchant name.
-    // If a source is provided, the function filter the instrument
     public static List<BsonDocument> MerchantMatchFromPaymentRequestsCondition(ObjectId? merchantId) {
         var matchConditions = new List<BsonDocument>();
         if(merchantId.HasValue) {
@@ -75,6 +80,35 @@ public class MongoQueryHelper {
                     new BsonDocument("pos.merchantId",
                         new BsonDocument("$eq",
                             new ObjectId(merchantId.ToString()))))
+            );
+        }
+
+        return matchConditions;
+    }
+
+    public static List<BsonDocument> DatePaymentConfirmationCondition(DateTime? startDateTime, DateTime? endDateTime,
+        string key) {
+        var matchConditions = new List<BsonDocument>();
+        if(startDateTime.HasValue && endDateTime.HasValue) {
+            matchConditions.Add(
+                new BsonDocument("$unwind",
+                    new BsonDocument {
+                        { "path", "$confirmations" },
+                        { "includeArrayIndex", "string" },
+                        { "preserveNullAndEmptyArrays", false }
+                    }));
+            matchConditions.Add(
+                new BsonDocument("$match",
+                    new BsonDocument(key,
+                        new BsonDocument {
+                            {
+                                "$gte",
+                                startDateTime
+                            }, {
+                                "$lte",
+                                endDateTime
+                            }
+                        }))
             );
         }
 

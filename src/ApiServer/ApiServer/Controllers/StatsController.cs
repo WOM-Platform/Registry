@@ -282,23 +282,26 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetMerchantRank(
-            [FromQuery] string merchantId,
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate
+            [FromQuery] ObjectId? merchantId = null,
+            [FromQuery] string startDate = null,
+            [FromQuery] string endDate = null
         ) {
-            // Check if start date is before end date
-            DateRangeHelper.CheckDateValidity(startDate, endDate);
+            try {
+                // check if user is admin or owner of the source
+                await IsUserAdminOrOwnerMerchant(merchantId);
 
-            // Fetch the merchant position based on the others
-            var merchantRank = await PaymentService.GetMerchantRank(merchantId, startDate, endDate);
+                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
 
-            // If no vouchers are found, consider returning a 404 status
-            if(merchantRank == null || !merchantRank.Any()) {
-                return NotFound("Merchant was not found for the given date range.");
+                // Fetch the list of consumed vouchers based on aim
+                var merchantRank =
+                    await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, merchantId);
+
+                // Return consumed vouchers divided for period
+                return Ok(merchantRank);
             }
-
-            // Return consumed vouchers divided for period
-            return Ok(merchantRank);
+            catch(ServiceProblemException e) {
+                return StatusCode(e.HttpStatus, e.Message);
+            }
         }
 
         /// <summary>

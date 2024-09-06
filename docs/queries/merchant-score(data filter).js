@@ -1,9 +1,29 @@
 /*
- * Posizionamento dei merchant in base ai voucher consumati
+ * Posizionamento dei merchant in base ai voucher consumati con il filtro della data
  *
  * Collection: PaymentRequests
  */
 [
+  {
+    $unwind: {
+      path: "$confirmations",
+      includeArrayIndex: "string",
+      preserveNullAndEmptyArrays: false
+    }
+  },
+  {
+    $match:
+      {
+        "confirmations.performedAt": {
+          $gte: ISODate(
+            "2023-01-01T00:00:00.000Z"
+          ),
+          $lte: ISODate(
+            "2024-01-01T00:00:00.000Z"
+          )
+        }
+      }
+  },
   {
     $lookup: {
       from: "Pos",
@@ -31,22 +51,7 @@
     $group: {
       _id: "$merchantId",
       totalAmount: {
-        $sum: {
-          $multiply: [
-            "$amount",
-            {
-              $cond: {
-                if: {
-                  $isArray: "$confirmations"
-                },
-                then: {
-                  $size: "$confirmations"
-                },
-                else: 0
-              }
-            }
-          ]
-        }
+        $sum: "$amount"
       },
       name: {
         $first: "$merchant.name"
