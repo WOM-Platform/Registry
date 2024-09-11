@@ -12,6 +12,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.DTO;
 using WomPlatform.Web.Api.InputModels.Generation;
 using WomPlatform.Web.Api.Utilities;
 
@@ -266,7 +267,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers generated from all the sources in a period of time
         /// </summary>
-        public async Task<BsonDocument> GetTotalAmountOfGeneratedRedeemedVouchers(DateTime? startDate,
+        public async Task<(int TotalCount, int RedeemedCount)> GetTotalAmountOfGeneratedRedeemedVouchers(DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId) {
 
@@ -329,23 +330,17 @@ namespace WomPlatform.Web.Api.Service {
 
             // If no data was found
             if(totalAmountGeneratedDoc == null) {
-                return new BsonDocument {
-                    { "totalCount", 0 },
-                    {"redeemedCount", 0}
-                };
+                return (0, 0);
             }
 
             // if data found
-            return new BsonDocument {
-                { "totalCount", totalAmountGeneratedDoc["totalCount"].AsInt32 },
-                { "redeemedCount", totalAmountGeneratedDoc["redeemedCount"].AsInt32 }
-            };
+            return (totalAmountGeneratedDoc["totalCount"].AsInt32 , totalAmountGeneratedDoc["redeemedCount"].AsInt32);
         }
 
         /// <summary>
         /// Get total amount of vouchers generated grouped by aims
         /// </summary>
-        public async Task<List<VoucherByAim>> GetVoucherTotalsByAimAsync(DateTime? startDate, DateTime? endDate,
+        public async Task<List<VoucherByAimDTO>> GetVoucherTotalsByAimAsync(DateTime? startDate, DateTime? endDate,
             ObjectId? sourceId) {
             try {
                 // Create the list to hold match conditions for the voucher collection
@@ -403,7 +398,7 @@ namespace WomPlatform.Web.Api.Service {
                 var generatedVouchersByAim = await result.ToListAsync();
 
                 // Map to a strongly-typed model
-                var vouchersByAim = generatedVouchersByAim.Select(doc => new VoucherByAim {
+                var vouchersByAim = generatedVouchersByAim.Select(doc => new VoucherByAimDTO() {
                     AimCode = doc["_id"].AsString,
                     Amount = doc["amount"].AsInt32
                 }).ToList();
@@ -416,91 +411,64 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
-
-        public class VoucherByAim {
-            public string AimCode { get; set; }
-            public int Amount { get; set; }
-        }
-
-        /// <summary>
-        /// Get the redeemed aim list from most used to least in a period of time
-        /// </summary>
-        public async Task<List<BsonDocument>> GetRedeemedAimList(DateTime startDate, DateTime endDate) {
-            var matchConditions = MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp");
-
-            var pipeline = new BsonDocument[] {
-                new BsonDocument("$match", new BsonDocument("$and", new BsonArray(matchConditions))),
-                new BsonDocument("$lookup",
-                    new BsonDocument {
-                        { "from", "GenerationRequests" },
-                        { "localField", "generationRequestId" },
-                        { "foreignField", "_id" },
-                        { "as", "generatedRequest" }
-                    }),
-                new BsonDocument("$addFields",
-                    new BsonDocument("generatedAmount",
-                        new BsonDocument("$arrayElemAt",
-                            new BsonArray {
-                                "$generatedRequest.amount",
-                                0
-                            }))),
-                new BsonDocument("$group",
-                    new BsonDocument {
-                        { "_id", "$aimCode" }, {
-                            "totalAmount",
-                            new BsonDocument("$sum", "$generatedAmount")
-                        }
-                    }),
-                new BsonDocument("$sort",
-                    new BsonDocument("totalAmount", -1))
-            };
-            var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
-            return await result.ToListAsync();
-        }
-
         /// <summary>
         /// Get number of unused vouchers based on the position
         /// </summary>
-        public async Task<List<BsonDocument>>
-            GetNumberUnusedVouchers(double latitude, double longitude, int radius) {
-            var pipeline = new BsonDocument[] {
-                new BsonDocument("$geoNear",
-                    new BsonDocument {
-                        {
-                            "near",
-                            new BsonDocument {
-                                { "type", "Point" },
-                                { "coordinates", new BsonArray { latitude, longitude } }
-                            }
-                        },
-                        { "distanceField", "distance" },
-                        { "maxDistance", radius * 100 },
-                        { "spherical", true }
-                    }),
-                new BsonDocument("$match",
+        public async Task<int>
+            GetNumberUnusedVouchers(double? latitude, double? longitude, int? radius) {
+            var pipeline = new List<BsonDocument>();
+            if(radius.HasValue && latitude.HasValue && longitude.HasValue) {
+                pipeline.Add(
+                    new BsonDocument("$geoNear",
+                        new BsonDocument {
+                            {
+                                "near",
+                                new BsonDocument {
+                                    { "type", "Point" },
+                                    { "coordinates", new BsonArray { latitude, longitude } }
+                                }
+                            },
+                            { "distanceField", "distance" },
+                            { "maxDistance", radius * 100 },
+                            { "spherical", true }
+                        })
+                    );
+            }
+            pipeline.Add(  new BsonDocument("$match",
                     new BsonDocument("$or",
                         new BsonArray {
                             new BsonDocument("count",
                                 new BsonDocument("$exists", false)),
                             new BsonDocument("count",
                                 new BsonDocument("$gt", 0))
-                        })),
-                new BsonDocument("$group",
-                    new BsonDocument {
-                        { "_id", BsonNull.Value }, {
-                            "totalUnusedVouchers",
-                            new BsonDocument("$sum", "$count")
-                        }
-                    }),
-                new BsonDocument("$project",
-                    new BsonDocument {
-                        { "_id", 0 },
-                        { "totalUnusedVouchers", 1 }
-                    })
-            };
+                        }))
+                );
+                pipeline.Add(
+                    new BsonDocument("$group",
+                        new BsonDocument {
+                            { "_id", BsonNull.Value }, {
+                                "totalUnusedVouchers",
+                                new BsonDocument("$sum", "$count")
+                            }
+                        })
+                    );
+
+                pipeline.Add(
+                    new BsonDocument("$project",
+                        new BsonDocument {
+                            { "_id", 0 },
+                            { "totalUnusedVouchers", 1 }
+                        })
+                    );
 
             var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
-            return await result.ToListAsync();
+
+            var document = await result.FirstOrDefaultAsync();
+            if (document != null && document.Contains("totalUnusedVouchers")) {
+                return document["totalUnusedVouchers"].ToInt32();
+            }
+
+            return 0;
         }
     }
 }

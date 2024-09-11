@@ -116,17 +116,10 @@ namespace WomPlatform.Web.Api.Controllers {
                     await GenerationService.GetTotalAmountOfGeneratedRedeemedVouchers(parsedStartDate, parsedEndDate,
                         sourceId);
 
-                // Check if the result is null or does not contain the expected field
-                if(generatedVouchers == null || !generatedVouchers.Contains("totalCount")) {
-                    return NotFound("No vouchers found for the given date range.");
-                }
-
-                // Extract the totalAmountGenerated value
-                var totalCount = generatedVouchers["totalCount"].AsInt32;
-                var redeemedCount = generatedVouchers["redeemedCount"].AsInt32;
 
                 // Return the JSON response
-                return Ok(new { totalCount, redeemedCount });
+                return Ok(new
+                    { TotalCount = generatedVouchers.TotalCount, RedeemedCount = generatedVouchers.RedeemedCount });
             }
             catch(ServiceProblemException ex) {
                 return StatusCode(ex.HttpStatus, ex.Message);
@@ -154,8 +147,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] string endDate = null,
             [FromQuery] ObjectId? merchantId = null
         ) {
-            try
-            {
+            try {
                 // check if user is admin or owner of the source
                 await IsUserAdminOrOwnerMerchant(merchantId);
 
@@ -165,19 +157,10 @@ namespace WomPlatform.Web.Api.Controllers {
                 var consumedVouchers =
                     await PaymentService.GetTotalAmountOfConsumedVouchers(parsedStartDate, parsedEndDate, merchantId);
 
-                // Check if the result is null or does not contain the expected field
-                if(consumedVouchers == null || !consumedVouchers.Contains("totalAmount")) {
-                    return NotFound("No vouchers found for the given date range.");
-                }
-
-                // Extract the totalAmount value
-                var totalAmountConsumed = consumedVouchers["totalAmount"].AsInt32;
-
                 // Return the JSON response
-                return Ok(new { totalAmountConsumed });
+                return Ok(consumedVouchers);
             }
-            catch (ServiceProblemException ex)
-            {
+            catch(ServiceProblemException ex) {
                 return StatusCode(ex.HttpStatus, ex.Message);
             }
         }
@@ -204,9 +187,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
             catch(ServiceProblemException e) {
                 return StatusCode(e.HttpStatus, e.Message);
-
             }
-
         }
 
         /// <summary>
@@ -244,7 +225,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Ok(listConsumedByAims);
             }
             catch(ServiceProblemException e) {
-               return StatusCode(e.HttpStatus, e.Message);
+                return StatusCode(e.HttpStatus, e.Message);
             }
         }
 
@@ -261,14 +242,9 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] ObjectId merchantId
         ) {
             // Fetch the list of consumed vouchers based on the merchant offer
-            var listConsumedByOffer = await PaymentService.GetListConsumedByOffer(merchantId);
+            var listConsumedByOffer = await OfferService.GetListConsumedByOffer(merchantId);
 
-
-            // If no vouchers are found, consider returning a 404 status
-            if(listConsumedByOffer == null || !listConsumedByOffer.Any()) {
-                return NotFound("No vouchers found for the given date range.");
-            }
-
+            Console.WriteLine("Warm");
             // Return consumed vouchers divided for period
             return Ok(listConsumedByOffer);
         }
@@ -305,52 +281,20 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         /// <summary>
-        /// Get total amount of vouchers redeemed from all the sources
-        /// </summary>
-        [HttpGet("redeemed-aims")]
-        [Authorize]
-        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GetRedeemedAimList(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate
-        ) {
-            // Check if start date is before end date
-            DateRangeHelper.CheckDateValidity(startDate, endDate);
-
-            // Fetch the total amount of redeemed vouchers
-            var totalAmountOfRedeemedVouchers = await GenerationService.GetRedeemedAimList(startDate, endDate);
-
-            // If no vouchers are found, consider returning a 404 status
-            if(totalAmountOfRedeemedVouchers == null || !totalAmountOfRedeemedVouchers.Any()) {
-                return NotFound("No data found.");
-            }
-
-            // Return consumed vouchers divided for period
-            return Ok(totalAmountOfRedeemedVouchers);
-        }
-
-        /// <summary>
         /// Get the total number of unused vouchers by position
         /// </summary>
-        [HttpGet("merchant/vouchers/available")]
+        [HttpGet("voucher/available")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetNumberOfUnusedVouchers(
-            [FromQuery] double latitude,
-            [FromQuery] double longitude,
-            [FromQuery] int radius
+            [FromQuery] double? latitude = null,
+            [FromQuery] double? longitude = null,
+            [FromQuery] int? radius = null
         ) {
             // Fetch the number of unused vouchers
             var numberUnusedVouchers = await GenerationService.GetNumberUnusedVouchers(latitude, longitude, radius);
-
-            // If no vouchers are found, consider returning a 404 status
-            if(numberUnusedVouchers == null || !numberUnusedVouchers.Any()) {
-                return NotFound("No data found.");
-            }
 
             // Return consumed vouchers divided for period
             return Ok(numberUnusedVouchers);

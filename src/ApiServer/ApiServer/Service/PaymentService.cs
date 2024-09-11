@@ -7,8 +7,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using SixLabors.ImageSharp;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.DTO;
 using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Service {
@@ -386,7 +388,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers consumed from all the merchants in a period of time
         /// </summary>
-        public async Task<BsonDocument> GetTotalAmountOfConsumedVouchers(DateTime? startDate,
+        public async Task<int> GetTotalAmountOfConsumedVouchers(DateTime? startDate,
             DateTime? endDate, ObjectId? merchantId) {
             var pipeline = new List<BsonDocument>();
 
@@ -439,22 +441,18 @@ namespace WomPlatform.Web.Api.Service {
 
             // If no data was found
             if(totalAmountConsumedDoc == null) {
-                return new BsonDocument {
-                    { "totalAmount", 0 }
-                };
+                return 0;
             }
 
             // if data found
-            return new BsonDocument {
-                { "totalAmount", totalAmountConsumedDoc["totalAmount"].AsInt32 }
-            };
+            return totalAmountConsumedDoc["totalAmount"].AsInt32;
         }
 
 
         /// <summary>
         /// Get the consumed aim list from most used to least in a period of time
         /// </summary>
-        public async Task<List<GenerationService.VoucherByAim>> GetConsumedVouchersByAims(DateTime? startDate,
+        public async Task<List<VoucherByAimDTO>> GetConsumedVouchersByAims(DateTime? startDate,
             DateTime? endDate, ObjectId? merchantId) {
             var pipeline = new List<BsonDocument>();
 
@@ -529,7 +527,7 @@ namespace WomPlatform.Web.Api.Service {
             var consumedVouchersByAim = await result.ToListAsync();
 
             // Map to a strongly-typed model
-            var vouchersByAim = consumedVouchersByAim.Select(doc => new GenerationService.VoucherByAim {
+            var vouchersByAim = consumedVouchersByAim.Select(doc => new VoucherByAimDTO(){
                 AimCode = doc["aimCode"].AsString,
                 Amount = doc["totalAmount"].AsInt32
             }).ToList();
@@ -538,53 +536,10 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         /// <summary>
-        /// Get list of voucher consumed by merchant's offers
-        /// </summary>
-        public async Task<List<BsonDocument>> GetListConsumedByOffer(ObjectId merchantId) {
-            var pipeline = new BsonDocument[] {
-                new BsonDocument("$match",
-                    new BsonDocument("merchant._id",
-                        new ObjectId("5fb24fe93922fa0001766b3c"))),
-                new BsonDocument("$lookup",
-                    new BsonDocument {
-                        { "from", "PaymentRequests" },
-                        { "localField", "paymentRequestId" },
-                        { "foreignField", "_id" },
-                        { "as", "payments" }
-                    }),
-                new BsonDocument("$match",
-                    new BsonDocument("payments",
-                        new BsonDocument("$ne",
-                            new BsonArray()))),
-                new BsonDocument("$addFields",
-                    new BsonDocument("totalAmount",
-                        new BsonDocument("$multiply",
-                            new BsonArray {
-                                new BsonDocument("$size", "$payments"),
-                                "$cost"
-                            }))),
-                new BsonDocument("$sort",
-                    new BsonDocument("totalAmount", -1)),
-                new BsonDocument("$project",
-                    new BsonDocument {
-                        { "offerId", 1 },
-                        { "title", 1 },
-                        { "description", 1 },
-                        { "filter", 1 },
-                        { "cost", 1 },
-                        { "totalAmount", 1 }
-                    })
-            };
-            var result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
-            return await result.ToListAsync();
-        }
-
-        /// <summary>
         /// Get merchant rank in a period of time
         /// </summary>
-        public async Task<List<MerchantRank>> GetMerchantRank(DateTime? startDate, DateTime? endDate,
+        public async Task<List<MerchantRankDTO>> GetMerchantRank(DateTime? startDate, DateTime? endDate,
             ObjectId? merchantId) {
-
             var pipeline = new List<BsonDocument>();
 
             // filter date
@@ -708,7 +663,7 @@ namespace WomPlatform.Web.Api.Service {
                 Console.WriteLine($"Rank Aggregation pipeline executed in {elapsedMilliseconds} ms");
 
                 // Map to a strongly-typed model
-                var merchantRank = merchantRankList.Select(doc => new MerchantRank() {
+                var merchantRank = merchantRankList.Select(doc => new MerchantRankDTO() {
                     Id = doc["_id"].AsObjectId,
                     Name = doc["name"].AsString,
                     Amount = doc["totalAmount"].AsInt32,
@@ -722,14 +677,6 @@ namespace WomPlatform.Web.Api.Service {
 
                 throw;
             }
-        }
-
-
-        public class MerchantRank {
-            public ObjectId Id { get; set; }
-            public string Name { get; set; }
-            public int Amount { get; set; }
-            public int Rank { get; set; }
         }
     }
 }
