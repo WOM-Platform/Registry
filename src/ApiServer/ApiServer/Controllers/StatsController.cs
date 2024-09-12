@@ -244,7 +244,6 @@ namespace WomPlatform.Web.Api.Controllers {
             // Fetch the list of consumed vouchers based on the merchant offer
             var listConsumedByOffer = await OfferService.GetListConsumedByOffer(merchantId);
 
-            Console.WriteLine("Warm");
             // Return consumed vouchers divided for period
             return Ok(listConsumedByOffer);
         }
@@ -269,8 +268,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
 
                 // Fetch the list of consumed vouchers based on aim
-                var merchantRank =
-                    await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, merchantId);
+                var merchantRank = await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, merchantId);
 
                 // Return consumed vouchers divided for period
                 return Ok(merchantRank);
@@ -288,64 +286,76 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GetNumberOfUnusedVouchers(
+        public async Task<ActionResult> GetNumberOfAvailableVouchers(
             [FromQuery] double? latitude = null,
             [FromQuery] double? longitude = null,
-            [FromQuery] int? radius = null
+            [FromQuery] int? radius = null,
+            [FromQuery] ObjectId? merchantId = null
         ) {
+            // Think how to make a control on this api
+            await IsUserAdminOrOwnerMerchant(merchantId);
+
             // Fetch the number of unused vouchers
-            var numberUnusedVouchers = await GenerationService.GetNumberUnusedVouchers(latitude, longitude, radius);
+            var numberUnusedVouchers = await GenerationService.GetNumberAvailableVouchers(latitude, longitude, radius);
 
             // Return consumed vouchers divided for period
             return Ok(numberUnusedVouchers);
         }
 
-
-        // LIST TO DELETE
-
-        /*
         /// <summary>
-        /// Gets the list of consumed vouchers grouped by merchant
+        /// Retrieves the total number of vouchers generated over time based on optional filters such as date range and source.
         /// </summary>
-        /// <remarks>
-        /// This endpoint is restricted to admin users. If the user is not an admin, a 403 Forbidden status is returned.
-        /// The date range can be modified to take parameters from the query string.
-        /// </remarks>
-        /// <returns>
-        /// Returns a 200 OK status with the list.
-        /// If the user is not authorized, a 403 Forbidden status is returned.
-        /// </returns>
-        [HttpGet("merchant/voucher/total-consumed")]
+        /// <param name="startDate">The start date for the date range filter (optional).</param>
+        /// <param name="endDate">The end date for the date range filter (optional).</param>
+        /// <param name="sourceId">The ID of the voucher source to filter by (optional).</param>
+        /// <returns>The total number of vouchers generated within the specified criteria.</returns>
+        [HttpGet("voucher/total-generated-redeemed-over-time")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GetListConsumedVouchersByMerchant(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate
+        public async Task<ActionResult> GetTotalGeneratedRedeemedVouchersOverTime(
+            [FromQuery] string startDate = null,
+            [FromQuery] string endDate = null,
+            [FromQuery] ObjectId? sourceId = null
         ) {
-            // Check if start date is before end date
-            DateRangeHelper.CheckDateValidity(startDate, endDate);
+            // check if user is admin or owner of the source
+            await IsUserAdminOrOwnerMerchant(sourceId);
 
-            // Check if the user is an admin
-            bool isAdmin = await this.IsUserAdmin();
-            if(!isAdmin) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden,
-                    title: "Only administrators can access this resource.");
-            }
+            var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
 
-            // Fetch the list of consumed vouchers for merchant
-            var listConsumedByMerchant = await PaymentService.GetListConsumedByMerchants(startDate, endDate);
+            // Fetch the list of consumed vouchers based on aim
+            var totalGeneratedVouchersOverTime = await GenerationService.GetTotalGeneratedRedeemedVouchersOverTime(parsedStartDate, parsedEndDate, sourceId);
 
-
-            // If no vouchers are found, consider returning a 404 status
-            if(listConsumedByMerchant == null || !listConsumedByMerchant.Any()) {
-                return NotFound("No vouchers found for the given date range.");
-            }
-
-            // Return consumed vouchers divided for period
-            return Ok(listConsumedByMerchant);
+            return Ok(totalGeneratedVouchersOverTime);
         }
-        */
+
+        /// <summary>
+        /// Retrieves the total number of voucher usage over time based on optional filters like period of time and merchant.
+        /// </summary>
+        /// <param name="startDate">The start date to filter by (optional).</param>
+        /// <param name="endDate">The end date to filter by (optional).</param>
+        /// <param name="merchantId">The ID of the merchant to filter by (optional).</param>
+        /// <returns>The total number of voucher consumed over time.</returns>
+        [HttpGet("voucher/total-consumption-over-time")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetTotalConsumptionVouchersOverTime(
+            [FromQuery] string startDate = null,
+            [FromQuery] string endDate = null,
+            [FromQuery] ObjectId? merchantId = null
+        ) {
+            // check if user is admin or owner of the source
+            await IsUserAdminOrOwnerMerchant(merchantId);
+
+            var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+
+            // Fetch the list of consumed vouchers based on aim
+            var totalConsumedVouchersOverTime = await PaymentService.GetTotalConsumedVouchersOverTime(parsedStartDate, parsedEndDate, merchantId);
+
+            return Ok(totalConsumedVouchersOverTime);
+        }
     }
 }

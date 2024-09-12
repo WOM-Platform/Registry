@@ -267,11 +267,15 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers generated from all the sources in a period of time
         /// </summary>
-        public async Task<(int TotalCount, int RedeemedCount)> GetTotalAmountOfGeneratedRedeemedVouchers(DateTime? startDate,
+        public async Task<(int TotalCount, int RedeemedCount)> GetTotalAmountOfGeneratedRedeemedVouchers(
+            DateTime? startDate,
             DateTime? endDate,
-            ObjectId? sourceId) {
-
+            ObjectId? sourceId
+        ) {
             var pipeline = new List<BsonDocument>();
+
+            // Add the instrumentName condition if filter applied
+            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
 
             pipeline.Add(new BsonDocument("$match",
                 new BsonDocument("$and",
@@ -294,8 +298,6 @@ namespace WomPlatform.Web.Api.Service {
                     })
             );
 
-            // Add the instrumentName condition if filter applied
-            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
 
             pipeline.Add(new BsonDocument("$project",
                 new BsonDocument {
@@ -334,14 +336,17 @@ namespace WomPlatform.Web.Api.Service {
             }
 
             // if data found
-            return (totalAmountGeneratedDoc["totalCount"].AsInt32 , totalAmountGeneratedDoc["redeemedCount"].AsInt32);
+            return (totalAmountGeneratedDoc["totalCount"].AsInt32, totalAmountGeneratedDoc["redeemedCount"].AsInt32);
         }
 
         /// <summary>
         /// Get total amount of vouchers generated grouped by aims
         /// </summary>
-        public async Task<List<VoucherByAimDTO>> GetVoucherTotalsByAimAsync(DateTime? startDate, DateTime? endDate,
-            ObjectId? sourceId) {
+        public async Task<List<VoucherByAimDTO>> GetVoucherTotalsByAimAsync(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? sourceId
+        ) {
             try {
                 // Create the list to hold match conditions for the voucher collection
                 List<BsonDocument> matchConditions =
@@ -414,8 +419,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get number of unused vouchers based on the position
         /// </summary>
-        public async Task<int>
-            GetNumberUnusedVouchers(double? latitude, double? longitude, int? radius) {
+        public async Task<int> GetNumberAvailableVouchers(double? latitude, double? longitude, int? radius) {
             var pipeline = new List<BsonDocument>();
             if(radius.HasValue && latitude.HasValue && longitude.HasValue) {
                 pipeline.Add(
@@ -432,43 +436,138 @@ namespace WomPlatform.Web.Api.Service {
                             { "maxDistance", radius * 100 },
                             { "spherical", true }
                         })
-                    );
-            }
-            pipeline.Add(  new BsonDocument("$match",
-                    new BsonDocument("$or",
-                        new BsonArray {
-                            new BsonDocument("count",
-                                new BsonDocument("$exists", false)),
-                            new BsonDocument("count",
-                                new BsonDocument("$gt", 0))
-                        }))
                 );
-                pipeline.Add(
-                    new BsonDocument("$group",
-                        new BsonDocument {
-                            { "_id", BsonNull.Value }, {
-                                "totalUnusedVouchers",
-                                new BsonDocument("$sum", "$count")
-                            }
-                        })
-                    );
+            }
 
-                pipeline.Add(
-                    new BsonDocument("$project",
-                        new BsonDocument {
-                            { "_id", 0 },
-                            { "totalUnusedVouchers", 1 }
-                        })
-                    );
+            pipeline.Add(new BsonDocument("$match",
+                new BsonDocument("$or",
+                    new BsonArray {
+                        new BsonDocument("count",
+                            new BsonDocument("$exists", false)),
+                        new BsonDocument("count",
+                            new BsonDocument("$gt", 0))
+                    }))
+            );
+            pipeline.Add(
+                new BsonDocument("$group",
+                    new BsonDocument {
+                        { "_id", BsonNull.Value }, {
+                            "totalUnusedVouchers",
+                            new BsonDocument("$sum", "$count")
+                        }
+                    })
+            );
+
+            pipeline.Add(
+                new BsonDocument("$project",
+                    new BsonDocument {
+                        { "_id", 0 },
+                        { "totalUnusedVouchers", 1 }
+                    })
+            );
 
             var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
 
             var document = await result.FirstOrDefaultAsync();
-            if (document != null && document.Contains("totalUnusedVouchers")) {
+            if(document != null && document.Contains("totalUnusedVouchers")) {
                 return document["totalUnusedVouchers"].ToInt32();
             }
 
             return 0;
+        }
+
+        public async Task<List<TotalGeneratedAndRedeemedOverTimeDTO>> GetTotalGeneratedRedeemedVouchersOverTime(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? sourceId
+        ) {
+            var pipeline = new List<BsonDocument>();
+            // set calculation on last year if period of time is not specified
+            if(!startDate.HasValue && !endDate.HasValue) {
+                endDate = DateTime.Today;
+                startDate = DateTime.Today - TimeSpan.FromDays(365);
+                Console.WriteLine($" startDate: {startDate}, endDate: {endDate}");
+            }
+
+            var formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value);
+
+            pipeline.Add(
+                new BsonDocument("$match",
+                    new BsonDocument("timestamp",
+                        new BsonDocument {
+                            {
+                                "$gte", startDate
+                            }, {
+                                "$lte", endDate
+                            }
+                        }))
+            );
+
+            pipeline.Add(
+                new BsonDocument("$lookup",
+                    new BsonDocument {
+                        { "from", "GenerationRequests" },
+                        { "localField", "generationRequestId" },
+                        { "foreignField", "_id" },
+                        { "as", "generationRequest" }
+                    })
+            );
+
+            pipeline.Add(
+                new BsonDocument("$unwind",
+                    new BsonDocument {
+                        { "path", "$generationRequest" },
+                        { "includeArrayIndex", "string" },
+                        { "preserveNullAndEmptyArrays", true }
+                    })
+            );
+
+            // Add the instrumentName condition if filter applied
+            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
+
+            pipeline.Add(new BsonDocument("$project",
+                new BsonDocument {
+                    { "source", 1 },
+                    { "initialCount", 1 },
+                    { "timestamp", 1 },
+                    { "generationRequest.performedAt", 1 }
+                }));
+
+            pipeline.Add(new BsonDocument("$group",
+                new BsonDocument {
+                    {
+                        "_id",
+                        new BsonDocument("$dateToString",
+                            new BsonDocument {
+                                { "format", formatDate },
+                                { "date", "$timestamp" }
+                            })
+                    }, {
+                        "generatedCount",
+                        new BsonDocument("$sum", "$initialCount")
+                    }, {
+                        "redeemedCount",
+                        new BsonDocument("$sum",
+                            new BsonDocument("$cond",
+                                new BsonDocument {
+                                    { "if", "$generationRequest.performedAt" },
+                                    { "then", "$initialCount" },
+                                    { "else", 0 }
+                                }))
+                    }
+                }));
+
+            var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
+            var generatedRedeemedOverTime = await result.ToListAsync();
+
+            var vouchersByAim = generatedRedeemedOverTime.Select(doc => new TotalGeneratedAndRedeemedOverTimeDTO() {
+                Date =  doc["_id"].AsString,
+                TotalGenerated = doc["generatedCount"].AsInt32,
+                TotalRedeemed = doc["redeemedCount"].AsInt32
+
+            }).ToList();
+
+            return vouchersByAim;
         }
     }
 }

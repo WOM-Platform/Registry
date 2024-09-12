@@ -388,8 +388,11 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers consumed from all the merchants in a period of time
         /// </summary>
-        public async Task<int> GetTotalAmountOfConsumedVouchers(DateTime? startDate,
-            DateTime? endDate, ObjectId? merchantId) {
+        public async Task<int> GetTotalAmountOfConsumedVouchers(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? merchantId
+        ) {
             var pipeline = new List<BsonDocument>();
 
             // execute a different aggregation pipeline if the user is filtering or not for date
@@ -452,8 +455,11 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get the consumed aim list from most used to least in a period of time
         /// </summary>
-        public async Task<List<VoucherByAimDTO>> GetConsumedVouchersByAims(DateTime? startDate,
-            DateTime? endDate, ObjectId? merchantId) {
+        public async Task<List<VoucherByAimDTO>> GetConsumedVouchersByAims(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? merchantId
+        ) {
             var pipeline = new List<BsonDocument>();
 
             // Unwind confirmations array
@@ -527,7 +533,7 @@ namespace WomPlatform.Web.Api.Service {
             var consumedVouchersByAim = await result.ToListAsync();
 
             // Map to a strongly-typed model
-            var vouchersByAim = consumedVouchersByAim.Select(doc => new VoucherByAimDTO(){
+            var vouchersByAim = consumedVouchersByAim.Select(doc => new VoucherByAimDTO() {
                 AimCode = doc["aimCode"].AsString,
                 Amount = doc["totalAmount"].AsInt32
             }).ToList();
@@ -538,8 +544,11 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get merchant rank in a period of time
         /// </summary>
-        public async Task<List<MerchantRankDTO>> GetMerchantRank(DateTime? startDate, DateTime? endDate,
-            ObjectId? merchantId) {
+        public async Task<List<MerchantRankDTO>> GetMerchantRank(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? merchantId
+        ) {
             var pipeline = new List<BsonDocument>();
 
             // filter date
@@ -677,6 +686,77 @@ namespace WomPlatform.Web.Api.Service {
 
                 throw;
             }
+        }
+
+        public async Task<List<TotalConsumedOverTimeDTO>> GetTotalConsumedVouchersOverTime(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? sourceId
+        ) {
+            var pipeline = new List<BsonDocument>();
+
+            // if not specified a period of time set calculation on last year
+            if(!startDate.HasValue && !endDate.HasValue) {
+                endDate = DateTime.Today;
+                startDate = DateTime.Today - TimeSpan.FromDays(365);
+            }
+
+            pipeline.Add(new BsonDocument("$unwind",
+                new BsonDocument {
+                    { "path", "$confirmations" },
+                    { "includeArrayIndex", "string" },
+                    { "preserveNullAndEmptyArrays", true }
+                })
+            );
+
+            pipeline.Add(
+                new BsonDocument("$addFields",
+                    new BsonDocument("confirmations", "$confirmations.performedAt"))
+            );
+
+            pipeline.Add(
+                new BsonDocument("$match",
+                    new BsonDocument("confirmations",
+                        new BsonDocument {
+                            {
+                                "$gte", startDate
+                            }, {
+                                "$lte", endDate
+                            }
+                        }))
+            );
+            var formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value);
+
+            pipeline.Add(
+                new BsonDocument("$group",
+                    new BsonDocument {
+                        {
+                            "_id",
+                            new BsonDocument("$dateToString",
+                                new BsonDocument {
+                                    { "format", formatDate },
+                                    { "date", "$confirmations" }
+                                })
+                        }, {
+                            "totalAmount",
+                            new BsonDocument("$sum", "$amount")
+                        }
+                    })
+            );
+
+            pipeline.Add(new BsonDocument("$sort",
+                new BsonDocument("_id", 1))
+            );
+
+            var result = PaymentRequestCollection.Aggregate<BsonDocument>(pipeline);
+            var totalConsumedVouchersOverTime = await result.ToListAsync();
+
+            var vouchersByAim = totalConsumedVouchersOverTime.Select(doc => new TotalConsumedOverTimeDTO() {
+                Date =  doc["_id"].AsString,
+                Total = doc["totalAmount"].AsInt32
+            }).ToList();
+
+            return vouchersByAim;
         }
     }
 }

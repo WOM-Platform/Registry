@@ -342,7 +342,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        protected async Task IsUserAdminOrOwnerMerchant(ObjectId? merchantId) {
+        protected async Task IsUserAdminOrOwnerMerchant(ObjectId? merchantId = null) {
             // If a merchantId is provided, check if the user is an admin or the owner of the merchant
             if(merchantId.HasValue) {
                 await VerifyUserIsAdminOfMerchant(merchantId.Value);
