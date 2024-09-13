@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>WomPlatform.Web.Api</RootNamespace>
+    <UserSecretsId>386f9b1f-9991-4a9c-ba96-6dc60acf63e1</UserSecretsId>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -49,4 +50,5 @@
     <PackageReference Include="Blurhash.ImageSharp" Version="4.0.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
   </ItemGroup>
+
 </Project>

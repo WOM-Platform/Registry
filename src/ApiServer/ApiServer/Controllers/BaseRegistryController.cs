@@ -331,6 +331,28 @@ namespace WomPlatform.Web.Api.Controllers {
             return source;
         }
 
+        protected async Task IsUserAdminOrOwnerSource(ObjectId? sourceId) {
+            // If a sourceId is provided, check if the user is an admin or the owner of the source
+            if(sourceId.HasValue) {
+                await VerifyUserIsAdminOfSource(sourceId.Value);
+            }
+            // If no sourceId is provided, only check if the user is an admin
+            else {
+                await VerifyUserIsAdmin();
+            }
+        }
+
+        protected async Task IsUserAdminOrOwnerMerchant(ObjectId? merchantId = null) {
+            // If a merchantId is provided, check if the user is an admin or the owner of the merchant
+            if(merchantId.HasValue) {
+                await VerifyUserIsAdminOfMerchant(merchantId.Value);
+            }
+            // If no sourceId is provided, only check if the user is an admin
+            else {
+                await VerifyUserIsAdmin();
+            }
+        }
+
     }
 
 }

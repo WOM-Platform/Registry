@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -88,9 +89,12 @@ namespace WomPlatform.Web.Api.Service {
             if(controlledBy.HasValue) {
                 filters.Add(Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, controlledBy.Value));
             }
+
             if(!string.IsNullOrWhiteSpace(textSearch)) {
-                filters.Add(Builders<Source>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
+                filters.Add(Builders<Source>.Filter.Regex(s => s.Name, new MongoDB.Bson.BsonRegularExpression($"{Regex.Escape(textSearch)}", "i")));
             }
+
+
             if(!string.IsNullOrWhiteSpace(aim)) {
                 filters.Add(Builders<Source>.Filter.Or(
                     Builders<Source>.Filter.Eq(s => s.Aims.EnableAll, true),
@@ -216,6 +220,17 @@ namespace WomPlatform.Web.Api.Service {
             };
 
             return await GenerationRequestCollection.Aggregate(pipeline).SingleOrDefaultAsync();
+        }
+
+        public async Task<Source> GetSourceByName(string sourceName) {
+            var filter = Builders<Source>.Filter.Eq(s => s.Name, sourceName);
+            var source = await SourceCollection.Find(filter).FirstOrDefaultAsync();
+
+            if(source == null) {
+                throw new ApplicationException($"Source with name '{sourceName}' not found.");
+            }
+
+            return source;
         }
     }
 

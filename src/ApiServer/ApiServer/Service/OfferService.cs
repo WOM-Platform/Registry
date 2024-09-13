@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.DTO;
 
 namespace WomPlatform.Web.Api.Service {
     public class OfferService : BaseService {
@@ -357,6 +359,67 @@ namespace WomPlatform.Web.Api.Service {
 
             Logger.LogDebug("Performing bulk updates");
             await OfferCollection.BulkWriteAsync(writes);
+        }
+
+
+               /// <summary>
+        /// Get list of voucher consumed by merchant's offers
+        /// </summary>
+        public async Task<List<MerchantOfferDTO>> GetListConsumedByOffer(ObjectId merchantId) {
+            try {
+                var pipeline = new BsonDocument[] {
+                    new BsonDocument("$match",
+                        new BsonDocument("merchant._id",
+                            new ObjectId(merchantId.ToString()))),
+                    new BsonDocument("$lookup",
+                        new BsonDocument {
+                            { "from", "PaymentRequests" },
+                            { "localField", "paymentRequestId" },
+                            { "foreignField", "_id" },
+                            { "as", "payments" }
+                        }),
+                    new BsonDocument("$match",
+                        new BsonDocument("payments",
+                            new BsonDocument("$ne",
+                                new BsonArray()))),
+                    new BsonDocument("$addFields",
+                        new BsonDocument("totalAmount",
+                            new BsonDocument("$multiply",
+                                new BsonArray {
+                                    new BsonDocument("$size", "$payments"),
+                                    "$cost"
+                                }))),
+                    new BsonDocument("$sort",
+                        new BsonDocument("totalAmount", -1)),
+                    new BsonDocument("$project",
+                        new BsonDocument {
+                            { "offerId", 1 },
+                            { "title", 1 },
+                            { "description", 1 },
+                            { "filter", 1 },
+                            { "cost", 1 },
+                            { "totalAmount", 1 }
+                        })
+                };
+
+
+                var result = await OfferCollection.AggregateAsync<BsonDocument>(pipeline);
+                var consumedVouchersByOffer = await result.ToListAsync();
+
+                // Map to a strongly-typed model
+                var merchantOffers = consumedVouchersByOffer.Select(doc => new MerchantOfferDTO() {
+                    Title = doc.Contains("title") && !doc["title"].IsBsonNull ? doc["title"].AsString : string.Empty,
+                    Description = doc.Contains("description") && !doc["description"].IsBsonNull ? doc["description"].AsString : string.Empty,
+                    TotalAmount = doc.Contains("totalAmount") && !doc["totalAmount"].IsBsonNull ? doc["totalAmount"].ToInt32() : 0,
+                    Cost = doc.Contains("cost") && !doc["cost"].IsBsonNull ? doc["cost"].ToInt32() : 0
+                }).ToList();
+
+                return merchantOffers;
+            }
+            catch(Exception ex) {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
+            }
         }
 
     }
