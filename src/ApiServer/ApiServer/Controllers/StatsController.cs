@@ -6,22 +6,21 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
-using MongoDB.Bson.IO;
 using WomPlatform.Web.Api.OutputModels.Stats;
 using WomPlatform.Web.Api.Utilities;
-using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Controllers {
+
     [Route("v1/stats")]
     [OperationsTags("Stats and info")]
     [RequireHttpsInProd]
     public class StatsController : BaseRegistryController {
+
         public StatsController(
             IServiceProvider serviceProvider,
             ILogger<StatsController> logger)
-            : base(serviceProvider, logger) {
+        : base(serviceProvider, logger) {
         }
 
         /// <summary>
@@ -118,8 +117,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
 
                 // Return the JSON response
-                return Ok(new
-                    { TotalCount = generatedVouchers.TotalCount, RedeemedCount = generatedVouchers.RedeemedCount });
+                return Ok(new { TotalCount = generatedVouchers.TotalCount, RedeemedCount = generatedVouchers.RedeemedCount });
             }
             catch(ServiceProblemException ex) {
                 return StatusCode(ex.HttpStatus, ex.Message);

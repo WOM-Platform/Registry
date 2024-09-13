@@ -90,7 +90,7 @@ namespace WomPlatform.Web.Api.Service {
                 filters.Add(Builders<Source>.Filter.AnyEq(s => s.AdministratorUserIds, controlledBy.Value));
             }
 
-            if (!string.IsNullOrWhiteSpace(textSearch)) {
+            if(!string.IsNullOrWhiteSpace(textSearch)) {
                 filters.Add(Builders<Source>.Filter.Regex(s => s.Name, new MongoDB.Bson.BsonRegularExpression($"{Regex.Escape(textSearch)}", "i")));
             }
 
@@ -222,13 +222,11 @@ namespace WomPlatform.Web.Api.Service {
             return await GenerationRequestCollection.Aggregate(pipeline).SingleOrDefaultAsync();
         }
 
-        public async Task<Source> GetSourceByName(string sourceName)
-        {
+        public async Task<Source> GetSourceByName(string sourceName) {
             var filter = Builders<Source>.Filter.Eq(s => s.Name, sourceName);
             var source = await SourceCollection.Find(filter).FirstOrDefaultAsync();
 
-            if (source == null)
-            {
+            if(source == null) {
                 throw new ApplicationException($"Source with name '{sourceName}' not found.");
             }
 

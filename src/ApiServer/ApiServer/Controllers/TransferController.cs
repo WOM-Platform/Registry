@@ -12,6 +12,7 @@ namespace WomPlatform.Web.Api.Controllers {
     [Route("v1/transfer")]
     [OperationsTags("Transfer", "Operations")]
     public class TransferController : BaseRegistryController {
+
         public TransferController(
             IServiceProvider serviceProvider,
             ILogger<TransferController> logger)
