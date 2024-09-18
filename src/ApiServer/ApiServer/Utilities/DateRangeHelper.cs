@@ -61,4 +61,20 @@ public class DateRangeHelper {
             throw new ServiceProblemException("End date cannot be earlier than start date", StatusCodes.Status400BadRequest);
         }
     }
+
+    public static Func<DateTime, DateTime> setDateIncrement(string netFormatDate) {
+        // Check for the format and determine increments whether to add days, months, or years
+        if(netFormatDate.Contains("dd")) {
+            // Add days if the format includes days
+            return date => date.AddDays(1);
+        }
+        else if(netFormatDate.Contains("MM")) {
+            // Add months if the format includes months
+            return date => date.AddMonths(1);
+        }
+        else {
+            // Add years if the format includes only years
+            return date => date.AddYears(1);
+        }
+    }
 }

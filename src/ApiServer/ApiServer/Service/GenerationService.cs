@@ -482,15 +482,14 @@ namespace WomPlatform.Web.Api.Service {
             ObjectId? sourceId
         ) {
             var pipeline = new List<BsonDocument>();
+
             // set calculation on last year if period of time is not specified
             if(!startDate.HasValue && !endDate.HasValue) {
                 endDate = DateTime.Today;
                 startDate = DateTime.Today - TimeSpan.FromDays(365);
-                Console.WriteLine($" startDate: {startDate}, endDate: {endDate}");
             }
 
             var formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value);
-
             pipeline.Add(
                 new BsonDocument("$match",
                     new BsonDocument("timestamp",
@@ -557,14 +556,48 @@ namespace WomPlatform.Web.Api.Service {
                     }
                 }));
 
+            pipeline.Add(
+                new BsonDocument("$sort",
+                    new BsonDocument("_id", 1))
+            );
+
             var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
             var generatedRedeemedOverTime = await result.ToListAsync();
 
-            var vouchersByAim = generatedRedeemedOverTime.Select(doc => new TotalGeneratedAndRedeemedOverTimeDTO() {
-                Date =  doc["_id"].AsString,
-                TotalGenerated = doc["generatedCount"].AsInt32,
-                TotalRedeemed = doc["redeemedCount"].AsInt32
+            // transform format date from MongoDB to .NET
+            var netFormatDate = formatDate.Replace("%Y", "yyyy").Replace("%m", "MM").Replace("%d", "dd");
 
+            // Determine the increment unit based on the date format
+            Func<DateTime, DateTime> incrementDate = DateRangeHelper.setDateIncrement(netFormatDate);
+
+            // Get the list of all dates between startDate and endDate
+            var allDates = new List<string>();
+            for(var date = startDate.Value.Date; date <= endDate.Value.Date; date = incrementDate(date)) {
+                allDates.Add(date.ToString(netFormatDate));
+            }
+
+            // Map MongoDB results to DTO and create a dictionary by date
+            var vouchersByAimDict = generatedRedeemedOverTime
+                .ToDictionary(
+                    doc => doc["_id"].AsString,
+                    doc => new TotalGeneratedAndRedeemedOverTimeDTO {
+                        Date = doc["_id"].AsString,
+                        TotalGenerated = doc["generatedCount"].AsInt32,
+                        TotalRedeemed = doc["redeemedCount"].AsInt32
+                    }
+                );
+
+            // Create the final list with missing dates filled with 0
+            var vouchersByAim = allDates.Select(date => {
+                if(vouchersByAimDict.ContainsKey(date)) {
+                    return vouchersByAimDict[date];
+                }
+
+                return new TotalGeneratedAndRedeemedOverTimeDTO {
+                    Date = date,
+                    TotalGenerated = 0,
+                    TotalRedeemed = 0
+                };
             }).ToList();
 
             return vouchersByAim;

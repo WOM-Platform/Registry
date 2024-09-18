@@ -731,11 +731,40 @@ namespace WomPlatform.Web.Api.Service {
             );
 
             var result = PaymentRequestCollection.Aggregate<BsonDocument>(pipeline);
-            var totalConsumedVouchersOverTime = await result.ToListAsync();
+            var consumedOverTime = await result.ToListAsync();
 
-            var vouchersByAim = totalConsumedVouchersOverTime.Select(doc => new TotalConsumedOverTimeDTO() {
-                Date =  doc["_id"].AsString,
-                Total = doc["totalAmount"].AsInt32
+            // transform format date from MongoDB to .NET
+            var netFormatDate = formatDate.Replace("%Y", "yyyy").Replace("%m", "MM").Replace("%d", "dd");
+
+            // Determine the increment unit based on the date format
+            Func<DateTime, DateTime> incrementDate = DateRangeHelper.setDateIncrement(netFormatDate);
+
+            // Get the list of all dates between startDate and endDate
+            var allDates = new List<string>();
+            for(var date = startDate.Value.Date; date <= endDate.Value.Date; date = incrementDate(date)) {
+                allDates.Add(date.ToString(netFormatDate));
+            }
+
+            // Map MongoDB results to DTO and create a dictionary by date
+            var vouchersByAimDict = consumedOverTime
+                .ToDictionary(
+                    doc => doc["_id"].AsString,
+                    doc => new TotalConsumedOverTimeDTO {
+                        Date = doc["_id"].AsString,
+                        Total = doc["totalAmount"].AsInt32
+                    }
+                );
+
+            // Create the final list with missing dates filled with 0
+            var vouchersByAim = allDates.Select(date => {
+                if(vouchersByAimDict.ContainsKey(date)) {
+                    return vouchersByAimDict[date];
+                }
+
+                return new TotalConsumedOverTimeDTO() {
+                    Date = date,
+                    Total = 0
+                };
             }).ToList();
 
             return vouchersByAim;
