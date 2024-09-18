@@ -673,7 +673,7 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<List<TotalConsumedOverTimeDTO>> GetTotalConsumedVouchersOverTime(
             DateTime? startDate,
             DateTime? endDate,
-            ObjectId? sourceId
+            ObjectId? merchantId
         ) {
             var pipeline = new List<BsonDocument>();
 
@@ -682,6 +682,9 @@ namespace WomPlatform.Web.Api.Service {
                 endDate = DateTime.Today;
                 startDate = DateTime.Today - TimeSpan.FromDays(365);
             }
+
+            // check if user is filtering for merchant name
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantId));
 
             pipeline.Add(new BsonDocument("$unwind",
                 new BsonDocument {

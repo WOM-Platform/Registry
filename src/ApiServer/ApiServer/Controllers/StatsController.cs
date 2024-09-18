@@ -355,5 +355,16 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(totalConsumedVouchersOverTime);
         }
+
+        [HttpGet("download/csv")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public IActionResult DownloadCsv() {
+            var records = CsvFileHelper.GenerateCsvContent();
+
+            return File(records, "text/csv", "totalConsumedOverTime.csv");
+        }
     }
 }

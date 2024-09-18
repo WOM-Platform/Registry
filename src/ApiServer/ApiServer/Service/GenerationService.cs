@@ -272,10 +272,8 @@ namespace WomPlatform.Web.Api.Service {
             DateTime? endDate,
             ObjectId? sourceId
         ) {
-            var pipeline = new List<BsonDocument>();
 
-            // Add the instrumentName condition if filter applied
-            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
+            var pipeline = new List<BsonDocument>();
 
             pipeline.Add(new BsonDocument("$match",
                 new BsonDocument("$and",
@@ -298,6 +296,9 @@ namespace WomPlatform.Web.Api.Service {
                     })
             );
 
+
+            // Add the instrumentName condition if filter applied
+            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
 
             pipeline.Add(new BsonDocument("$project",
                 new BsonDocument {
