@@ -318,13 +318,12 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] ObjectId? sourceId = null
         ) {
             // check if user is admin or owner of the source
-            await IsUserAdminOrOwnerMerchant(sourceId);
+            await IsUserAdminOrOwnerSource(sourceId);
 
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
 
             // Fetch the list of consumed vouchers based on aim
             var totalGeneratedVouchersOverTime = await GenerationService.GetTotalGeneratedRedeemedVouchersOverTime(parsedStartDate, parsedEndDate, sourceId);
-
             return Ok(totalGeneratedVouchersOverTime);
         }
 
