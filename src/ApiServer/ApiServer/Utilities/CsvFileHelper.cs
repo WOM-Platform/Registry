@@ -7,11 +7,11 @@ using WomPlatform.Web.Api.DTO;
 namespace WomPlatform.Web.Api.Utilities;
 
 public class CsvFileHelper {
-    public static byte[] GenerateCsvContent()
+    public static byte[] GenerateCsvContent(StatisticsRequestDto statisticsRequestDto)
     {
-        var totalConsumedOverTime = new List<TotalConsumedOverTimeDTO>
+        var totalConsumedOverTime = new List<TotalConsumedOverTimeDto>
         {
-            new TotalConsumedOverTimeDTO { Total = 20, Date = "datyadoiasoi" }
+            new TotalConsumedOverTimeDto { Total = 20, Date = "datyadoiasoi" }
         };
 
         using (var memoryStream = new MemoryStream())

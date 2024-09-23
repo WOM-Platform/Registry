@@ -264,15 +264,36 @@ namespace WomPlatform.Web.Api.Service {
             return (source, vouchers);
         }
 
+        public async Task<VoucherGenerationRedemptionStatsResponse> FetchTotalVouchersGeneratedAndRedeemedStats(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? sourceId,
+            double? latitude,
+            double? longitude,
+            int? radius
+        ) {
+            var (generatedVouchers, redeemedVouchers) = await FetchTotalVouchersGeneratedAndRedeemed(startDate, endDate, sourceId);
+            List<VoucherByAimDTO> voucherByAim = await FetchTotalVouchersGeneratedByAim(startDate, endDate, sourceId);
+            int vouchersAvailable = await FetchVouchersAvailable(latitude, longitude, radius);
+            List<TotalGeneratedAndRedeemedOverTimeDto> totalGeneratedRedeemedVouchersOverTime = await GetTotalGeneratedRedeemedVouchersOverTime(startDate, endDate, sourceId);
+
+            return new VoucherGenerationRedemptionStatsResponse {
+                TotalGenerated = generatedVouchers,
+                TotalRedeemed = redeemedVouchers,
+                VoucherByAim = voucherByAim,
+                VoucherAvailable = vouchersAvailable,
+                TotalGeneratedAndRedeemedOverTime = totalGeneratedRedeemedVouchersOverTime
+            };
+        }
+
         /// <summary>
         /// Get total amount of vouchers generated from all the sources in a period of time
         /// </summary>
-        public async Task<(int TotalCount, int RedeemedCount)> GetTotalAmountOfGeneratedRedeemedVouchers(
+        public async Task<(int TotalCount, int RedeemedCount)> FetchTotalVouchersGeneratedAndRedeemed(
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId
         ) {
-
             var pipeline = new List<BsonDocument>();
 
             pipeline.Add(new BsonDocument("$match",
@@ -343,7 +364,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers generated grouped by aims
         /// </summary>
-        public async Task<List<VoucherByAimDTO>> GetVoucherTotalsByAimAsync(
+        public async Task<List<VoucherByAimDTO>> FetchTotalVouchersGeneratedByAim(
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId
@@ -420,7 +441,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get number of unused vouchers based on the position
         /// </summary>
-        public async Task<int> GetNumberAvailableVouchers(double? latitude, double? longitude, int? radius) {
+        public async Task<int> FetchVouchersAvailable(double? latitude, double? longitude, int? radius) {
             var pipeline = new List<BsonDocument>();
             if(radius.HasValue && latitude.HasValue && longitude.HasValue) {
                 pipeline.Add(
@@ -477,7 +498,7 @@ namespace WomPlatform.Web.Api.Service {
             return 0;
         }
 
-        public async Task<List<TotalGeneratedAndRedeemedOverTimeDTO>> GetTotalGeneratedRedeemedVouchersOverTime(
+        public async Task<List<TotalGeneratedAndRedeemedOverTimeDto>> GetTotalGeneratedRedeemedVouchersOverTime(
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId
@@ -581,7 +602,7 @@ namespace WomPlatform.Web.Api.Service {
             var vouchersByAimDict = generatedRedeemedOverTime
                 .ToDictionary(
                     doc => doc["_id"].AsString,
-                    doc => new TotalGeneratedAndRedeemedOverTimeDTO {
+                    doc => new TotalGeneratedAndRedeemedOverTimeDto {
                         Date = doc["_id"].AsString,
                         TotalGenerated = doc["generatedCount"].AsInt32,
                         TotalRedeemed = doc["redeemedCount"].AsInt32
@@ -594,7 +615,7 @@ namespace WomPlatform.Web.Api.Service {
                     return vouchersByAimDict[date];
                 }
 
-                return new TotalGeneratedAndRedeemedOverTimeDTO {
+                return new TotalGeneratedAndRedeemedOverTimeDto {
                     Date = date,
                     TotalGenerated = 0,
                     TotalRedeemed = 0
