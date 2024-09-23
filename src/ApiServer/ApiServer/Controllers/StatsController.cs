@@ -7,20 +7,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using WomPlatform.Web.Api.DTO;
 using WomPlatform.Web.Api.OutputModels.Stats;
 using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Controllers {
-
     [Route("v1/stats")]
     [OperationsTags("Stats and info")]
     [RequireHttpsInProd]
     public class StatsController : BaseRegistryController {
-
         public StatsController(
             IServiceProvider serviceProvider,
             ILogger<StatsController> logger)
-        : base(serviceProvider, logger) {
+            : base(serviceProvider, logger) {
         }
 
         /// <summary>
@@ -94,26 +93,25 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Returns a 200 OK status with the total number of generated vouchers.
         /// If the user is not authorized, a 403 Forbidden status is returned.
         /// </returns>
-        [HttpGet("vouchers/total-generated-redeemed")]
+        [HttpPost("vouchers/total-generated-redeemed")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetTotalVouchersGeneratedRedeemed(
-            [FromQuery] string startDate = null,
-            [FromQuery] string endDate = null,
-            [FromQuery] ObjectId? sourceId = null
+            [FromBody] StatisticsRequestDto request
         ) {
             try {
+                Console.WriteLine($"request: {request}");
                 // check if user is admin or owner of the source
-                await IsUserAdminOrOwnerSource(sourceId);
+                await IsUserAdminOrOwnerSource(request.SourceId);
 
-                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 // Fetch the total amount of generated and redeemed vouchers, passing the optional date range
                 var generatedVouchers =
                     await GenerationService.GetTotalAmountOfGeneratedRedeemedVouchers(parsedStartDate, parsedEndDate,
-                        sourceId);
+                        request.SourceId);
 
 
                 // Return the JSON response
@@ -135,25 +133,23 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Returns a 200 OK status with the total number of consumed vouchers.
         /// If the user is not authorized, a 403 Forbidden status is returned.
         /// </returns>
-        [HttpGet("vouchers/total-consumed")]
+        [HttpPost("vouchers/total-consumed")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetTotalAmountOfConsumedVouchers(
-            [FromQuery] string startDate = null,
-            [FromQuery] string endDate = null,
-            [FromQuery] ObjectId? merchantId = null
+            [FromBody] StatisticsRequestDto request
         ) {
             try {
                 // check if user is admin or owner of the source
-                await IsUserAdminOrOwnerMerchant(merchantId);
+                await IsUserAdminOrOwnerMerchant(request.MerchantId);
 
-                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 // Fetch the total amount of consumed vouchers
                 var consumedVouchers =
-                    await PaymentService.GetTotalAmountOfConsumedVouchers(parsedStartDate, parsedEndDate, merchantId);
+                    await PaymentService.GetTotalAmountOfConsumedVouchers(parsedStartDate, parsedEndDate, request.MerchantId);
 
                 // Return the JSON response
                 return Ok(consumedVouchers);
@@ -163,24 +159,22 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        [HttpGet("vouchers/total-generated-by-aim")]
+        [HttpPost("vouchers/total-generated-by-aim")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetGeneratedVouchersByAim(
-            [FromQuery] string startDate = null,
-            [FromQuery] string endDate = null,
-            [FromQuery] ObjectId? sourceId = null
+            [FromBody] StatisticsRequestDto request
         ) {
             try {
                 // check if user is admin or owner of the source
-                await IsUserAdminOrOwnerSource(sourceId);
+                await IsUserAdminOrOwnerSource(request.SourceId);
 
-                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 var generatedVouchersByAim =
-                    await GenerationService.GetVoucherTotalsByAimAsync(parsedStartDate, parsedEndDate, sourceId);
+                    await GenerationService.GetVoucherTotalsByAimAsync(parsedStartDate, parsedEndDate, request.SourceId);
                 return Ok(generatedVouchersByAim);
             }
             catch(ServiceProblemException e) {
@@ -199,25 +193,23 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Returns a 200 OK status with the list.
         /// If the user is not authorized, a 403 Forbidden status is returned.
         /// </returns>
-        [HttpGet("vouchers/total-consumed-by-aims")]
+        [HttpPost("vouchers/total-consumed-by-aims")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetConsumedVouchersByAim(
-            [FromQuery] string startDate = null,
-            [FromQuery] string endDate = null,
-            [FromQuery] ObjectId? merchantId = null
+            [FromBody] StatisticsRequestDto request
         ) {
             try {
                 // check if user is admin or owner of the source
-                await IsUserAdminOrOwnerMerchant(merchantId);
+                await IsUserAdminOrOwnerMerchant(request.MerchantId);
 
-                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 // Fetch the list of consumed vouchers based on aim
                 var listConsumedByAims =
-                    await PaymentService.GetConsumedVouchersByAims(parsedStartDate, parsedEndDate, merchantId);
+                    await PaymentService.GetConsumedVouchersByAims(parsedStartDate, parsedEndDate, request.MerchantId);
 
                 // Return consumed vouchers divided for period
                 return Ok(listConsumedByAims);
@@ -231,42 +223,47 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Gets the list of consumed vouchers grouped by offer
         /// </summary>
         /// for merchant to know how offers are going
-        [HttpGet("merchant/voucher/total-consumed-by-offer")]
+        [HttpPost("merchant/voucher/total-consumed-by-offer")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetListConsumedVouchersByOffer(
-            [FromQuery] ObjectId merchantId
+            [FromBody] StatisticsRequestDto request
         ) {
-            // Fetch the list of consumed vouchers based on the merchant offer
-            var listConsumedByOffer = await OfferService.GetListConsumedByOffer(merchantId);
+            // ********************************
+            // TO ADD DATA FILTER ON SERVICE
+            // ****************************
+            if(request.MerchantId.HasValue) {
+                // Fetch the list of consumed vouchers based on the merchant offer
+                var listConsumedByOffer = await OfferService.GetListConsumedByOffer(request.MerchantId.Value);
 
-            // Return consumed vouchers divided for period
-            return Ok(listConsumedByOffer);
+                // Return consumed vouchers divided for period
+                return Ok(listConsumedByOffer);
+            }
+
+            return (BadRequest());
         }
 
         /// <summary>
         /// Gets the position of the merchant based on total amount of vouchers consumed in a period of time
         /// </summary>
-        [HttpGet("merchant/rank-consumed")]
+        [HttpPost("merchant/rank-consumed")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetMerchantRank(
-            [FromQuery] ObjectId? merchantId = null,
-            [FromQuery] string startDate = null,
-            [FromQuery] string endDate = null
+            [FromBody] StatisticsRequestDto request
         ) {
             try {
                 // check if user is admin or owner of the source
-                await IsUserAdminOrOwnerMerchant(merchantId);
+                await IsUserAdminOrOwnerMerchant(request.MerchantId);
 
-                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+                var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 // Fetch the list of consumed vouchers based on aim
-                var merchantRank = await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, merchantId);
+                var merchantRank = await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, request.MerchantId);
 
                 // Return consumed vouchers divided for period
                 return Ok(merchantRank);
@@ -279,16 +276,16 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Get the total number of unused vouchers by position
         /// </summary>
-        [HttpGet("voucher/available")]
+        [HttpPost("voucher/available")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetNumberOfAvailableVouchers(
-            [FromQuery] double? latitude = null,
-            [FromQuery] double? longitude = null,
-            [FromQuery] int? radius = null,
-            [FromQuery] ObjectId? merchantId = null
+            [FromQueryAttribute] double? latitude = null,
+            [FromQueryAttribute] double? longitude = null,
+            [FromQueryAttribute] int? radius = null,
+            [FromQueryAttribute] ObjectId? merchantId = null
         ) {
             // Think how to make a control on this api
             await IsUserAdminOrOwnerMerchant(merchantId);
@@ -307,23 +304,21 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="endDate">The end date for the date range filter (optional).</param>
         /// <param name="sourceId">The ID of the voucher source to filter by (optional).</param>
         /// <returns>The total number of vouchers generated within the specified criteria.</returns>
-        [HttpGet("voucher/total-generated-redeemed-over-time")]
+        [HttpPost("voucher/total-generated-redeemed-over-time")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetTotalGeneratedRedeemedVouchersOverTime(
-            [FromQuery] string startDate = null,
-            [FromQuery] string endDate = null,
-            [FromQuery] ObjectId? sourceId = null
+            [FromBody] StatisticsRequestDto request
         ) {
             // check if user is admin or owner of the source
-            await IsUserAdminOrOwnerSource(sourceId);
+            await IsUserAdminOrOwnerSource(request.SourceId);
 
-            var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+            var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // Fetch the list of consumed vouchers based on aim
-            var totalGeneratedVouchersOverTime = await GenerationService.GetTotalGeneratedRedeemedVouchersOverTime(parsedStartDate, parsedEndDate, sourceId);
+            var totalGeneratedVouchersOverTime = await GenerationService.GetTotalGeneratedRedeemedVouchersOverTime(parsedStartDate, parsedEndDate, request.SourceId);
             return Ok(totalGeneratedVouchersOverTime);
         }
 
@@ -334,23 +329,21 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <param name="endDate">The end date to filter by (optional).</param>
         /// <param name="merchantId">The ID of the merchant to filter by (optional).</param>
         /// <returns>The total number of voucher consumed over time.</returns>
-        [HttpGet("voucher/total-consumption-over-time")]
+        [HttpPost("voucher/total-consumption-over-time")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetTotalConsumptionVouchersOverTime(
-            [FromQuery] string startDate = null,
-            [FromQuery] string endDate = null,
-            [FromQuery] ObjectId? merchantId = null
+            [FromBody] StatisticsRequestDto request
         ) {
             // check if user is admin or owner of the source
-            await IsUserAdminOrOwnerMerchant(merchantId);
+            await IsUserAdminOrOwnerMerchant(request.MerchantId);
 
-            var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(startDate, endDate);
+            var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // Fetch the list of consumed vouchers based on aim
-            var totalConsumedVouchersOverTime = await PaymentService.GetTotalConsumedVouchersOverTime(parsedStartDate, parsedEndDate, merchantId);
+            var totalConsumedVouchersOverTime = await PaymentService.GetTotalConsumedVouchersOverTime(parsedStartDate, parsedEndDate, request.MerchantId);
 
             return Ok(totalConsumedVouchersOverTime);
         }
