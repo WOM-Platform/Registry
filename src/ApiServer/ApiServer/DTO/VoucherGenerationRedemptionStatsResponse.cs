@@ -10,9 +10,3 @@ public class VoucherGenerationRedemptionStatsResponse {
     public int VoucherAvailable { get; set; }
     public List<TotalGeneratedAndRedeemedOverTimeDto> TotalGeneratedAndRedeemedOverTime { get; set; }
 }
-
-public class VoucherDetails {
-    public string Aim { get; set; }
-    public int Count { get; set; }
-    public DateTime Date { get; set; }
-}
