@@ -113,12 +113,13 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<ActionResult> ListUsers(
             [FromQuery] string name,
             [FromQuery] string email,
+            [FromQuery] string globalSearch,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10
         ) {
             await VerifyUserIsAdmin();
 
-            (var results, var count) = await UserService.Search(name, email, page, pageSize);
+            (var results, var count) = await UserService.Search(name, email, globalSearch, page, pageSize);
 
             return Ok(Paged<UserOutput>.FromPage(
                 (from u in results select u.ToOutput(false)).ToArray(),
