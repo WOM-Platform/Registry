@@ -264,18 +264,37 @@ namespace WomPlatform.Web.Api.Service {
             return (source, vouchers);
         }
 
+        public async Task<VoucherGenerationRedemptionStatsResponse> FetchTotalVouchersGeneratedAndRedeemedStats(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId? sourceId,
+            double? latitude,
+            double? longitude,
+            int? radius
+        ) {
+            var (generatedVouchers, redeemedVouchers) = await FetchTotalVouchersGeneratedAndRedeemed(startDate, endDate, sourceId);
+            List<VoucherByAimDTO> voucherByAim = await FetchTotalVouchersGeneratedByAim(startDate, endDate, sourceId);
+            int vouchersAvailable = await FetchVouchersAvailable(latitude, longitude, radius);
+            List<TotalGeneratedAndRedeemedOverTimeDto> totalGeneratedRedeemedVouchersOverTime = await GetTotalGeneratedRedeemedVouchersOverTime(startDate, endDate, sourceId);
+
+            return new VoucherGenerationRedemptionStatsResponse {
+                TotalGenerated = generatedVouchers,
+                TotalRedeemed = redeemedVouchers,
+                VoucherByAim = voucherByAim,
+                VoucherAvailable = vouchersAvailable,
+                TotalGeneratedAndRedeemedOverTime = totalGeneratedRedeemedVouchersOverTime
+            };
+        }
+
         /// <summary>
         /// Get total amount of vouchers generated from all the sources in a period of time
         /// </summary>
-        public async Task<(int TotalCount, int RedeemedCount)> GetTotalAmountOfGeneratedRedeemedVouchers(
+        public async Task<(int TotalCount, int RedeemedCount)> FetchTotalVouchersGeneratedAndRedeemed(
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId
         ) {
             var pipeline = new List<BsonDocument>();
-
-            // Add the instrumentName condition if filter applied
-            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
 
             pipeline.Add(new BsonDocument("$match",
                 new BsonDocument("$and",
@@ -298,6 +317,9 @@ namespace WomPlatform.Web.Api.Service {
                     })
             );
 
+
+            // Add the instrumentName condition if filter applied
+            pipeline.AddRange(MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId));
 
             pipeline.Add(new BsonDocument("$project",
                 new BsonDocument {
@@ -342,7 +364,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get total amount of vouchers generated grouped by aims
         /// </summary>
-        public async Task<List<VoucherByAimDTO>> GetVoucherTotalsByAimAsync(
+        public async Task<List<VoucherByAimDTO>> FetchTotalVouchersGeneratedByAim(
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId
@@ -419,7 +441,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get number of unused vouchers based on the position
         /// </summary>
-        public async Task<int> GetNumberAvailableVouchers(double? latitude, double? longitude, int? radius) {
+        public async Task<int> FetchVouchersAvailable(double? latitude, double? longitude, int? radius) {
             var pipeline = new List<BsonDocument>();
             if(radius.HasValue && latitude.HasValue && longitude.HasValue) {
                 pipeline.Add(
@@ -476,21 +498,20 @@ namespace WomPlatform.Web.Api.Service {
             return 0;
         }
 
-        public async Task<List<TotalGeneratedAndRedeemedOverTimeDTO>> GetTotalGeneratedRedeemedVouchersOverTime(
+        public async Task<List<TotalGeneratedAndRedeemedOverTimeDto>> GetTotalGeneratedRedeemedVouchersOverTime(
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId
         ) {
             var pipeline = new List<BsonDocument>();
+
             // set calculation on last year if period of time is not specified
             if(!startDate.HasValue && !endDate.HasValue) {
                 endDate = DateTime.Today;
                 startDate = DateTime.Today - TimeSpan.FromDays(365);
-                Console.WriteLine($" startDate: {startDate}, endDate: {endDate}");
             }
 
             var formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value);
-
             pipeline.Add(
                 new BsonDocument("$match",
                     new BsonDocument("timestamp",
@@ -557,14 +578,48 @@ namespace WomPlatform.Web.Api.Service {
                     }
                 }));
 
+            pipeline.Add(
+                new BsonDocument("$sort",
+                    new BsonDocument("_id", 1))
+            );
+
             var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
             var generatedRedeemedOverTime = await result.ToListAsync();
 
-            var vouchersByAim = generatedRedeemedOverTime.Select(doc => new TotalGeneratedAndRedeemedOverTimeDTO() {
-                Date =  doc["_id"].AsString,
-                TotalGenerated = doc["generatedCount"].AsInt32,
-                TotalRedeemed = doc["redeemedCount"].AsInt32
+            // transform format date from MongoDB to .NET
+            var netFormatDate = formatDate.Replace("%Y", "yyyy").Replace("%m", "MM").Replace("%d", "dd");
 
+            // Determine the increment unit based on the date format
+            Func<DateTime, DateTime> incrementDate = DateRangeHelper.setDateIncrement(netFormatDate);
+
+            // Get the list of all dates between startDate and endDate
+            var allDates = new List<string>();
+            for(var date = startDate.Value.Date; date <= endDate.Value.Date; date = incrementDate(date)) {
+                allDates.Add(date.ToString(netFormatDate));
+            }
+
+            // Map MongoDB results to DTO and create a dictionary by date
+            var vouchersByAimDict = generatedRedeemedOverTime
+                .ToDictionary(
+                    doc => doc["_id"].AsString,
+                    doc => new TotalGeneratedAndRedeemedOverTimeDto {
+                        Date = doc["_id"].AsString,
+                        TotalGenerated = doc["generatedCount"].AsInt32,
+                        TotalRedeemed = doc["redeemedCount"].AsInt32
+                    }
+                );
+
+            // Create the final list with missing dates filled with 0
+            var vouchersByAim = allDates.Select(date => {
+                if(vouchersByAimDict.ContainsKey(date)) {
+                    return vouchersByAimDict[date];
+                }
+
+                return new TotalGeneratedAndRedeemedOverTimeDto {
+                    Date = date,
+                    TotalGenerated = 0,
+                    TotalRedeemed = 0
+                };
             }).ToList();
 
             return vouchersByAim;

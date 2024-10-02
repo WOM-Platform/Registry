@@ -10,7 +10,6 @@ using WomPlatform.Web.Api.Mail;
 
 namespace WomPlatform.Web.Api.Service {
     public class UserService : BaseService {
-
         private readonly IConfiguration _configuration;
         private readonly MailerComposer _composer;
         private readonly ILogger<UserService> _logger;
@@ -43,16 +42,29 @@ namespace WomPlatform.Web.Api.Service {
             return UserCollection.Find(filter, options).SingleOrDefaultAsync();
         }
 
-        public Task<(List<User>, long Total)> Search(string name, string email, int page, int pageSize) {
+        public Task<(List<User>, long Total)> Search(string name, string email, string globalSearch, int page, int pageSize) {
             var filters = new List<FilterDefinition<User>>();
-            if(!string.IsNullOrWhiteSpace(name)) {
-                filters.Add(Builders<User>.Filter.Regex(u => u.Name, new BsonRegularExpression(name, "i")));
-                filters.Add(Builders<User>.Filter.Regex(u => u.Surname, new BsonRegularExpression(name, "i")));
-            }
-            if(!string.IsNullOrWhiteSpace(email)) {
-                filters.Add(Builders<User>.Filter.Regex(u => u.Email, new BsonRegularExpression(email, "i")));
-            }
 
+            if (!string.IsNullOrWhiteSpace(globalSearch)) {
+                // if globalSearch is provided, search across all fields: Name, Surname, and Email
+                filters.Add(Builders<User>.Filter.Or(
+                    Builders<User>.Filter.Regex(u => u.Name, new BsonRegularExpression(globalSearch, "i")),
+                    Builders<User>.Filter.Regex(u => u.Surname, new BsonRegularExpression(globalSearch, "i")),
+                    Builders<User>.Filter.Regex(u => u.Email, new BsonRegularExpression(globalSearch, "i"))
+                ));
+            } else {
+                // otherwise, apply the specific filters
+                if (!string.IsNullOrWhiteSpace(name)) {
+                    filters.Add(Builders<User>.Filter.Or(
+                        Builders<User>.Filter.Regex(u => u.Name, new BsonRegularExpression(name, "i")),
+                        Builders<User>.Filter.Regex(u => u.Surname, new BsonRegularExpression(name, "i"))
+                    ));
+                }
+
+                if (!string.IsNullOrWhiteSpace(email)) {
+                    filters.Add(Builders<User>.Filter.Regex(u => u.Email, new BsonRegularExpression(email, "i")));
+                }
+            }
             return UserCollection.FilteredPagedListAsync(
                 filters,
                 Builders<User>.Sort.Descending(u => u.RegisteredOn),
@@ -107,18 +119,23 @@ namespace WomPlatform.Web.Api.Service {
             if(name != null) {
                 chain.Set(u => u.Name, name);
             }
+
             if(surname != null) {
                 chain.Set(u => u.Surname, surname);
             }
+
             if(email != null) {
                 chain.Set(u => u.Email, email);
             }
+
             if(password != null) {
                 chain.Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(password));
             }
+
             if(role.HasValue) {
                 chain.Set(u => u.Role, role.Value);
             }
+
             chain.Set(u => u.LastUpdate, DateTime.UtcNow);
 
             return UserCollection.FindOneAndUpdateAsync(filter, chain.End(), new FindOneAndUpdateOptions<User, User> { ReturnDocument = ReturnDocument.After });
@@ -147,6 +164,7 @@ namespace WomPlatform.Web.Api.Service {
             if(user == null) {
                 throw ServiceProblemException.UserNotFound;
             }
+
             if(user.VerificationToken == null) {
                 return;
             }
@@ -230,6 +248,5 @@ namespace WomPlatform.Web.Api.Service {
 
             return UserCollection.DeleteOneAsync(filter);
         }
-
     }
 }

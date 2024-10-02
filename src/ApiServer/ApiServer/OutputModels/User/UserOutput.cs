@@ -9,6 +9,7 @@ namespace WomPlatform.Web.Api.OutputModels.User {
         public string Name { get; set; }
 
         public string Surname { get; set; }
+        public PlatformRole Role { get; set; }
 
         public bool Verified { get; set; }
     }
@@ -20,6 +21,7 @@ namespace WomPlatform.Web.Api.OutputModels.User {
                 Email = conceal ? user.Email.ConcealEmail() : user.Email,
                 Name = user.Name,
                 Surname = conceal ? user.Surname.Conceal() : user.Surname,
+                Role = user.Role,
                 Verified = user.VerificationToken == null,
             };
         }
