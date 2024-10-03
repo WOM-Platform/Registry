@@ -35,6 +35,16 @@ namespace WomPlatform.Web.Api {
             );
         }
 
+        public static ActionResult LoginFailed(this ControllerBase c) {
+            return new ObjectResult(
+                new ProblemDetails {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://wom.social/api/problems/username-or-password-not-valid",
+                    Title = "Username or password not valid"
+                }
+            );
+        }
+
         public static ActionResult UserNotFound(this ControllerBase c) {
             return new ObjectResult(
                 new ProblemDetails {
