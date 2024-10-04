@@ -369,7 +369,7 @@ namespace WomPlatform.Web.Api.Service {
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? merchantId
-            ) {
+        ) {
             VoucherConsumptionStatsResponse response = new VoucherConsumptionStatsResponse();
             int totalConsumed = await FetchTotalVouchersConsumed(startDate, endDate, merchantId);
             List<VoucherByAimDTO> voucherByAims = await FetchTotalVouchersConsumedByAim(startDate, endDate, merchantId);
@@ -644,6 +644,10 @@ namespace WomPlatform.Web.Api.Service {
                 new BsonDocument("$match",
                     new BsonDocument("name",
                         new BsonDocument("$ne", BsonNull.Value))));
+            pipeline.Add(
+                new BsonDocument("$match",
+                    new BsonDocument("totalAmount",
+                        new BsonDocument("$gt", 0))));
             pipeline.Add(
                 new BsonDocument("$setWindowFields",
                     new BsonDocument {
