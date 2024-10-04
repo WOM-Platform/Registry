@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
@@ -116,8 +117,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 // Fetch the total amount of consumed vouchers
-                var consumedVouchers =
-                    await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantId);
+                var consumedVouchers = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantId);
 
                 // Return the JSON response
                 return Ok(consumedVouchers);
@@ -424,18 +424,23 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DownloadCsv([FromBody] StatisticsRequestDto request) {
+            Console.WriteLine("Requests ", request.StartDate, request.EndDate);
             await VerifyUserIsAdmin(); // check if user is an admin
 
             // if dates present check dates are valid and in case parse them
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // create general API to call them and save the data
+            var genRedResponse = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, request.SourceId, request.Latitude, request.Longitude, request.Radius);
+            var consumedResponse = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantId);
+
+            // flatten data
             // save the data to put on the CSV
             // use the CSV to save the data in a file
             // send the file back
-            var records = CsvFileHelper.GenerateCsvContent(request);
+            var records = CsvFileHelper.GenerateCsvContent(genRedResponse, consumedResponse);
 
-            return File(records, "text/csv", "totalConsumedOverTime.csv");
+            return File(records, "text/csv", $"{DateTime.Now:yyyy-M-d dddd}_stats.csv");
         }
     }
 }
