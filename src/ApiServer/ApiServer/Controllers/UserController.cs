@@ -54,7 +54,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<ActionResult> Register(UserRegisterInput input) {
             if(!CheckUserPassword(input.Password)) {
-                return this.ProblemParameter("Password is not secure");
+                return this.PasswordUnacceptableFailure("Password is not secure");
             }
             if(input.Verified || input.Role > PlatformRole.User) {
                 await this.VerifyUserIsAdmin();
@@ -518,7 +518,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [AllowAnonymous]
         [ForceAuthChallenge(BasicAuthenticationSchemeOptions.SchemeName)]
         [ProducesResponseType(typeof(UserLoginOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login(
             [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] UserLoginInput input
         ) {
@@ -526,7 +526,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             var user = await GetUserToLogin(input);
             if(user == null) {
-                return NotFound();
+                return this.LoginFailed();
             }
 
             var sessionId = Guid.NewGuid().ToString("N");
