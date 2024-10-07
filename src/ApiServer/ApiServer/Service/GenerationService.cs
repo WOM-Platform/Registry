@@ -274,14 +274,12 @@ namespace WomPlatform.Web.Api.Service {
         ) {
             var (generatedVouchers, redeemedVouchers) = await FetchTotalVouchersGeneratedAndRedeemed(startDate, endDate, sourceId);
             List<VoucherByAimDTO> voucherByAim = await FetchTotalVouchersGeneratedByAim(startDate, endDate, sourceId);
-            int vouchersAvailable = await FetchVouchersAvailable(latitude, longitude, radius);
             List<TotalGeneratedAndRedeemedOverTimeDto> totalGeneratedRedeemedVouchersOverTime = await GetTotalGeneratedRedeemedVouchersOverTime(startDate, endDate, sourceId);
 
             return new VoucherGenerationRedemptionStatsResponse {
                 TotalGenerated = generatedVouchers,
                 TotalRedeemed = redeemedVouchers,
                 VoucherByAim = voucherByAim,
-                VoucherAvailable = vouchersAvailable,
                 TotalGeneratedAndRedeemedOverTime = totalGeneratedRedeemedVouchersOverTime
             };
         }
@@ -438,6 +436,7 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+
         /// <summary>
         /// Get number of unused vouchers based on the position
         /// </summary>
@@ -470,6 +469,46 @@ namespace WomPlatform.Web.Api.Service {
                             new BsonDocument("$gt", 0))
                     }))
             );
+            pipeline.Add(
+                new BsonDocument("$lookup",
+                    new BsonDocument
+                    {
+                        { "from", "GenerationRequests" },
+                        { "localField", "generationRequestId" },
+                        { "foreignField", "_id" },
+                        { "as", "generationRequest" }
+                    })
+                );
+
+            pipeline.Add(
+                new BsonDocument("$unwind",
+                    new BsonDocument
+                    {
+                        { "path", "$generationRequest" },
+                        { "includeArrayIndex", "string" },
+                        { "preserveNullAndEmptyArrays", true }
+                    })
+                );
+
+            pipeline.Add(
+                new BsonDocument("$match",
+                    new BsonDocument("generationRequest.performedAt",
+                        new BsonDocument
+                        {
+                            { "$exists", true },
+                            { "$ne", BsonNull.Value }
+                        }))
+                );
+            pipeline.Add(
+                new BsonDocument("$project",
+                    new BsonDocument
+                    {
+                        { "source", 1 },
+                        { "initialCount", 1 },
+                        { "count", 1 },
+                        { "generationRequest.performedAt", 1 }
+                    })
+                );
             pipeline.Add(
                 new BsonDocument("$group",
                     new BsonDocument {
