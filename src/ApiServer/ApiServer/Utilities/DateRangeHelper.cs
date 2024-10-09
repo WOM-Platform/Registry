@@ -19,7 +19,7 @@ public class DateRangeHelper {
         {
             return "%Y-%m-%d"; // Group by day
         }
-        else if (totalDays <= 365)
+        else if (totalDays <= 366)
         {
             return "%Y-%m"; // Group by month
         }

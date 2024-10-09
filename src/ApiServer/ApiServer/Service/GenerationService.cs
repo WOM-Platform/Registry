@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
+using MongoDB.Driver.Linq;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.DTO;
 using WomPlatform.Web.Api.InputModels.Generation;
@@ -545,12 +546,16 @@ namespace WomPlatform.Web.Api.Service {
             var pipeline = new List<BsonDocument>();
 
             // set calculation on last year if period of time is not specified
-            if(!startDate.HasValue && !endDate.HasValue) {
-                endDate = DateTime.Today;
-                startDate = DateTime.Today - TimeSpan.FromDays(365);
+            if (!startDate.HasValue && !endDate.HasValue) {
+                endDate = DateTime.Today; // Set to today
+                startDate = DateTime.Today.AddDays(-366); // One year ago
             }
-
             var formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value);
+
+            startDate = startDate.Value.Date; // Truncate to midnight
+            endDate = endDate.Value.Date;
+
+            Console.WriteLine($"Data range problem is: {startDate.Value} - {endDate.Value} - format: {formatDate}");
             pipeline.Add(
                 new BsonDocument("$match",
                     new BsonDocument("timestamp",
@@ -633,8 +638,16 @@ namespace WomPlatform.Web.Api.Service {
 
             // Get the list of all dates between startDate and endDate
             var allDates = new List<string>();
-            for(var date = startDate.Value.Date; date <= endDate.Value.Date; date = incrementDate(date)) {
-                allDates.Add(date.ToString(netFormatDate));
+
+            var currentDate = startDate.Value.Date;  // Start with the initial date
+
+            // While currentDate is less than or equal to endDate
+            while (currentDate <= endDate.Value.Date)
+            {
+                allDates.Add(currentDate.ToString(netFormatDate));
+
+                // Increment the date using the appropriate logic based on netFormatDate
+                currentDate = incrementDate(currentDate); // Increment date accordingly
             }
 
             // Map MongoDB results to DTO and create a dictionary by date
