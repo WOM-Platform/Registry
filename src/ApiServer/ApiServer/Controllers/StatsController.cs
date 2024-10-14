@@ -424,7 +424,6 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DownloadCsv([FromBody] StatisticsRequestDto request) {
-            Console.WriteLine("Requests ", request.StartDate, request.EndDate);
             await VerifyUserIsAdmin(); // check if user is an admin
 
             // if dates present check dates are valid and in case parse them

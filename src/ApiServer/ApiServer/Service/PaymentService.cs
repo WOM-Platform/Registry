@@ -668,7 +668,7 @@ namespace WomPlatform.Web.Api.Service {
                 stopwatch.Stop();
                 var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
 
-                Console.WriteLine($"Rank Aggregation pipeline executed in {elapsedMilliseconds} ms");
+                Logger.LogInformation($"Rank Aggregation pipeline executed in {elapsedMilliseconds} ms");
 
                 // Map to a strongly-typed model
                 var merchantRank = merchantRankList.Select(doc => new MerchantRankDTO() {
@@ -697,7 +697,7 @@ namespace WomPlatform.Web.Api.Service {
             // if not specified a period of time set calculation on last year
             if(!startDate.HasValue && !endDate.HasValue) {
                 endDate = DateTime.Today;
-                startDate = DateTime.Today.AddDays(-366);
+                startDate = DateTime.Today.AddYears(-1); // One year ago
             }
 
             // check if user is filtering for merchant name

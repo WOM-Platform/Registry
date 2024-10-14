@@ -548,14 +548,13 @@ namespace WomPlatform.Web.Api.Service {
             // set calculation on last year if period of time is not specified
             if (!startDate.HasValue && !endDate.HasValue) {
                 endDate = DateTime.Today; // Set to today
-                startDate = DateTime.Today.AddDays(-366); // One year ago
+                startDate = DateTime.Today.AddYears(-1); // One year ago
             }
             var formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value);
 
             startDate = startDate.Value.Date; // Truncate to midnight
             endDate = endDate.Value.Date;
 
-            Console.WriteLine($"Data range problem is: {startDate.Value} - {endDate.Value} - format: {formatDate}");
             pipeline.Add(
                 new BsonDocument("$match",
                     new BsonDocument("timestamp",

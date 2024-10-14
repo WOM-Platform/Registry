@@ -19,14 +19,12 @@ public class DateRangeHelper {
         {
             return "%Y-%m-%d"; // Group by day
         }
-        else if (totalDays <= 366)
+        if (totalDays <= (DateTime.Today - DateTime.Today.AddYears(-1)).TotalDays)
         {
             return "%Y-%m"; // Group by month
         }
-        else
-        {
-            return "%Y"; // Group by year
-        }
+
+        return "%Y"; // Group by year
     }
 
     public static (DateTime? parsedStartDate, DateTime? parsedEndDate) ParseAndValidateDates(string startDate, string endDate)
