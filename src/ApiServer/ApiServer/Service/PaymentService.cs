@@ -7,7 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using SixLabors.ImageSharp;
 using WomPlatform.Connector.Models;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.DTO;
@@ -644,6 +643,7 @@ namespace WomPlatform.Web.Api.Service {
                 new BsonDocument("$match",
                     new BsonDocument("name",
                         new BsonDocument("$ne", BsonNull.Value))));
+
             pipeline.Add(
                 new BsonDocument("$match",
                     new BsonDocument("totalAmount",
@@ -657,7 +657,7 @@ namespace WomPlatform.Web.Api.Service {
                         }, {
                             "output",
                             new BsonDocument("rank",
-                                new BsonDocument("$rank",
+                                new BsonDocument("$denseRank",
                                     new BsonDocument()))
                         }
                     }));
@@ -672,7 +672,7 @@ namespace WomPlatform.Web.Api.Service {
                 stopwatch.Stop();
                 var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
 
-                Console.WriteLine($"Rank Aggregation pipeline executed in {elapsedMilliseconds} ms");
+                Logger.LogInformation($"Rank Aggregation pipeline executed in {elapsedMilliseconds} ms");
 
                 // Map to a strongly-typed model
                 var merchantRank = merchantRankList.Select(doc => new MerchantRankDTO() {
@@ -701,7 +701,7 @@ namespace WomPlatform.Web.Api.Service {
             // if not specified a period of time set calculation on last year
             if(!startDate.HasValue && !endDate.HasValue) {
                 endDate = DateTime.Today;
-                startDate = DateTime.Today - TimeSpan.FromDays(365);
+                startDate = DateTime.Today.AddYears(-1); // One year ago
             }
 
             // check if user is filtering for merchant name
