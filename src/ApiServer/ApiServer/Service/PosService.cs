@@ -106,11 +106,11 @@ namespace WomPlatform.Web.Api.Service {
             string textSearch, bool? hasPosition, bool applyDefaultFilters,
             int page, int pageSize, PosListOrder orderBy
         ) {
-            var filters = GetBasicPosFilter();
+            var filters = GetBasicPosFilter(applyDefaultFilters, applyDefaultFilters);
             if(!string.IsNullOrWhiteSpace(textSearch)) {
                 filters.Add(Builders<Pos>.Filter.Text(textSearch, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false }));
             }
-            if(hasPosition.Value) {
+            if(hasPosition.HasValue) {
                 filters.Add(Builders<Pos>.Filter.Exists(p => p.Position, hasPosition.Value));
             }
 
