@@ -256,7 +256,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult> SetCustomGeneratorLogo(
             [FromRoute] ObjectId sourceId,
-            [FromForm] [Required] IFormFile image
+            [Required] IFormFile image
         ) {
             var source = await VerifyUserIsAdminOfSource(sourceId);
 

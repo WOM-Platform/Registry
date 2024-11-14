@@ -230,7 +230,7 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> UpdateCover(
             [FromRoute] ObjectId posId,
-            [FromForm] [Required] IFormFile image
+            [Required] IFormFile image
         ) {
             (var merchant, var pos) = await VerifyUserIsAdminOfPos(posId);
 
