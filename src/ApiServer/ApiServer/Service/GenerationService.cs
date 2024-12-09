@@ -269,13 +269,14 @@ namespace WomPlatform.Web.Api.Service {
             DateTime? startDate,
             DateTime? endDate,
             ObjectId? sourceId,
+            string[] aimListFilter,
             double? latitude,
             double? longitude,
             int? radius
         ) {
-            var (generatedVouchers, redeemedVouchers) = await FetchTotalVouchersGeneratedAndRedeemed(startDate, endDate, sourceId);
-            List<VoucherByAimDTO> voucherByAim = await FetchTotalVouchersGeneratedByAim(startDate, endDate, sourceId);
-            List<TotalGeneratedAndRedeemedOverTimeDto> totalGeneratedRedeemedVouchersOverTime = await GetTotalGeneratedRedeemedVouchersOverTime(startDate, endDate, sourceId);
+            var (generatedVouchers, redeemedVouchers) = await FetchTotalVouchersGeneratedAndRedeemed(startDate, endDate, sourceId, aimListFilter);
+            List<VoucherByAimDTO> voucherByAim = await FetchTotalVouchersGeneratedByAim(startDate, endDate, sourceId, aimListFilter);
+            List<TotalGeneratedAndRedeemedOverTimeDto> totalGeneratedRedeemedVouchersOverTime = await GetTotalGeneratedRedeemedVouchersOverTime(startDate, endDate, sourceId, aimListFilter);
 
             return new VoucherGenerationRedemptionStatsResponse {
                 TotalGenerated = generatedVouchers,
@@ -291,13 +292,24 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<(int TotalCount, int RedeemedCount)> FetchTotalVouchersGeneratedAndRedeemed(
             DateTime? startDate,
             DateTime? endDate,
-            ObjectId? sourceId
+            ObjectId? sourceId,
+            string[] aimListFilter
         ) {
             var pipeline = new List<BsonDocument>();
 
             pipeline.Add(new BsonDocument("$match",
                 new BsonDocument("$and",
                     new BsonArray(MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp")))));
+
+            if (aimListFilter != null && aimListFilter.Any()) {
+                pipeline.Add(
+                    new BsonDocument("$match",
+                        new BsonDocument("aimCode",
+                            new BsonDocument("$in",
+                                new BsonArray(aimListFilter.Select(x => x.Trim())))))
+                );
+            }
+
             pipeline.Add(
                 new BsonDocument("$lookup",
                     new BsonDocument {
@@ -366,7 +378,8 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<List<VoucherByAimDTO>> FetchTotalVouchersGeneratedByAim(
             DateTime? startDate,
             DateTime? endDate,
-            ObjectId? sourceId
+            ObjectId? sourceId,
+            string[] aimListFilter
         ) {
             try {
                 // Create the list to hold match conditions for the voucher collection
@@ -380,6 +393,15 @@ namespace WomPlatform.Web.Api.Service {
                 // Add the date match conditions
                 if(matchConditions.Count > 0) {
                     pipeline.Add(new BsonDocument("$match", new BsonDocument("$and", new BsonArray(matchConditions))));
+                }
+
+                if (aimListFilter != null && aimListFilter.Any()) {
+                    pipeline.Add(
+                        new BsonDocument("$match",
+                            new BsonDocument("aimCode",
+                                new BsonDocument("$in",
+                                    new BsonArray(aimListFilter.Select(x => x.Trim())))))
+                    );
                 }
 
                 if(sourceId.HasValue) {
@@ -541,7 +563,8 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<List<TotalGeneratedAndRedeemedOverTimeDto>> GetTotalGeneratedRedeemedVouchersOverTime(
             DateTime? startDate,
             DateTime? endDate,
-            ObjectId? sourceId
+            ObjectId? sourceId,
+            string[] aimListFilter
         ) {
             var pipeline = new List<BsonDocument>();
 
@@ -566,6 +589,15 @@ namespace WomPlatform.Web.Api.Service {
                             }
                         }))
             );
+
+            if (aimListFilter != null && aimListFilter.Any()) {
+                pipeline.Add(
+                    new BsonDocument("$match",
+                        new BsonDocument("aimCode",
+                            new BsonDocument("$in",
+                                new BsonArray(aimListFilter.Select(x => x.Trim())))))
+                );
+            }
 
             pipeline.Add(
                 new BsonDocument("$lookup",
