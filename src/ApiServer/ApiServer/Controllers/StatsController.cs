@@ -95,7 +95,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 // Call separate methods or services to retrieve stats
-                var response = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, request.SourceId, request.Latitude, request.Longitude, request.Radius);
+                var response = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, request.SourceId, request.AimListFilter, request.Latitude, request.Longitude, request.Radius);
 
                 return Ok(response);
             }
@@ -154,8 +154,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 // Fetch the total amount of generated and redeemed vouchers, passing the optional date range
                 var generatedVouchers =
-                    await GenerationService.FetchTotalVouchersGeneratedAndRedeemed(parsedStartDate, parsedEndDate,
-                        request.SourceId);
+                    await GenerationService.FetchTotalVouchersGeneratedAndRedeemed(parsedStartDate, parsedEndDate,request.SourceId, request.AimListFilter);
 
 
                 // Return the JSON response
@@ -233,7 +232,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
                 var generatedVouchersByAim =
-                    await GenerationService.FetchTotalVouchersGeneratedByAim(parsedStartDate, parsedEndDate, request.SourceId);
+                    await GenerationService.FetchTotalVouchersGeneratedByAim(parsedStartDate, parsedEndDate, request.SourceId, request.AimListFilter);
                 return Ok(generatedVouchersByAim);
             }
             catch(ServiceProblemException e) {
@@ -388,7 +387,7 @@ namespace WomPlatform.Web.Api.Controllers {
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // Fetch the list of consumed vouchers based on aim
-            var totalGeneratedVouchersOverTime = await GenerationService.GetTotalGeneratedRedeemedVouchersOverTime(parsedStartDate, parsedEndDate, request.SourceId);
+            var totalGeneratedVouchersOverTime = await GenerationService.GetTotalGeneratedRedeemedVouchersOverTime(parsedStartDate, parsedEndDate, request.SourceId, request.AimListFilter);
             return Ok(totalGeneratedVouchersOverTime);
         }
 
@@ -424,20 +423,15 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DownloadCsv([FromBody] StatisticsRequestDto request) {
-            Console.WriteLine("Requests ", request.StartDate, request.EndDate);
             await VerifyUserIsAdmin(); // check if user is an admin
 
             // if dates present check dates are valid and in case parse them
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // create general API to call them and save the data
-            var genRedResponse = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, request.SourceId, request.Latitude, request.Longitude, request.Radius);
+            var genRedResponse = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, request.SourceId, request.AimListFilter, request.Latitude, request.Longitude, request.Radius);
             var consumedResponse = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantId);
 
-            // flatten data
-            // save the data to put on the CSV
-            // use the CSV to save the data in a file
-            // send the file back
             var records = CsvFileHelper.GenerateCsvContent(genRedResponse, consumedResponse);
 
             return File(records, "text/csv", $"{DateTime.Now:yyyy-M-d dddd}_stats.csv");
