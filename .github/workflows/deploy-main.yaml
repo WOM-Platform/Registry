@@ -1,0 +1,28 @@
+name: Deploy main to production via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  fetch-setup:
+    name: Fetch and setup
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-main # Previene deployment contemporanei
+      cancel-in-progress: true
+    steps:
+      - name: SSH key setup
+        run: |
+          mkdir -p ~/.ssh
+          # echo "${{ vars.SSH_HOST_PROD }} ${{ inputs.ssh-host-key }}" > ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/gha_private_key
+          chmod 600 ~/.ssh/gha_private_key
+      - name: SSH fetch commit and setup
+        run: |
+          ssh -i ~/.ssh/gha_private_key -o StrictHostKeyChecking=accept-new ${{ vars.SSH_USER }}@${{ vars.SSH_HOST_PROD }} << 'ENDSSH'
+          cd ${{ vars.SSH_PWD }}
+          git pull --ff origin main
+          make rebuild
+          ENDSSH
