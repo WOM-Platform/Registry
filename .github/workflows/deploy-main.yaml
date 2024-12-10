@@ -16,13 +16,13 @@ jobs:
       - name: SSH key setup
         run: |
           mkdir -p ~/.ssh
-          # echo "${{ vars.SSH_HOST_PROD }} ${{ inputs.ssh-host-key }}" > ~/.ssh/known_hosts
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/gha_private_key
+          # echo "${{ vars.SSH_HOST_REGISTRY_PROD }} ${{ inputs.ssh-host-key }}" > ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_KEY_REGISTRY_PROD }}" > ~/.ssh/gha_private_key
           chmod 600 ~/.ssh/gha_private_key
       - name: SSH fetch commit and setup
         run: |
-          ssh -i ~/.ssh/gha_private_key -o StrictHostKeyChecking=accept-new ${{ vars.SSH_USER }}@${{ vars.SSH_HOST_PROD }} << 'ENDSSH'
-          cd ${{ vars.SSH_PWD }}
+          ssh -i ~/.ssh/gha_private_key -o StrictHostKeyChecking=accept-new ${{ vars.SSH_USER_REGISTRY_PROD }}@${{ vars.SSH_HOST_REGISTRY_PROD }} << 'ENDSSH'
+          cd ${{ vars.SSH_PWD_REGISTRY_PROD }}
           git pull --ff origin main
           make rebuild
           ENDSSH
