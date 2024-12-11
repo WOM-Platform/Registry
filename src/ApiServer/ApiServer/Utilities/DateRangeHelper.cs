@@ -15,7 +15,7 @@ public class DateRangeHelper {
 
         var totalDays = (endDate - startDate).TotalDays;
 
-        if (totalDays <= 7)
+        if (totalDays <= 30)
         {
             return "%Y-%m-%d"; // Group by day
         }
