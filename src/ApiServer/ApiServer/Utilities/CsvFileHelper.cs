@@ -23,6 +23,7 @@ public class CsvFileHelper {
         csvData.AddRange(consumedResponse.MerchantRanks.Select(item => new { Category = $"Merchant Rank {item.Rank} ({item.Name})", Value = item.Amount }));
         csvData.AddRange(consumedResponse.VoucherByAims.Select(item => new { Category = $"Voucher Consumed ({item.AimCode})", Value = item.Amount }));
         csvData.AddRange(genRedResponse.VoucherByAim.Select(item => new { Category = $"Voucher Generated ({item.AimCode})", Value = item.Amount }));
+        csvData.AddRange(genRedResponse.SourceRank.Select(item => new { Category = $"Source Rank {item.Rank} ({item.Name})", Value = item.TotalGeneratedAmount,  TotalRedeemedAmount = item.TotalRedeemedAmount  }));
 
         using (var memoryStream = new MemoryStream())
         using (var writer = new StreamWriter(memoryStream, leaveOpen: true))

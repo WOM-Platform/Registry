@@ -82,6 +82,7 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
+        // API to send back the data for generation and redeemed vouchers
         [HttpPost("vouchers/generated-redeemed-statistics")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
@@ -104,6 +105,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        // API to send back the data for consumed vouchers
         [HttpPost("vouchers/consumed-statistics")]
         [Authorize]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]

@@ -9,4 +9,5 @@ public class VoucherGenerationRedemptionStatsResponse {
     public List<VoucherByAimDTO> VoucherByAim { get; set; }
     public int VoucherAvailable { get; set; }
     public List<TotalGeneratedAndRedeemedOverTimeDto> TotalGeneratedAndRedeemedOverTime { get; set; }
+    public List<SourceRankDTO> SourceRank { get; set; }
 }

@@ -274,15 +274,20 @@ namespace WomPlatform.Web.Api.Service {
             double? longitude,
             int? radius
         ) {
-            var (generatedVouchers, redeemedVouchers) = await FetchTotalVouchersGeneratedAndRedeemed(startDate, endDate, sourceId, aimListFilter);
-            List<VoucherByAimDTO> voucherByAim = await FetchTotalVouchersGeneratedByAim(startDate, endDate, sourceId, aimListFilter);
-            List<TotalGeneratedAndRedeemedOverTimeDto> totalGeneratedRedeemedVouchersOverTime = await GetTotalGeneratedRedeemedVouchersOverTime(startDate, endDate, sourceId, aimListFilter);
+            var (generatedVouchers, redeemedVouchers) =
+                await FetchTotalVouchersGeneratedAndRedeemed(startDate, endDate, sourceId, aimListFilter);
+            List<VoucherByAimDTO> voucherByAim =
+                await FetchTotalVouchersGeneratedByAim(startDate, endDate, sourceId, aimListFilter);
+            List<TotalGeneratedAndRedeemedOverTimeDto> totalGeneratedRedeemedVouchersOverTime =
+                await GetTotalGeneratedRedeemedVouchersOverTime(startDate, endDate, sourceId, aimListFilter);
+            List<SourceRankDTO> sourceRank = await GetSourceRank(startDate, endDate, sourceId, aimListFilter);
 
             return new VoucherGenerationRedemptionStatsResponse {
                 TotalGenerated = generatedVouchers,
                 TotalRedeemed = redeemedVouchers,
                 VoucherByAim = voucherByAim,
-                TotalGeneratedAndRedeemedOverTime = totalGeneratedRedeemedVouchersOverTime
+                TotalGeneratedAndRedeemedOverTime = totalGeneratedRedeemedVouchersOverTime,
+                SourceRank = sourceRank,
             };
         }
 
@@ -301,7 +306,7 @@ namespace WomPlatform.Web.Api.Service {
                 new BsonDocument("$and",
                     new BsonArray(MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp")))));
 
-            if (aimListFilter != null && aimListFilter.Any()) {
+            if(aimListFilter != null && aimListFilter.Any()) {
                 pipeline.Add(
                     new BsonDocument("$match",
                         new BsonDocument("aimCode",
@@ -395,7 +400,7 @@ namespace WomPlatform.Web.Api.Service {
                     pipeline.Add(new BsonDocument("$match", new BsonDocument("$and", new BsonArray(matchConditions))));
                 }
 
-                if (aimListFilter != null && aimListFilter.Any()) {
+                if(aimListFilter != null && aimListFilter.Any()) {
                     pipeline.Add(
                         new BsonDocument("$match",
                             new BsonDocument("aimCode",
@@ -494,44 +499,40 @@ namespace WomPlatform.Web.Api.Service {
             );
             pipeline.Add(
                 new BsonDocument("$lookup",
-                    new BsonDocument
-                    {
+                    new BsonDocument {
                         { "from", "GenerationRequests" },
                         { "localField", "generationRequestId" },
                         { "foreignField", "_id" },
                         { "as", "generationRequest" }
                     })
-                );
+            );
 
             pipeline.Add(
                 new BsonDocument("$unwind",
-                    new BsonDocument
-                    {
+                    new BsonDocument {
                         { "path", "$generationRequest" },
                         { "includeArrayIndex", "string" },
                         { "preserveNullAndEmptyArrays", true }
                     })
-                );
+            );
 
             pipeline.Add(
                 new BsonDocument("$match",
                     new BsonDocument("generationRequest.performedAt",
-                        new BsonDocument
-                        {
+                        new BsonDocument {
                             { "$exists", true },
                             { "$ne", BsonNull.Value }
                         }))
-                );
+            );
             pipeline.Add(
                 new BsonDocument("$project",
-                    new BsonDocument
-                    {
+                    new BsonDocument {
                         { "source", 1 },
                         { "initialCount", 1 },
                         { "count", 1 },
                         { "generationRequest.performedAt", 1 }
                     })
-                );
+            );
             pipeline.Add(
                 new BsonDocument("$group",
                     new BsonDocument {
@@ -569,10 +570,11 @@ namespace WomPlatform.Web.Api.Service {
             var pipeline = new List<BsonDocument>();
 
             // set calculation on last year if period of time is not specified
-            if (!startDate.HasValue && !endDate.HasValue) {
+            if(!startDate.HasValue && !endDate.HasValue) {
                 endDate = DateTime.Today; // Set to today
                 startDate = DateTime.Today.AddYears(-1); // One year ago
             }
+
             var formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value);
 
             startDate = startDate.Value.Date; // Truncate to midnight
@@ -590,7 +592,7 @@ namespace WomPlatform.Web.Api.Service {
                         }))
             );
 
-            if (aimListFilter != null && aimListFilter.Any()) {
+            if(aimListFilter != null && aimListFilter.Any()) {
                 pipeline.Add(
                     new BsonDocument("$match",
                         new BsonDocument("aimCode",
@@ -670,11 +672,10 @@ namespace WomPlatform.Web.Api.Service {
             // Get the list of all dates between startDate and endDate
             var allDates = new List<string>();
 
-            var currentDate = startDate.Value.Date;  // Start with the initial date
+            var currentDate = startDate.Value.Date; // Start with the initial date
 
             // While currentDate is less than or equal to endDate
-            while (currentDate <= endDate.Value.Date)
-            {
+            while(currentDate <= endDate.Value.Date) {
                 allDates.Add(currentDate.ToString(netFormatDate));
 
                 // Increment the date using the appropriate logic based on netFormatDate
@@ -706,6 +707,163 @@ namespace WomPlatform.Web.Api.Service {
             }).ToList();
 
             return vouchersByAim;
+        }
+
+        public async Task<List<SourceRankDTO>> GetSourceRank(DateTime? startDate, DateTime? endDate,
+            ObjectId? sourceId, string[] aimListFilter) {
+            var pipeline = new List<BsonDocument>();
+
+            // Create the list to hold match conditions for the voucher collection
+            List<BsonDocument> matchConditions =
+                MongoQueryHelper.DateMatchCondition(startDate, endDate, "timestamp");
+
+
+            // Add the date match conditions
+            if(matchConditions.Count > 0) {
+                pipeline.Add(new BsonDocument("$match", new BsonDocument("$and", new BsonArray(matchConditions))));
+            }
+
+            if(aimListFilter != null && aimListFilter.Any()) {
+                pipeline.Add(
+                    new BsonDocument("$match",
+                        new BsonDocument("aimCode",
+                            new BsonDocument("$in",
+                                new BsonArray(aimListFilter.Select(x => x.Trim())))))
+                );
+            }
+
+            pipeline.Add(new BsonDocument("$sort",
+                new BsonDocument("totalRedeemedAmount", -1)));
+
+            // If instrumentName is provided, add the lookup and match conditions
+            if(sourceId.HasValue) {
+                var sourceMatchConditions = MongoQueryHelper.SourceMatchFromVouchersCondition(sourceId);
+                pipeline.AddRange(sourceMatchConditions);
+            }
+
+
+
+            // $lookup: GenerationRequests
+            pipeline.Add(
+                new BsonDocument("$lookup",
+                    new BsonDocument
+                    {
+                        { "from", "GenerationRequests" },
+                        { "localField", "generationRequestId" },
+                        { "foreignField", "_id" },
+                        { "as", "gen" }
+                    }
+                )
+            );
+
+            // $unwind: gen
+            pipeline.Add(
+                new BsonDocument("$unwind",
+                    new BsonDocument
+                    {
+                        { "path", "$gen" },
+                        { "includeArrayIndex", "string" },
+                        { "preserveNullAndEmptyArrays", false }
+                    }
+                )
+            );
+
+            // $lookup: Sources
+            pipeline.Add(
+                new BsonDocument("$lookup",
+                    new BsonDocument
+                    {
+                        { "from", "Sources" },
+                        { "localField", "gen.sourceId" },
+                        { "foreignField", "_id" },
+                        { "as", "source" }
+                    }
+                )
+            );
+
+            // $unwind: source
+            pipeline.Add(
+                new BsonDocument("$unwind",
+                    new BsonDocument
+                    {
+                        { "path", "$source" },
+                        { "includeArrayIndex", "string" },
+                        { "preserveNullAndEmptyArrays", false }
+                    }
+                )
+            );
+
+            // $group: Aggregate totals
+            pipeline.Add(
+                new BsonDocument("$group",
+                    new BsonDocument
+                    {
+                        { "_id", "$source._id" },
+                        { "name", new BsonDocument("$first", "$source.name") },
+                        { "totalGeneratedAmount", new BsonDocument("$sum", "$initialCount") },
+                        { "totalRedeemedAmount",
+                            new BsonDocument("$sum",
+                                new BsonDocument("$cond",
+                                    new BsonDocument
+                                    {
+                                        { "if",
+                                            new BsonDocument("$gt",
+                                                new BsonArray
+                                                {
+                                                    "$gen.performedAt",
+                                                    BsonNull.Value
+                                                }
+                                            )
+                                        },
+                                        { "then", "$initialCount" },
+                                        { "else", 0 }
+                                    }
+                                )
+                            )
+                        }
+                    }
+                )
+            );
+
+            // $sort: totalRedeemedAmount descending
+            pipeline.Add(
+                new BsonDocument("$setWindowFields",
+                    new BsonDocument {
+                        {
+                            "sortBy",
+                            new BsonDocument("totalGeneratedAmount", -1)
+                        }, {
+                            "output",
+                            new BsonDocument("rank",
+                                new BsonDocument("$denseRank",
+                                    new BsonDocument()))
+                        }
+                    }));
+
+            try {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                var result = await VoucherCollection.AggregateAsync<BsonDocument>(pipeline);
+                var sourceRankList = await result.ToListAsync();
+                stopwatch.Stop();
+                var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+
+                Logger.LogInformation($"Rank Aggregation pipeline executed in {elapsedMilliseconds} ms");
+
+                // Map to a strongly-typed model
+                var sourceRank = sourceRankList.Select(doc => new SourceRankDTO() {
+                    Id = doc["_id"].IsBsonNull ? ObjectId.Empty : doc["_id"].AsObjectId,
+                    Name = doc["name"].AsString,
+                    TotalGeneratedAmount = doc["totalGeneratedAmount"].AsInt32,
+                    TotalRedeemedAmount = doc["totalRedeemedAmount"].AsInt32,
+                    Rank = doc["rank"].AsInt32
+                }).ToList();
+
+                return sourceRank;
+            }
+            catch(Exception ex) {
+                Logger.LogError($"An error occurred: {ex.Message}");
+                throw;
+            }
         }
     }
 }
