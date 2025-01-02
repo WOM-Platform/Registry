@@ -1,5 +1,7 @@
+using System;
 using System.IO;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -14,22 +16,33 @@ namespace WomPlatform.Web.Api {
 
         public static IWebHost BuildWebHost(string[] args) {
             // Build configuration
-            var confBuilder = new ConfigurationBuilder()
+            var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddUserSecrets<Program>()
                 .AddEnvironmentVariables()
-            ;
-            var configuration = confBuilder.Build();
+                .Build();
 
-            return WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
+            var host = WebHost.CreateDefaultBuilder(args)
                 .UseConfiguration(configuration)
                 .ConfigureLogging((context, logging) => {
                     logging.ClearProviders();
                     logging.AddConfiguration(context.Configuration.GetSection("Logging"));
                     logging.AddConsole();
-                })
-                .Build();
+                });
+
+            var confSentry = configuration.GetSection("Sentry");
+            if(confSentry != null && Convert.ToBoolean(confSentry["Enabled"])) {
+                host = host.UseSentry(sentry => {
+                    sentry.Dsn = confSentry["Dns"]!;
+                    sentry.Debug = true;
+                    sentry.DiagnosticLevel = Sentry.SentryLevel.Warning;
+                });
+            }
+
+            host = host.UseStartup<Startup>();
+
+            return host.Build();
         }
 
     }
