@@ -825,6 +825,44 @@ namespace WomPlatform.Web.Api.Service {
                 )
             );
 
+            pipeline.Add(
+                new BsonDocument(
+                    "$unionWith",
+                    new BsonDocument
+                    {
+                        { "coll", "Sources" },
+                        { "pipeline",
+                            new BsonArray
+                            {
+                                new BsonDocument("$project",
+                                    new BsonDocument
+                                    {
+                                        { "_id", "$_id" },
+                                        { "name", "$name" },
+                                        { "totalGeneratedAmount",
+                                            new BsonDocument("$literal", 0) },
+                                        { "totalRedeemedAmount",
+                                            new BsonDocument("$literal", 0) }
+                                    })
+                            } }
+                    }
+                    )
+                );
+
+            pipeline.Add(
+                new BsonDocument("$group",
+                    new BsonDocument
+                    {
+                        { "_id", "$_id" },
+                        { "name",
+                            new BsonDocument("$first", "$name") },
+                        { "totalGeneratedAmount",
+                            new BsonDocument("$max", "$totalGeneratedAmount") },
+                        { "totalRedeemedAmount",
+                            new BsonDocument("$max", "$totalRedeemedAmount") }
+                    })
+                );
+
             // $sort: totalRedeemedAmount descending
             pipeline.Add(
                 new BsonDocument("$setWindowFields",
