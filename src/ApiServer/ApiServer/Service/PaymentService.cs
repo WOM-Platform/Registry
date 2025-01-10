@@ -644,10 +644,10 @@ namespace WomPlatform.Web.Api.Service {
                     new BsonDocument("name",
                         new BsonDocument("$ne", BsonNull.Value))));
 
-            pipeline.Add(
-                new BsonDocument("$match",
-                    new BsonDocument("totalAmount",
-                        new BsonDocument("$gt", 0))));
+            // pipeline.Add(
+            //     new BsonDocument("$match",
+            //         new BsonDocument("totalAmount",
+            //             new BsonDocument("$gt", 0))));
             pipeline.Add(
                 new BsonDocument("$setWindowFields",
                     new BsonDocument {
