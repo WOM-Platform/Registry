@@ -34,8 +34,6 @@ namespace WomPlatform.Web.Api.Utilities {
                 csvData.Add(new { Period = "Filter", Metric = "Aim Filter", Value = string.Join(", ", filters.AimFilter), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
             }
 
-            Console.WriteLine($"consumed all {consumedResponse}");
-
             // Add the main data rows
             csvData.Add(new { Period = "Total", Metric = "Consumed", Value = consumedResponse.TotalConsumed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
             csvData.Add(new { Period = "Total", Metric = "Consumed Ever", Value = consumedResponse.TotalEverConsumed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
