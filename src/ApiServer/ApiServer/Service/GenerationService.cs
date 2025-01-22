@@ -454,7 +454,10 @@ namespace WomPlatform.Web.Api.Service {
                 var vouchersByAim = generatedVouchersByAim.Select(doc =>
                 {
                     var aimCode = doc.GetValue("_id", defaultValue: BsonValue.Create("Unknown")).AsString;
-                    var aimName = _aimService.GetAimByCode(aimCode).Titles["it"];
+                    var aim = _aimService.GetAimByCode(aimCode);
+                    var aimName = aim?.Titles.ContainsKey("it") == true && aim.Titles["it"] != null
+                        ? aim.Titles["it"]
+                        : "Unknown";
 
                     return new VoucherByAimDTO
                     {
