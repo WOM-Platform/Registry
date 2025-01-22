@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -15,65 +14,66 @@ namespace WomPlatform.Web.Api.Utilities {
 
             // Add filters information if present
             if(filters.StartDate.HasValue) {
-                csvData.Add(new { Period = "Filter", Metric = "Start Date", Value = filters.StartDate.Value.ToString("yyyy-MM-dd"), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
+                csvData.Add(new { Period = "Filter", Metric = "Start Date", Value = filters.StartDate.Value.ToString("yyyy-MM-dd"), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
             }
 
             if(filters.EndDate.HasValue) {
-                csvData.Add(new { Period = "Filter", Metric = "End Date", Value = filters.EndDate.Value.ToString("yyyy-MM-dd"), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
+                csvData.Add(new { Period = "Filter", Metric = "End Date", Value = filters.EndDate.Value.ToString("yyyy-MM-dd"), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
             }
 
             if(filters.SourceIds != null && filters.SourceIds.Length > 0) {
-                csvData.Add(new { Period = "Filter", Metric = "Source ID", Value = filters.SourceIds.ToString(), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
+                csvData.Add(new { Period = "Filter", Metric = "Source ID", Value = filters.SourceIds.ToString(), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
             }
 
             if(filters.MerchantIds != null && filters.MerchantIds.Length > 0) {
-                csvData.Add(new { Period = "Filter", Metric = "Merchant ID", Value = filters.MerchantIds.ToString(), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
+                csvData.Add(new { Period = "Filter", Metric = "Merchant ID", Value = filters.MerchantIds.ToString(), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
             }
 
             if(filters.AimFilter != null && filters.AimFilter.Length > 0) {
-                csvData.Add(new { Period = "Filter", Metric = "Aim Filter", Value = string.Join(", ", filters.AimFilter), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
+                csvData.Add(new { Period = "Filter", Metric = "Aim Filter", Value = string.Join(", ", filters.AimFilter), Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
             }
 
-            // Add the main data rows
-            csvData.Add(new { Period = "Total", Metric = "Consumed", Value = consumedResponse.TotalConsumed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
-            csvData.Add(new { Period = "Total", Metric = "Consumed Ever", Value = consumedResponse.TotalEverConsumed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
-            csvData.Add(new { Period = "Total", Metric = "Available", Value = availableResponse, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
-            csvData.Add(new { Period = "Total", Metric = "Generated", Value = genRedResponse.TotalGenerated, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
-            csvData.Add(new { Period = "Total", Metric = "Generated Ever", Value = genRedResponse.TotalEverGenerated, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
-            csvData.Add(new { Period = "Total", Metric = "Redeemed", Value = genRedResponse.TotalRedeemed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
-            csvData.Add(new { Period = "Total", Metric = "Redeemed Ever", Value = genRedResponse.TotalEverRedeemed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = "" });
+// Add the main data rows
+            csvData.Add(new { Period = "Total", Metric = "Consumed", Value = consumedResponse.TotalConsumed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
+            csvData.Add(new { Period = "Total", Metric = "Consumed Ever", Value = consumedResponse.TotalEverConsumed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
+            csvData.Add(new { Period = "Total", Metric = "Available", Value = availableResponse, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
+            csvData.Add(new { Period = "Total", Metric = "Generated", Value = genRedResponse.TotalGenerated, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
+            csvData.Add(new { Period = "Total", Metric = "Generated Ever", Value = genRedResponse.TotalEverGenerated, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
+            csvData.Add(new { Period = "Total", Metric = "Redeemed", Value = genRedResponse.TotalRedeemed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
+            csvData.Add(new { Period = "Total", Metric = "Redeemed Ever", Value = genRedResponse.TotalEverRedeemed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = "" });
 
             csvData.AddRange(consumedResponse.TotalConsumedOverTime.Select(item => new {
-                Period = item.Date, Metric = "Consumed", Value = item.Total, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = ""
+                Period = item.Date, Metric = "Consumed", Value = item.Total, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = ""
             }));
 
             csvData.AddRange(genRedResponse.TotalGeneratedAndRedeemedOverTime.Select(item => new {
-                Period = item.Date, Metric = "Generated", Value = item.TotalGenerated, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = ""
+                Period = item.Date, Metric = "Generated", Value = item.TotalGenerated, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = ""
             }));
 
             csvData.AddRange(genRedResponse.TotalGeneratedAndRedeemedOverTime.Select(item => new {
-                Period = item.Date, Metric = "Redeemed", Value = item.TotalRedeemed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = ""
+                Period = item.Date, Metric = "Redeemed", Value = item.TotalRedeemed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = ""
             }));
 
             csvData.AddRange(consumedResponse.MerchantRanks.Select(item => new {
-                Period = "", Metric = "Rank", Value = item.Amount, Rank_Type = "Merchant", Rank_Position = item.Rank, Rank_Name = item.Name, Aim = ""
+                Period = "", Metric = "Rank", Value = item.Amount, Rank_Type = "Merchant", Rank_Position = item.Rank, Rank_Name = item.Name, Aim_Code = "", Aim_Name = ""
             }));
 
             csvData.AddRange(genRedResponse.SourceRank.Select(item => new {
-                Period = "", Metric = "Rank", Value = item.TotalGeneratedAmount, Rank_Type = "Instrument Generated", Rank_Position = item.Rank, Rank_Name = item.Name, Aim = ""
+                Period = "", Metric = "Rank", Value = item.TotalGeneratedAmount, Rank_Type = "Instrument Generated", Rank_Position = item.Rank, Rank_Name = item.Name, Aim_Code = "", Aim_Name = ""
             }));
 
             csvData.AddRange(genRedResponse.SourceRank.Select(item => new {
-                Period = "", Metric = "Rank", Value = item.TotalRedeemedAmount, Rank_Type = "Instrument Redeemed", Rank_Position = item.Rank, Rank_Name = item.Name, Aim = ""
+                Period = "", Metric = "Rank", Value = item.TotalRedeemedAmount, Rank_Type = "Instrument Redeemed", Rank_Position = item.Rank, Rank_Name = item.Name, Aim_Code = "", Aim_Name = ""
             }));
 
             csvData.AddRange(consumedResponse.VoucherByAims.Select(item => new {
-                Period = "", Metric = "Consumed by Aim", Value = item.Amount, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = item.AimCode
+                Period = "", Metric = "Consumed by Aim", Value = item.Amount, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code=item.AimCode, Aim_Name = item.AimName
             }));
 
             csvData.AddRange(genRedResponse.VoucherByAim.Select(item => new {
-                Period = "", Metric = "Generated by Aim", Value = item.Amount, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim = item.AimCode
+                Period = "", Metric = "Generated by Aim", Value = item.Amount, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code=item.AimCode, Aim_Name = item.AimName
             }));
+
 
             // Write the records to CSV
             using(MemoryStream memoryStream = new MemoryStream())
