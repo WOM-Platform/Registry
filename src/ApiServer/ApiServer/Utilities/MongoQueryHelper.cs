@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using MongoDB.Bson;
-using RestSharp.Extensions;
 
 namespace WomPlatform.Web.Api.Utilities;
 
 public class MongoQueryHelper {
     // Create the match condition if the user have specified the data range or not
-    public static List<BsonDocument> DateMatchCondition(DateTime? startDateTime, DateTime? endDateTime, string key, string unwindKey = null ) {
+    public static List<BsonDocument> DateMatchCondition(DateTime? startDateTime, DateTime? endDateTime, string key, string unwindKey = null) {
         var matchConditions = new List<BsonDocument>();
         // Check if filter by date
         if(startDateTime.HasValue && endDateTime.HasValue) {
@@ -39,15 +38,13 @@ public class MongoQueryHelper {
 
     // Creates a list of MongoDB aggregation stages that filter documents based on a specified source name.
     // If a source is provided, the function filter the instrument
-    public static List<BsonDocument> SourceMatchFromVouchersCondition(ObjectId? sourceId) {
+    public static List<BsonDocument> SourceMatchFromVouchersCondition(ObjectId[] sourceIds) {
         var matchConditions = new List<BsonDocument>();
-        if(sourceId.HasValue) {
+        if(sourceIds.Length > 0) {
             matchConditions.Add(
                 new BsonDocument("$match",
                     new BsonDocument("generationRequest.sourceId",
-                        new BsonDocument("$eq",
-                            new ObjectId(sourceId.ToString())
-                        )
+                        new BsonDocument("$in", new BsonArray(sourceIds))
                     )
                 )
             );
@@ -56,9 +53,10 @@ public class MongoQueryHelper {
         return matchConditions;
     }
 
-    public static List<BsonDocument> MerchantMatchFromPaymentRequestsCondition(ObjectId? merchantId) {
+    public static List<BsonDocument> MerchantMatchFromPaymentRequestsCondition(ObjectId[]? merchantIds) {
         var matchConditions = new List<BsonDocument>();
-        if(merchantId.HasValue) {
+
+        if(merchantIds != null && merchantIds.Length > 0) {
             matchConditions.Add(
                 new BsonDocument("$lookup",
                     new BsonDocument {
@@ -66,25 +64,30 @@ public class MongoQueryHelper {
                         { "localField", "posId" },
                         { "foreignField", "_id" },
                         { "as", "pos" }
-                    }));
+                    }
+                )
+            );
             matchConditions.Add(
                 new BsonDocument("$unwind",
                     new BsonDocument {
                         { "path", "$pos" },
                         { "includeArrayIndex", "string" },
                         { "preserveNullAndEmptyArrays", false }
-                    }));
-
+                    }
+                )
+            );
             matchConditions.Add(
                 new BsonDocument("$match",
                     new BsonDocument("pos.merchantId",
-                        new BsonDocument("$eq",
-                            new ObjectId(merchantId.ToString()))))
+                        new BsonDocument("$in", new BsonArray(merchantIds))
+                    )
+                )
             );
         }
 
         return matchConditions;
     }
+
 
     public static List<BsonDocument> DatePaymentConfirmationCondition(DateTime? startDateTime, DateTime? endDateTime,
         string key) {

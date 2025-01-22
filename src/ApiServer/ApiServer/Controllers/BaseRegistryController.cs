@@ -331,10 +331,12 @@ namespace WomPlatform.Web.Api.Controllers {
             return source;
         }
 
-        protected async Task IsUserAdminOrOwnerSource(ObjectId? sourceId) {
+        protected async Task IsUserAdminOrOwnerSource(ObjectId[] sourceIds) {
             // If a sourceId is provided, check if the user is an admin or the owner of the source
-            if(sourceId.HasValue) {
-                await VerifyUserIsAdminOfSource(sourceId.Value);
+            if(sourceIds != null && sourceIds.Length > 0) {
+                foreach(var sourceId in sourceIds) {
+                    await VerifyUserIsAdminOfSource(sourceId);
+                }
             }
             // If no sourceId is provided, only check if the user is an admin
             else {
@@ -342,12 +344,14 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        protected async Task IsUserAdminOrOwnerMerchant(ObjectId? merchantId = null) {
+        protected async Task IsUserAdminOrOwnerMerchant(ObjectId[] merchantIds = null) {
             // If a merchantId is provided, check if the user is an admin or the owner of the merchant
-            if(merchantId.HasValue) {
-                await VerifyUserIsAdminOfMerchant(merchantId.Value);
+            if(merchantIds != null && merchantIds.Length > 0) {
+                foreach(ObjectId merchantId in merchantIds) {
+                    await VerifyUserIsAdminOfMerchant(merchantId);
+                }
             }
-            // If no sourceId is provided, only check if the user is an admin
+            // If no merchantId is provided, only check if the user is an admin
             else {
                 await VerifyUserIsAdmin();
             }
