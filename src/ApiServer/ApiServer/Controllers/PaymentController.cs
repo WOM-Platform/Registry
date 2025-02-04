@@ -297,7 +297,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Logger.LogInformation(LoggingEvents.PaymentStatus, $"Payment {payloadContent.Otc} not found");
                     return this.OtcNotFound();
                 }
-                if(!payload.PosId.Equals(payment.PosId)) {
+                if(!payload.PosId.Matches(payment.PosId)) {
                     Logger.LogWarning(LoggingEvents.PaymentStatus, $"Payment {payment.Otc} by POS {payment.PosId} was not created by POS specified in request ({payload.PosId})");
                     return this.OtcNotFound();
                 }
