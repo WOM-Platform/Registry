@@ -287,8 +287,8 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             if(payload.PosId != payloadContent.PosId) {
-                Logger.LogError(LoggingEvents.PaymentStatus, "POS ID mismatch in payload ({0} != {1})", payload.PosId, payloadContent.PosId);
-                return BadRequest();
+                Logger.LogError(LoggingEvents.PaymentStatus, "Verification failed, POS ID {0} differs from ID {1} in payload", payload.PosId, payloadContent.PosId);
+                return this.PayloadVerificationFailure("Verification of POS ID in payload failed");
             }
 
             try {
@@ -297,8 +297,8 @@ namespace WomPlatform.Web.Api.Controllers {
                     Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
                     return this.OtcNotFound();
                 }
-                if(payment.PosId != payment.PosId) {
-                    Logger.LogWarning(LoggingEvents.PaymentStatus, "Payment {0} has not been created by POS {1}", payment.Otc, payment.PosId);
+                if(!payment.PosId.Equals(payload.PosId)) {
+                    Logger.LogWarning(LoggingEvents.PaymentStatus, "Payment {0} has not been created by POS {1}", payment.Otc, payload.PosId);
                     return this.OtcNotFound();
                 }
 
