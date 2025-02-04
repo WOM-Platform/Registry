@@ -31,6 +31,9 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfDefault]
         public bool IsPersistent { get; set; } = false;
 
+        [BsonElement("merchantId")]
+        public ObjectId MerchantId { get; set; }
+
         [BsonElement("posId")]
         public ObjectId PosId { get; set; }
 

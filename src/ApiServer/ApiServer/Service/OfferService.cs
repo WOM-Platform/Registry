@@ -362,7 +362,7 @@ namespace WomPlatform.Web.Api.Service {
         }
 
 
-               /// <summary>
+        /// <summary>
         /// Get list of voucher consumed by merchant's offers
         /// </summary>
         public async Task<List<MerchantOfferDTO>> FetchConsumedVouchersByOffer(ObjectId merchantId) {
