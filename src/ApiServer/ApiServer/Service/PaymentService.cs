@@ -103,6 +103,7 @@ namespace WomPlatform.Web.Api.Service {
                 CreatedAt = DateTime.UtcNow,
                 Verified = isPreVerified,
                 IsPersistent = isPersistent,
+                MerchantId = pointOfService.MerchantId,
                 PosId = pointOfService.Id,
                 Nonce = nonce ?? string.Concat(pointOfService.Id, Guid.NewGuid()),
                 Password = password,
