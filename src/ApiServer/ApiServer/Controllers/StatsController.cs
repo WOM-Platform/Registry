@@ -114,12 +114,12 @@ public class StatsController : BaseRegistryController {
     public async Task<ActionResult> FetchVouchersConsumedStats([FromBody] StatisticsRequestDto request) {
         try {
             // check if user is admin or owner of the source
-            await IsUserAdminOrOwnerMerchant(request.MerchantId);
+            await IsUserAdminOrOwnerMerchant(request.MerchantIds);
 
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // Fetch the total amount of consumed vouchers
-            var consumedVouchers = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantId);
+            var consumedVouchers = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantIds);
 
             // Return the JSON response
             return Ok(consumedVouchers);
@@ -188,13 +188,13 @@ public class StatsController : BaseRegistryController {
     ) {
         try {
             // check if user is admin or owner of the source
-            await IsUserAdminOrOwnerMerchant(request.MerchantId);
+            await IsUserAdminOrOwnerMerchant(request.MerchantIds);
 
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // Fetch the total amount of consumed vouchers
             var consumedVouchers =
-                await PaymentService.FetchTotalVouchersConsumed(parsedStartDate, parsedEndDate, request.MerchantId);
+                await PaymentService.FetchTotalVouchersConsumed(parsedStartDate, parsedEndDate, request.MerchantIds);
 
             // Return the JSON response
             return Ok(consumedVouchers);
@@ -262,14 +262,13 @@ public class StatsController : BaseRegistryController {
         [FromBody] StatisticsRequestDto request
     ) {
         try {
-            // check if user is admin or owner of the source
-            await IsUserAdminOrOwnerMerchant(request.MerchantId);
+            await IsUserAdminOrOwnerMerchant(request.MerchantIds);
 
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // Fetch the list of consumed vouchers based on aim
             var listConsumedByAims =
-                await PaymentService.FetchTotalVouchersConsumedByAim(parsedStartDate, parsedEndDate, request.MerchantId);
+                await PaymentService.FetchTotalVouchersConsumedByAim(parsedStartDate, parsedEndDate, request.MerchantIds);
 
             // Return consumed vouchers divided for period
             return Ok(listConsumedByAims);
@@ -297,13 +296,13 @@ public class StatsController : BaseRegistryController {
     public async Task<ActionResult> FetchConsumedVouchersByOffer(
         [FromBody] StatisticsRequestDto request
     ) {
-        await IsUserAdminOrOwnerMerchant(request.MerchantId);
+        await IsUserAdminOrOwnerMerchant(request.MerchantIds);
         // ********************************
         // TO ADD DATA FILTER ON SERVICE
         // ****************************
-        if(request.MerchantId.HasValue) {
+        if(request.MerchantIds != null && request.MerchantIds.Length > 0) {
             // Fetch the list of consumed vouchers based on the merchant offer
-            var listConsumedByOffer = await OfferService.FetchConsumedVouchersByOffer(request.MerchantId.Value);
+            var listConsumedByOffer = await OfferService.FetchConsumedVouchersByOffer(request.MerchantIds);
 
             // Return consumed vouchers divided for period
             return Ok(listConsumedByOffer);
@@ -332,12 +331,12 @@ public class StatsController : BaseRegistryController {
     ) {
         try {
             // check if user is admin or owner of the source
-            await IsUserAdminOrOwnerMerchant(request.MerchantId);
+            await IsUserAdminOrOwnerMerchant(request.MerchantIds);
 
             var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // Fetch the list of consumed vouchers based on aim
-            var merchantRank = await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, request.MerchantId);
+            var merchantRank = await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, request.MerchantIds);
 
             // Return consumed vouchers divided for period
             return Ok(merchantRank);
@@ -359,7 +358,7 @@ public class StatsController : BaseRegistryController {
         [FromBody] StatisticsRequestDto request
     ) {
         // Think how to make a control on this api
-        await IsUserAdminOrOwnerMerchant(request.MerchantId);
+        await IsUserAdminOrOwnerMerchant(request.MerchantIds);
 
         // Fetch the number of unused vouchers
         var numberUnusedVouchers = await GenerationService.FetchVouchersAvailable(request.Latitude, request.Longitude, request.Radius);
@@ -409,12 +408,12 @@ public class StatsController : BaseRegistryController {
         [FromBody] StatisticsRequestDto request
     ) {
         // check if user is admin or owner of the source
-        await IsUserAdminOrOwnerMerchant(request.MerchantId);
+        await IsUserAdminOrOwnerMerchant(request.MerchantIds);
 
         var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
         // Fetch the list of consumed vouchers based on aim
-        var totalConsumedVouchersOverTime = await PaymentService.GetTotalConsumedVouchersOverTime(parsedStartDate, parsedEndDate, request.MerchantId);
+        var totalConsumedVouchersOverTime = await PaymentService.GetTotalConsumedVouchersOverTime(parsedStartDate, parsedEndDate, request.MerchantIds);
 
         return Ok(totalConsumedVouchersOverTime);
     }
@@ -431,15 +430,15 @@ public class StatsController : BaseRegistryController {
         var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
         // create general API to call them and save the data
-        var genRedResponse = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, request.SourceId, request.AimListFilter, request.Latitude, request.Longitude, request.Radius);
-        var consumedResponse = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantId);
+        var genRedResponse = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, request.SourceId, request.AimListFilter, request.Latitude, request.Longitude, request.Radius, true);
+        var consumedResponse = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, request.MerchantIds, true);
         var availableResponse = await GenerationService.FetchVouchersAvailable(request.Latitude, request.Longitude, request.Radius);
 
         var filters = new FiltersDTO {
             StartDate = parsedStartDate,
             EndDate = parsedEndDate,
-            SourceId = request.SourceId,
-            MerchantId = request.MerchantId,
+            SourceIds = request.SourceId,
+            MerchantIds = request.MerchantIds,
             AimFilter = request.AimListFilter
         };
 

@@ -365,7 +365,7 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         /// Get list of voucher consumed by merchant's offers
         /// </summary>
-        public async Task<List<MerchantOfferDTO>> FetchConsumedVouchersByOffer(ObjectId merchantId) {
+        public async Task<List<MerchantOfferDTO>> FetchConsumedVouchersByOffer(ObjectId[] merchantId) {
             try {
                 var pipeline = new BsonDocument[] {
                     new BsonDocument("$match",
