@@ -370,19 +370,32 @@ namespace WomPlatform.Web.Api.Service {
             DateTime? startDate,
             DateTime? endDate,
             ObjectId[] merchantId,
-            bool isDailyGranularity = false
+            bool isCsvRequest = false
         ) {
-            int totalConsumed = await FetchTotalVouchersConsumed(startDate, endDate, merchantId);
-            int totalEverConsumed = await FetchTotalVouchersConsumed(null, null, merchantId);
-            List<TotalConsumedOverTimeDto> totalConsumedOverTimeDtos = await GetTotalConsumedVouchersOverTime(startDate, endDate, merchantId, isDailyGranularity);
-            List<VoucherByAimDTO> voucherByAims = await FetchTotalVouchersConsumedByAim(startDate, endDate, merchantId);
-            List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(startDate, endDate, merchantId);
+            VouchersConsumedDTO totalConsumed = await FetchTotalVouchersConsumed(startDate, endDate, merchantId);
+            VouchersConsumedDTO totalEverConsumed = await FetchTotalVouchersConsumed(null, null, merchantId);
+            List<TotalConsumedOverTimeDto> totalConsumedOverTimeDtos = await GetTotalConsumedVouchersOverTime(startDate, endDate, merchantId, isCsvRequest);
 
+            if(isCsvRequest) {
+                List<MerchantRankOvertimeDTO> merchantOvertimeRankDtos = await GetPaymentData(startDate, endDate, merchantId);
+                return new VoucherConsumptionStatsResponse {
+                    ConsumedInPeriod = totalConsumed.TotalAmount,
+                    TransactionsInPeriod = totalConsumed.TransactionNumber,
+                    TotalTransactions = totalEverConsumed.TransactionNumber,
+                    TotalConsumed = totalEverConsumed.TotalAmount,
+                    MerchantOvertimeRanks = merchantOvertimeRankDtos,
+                    MerchantRanks = null,
+                    TotalConsumedOverTime = totalConsumedOverTimeDtos
+                };
+            }
+            List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(startDate, endDate, merchantId);
             return new VoucherConsumptionStatsResponse {
-                TotalConsumed = totalConsumed,
-                TotalEverConsumed = totalEverConsumed,
-                VoucherByAims = voucherByAims,
+                ConsumedInPeriod = totalConsumed.TotalAmount,
+                TransactionsInPeriod = totalConsumed.TransactionNumber,
+                TotalTransactions = totalEverConsumed.TransactionNumber,
+                TotalConsumed = totalEverConsumed.TotalAmount,
                 MerchantRanks = merchantRankDtos,
+                MerchantOvertimeRanks = null,
                 TotalConsumedOverTime = totalConsumedOverTimeDtos
             };
         }
@@ -391,66 +404,57 @@ namespace WomPlatform.Web.Api.Service {
         /// <summary>
         ///     Get total amount of vouchers consumed from all the merchants in a period of time
         /// </summary>
-        public async Task<int> FetchTotalVouchersConsumed(
+        public async Task<VouchersConsumedDTO> FetchTotalVouchersConsumed(
             DateTime? startDate,
             DateTime? endDate,
-            ObjectId[] merchantId
+            ObjectId[] merchantsId
         ) {
             List<BsonDocument> pipeline = new List<BsonDocument>();
 
-            // execute a different aggregation pipeline if the user is filtering or not for date
-            // if date filter
-            if(startDate.HasValue && endDate.HasValue) {
-                pipeline.AddRange(MongoQueryHelper.DatePaymentConfirmationCondition(startDate, endDate, "confirmations.performedAt"));
-                // check if user is filtering for merchant name
-                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantId));
-                pipeline.Add(new BsonDocument("$group",
+            pipeline.Add(
+                new BsonDocument("$unwind",
                     new BsonDocument {
-                        { "_id", BsonNull.Value }, {
-                            "totalAmount",
-                            new BsonDocument("$sum", "$amount")
-                        }
-                    }));
-            }
-            else {
-                pipeline.Add(
-                    new BsonDocument("$match",
-                        new BsonDocument("confirmations",
-                            new BsonDocument {
-                                { "$exists", true }, {
-                                    "$ne",
-                                    new BsonArray()
-                                }
-                            }))
-                );
-                // check if user is filtering for merchant name
-                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantId));
-                pipeline.Add(
-                    new BsonDocument("$group",
+                        { "path", "$confirmations" },
+                        { "preserveNullAndEmptyArrays", true }
+                    })
+            );
+            // check if user is filtering for date
+            pipeline.Add(MongoQueryHelper.DateMatchCondition(startDate, endDate, "confirmations.performedAt"));
+            // check if user is filtering for merchant name
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantsId));
+
+            pipeline.Add(
+                new BsonDocument("$match",
+                    new BsonDocument("confirmations",
                         new BsonDocument {
-                            { "_id", BsonNull.Value }, {
-                                "totalAmount",
-                                new BsonDocument("$sum",
-                                    new BsonDocument("$multiply",
-                                        new BsonArray {
-                                            "$amount",
-                                            new BsonDocument("$size", "$confirmations")
-                                        }))
+                            { "$exists", true }, {
+                                "$ne",
+                                new BsonArray()
                             }
-                        })
-                );
-            }
+                        }))
+            );
+
+            pipeline.Add(
+                new BsonDocument("$group",
+                    new BsonDocument {
+                        { "_id", BsonNull.Value },
+                        { "transactionNumber", new BsonDocument("$sum", 1) },
+                        { "totalAmount", new BsonDocument("$sum", "$amount") }
+                    })
+            );
 
             IAsyncCursor<BsonDocument> result = await PaymentRequestCollection.AggregateAsync<BsonDocument>(pipeline);
             BsonDocument totalAmountConsumedDoc = await result.FirstOrDefaultAsync();
 
             // If no data was found
             if(totalAmountConsumedDoc == null) {
-                return 0;
+                return new VouchersConsumedDTO();
             }
+            return new VouchersConsumedDTO {
+                TransactionNumber = totalAmountConsumedDoc["transactionNumber"].AsInt32,
+                TotalAmount = totalAmountConsumedDoc["totalAmount"].AsInt32
+            };
 
-            // if data found
-            return totalAmountConsumedDoc["totalAmount"].AsInt32;
         }
 
 
@@ -468,7 +472,6 @@ namespace WomPlatform.Web.Api.Service {
             pipeline.Add(new BsonDocument("$unwind",
                 new BsonDocument {
                     { "path", "$confirmations" },
-                    { "includeArrayIndex", "string" },
                     { "preserveNullAndEmptyArrays", false }
                 }));
 
@@ -553,7 +556,6 @@ namespace WomPlatform.Web.Api.Service {
         ) {
             List<BsonDocument> pipeline = new List<BsonDocument>();
 
-            // filter date
             pipeline.Add(
                 new BsonDocument("$unwind",
                     new BsonDocument {
@@ -561,26 +563,9 @@ namespace WomPlatform.Web.Api.Service {
                         { "preserveNullAndEmptyArrays", true }
                     })
             );
-            pipeline.AddRange(
-                MongoQueryHelper.DatePaymentConfirmationCondition(startDate, endDate, "confirmations.performedAt"));
+            // filter date if startDate and endDate not null
             pipeline.Add(
-                new BsonDocument("$lookup",
-                    new BsonDocument {
-                        { "from", "Pos" },
-                        { "localField", "posId" },
-                        { "foreignField", "_id" },
-                        { "as", "posData" }
-                    }));
-
-            pipeline.Add(
-                new BsonDocument("$addFields",
-                    new BsonDocument("merchantId",
-                        new BsonDocument("$arrayElemAt",
-                            new BsonArray {
-                                "$posData.merchantId",
-                                0
-                            })))
-            );
+                MongoQueryHelper.DateMatchCondition(startDate, endDate, "confirmations.performedAt"));
 
             pipeline.Add(
                 new BsonDocument("$lookup",
@@ -591,50 +576,21 @@ namespace WomPlatform.Web.Api.Service {
                         { "as", "merchant" }
                     }));
             // group sum if filter date
-            if(startDate.HasValue && endDate.HasValue) {
-                pipeline.Add(
-                    new BsonDocument("$group",
-                        new BsonDocument {
-                            { "_id", "$merchantId" }, {
-                                "totalAmount",
-                                new BsonDocument("$sum", "$amount")
-                            }, {
-                                "name",
-                                new BsonDocument("$first", "$merchant.name")
-                            }
-                        })
-                );
-            }
-            // group multiplication if no filter date
-            else {
-                pipeline.Add(
-                    new BsonDocument("$group",
-                        new BsonDocument {
-                            { "_id", "$merchantId" }, {
-                                "totalAmount",
-                                new BsonDocument("$sum",
-                                    new BsonDocument("$multiply",
-                                        new BsonArray {
-                                            "$amount",
-                                            new BsonDocument("$cond",
-                                                new BsonDocument {
-                                                    {
-                                                        "if",
-                                                        new BsonDocument("$isArray", "$confirmations")
-                                                    }, {
-                                                        "then",
-                                                        new BsonDocument("$size", "$confirmations")
-                                                    },
-                                                    { "else", 0 }
-                                                })
-                                        }))
-                            }, {
-                                "name",
-                                new BsonDocument("$first", "$merchant.name")
-                            }
-                        })
-                );
-            }
+            pipeline.Add(
+                new BsonDocument("$group",
+                    new BsonDocument {
+                        { "_id", "$merchantId" }, {
+                            "transactionNumber",
+                            new BsonDocument("$sum", 1)
+                        }, {
+                            "totalAmount",
+                            new BsonDocument("$sum", "$amount")
+                        }, {
+                            "name",
+                            new BsonDocument("$first", "$merchant.name")
+                        }
+                    })
+            );
 
             pipeline.Add(
                 new BsonDocument("$project",
@@ -647,6 +603,7 @@ namespace WomPlatform.Web.Api.Service {
                                     0
                                 })
                         },
+                        { "numberTransactions", 1 },
                         { "totalAmount", 1 }
                     }));
 
@@ -655,7 +612,7 @@ namespace WomPlatform.Web.Api.Service {
                     new BsonDocument("name",
                         new BsonDocument("$ne", BsonNull.Value))));
 
-            if(merchantId == null) {
+            if (merchantId == null || merchantId.Length == 0) {
                 pipeline.Add(
                     new BsonDocument(
                         "$unionWith",
@@ -684,6 +641,9 @@ namespace WomPlatform.Web.Api.Service {
                         { "_id", "$_id" }, {
                             "name",
                             new BsonDocument("$first", "$name")
+                        }, {
+                            "numberTransactions",
+                            new BsonDocument("$first", "$numberTransactions")
                         }, {
                             "totalAmount",
                             new BsonDocument("$max", "$totalAmount")
@@ -730,6 +690,9 @@ namespace WomPlatform.Web.Api.Service {
                     Id = doc["_id"].AsObjectId,
                     Name = doc["name"].AsString,
                     Amount = doc["totalAmount"].AsInt32,
+                    NumberTransactions = doc.Contains("numberTransactions") && !doc["numberTransactions"].IsBsonNull
+                        ? doc["numberTransactions"].AsInt32
+                        : 0,
                     Rank = doc["rank"].AsInt32
                 }).ToList();
 
@@ -740,6 +703,110 @@ namespace WomPlatform.Web.Api.Service {
 
                 throw;
             }
+        }
+
+        public async Task<List<MerchantRankOvertimeDTO>> GetPaymentData(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId[] merchantId) {
+            List<BsonDocument> pipeline = new List<BsonDocument>();
+
+            // Add confirmation field
+            pipeline.Add(
+                new BsonDocument("$addFields",
+                    new BsonDocument("confirmation",
+                        new BsonDocument("$arrayElemAt",
+                            new BsonArray {
+                                new BsonDocument("$map",
+                                    new BsonDocument {
+                                        { "input", "$confirmations" },
+                                        { "as", "confirmation" },
+                                        { "in", "$$confirmation.performedAt" }
+                                    }),
+                                0
+                            })
+                    )
+                )
+            );
+
+            // Lookup Pos collection
+            pipeline.Add(
+                new BsonDocument("$lookup",
+                    new BsonDocument {
+                        { "from", "Pos" },
+                        { "localField", "posId" },
+                        { "foreignField", "_id" },
+                        { "as", "posData" }
+                    }
+                )
+            );
+
+            // Add merchantId from Pos data
+            pipeline.Add(
+                new BsonDocument("$addFields",
+                    new BsonDocument("merchantId",
+                        new BsonDocument("$arrayElemAt",
+                            new BsonArray {
+                                "$posData.merchantId",
+                                0
+                            })
+                    )
+                )
+            );
+
+            // Lookup Merchants collection
+            pipeline.Add(
+                new BsonDocument("$lookup",
+                    new BsonDocument {
+                        { "from", "Merchants" },
+                        { "localField", "merchantId" },
+                        { "foreignField", "_id" },
+                        { "as", "merchant" }
+                    }
+                )
+            );
+
+            // Add merchant name
+            pipeline.Add(
+                new BsonDocument("$addFields",
+                    new BsonDocument("merchantName",
+                        new BsonDocument("$arrayElemAt",
+                            new BsonArray {
+                                "$merchant.name",
+                                0
+                            })
+                    )
+                )
+            );
+
+            // Project specific fields
+            pipeline.Add(
+                new BsonDocument("$project",
+                    new BsonDocument {
+                        { "_id", 1 },
+                        { "amount", 1 },
+                        { "confirmation", 1 },
+                        { "merchantId", 1 },
+                        { "merchantName", 1 }
+                    }
+                )
+            );
+
+            // Execute pipeline
+            List<BsonDocument> result = await PaymentRequestCollection.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<MerchantRankOvertimeDTO> overtimeRanks = result.Select(doc => new MerchantRankOvertimeDTO {
+                Id = doc["_id"].IsObjectId ? doc["_id"].AsObjectId.ToString() : doc["_id"].AsBsonBinaryData.ToGuid().ToString(),
+                Amount = doc.Contains("amount") ? doc["amount"].AsInt32 : 0,
+                Date = doc.Contains("confirmation") && !doc["confirmation"].IsBsonNull
+                    ? doc["confirmation"].ToUniversalTime().ToString("yyyy-MM-dd")
+                    : null,
+                MerchantId = doc.Contains("merchantId")
+                    ? doc["merchantId"].IsObjectId ? doc["merchantId"].AsObjectId.ToString() : doc["merchantId"].AsString
+                    : null,
+                MerchantName = doc.Contains("merchantName") ? doc["merchantName"].AsString : null
+            }).ToList();
+
+            return overtimeRanks;
         }
 
         public async Task<List<TotalConsumedOverTimeDto>> GetTotalConsumedVouchersOverTime(
@@ -756,7 +823,6 @@ namespace WomPlatform.Web.Api.Service {
             basePipeline.Add(new BsonDocument("$unwind",
                 new BsonDocument {
                     { "path", "$confirmations" },
-                    { "includeArrayIndex", "string" },
                     { "preserveNullAndEmptyArrays", true }
                 })
             );
@@ -767,19 +833,15 @@ namespace WomPlatform.Web.Api.Service {
             );
 
             string formatDate;
-            if(startDate.HasValue && endDate.HasValue) {
-                basePipeline.Add(
-                    new BsonDocument("$match",
-                        new BsonDocument("confirmations",
-                            new BsonDocument {
-                                {
-                                    "$gte", startDate
-                                }, {
-                                    "$lte", endDate
-                                }
-                            }))
-                );
 
+            // Add a date filter to the pipeline based on start and end dates, if provided
+            basePipeline.Add(MongoQueryHelper.DateMatchCondition(startDate, endDate, "confirmations"));
+
+            // Determine the date format for grouping or formatting output.
+            // If a date range is provided and is not for the CSV, use the granularity derived from the range (e.g., daily or yearly).
+            // Daily granularity for the CSVs
+            // Otherwise, default to daily granularity for CSVs or yearly for dashboards.
+            if(startDate.HasValue && endDate.HasValue) {
                 formatDate = DateRangeHelper.GetDateFormatForRange(startDate.Value, endDate.Value, isDailyGranularity);
             }
             // CSV case
@@ -821,44 +883,14 @@ namespace WomPlatform.Web.Api.Service {
             // Determine the increment unit based on the date format
             Func<DateTime, DateTime> incrementDate = DateRangeHelper.SetDateIncrement(netFormatDate);
 
-            // Get the list of all dates between startDate and endDate
-            List<string> allDates = new List<string>();
-            if(startDate.HasValue && endDate.HasValue) {
-                for(DateTime date = startDate.Value.Date; date <= endDate.Value.Date; date = incrementDate(date)) {
-                    allDates.Add(date.ToString(netFormatDate));
-                }
-            }
-            else {
-                // Clone the pipeline for finding the oldest date
-                List<BsonDocument> oldestDatePipeline = new List<BsonDocument>(basePipeline);
-
-                // Add a stage to find the oldest date
-                oldestDatePipeline.Add(new BsonDocument("$match",
-                    new BsonDocument("confirmations", new BsonDocument("$ne", BsonNull.Value))
-                ));
-
-                oldestDatePipeline.Add(new BsonDocument("$group",
-                    new BsonDocument {
-                        { "_id", BsonNull.Value },
-                        { "oldestDate", new BsonDocument("$min", "$confirmations") }
-                    }
-                ));
-
-                BsonDocument oldestDateResult = await PaymentRequestCollection
-                    .Aggregate<BsonDocument>(oldestDatePipeline)
-                    .FirstOrDefaultAsync();
-
-                DateTime oldestDate = oldestDateResult["oldestDate"].ToLocalTime();
-                DateTime today = DateTime.Today;
-
-                for(DateTime date = oldestDate.Date; date <= today.Date; date = incrementDate(date)) {
-                    allDates.Add(date.ToString(netFormatDate));
-                }
-
-                if(!allDates.Contains(today.ToString(netFormatDate))) {
-                    allDates.Add(today.ToString(netFormatDate));
-                }
-            }
+            List<string> allDates = MongoQueryHelper.GenerateDateRangeWithMissingData(
+                startDate,
+                endDate,
+                "confirmations",
+                netFormatDate,
+                incrementDate,
+                PaymentRequestCollection,
+                basePipeline);
 
             // Map MongoDB results to DTO and create a dictionary by date
             Dictionary<string, TotalConsumedOverTimeDto> vouchersByAimDict = consumedOverTime

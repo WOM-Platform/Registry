@@ -362,12 +362,12 @@ namespace WomPlatform.Web.Api.Service {
         }
 
 
-        /// <summary>
-        /// Get list of voucher consumed by merchant's offers
+   /// <summary>
+        ///     Get list of voucher consumed by merchant's offers
         /// </summary>
         public async Task<List<MerchantOfferDTO>> FetchConsumedVouchersByOffer(ObjectId[] merchantId) {
             try {
-                var pipeline = new BsonDocument[] {
+                BsonDocument[] pipeline = new[] {
                     new BsonDocument("$match",
                         new BsonDocument("merchant._id",
                             new ObjectId(merchantId.ToString()))),
@@ -403,15 +403,68 @@ namespace WomPlatform.Web.Api.Service {
                 };
 
 
-                var result = await OfferCollection.AggregateAsync<BsonDocument>(pipeline);
-                var consumedVouchersByOffer = await result.ToListAsync();
+                IAsyncCursor<BsonDocument> result = await OfferCollection.AggregateAsync<BsonDocument>(pipeline);
+                List<BsonDocument> consumedVouchersByOffer = await result.ToListAsync();
 
                 // Map to a strongly-typed model
-                var merchantOffers = consumedVouchersByOffer.Select(doc => new MerchantOfferDTO() {
+                List<MerchantOfferDTO> merchantOffers = consumedVouchersByOffer.Select(doc => new MerchantOfferDTO {
                     Title = doc.Contains("title") && !doc["title"].IsBsonNull ? doc["title"].AsString : string.Empty,
                     Description = doc.Contains("description") && !doc["description"].IsBsonNull ? doc["description"].AsString : string.Empty,
                     TotalAmount = doc.Contains("totalAmount") && !doc["totalAmount"].IsBsonNull ? doc["totalAmount"].ToInt32() : 0,
                     Cost = doc.Contains("cost") && !doc["cost"].IsBsonNull ? doc["cost"].ToInt32() : 0
+                }).ToList();
+
+                return merchantOffers;
+            }
+            catch(Exception ex) {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        ///     Get list of active offers
+        /// </summary>
+        public async Task<List<Offer>> GetActiveOffers() {
+            try {
+                List<BsonDocument> pipeline = new List<BsonDocument>();
+
+                pipeline.Add(
+                    new BsonDocument("$match",
+                        new BsonDocument("$or",
+                            new BsonArray {
+                                new BsonDocument("deactivated", false),
+                                new BsonDocument("deactivated",
+                                    new BsonDocument("$exists", false))
+                            }))
+                );
+
+
+                IAsyncCursor<BsonDocument> result = await OfferCollection.AggregateAsync<BsonDocument>(pipeline);
+                List<BsonDocument> listOfActiveOffers = await result.ToListAsync();
+
+                // Map to a strongly-typed model
+                List<Offer> merchantOffers = listOfActiveOffers.Select(doc => new Offer {
+                    Id = doc["_id"].AsObjectId,
+                    Title = doc.Contains("title") && !doc["title"].IsBsonNull ? doc["title"].AsString : string.Empty,
+                    Description = doc.Contains("description") && !doc["description"].IsBsonNull ? doc["description"].AsString : string.Empty,
+
+                    Payment = doc.Contains("payment") && doc["payment"].IsBsonDocument
+                        ? new Offer.PaymentInformation {
+                            Otc = doc["payment"].AsBsonDocument.Contains("otc") && !doc["payment"]["otc"].IsBsonNull ? doc["payment"]["otc"].AsGuid : Guid.Empty,
+                            Password = doc["payment"].AsBsonDocument.Contains("password") && !doc["payment"]["password"].IsBsonNull ? doc["payment"]["password"].AsString : string.Empty,
+                            Cost = doc["payment"].AsBsonDocument.Contains("cost") && !doc["payment"]["cost"].IsBsonNull ? doc["payment"]["cost"].ToInt32() : 0
+                        }
+                        : null,
+
+                    Merchant = doc.Contains("merchant") && doc["merchant"].IsBsonDocument
+                        ? new Offer.MerchantInformation {
+                            Id = doc["merchant"].AsBsonDocument.Contains("id") && !doc["merchant"]["id"].IsBsonNull ? doc["merchant"]["id"].AsObjectId : ObjectId.Empty,
+                            Name = doc["merchant"].AsBsonDocument.Contains("name") && !doc["merchant"]["name"].IsBsonNull ? doc["merchant"]["name"].AsString : string.Empty,
+                            WebsiteUrl = doc["merchant"].AsBsonDocument.Contains("website") && !doc["merchant"]["website"].IsBsonNull ? doc["merchant"]["website"].AsString : string.Empty
+                        }
+                        : null
+
                 }).ToList();
 
                 return merchantOffers;

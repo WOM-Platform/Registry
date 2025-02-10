@@ -5,8 +5,8 @@ namespace WomPlatform.Web.Api.DTO {
     public class StatisticsRequestDto {
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public ObjectId[] MerchantIds { get; set; }
-        public ObjectId[] SourceId { get; set; }
+        public string[] MerchantIds { get; set; }
+        public string[] SourceId { get; set; }
 
         public string[] AimListFilter { get; set; }
         public double? Latitude { get; set; }
