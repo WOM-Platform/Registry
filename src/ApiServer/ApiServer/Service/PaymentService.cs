@@ -375,19 +375,6 @@ namespace WomPlatform.Web.Api.Service {
             VouchersConsumedDTO totalConsumed = await FetchTotalVouchersConsumed(startDate, endDate, merchantId);
             VouchersConsumedDTO totalEverConsumed = await FetchTotalVouchersConsumed(null, null, merchantId);
             List<TotalConsumedOverTimeDto> totalConsumedOverTimeDtos = await GetTotalConsumedVouchersOverTime(startDate, endDate, merchantId, isCsvRequest);
-
-            if(isCsvRequest) {
-                List<MerchantRankOvertimeDTO> merchantOvertimeRankDtos = await GetPaymentData(startDate, endDate, merchantId);
-                return new VoucherConsumptionStatsResponse {
-                    ConsumedInPeriod = totalConsumed.TotalAmount,
-                    TransactionsInPeriod = totalConsumed.TransactionNumber,
-                    TotalTransactions = totalEverConsumed.TransactionNumber,
-                    TotalConsumed = totalEverConsumed.TotalAmount,
-                    MerchantOvertimeRanks = merchantOvertimeRankDtos,
-                    MerchantRanks = null,
-                    TotalConsumedOverTime = totalConsumedOverTimeDtos
-                };
-            }
             List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(startDate, endDate, merchantId);
             return new VoucherConsumptionStatsResponse {
                 ConsumedInPeriod = totalConsumed.TotalAmount,
@@ -398,6 +385,28 @@ namespace WomPlatform.Web.Api.Service {
                 MerchantOvertimeRanks = null,
                 TotalConsumedOverTime = totalConsumedOverTimeDtos
             };
+            // if(isCsvRequest) {
+            //     List<MerchantRankOvertimeDTO> merchantOvertimeRankDtos = await GetPaymentData(startDate, endDate, merchantId);
+            //     return new VoucherConsumptionStatsResponse {
+            //         ConsumedInPeriod = totalConsumed.TotalAmount,
+            //         TransactionsInPeriod = totalConsumed.TransactionNumber,
+            //         TotalTransactions = totalEverConsumed.TransactionNumber,
+            //         TotalConsumed = totalEverConsumed.TotalAmount,
+            //         MerchantOvertimeRanks = merchantOvertimeRankDtos,
+            //         MerchantRanks = null,
+            //         TotalConsumedOverTime = totalConsumedOverTimeDtos
+            //     };
+            // }
+            // List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(startDate, endDate, merchantId);
+            // return new VoucherConsumptionStatsResponse {
+            //     ConsumedInPeriod = totalConsumed.TotalAmount,
+            //     TransactionsInPeriod = totalConsumed.TransactionNumber,
+            //     TotalTransactions = totalEverConsumed.TransactionNumber,
+            //     TotalConsumed = totalEverConsumed.TotalAmount,
+            //     MerchantRanks = merchantRankDtos,
+            //     MerchantOvertimeRanks = null,
+            //     TotalConsumedOverTime = totalConsumedOverTimeDtos
+            // };
         }
 
 
@@ -612,7 +621,7 @@ namespace WomPlatform.Web.Api.Service {
                     new BsonDocument("name",
                         new BsonDocument("$ne", BsonNull.Value))));
 
-            if (merchantId == null || merchantId.Length == 0) {
+            if(merchantId == null || merchantId.Length == 0) {
                 pipeline.Add(
                     new BsonDocument(
                         "$unionWith",

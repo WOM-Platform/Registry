@@ -55,8 +55,12 @@ namespace WomPlatform.Web.Api.Utilities {
                 Period = item.Date, Metric = "Redeemed", Value = item.TotalRedeemed, Rank_Type = "", Rank_Position = "", Rank_Name = "", Aim_Code = "", Aim_Name = ""
             }));
 
-            csvData.AddRange(consumedResponse.MerchantOvertimeRanks.Select(item => new {
-                Period = item.Date, Metric = "Rank", Value = item.Amount, Rank_Type = "Merchant", Rank_Position = "", Rank_Name = item.MerchantName, Aim_Code = "", Aim_Name = ""
+            // csvData.AddRange(consumedResponse.MerchantOvertimeRanks.Select(item => new {
+            //     Period = item.Date, Metric = "Rank", Value = item.Amount, Rank_Type = "Merchant", Rank_Position = "", Rank_Name = item.MerchantName, Aim_Code = "", Aim_Name = ""
+            // }));
+
+            csvData.AddRange(consumedResponse.MerchantRanks.Select(item => new {
+                Period = "", Metric = "Rank", Value = item.Amount, Rank_Type = "Merchant Consumed", Rank_Position = item.Rank, Rank_Name = item.Name, Aim_Code = "", Aim_Name = ""
             }));
 
             csvData.AddRange(genRedResponse.SourceRank.Select(item => new {
