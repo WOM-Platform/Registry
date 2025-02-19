@@ -19,10 +19,11 @@ steps:
     args:
       - '-c'
       - |
-        gcloud secrets versions access latest --secret=WOM_PROD_SERVER_SSH_KEY > /root/.ssh/id_rsa
-        chmod 600 /root/.ssh/id_rsa
+        mkdir -p ~/.ssh
+        gcloud secrets versions access latest --secret=WOM_PROD_SERVER_SSH_KEY > ~/.ssh/gcloud_private_key
+        chmod 600 ~/.ssh/gcloud_private_key
 
-        ssh -o StrictHostKeyChecking=accept-new $_WOM_PROD_SERVER_USER@$_WOM_PROD_SERVER_HOST << 'ENDSSH'
+        ssh -i ~/.ssh/gcloud_private_key -o StrictHostKeyChecking=accept-new $_WOM_PROD_SERVER_USER@$_WOM_PROD_SERVER_HOST << 'ENDSSH'
         cd $_WOM_PROD_SERVER_PWD
         echo "GCLOUD_REGISTRY_IMAGE_URL='$_GCR_HOSTNAME/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA'" > gcloud.env
         make gcloud-deploy
