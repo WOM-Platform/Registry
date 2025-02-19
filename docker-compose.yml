@@ -5,11 +5,13 @@ networks:
 
 services:
   api:
-    build: ./src/ApiServer
     networks:
     - web
     - backend
     env_file: config.env
+    environment:
+    - "GOOGLE_PROJECT_ID=wom-platform-308616"
+    - "GOOGLE_APPLICATION_CREDENTIALS=/keys/wom-platform-308616.json"
     expose:
     - "8779"
     logging:

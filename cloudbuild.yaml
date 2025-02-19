@@ -25,7 +25,8 @@ steps:
 
         ssh -i ~/.ssh/gcloud_private_key -o StrictHostKeyChecking=accept-new $_WOM_PROD_SERVER_USER@$_WOM_PROD_SERVER_HOST << 'ENDSSH'
         cd $_WOM_PROD_SERVER_PWD
-        echo "GCLOUD_REGISTRY_IMAGE_URL='$_GCR_HOSTNAME/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA'" > gcloud.env
+        git pull --ff-only
+        echo "GCLOUD_REGISTRY_IMAGE_URL=$_GCR_HOSTNAME/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA" > gcloud.env
         make gcloud-deploy
         ENDSSH
     id: Deploy
@@ -36,9 +37,9 @@ images:
 substitutions:
   _GCR_HOSTNAME: eu.gcr.io
   _SERVICE_NAME: wom-registry
-  _WOM_PROD_SERVER_USER: lorenz
-  _WOM_PROD_SERVER_HOST: 85.235.146.184
-  _WOM_PROD_SERVER_PWD: /containers/wom-prod
+  _WOM_PROD_SERVER_USER: user
+  _WOM_PROD_SERVER_HOST: localhost
+  _WOM_PROD_SERVER_PWD: /path/to/wom-registry
 
 tags:
   - wom-registry

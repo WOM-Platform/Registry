@@ -99,8 +99,8 @@ logs:
 
 .PHONY: gcloud-deploy
 gcloud-deploy:
-	docker compose -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env up -d api well-known
-	docker compose -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env ps
+	docker compose -f docker-compose.yml -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env up -d api well-known
+	docker compose -f docker-compose.yml -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env ps
 	@echo
 	@echo 'WOM registry service deployed'
 	@echo
