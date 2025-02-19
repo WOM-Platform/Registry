@@ -3,6 +3,7 @@ SHELL := /bin/bash
 DC := docker compose -f docker-compose.yml -f docker-compose.custom.yml
 DC_RUN := ${DC} run --rm
 
+include gcloud.env
 include config.env
 export
 
@@ -95,3 +96,11 @@ rm:
 .PHONY: logs
 logs:
 	docker logs -f $(shell ${DC} ps -q api)
+
+.PHONY: gcloud-deploy
+gcloud-deploy:
+	docker compose -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env up -d api well-known
+	docker compose -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env ps
+	@echo
+	@echo 'WOM registry service deployed'
+	@echo
