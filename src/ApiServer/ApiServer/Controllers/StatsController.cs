@@ -195,7 +195,9 @@ public class StatsController : BaseRegistryController {
                 StartDate = parsedStartDate,
                 EndDate = parsedEndDate,
                 SourceIds = sourceObjectIds,
+                SourceNames = request.SourceNames,
                 MerchantIds = merchantObjectIds,
+                MerchantNames = request.MerchantNames,
                 AimFilter = request.AimListFilter
             };
 
