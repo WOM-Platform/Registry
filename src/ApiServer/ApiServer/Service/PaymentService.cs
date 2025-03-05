@@ -372,10 +372,10 @@ namespace WomPlatform.Web.Api.Service {
             ObjectId[] merchantId,
             bool isCsvRequest = false
         ) {
-            VouchersConsumedDTO totalConsumed = await FetchTotalVouchersConsumed(startDate, endDate, merchantId);
+            VouchersConsumedDTO totalConsumed = await FetchTotalVouchersConsumed(null, null, merchantId);
             VouchersConsumedDTO totalEverConsumed = await FetchTotalVouchersConsumed(null, null, merchantId);
-            List<TotalConsumedOverTimeDto> totalConsumedOverTimeDtos = await GetTotalConsumedVouchersOverTime(startDate, endDate, merchantId, isCsvRequest);
-            List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(startDate, endDate, merchantId);
+            List<TotalConsumedOverTimeDto> totalConsumedOverTimeDtos = await GetTotalConsumedVouchersOverTime(null, null, merchantId, isCsvRequest);
+            List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(null, null, merchantId);
             return new VoucherConsumptionStatsResponse {
                 ConsumedInPeriod = totalConsumed.TotalAmount,
                 TransactionsInPeriod = totalConsumed.TransactionNumber,
@@ -419,6 +419,8 @@ namespace WomPlatform.Web.Api.Service {
             ObjectId[] merchantsId
         ) {
             List<BsonDocument> pipeline = new List<BsonDocument>();
+            // check if user is filtering for merchant name
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchantId", merchantsId));
 
             pipeline.Add(
                 new BsonDocument("$unwind",
@@ -429,8 +431,6 @@ namespace WomPlatform.Web.Api.Service {
             );
             // check if user is filtering for date
             pipeline.Add(MongoQueryHelper.DateMatchCondition(startDate, endDate, "confirmations.performedAt"));
-            // check if user is filtering for merchant name
-            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantsId));
 
             pipeline.Add(
                 new BsonDocument("$match",
@@ -456,12 +456,16 @@ namespace WomPlatform.Web.Api.Service {
             BsonDocument totalAmountConsumedDoc = await result.FirstOrDefaultAsync();
 
             // If no data was found
-            if(totalAmountConsumedDoc == null) {
-                return new VouchersConsumedDTO();
+            if (totalAmountConsumedDoc == null) {
+                return new VouchersConsumedDTO {
+                    TransactionNumber = 0,
+                    TotalAmount = 0
+                };
             }
+
             return new VouchersConsumedDTO {
-                TransactionNumber = totalAmountConsumedDoc["transactionNumber"].AsInt32,
-                TotalAmount = totalAmountConsumedDoc["totalAmount"].AsInt32
+                TransactionNumber = totalAmountConsumedDoc.Contains("transactionNumber") ? totalAmountConsumedDoc["transactionNumber"].AsInt32 : 0,
+                TotalAmount = totalAmountConsumedDoc.Contains("totalAmount") ? totalAmountConsumedDoc["totalAmount"].AsInt32 : 0
             };
 
         }
@@ -485,7 +489,7 @@ namespace WomPlatform.Web.Api.Service {
                 }));
 
             // check if user is filtering for merchant name
-            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantIds));
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchantId",merchantIds));
 
             // Project relevant fields
             pipeline.Add(
@@ -827,7 +831,7 @@ namespace WomPlatform.Web.Api.Service {
             List<BsonDocument> basePipeline = new List<BsonDocument>();
 
             // check if user is filtering for merchant name
-            basePipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition(merchantId));
+            basePipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchantId", merchantId));
 
             basePipeline.Add(new BsonDocument("$unwind",
                 new BsonDocument {
@@ -891,6 +895,17 @@ namespace WomPlatform.Web.Api.Service {
 
             // Determine the increment unit based on the date format
             Func<DateTime, DateTime> incrementDate = DateRangeHelper.SetDateIncrement(netFormatDate);
+
+            // Validate essential variables before calling the method
+            if (PaymentRequestCollection == null) {
+                throw new NullReferenceException("PaymentRequestCollection is null");
+            }
+            if (basePipeline == null) {
+                throw new NullReferenceException("basePipeline is null");
+            }
+            if (incrementDate == null) {
+                throw new NullReferenceException("incrementDate function is null");
+            }
 
             List<string> allDates = MongoQueryHelper.GenerateDateRangeWithMissingData(
                 startDate,

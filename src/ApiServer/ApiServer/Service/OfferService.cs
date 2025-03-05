@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.DTO;
+using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Service {
     public class OfferService : BaseService {
@@ -361,67 +363,6 @@ namespace WomPlatform.Web.Api.Service {
             await OfferCollection.BulkWriteAsync(writes);
         }
 
-
-   /// <summary>
-        ///     Get list of voucher consumed by merchant's offers
-        /// </summary>
-        public async Task<List<MerchantOfferDTO>> FetchConsumedVouchersByOffer(ObjectId[] merchantId) {
-            try {
-                BsonDocument[] pipeline = new[] {
-                    new BsonDocument("$match",
-                        new BsonDocument("merchant._id",
-                            new ObjectId(merchantId.ToString()))),
-                    new BsonDocument("$lookup",
-                        new BsonDocument {
-                            { "from", "PaymentRequests" },
-                            { "localField", "paymentRequestId" },
-                            { "foreignField", "_id" },
-                            { "as", "payments" }
-                        }),
-                    new BsonDocument("$match",
-                        new BsonDocument("payments",
-                            new BsonDocument("$ne",
-                                new BsonArray()))),
-                    new BsonDocument("$addFields",
-                        new BsonDocument("totalAmount",
-                            new BsonDocument("$multiply",
-                                new BsonArray {
-                                    new BsonDocument("$size", "$payments"),
-                                    "$cost"
-                                }))),
-                    new BsonDocument("$sort",
-                        new BsonDocument("totalAmount", -1)),
-                    new BsonDocument("$project",
-                        new BsonDocument {
-                            { "offerId", 1 },
-                            { "title", 1 },
-                            { "description", 1 },
-                            { "filter", 1 },
-                            { "cost", 1 },
-                            { "totalAmount", 1 }
-                        })
-                };
-
-
-                IAsyncCursor<BsonDocument> result = await OfferCollection.AggregateAsync<BsonDocument>(pipeline);
-                List<BsonDocument> consumedVouchersByOffer = await result.ToListAsync();
-
-                // Map to a strongly-typed model
-                List<MerchantOfferDTO> merchantOffers = consumedVouchersByOffer.Select(doc => new MerchantOfferDTO {
-                    Title = doc.Contains("title") && !doc["title"].IsBsonNull ? doc["title"].AsString : string.Empty,
-                    Description = doc.Contains("description") && !doc["description"].IsBsonNull ? doc["description"].AsString : string.Empty,
-                    TotalAmount = doc.Contains("totalAmount") && !doc["totalAmount"].IsBsonNull ? doc["totalAmount"].ToInt32() : 0,
-                    Cost = doc.Contains("cost") && !doc["cost"].IsBsonNull ? doc["cost"].ToInt32() : 0
-                }).ToList();
-
-                return merchantOffers;
-            }
-            catch(Exception ex) {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                throw;
-            }
-        }
-
         /// <summary>
         ///     Get list of active offers
         /// </summary>
@@ -475,6 +416,109 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        public async Task<List<MerchantOfferDTO>> GetOffersRank(
+            DateTime? startDate,
+            DateTime? endDate,
+            ObjectId[] merchantId) {
+            try {
+                List<BsonDocument> pipeline = new List<BsonDocument>();
+
+                // check if user is filtering for merchant name
+                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchant._id", merchantId));
+                // match stage
+                pipeline.Add(
+                    new BsonDocument("$match",
+                        new BsonDocument("$or",
+                            new BsonArray
+                            {
+                                new BsonDocument("deactivated", false),
+                                new BsonDocument("deactivated",
+                                    new BsonDocument("$exists", false))
+                            }))
+                    );
+                // $lookup stage
+                pipeline.Add(new BsonDocument("$lookup",
+                    new BsonDocument
+                    {
+                        { "from", "PaymentRequests" },
+                        { "let", new BsonDocument("paymentRequestId", "$paymentRequestId") },
+                        { "pipeline", new BsonArray
+                            {
+                                new BsonDocument("$match",
+                                    new BsonDocument("$expr",
+                                        new BsonDocument("$eq",
+                                            new BsonArray { "$_id", "$$paymentRequestId" }))),
+                                new BsonDocument("$limit", 1)
+                            }
+                        },
+                        { "as", "paymentRequest" }
+                    }));
+
+                // $set stage
+                pipeline.Add(new BsonDocument("$set",
+                    new BsonDocument("paymentRequest",
+                        new BsonDocument("$first", "$paymentRequest"))));
+
+                // $addFields stage
+                pipeline.Add(
+                    new BsonDocument("$addFields",
+                        new BsonDocument
+                        {
+                            { "totalAmount",
+                                new BsonDocument("$sum",
+                                    new BsonDocument("$multiply",
+                                        new BsonArray
+                                        {
+                                            "$paymentRequest.amount",
+                                            new BsonDocument("$cond",
+                                                new BsonDocument
+                                                {
+                                                    { "if",
+                                                        new BsonDocument("$isArray", "$paymentRequest.confirmations") },
+                                                    { "then",
+                                                        new BsonDocument("$size", "$paymentRequest.confirmations") },
+                                                    { "else", 0 }
+                                                })
+                                        })) },
+                            { "transactionsNumber",
+                                new BsonDocument("$cond",
+                                    new BsonDocument
+                                    {
+                                        { "if",
+                                            new BsonDocument("$isArray", "$paymentRequest.confirmations") },
+                                        { "then",
+                                            new BsonDocument("$size", "$paymentRequest.confirmations") },
+                                        { "else", 0 }
+                                    }) }
+                        }));
+
+                // $sort stage
+                pipeline.Add(new BsonDocument("$sort",
+                    new BsonDocument("totalAmount", -1)));
+
+
+                IAsyncCursor<BsonDocument> result = await OfferCollection.AggregateAsync<BsonDocument>(pipeline);
+                List<BsonDocument> offersRank = await result.ToListAsync();
+
+                List<MerchantOfferDTO> merchantOffersRank = offersRank.Select(doc => new MerchantOfferDTO {
+                    Id = doc["_id"].AsObjectId,
+                    Title = doc.Contains("title") && !doc["title"].IsBsonNull ? doc["title"].AsString : string.Empty,
+                    Description = doc.Contains("description") && !doc["description"].IsBsonNull ? doc["description"].AsString : string.Empty,
+                    Pos = doc.Contains("pos") && !doc["pos"].IsBsonNull ? BsonSerializer.Deserialize<Pos>(doc["pos"].AsBsonDocument) : null,
+                    Merchant = doc.Contains("merchant") && !doc["merchant"].IsBsonNull ? BsonSerializer.Deserialize<Merchant>(doc["merchant"].AsBsonDocument) : null,
+                    TotalAmount = doc.Contains("totalAmount") && !doc["totalAmount"].IsBsonNull ? doc["totalAmount"].ToInt32() : 0,
+                    TransactionsNumber = doc.Contains("transactionsNumber") && !doc["transactionsNumber"].IsBsonNull ? doc["transactionsNumber"].ToInt32() : 0,
+
+
+                }).ToList();
+
+                return merchantOffersRank;
+            }
+            catch(Exception ex) {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
+            }
+        }
     }
 
 }

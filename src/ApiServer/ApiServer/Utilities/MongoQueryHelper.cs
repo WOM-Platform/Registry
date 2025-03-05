@@ -38,13 +38,12 @@ namespace WomPlatform.Web.Api.Utilities {
             return matchConditions;
         }
 
-        public static List<BsonDocument> MerchantMatchFromPaymentRequestsCondition(ObjectId[]? merchantIds) {
+        public static List<BsonDocument> MerchantMatchFromPaymentRequestsCondition(string merchantIdField, ObjectId[]? merchantIds) {
             List<BsonDocument> matchConditions = new List<BsonDocument>();
             if(merchantIds != null && merchantIds.Length > 0) {
-
                 matchConditions.Add(
                     new BsonDocument("$match",
-                        new BsonDocument("merchantId",
+                        new BsonDocument(merchantIdField,
                             new BsonDocument("$in", new BsonArray(merchantIds))
                         )
                     )
@@ -86,7 +85,11 @@ namespace WomPlatform.Web.Api.Utilities {
                 ));
 
                 BsonDocument oldestDateResult = collection.Aggregate<BsonDocument>(oldestDatePipeline).FirstOrDefault();
-                DateTime oldestDate = oldestDateResult["oldestDate"].ToLocalTime();
+
+                DateTime oldestDate = (oldestDateResult != null && oldestDateResult.Contains("oldestDate"))
+                    ? oldestDateResult["oldestDate"].ToLocalTime()
+                    : new DateTime(2022, 1, 1);
+
                 DateTime today = DateTime.Today;
 
                 for(DateTime date = oldestDate.Date; date <= today.Date; date = incrementDate(date)) {

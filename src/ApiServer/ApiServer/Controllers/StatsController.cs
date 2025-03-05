@@ -149,6 +149,26 @@ public class StatsController : BaseRegistryController {
             }
         }
 
+        [HttpPost("offers/rank")]
+        public async Task<ActionResult<List<Offer>>> GetOffersRank([FromBody] StatisticsRequestDto request) {
+            try {
+                ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
+
+                // check if user is admin or owner of the source
+                await IsUserAdminOrOwnerMerchant(merchantObjectIds);
+                (DateTime? parsedStartDate, DateTime? parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
+                List<MerchantOfferDTO> offers = await OfferService.GetOffersRank(parsedStartDate, parsedEndDate, merchantObjectIds);
+                if(offers == null || offers.Count == 0) {
+                    return NotFound("No active offers found.");
+                }
+
+                return Ok(offers);
+            }
+            catch(Exception ex) {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
         /// <summary>
         ///     Get the total number of unused vouchers by position
         /// </summary>
@@ -161,9 +181,6 @@ public class StatsController : BaseRegistryController {
             [FromBody] StatisticsRequestDto request
         ) {
             ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
-
-            // Think how to make a control on this api
-            await IsUserAdminOrOwnerMerchant(merchantObjectIds);
 
             // Fetch the number of unused vouchers
             int numberUnusedVouchers = await GenerationService.FetchVouchersAvailable(request.Latitude, request.Longitude, request.Radius);
