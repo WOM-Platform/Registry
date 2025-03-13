@@ -372,10 +372,10 @@ namespace WomPlatform.Web.Api.Service {
             ObjectId[] merchantId,
             bool isCsvRequest = false
         ) {
-            VouchersConsumedDTO totalConsumed = await FetchTotalVouchersConsumed(null, null, merchantId);
+            VouchersConsumedDTO totalConsumed = await FetchTotalVouchersConsumed(startDate, endDate, merchantId);
             VouchersConsumedDTO totalEverConsumed = await FetchTotalVouchersConsumed(null, null, merchantId);
-            List<TotalConsumedOverTimeDto> totalConsumedOverTimeDtos = await GetTotalConsumedVouchersOverTime(null, null, merchantId, isCsvRequest);
-            List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(null, null, merchantId);
+            List<TotalConsumedOverTimeDto> totalConsumedOverTimeDtos = await GetTotalConsumedVouchersOverTime(startDate, endDate, merchantId, isCsvRequest);
+            List<MerchantRankDTO> merchantRankDtos = await GetMerchantRank(startDate, endDate, merchantId);
             return new VoucherConsumptionStatsResponse {
                 ConsumedInPeriod = totalConsumed.TotalAmount,
                 TransactionsInPeriod = totalConsumed.TransactionNumber,
