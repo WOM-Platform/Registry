@@ -711,9 +711,6 @@ namespace WomPlatform.Web.Api.Service {
                 pipeline.Add(MongoQueryHelper.AimMatchCondition(aimListFilter));
             }
 
-            pipeline.Add(new BsonDocument("$sort",
-                new BsonDocument("totalRedeemedAmount", -1)));
-
             // $lookup: GenerationRequests
             pipeline.Add(
                 new BsonDocument("$lookup",
