@@ -456,7 +456,7 @@ namespace WomPlatform.Web.Api.Service {
             BsonDocument totalAmountConsumedDoc = await result.FirstOrDefaultAsync();
 
             // If no data was found
-            if (totalAmountConsumedDoc == null) {
+            if(totalAmountConsumedDoc == null) {
                 return new VouchersConsumedDTO {
                     TransactionNumber = 0,
                     TotalAmount = 0
@@ -489,7 +489,7 @@ namespace WomPlatform.Web.Api.Service {
                 }));
 
             // check if user is filtering for merchant name
-            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchantId",merchantIds));
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchantId", merchantIds));
 
             // Project relevant fields
             pipeline.Add(
@@ -565,7 +565,8 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<List<MerchantRankDTO>> GetMerchantRank(
             DateTime? startDate,
             DateTime? endDate,
-            ObjectId[] merchantId
+            ObjectId[] merchantId,
+            bool isReport = false
         ) {
             List<BsonDocument> pipeline = new List<BsonDocument>();
 
@@ -593,7 +594,7 @@ namespace WomPlatform.Web.Api.Service {
                 new BsonDocument("$group",
                     new BsonDocument {
                         { "_id", "$merchantId" }, {
-                            "transactionNumber",
+                            "numberOfTransactions",
                             new BsonDocument("$sum", 1)
                         }, {
                             "totalAmount",
@@ -601,22 +602,25 @@ namespace WomPlatform.Web.Api.Service {
                         }, {
                             "name",
                             new BsonDocument("$first", "$merchant.name")
+                        }, {
+                            "merchant",
+                            new BsonDocument("$first",
+                                new BsonDocument("$arrayElemAt",
+                                    new BsonArray {
+                                        "$merchant",
+                                        0
+                                    }))
                         }
-                    })
+                    }
+                )
             );
 
             pipeline.Add(
                 new BsonDocument("$project",
                     new BsonDocument {
-                        { "_id", 1 }, {
-                            "name",
-                            new BsonDocument("$arrayElemAt",
-                                new BsonArray {
-                                    "$name",
-                                    0
-                                })
-                        },
-                        { "numberTransactions", 1 },
+                        { "_id", 1 },
+                        { "name", "$merchant.name" },
+                        { "numberOfTransactions", 1 },
                         { "totalAmount", 1 }
                     }));
 
@@ -625,7 +629,8 @@ namespace WomPlatform.Web.Api.Service {
                     new BsonDocument("name",
                         new BsonDocument("$ne", BsonNull.Value))));
 
-            if(merchantId == null || merchantId.Length == 0) {
+            bool obtainAllMerchants = (merchantId == null || merchantId.Length == 0) && !isReport;
+            if(obtainAllMerchants) {
                 pipeline.Add(
                     new BsonDocument(
                         "$unionWith",
@@ -655,8 +660,8 @@ namespace WomPlatform.Web.Api.Service {
                             "name",
                             new BsonDocument("$first", "$name")
                         }, {
-                            "numberTransactions",
-                            new BsonDocument("$first", "$numberTransactions")
+                            "numberOfTransactions",
+                            new BsonDocument("$first", "$numberOfTransactions")
                         }, {
                             "totalAmount",
                             new BsonDocument("$max", "$totalAmount")
@@ -703,8 +708,8 @@ namespace WomPlatform.Web.Api.Service {
                     Id = doc["_id"].AsObjectId,
                     Name = doc["name"].AsString,
                     Amount = doc["totalAmount"].AsInt32,
-                    NumberTransactions = doc.Contains("numberTransactions") && !doc["numberTransactions"].IsBsonNull
-                        ? doc["numberTransactions"].AsInt32
+                    NumberTransactions = doc.Contains("numberOfTransactions") && !doc["numberOfTransactions"].IsBsonNull
+                        ? doc["numberOfTransactions"].AsInt32
                         : 0,
                     Rank = doc["rank"].AsInt32
                 }).ToList();
@@ -897,13 +902,13 @@ namespace WomPlatform.Web.Api.Service {
             Func<DateTime, DateTime> incrementDate = DateRangeHelper.SetDateIncrement(netFormatDate);
 
             // Validate essential variables before calling the method
-            if (PaymentRequestCollection == null) {
+            if(PaymentRequestCollection == null) {
                 throw new NullReferenceException("PaymentRequestCollection is null");
             }
-            if (basePipeline == null) {
+            if(basePipeline == null) {
                 throw new NullReferenceException("basePipeline is null");
             }
-            if (incrementDate == null) {
+            if(incrementDate == null) {
                 throw new NullReferenceException("incrementDate function is null");
             }
 
