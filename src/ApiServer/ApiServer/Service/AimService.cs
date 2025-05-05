@@ -61,6 +61,7 @@ namespace WomPlatform.Web.Api.Service {
                 new Aim("UM", Titles("Urban Mobility", "Mobilità urbana")),
             ]),
             new Aim("X", Titles("Social Cohesion", "Coesione sociale"), [
+                new Aim("XN", Titles("Networking", "Networking")),
                 new Aim("XX", Titles("Gratitude", "Gratitudine")),
             ]),
         ];
