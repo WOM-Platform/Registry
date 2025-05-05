@@ -6,7 +6,7 @@ namespace WomPlatform.Web.Api {
 
     public static class IdentifierExtension {
 
-        public static bool Equals(this Identifier id, ObjectId objId) {
+        public static bool Matches(this Identifier id, ObjectId objId) {
             return string.Equals(id.Id, objId.ToString(), StringComparison.InvariantCulture);
         }
 
