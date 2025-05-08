@@ -134,6 +134,32 @@ public class StatsController : BaseRegistryController {
             }
         }
 
+        // API to send back the data for consumed vouchers
+        [HttpPost("vouchers/active-merchants")]
+        [Authorize]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetListActiveMerchants([FromBody] StatisticsRequestDto request) {
+            try {
+                ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
+
+                // check if user is admin or owner of the source
+                await IsUserAdminOrOwnerMerchant(merchantObjectIds);
+
+                (DateTime? parsedStartDate, DateTime? parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
+
+                // Fetch the total amount of consumed vouchers
+                List<MerchantRankDTO> activeMerchantsList = await PaymentService.GetMerchantRank(parsedStartDate, parsedEndDate, merchantObjectIds, true);
+
+                // Return the JSON response
+                return Ok(activeMerchantsList);
+            }
+            catch(ServiceProblemException ex) {
+                return StatusCode(ex.HttpStatus, ex.Message);
+            }
+        }
+
         [HttpGet("offers/active")]
         public async Task<ActionResult<List<Offer>>> GetActiveOffers() {
             try {
