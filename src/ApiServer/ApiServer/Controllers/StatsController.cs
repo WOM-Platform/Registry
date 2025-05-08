@@ -14,74 +14,75 @@ using WomPlatform.Web.Api.OutputModels.Stats;
 using WomPlatform.Web.Api.Service;
 using WomPlatform.Web.Api.Utilities;
 
-namespace WomPlatform.Web.Api.Controllers {
-    [Route("v1/stats")]
-    [OperationsTags("Stats and info")]
-    [RequireHttpsInProd]
-    public class StatsController : BaseRegistryController {
-        public StatsController(
-            IServiceProvider serviceProvider,
-            ILogger<StatsController> logger)
-            : base(serviceProvider, logger) {
+namespace WomPlatform.Web.Api.Controllers;
+
+[Route("v1/stats")]
+[OperationsTags("Stats and info")]
+[RequireHttpsInProd]
+public class StatsController : BaseRegistryController {
+    public StatsController(
+        IServiceProvider serviceProvider,
+        ILogger<StatsController> logger)
+        : base(serviceProvider, logger) {
+    }
+
+    /// <summary>
+    ///     Provides a count of all existing vouchers.
+    /// </summary>
+    [HttpGet("vouchers")]
+    [Produces(MediaTypeNames.Application.Json)]
+    [ProducesResponseType(typeof(VouchersGeneralStatsResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVoucherStats() {
+        var results = await StatsService.GetVoucherCountByAim();
+
+        var totalGenerated = results.Sum(a => a.TotalCount);
+        var totalAvailable = results.Sum(a => a.AvailableCount);
+
+        return Ok(new VouchersGeneralStatsResponse {
+            TotalVouchersGenerated = totalGenerated,
+            TotalVouchersRedeemed = results.Sum(a => a.RedeemedCount),
+            TotalVouchersAvailable = totalAvailable,
+            TotalVouchersSpent = totalGenerated - totalAvailable,
+            Aims = results.ToDictionary(
+                a => a.AimCode,
+                a => new VouchersGeneralStatsResponse.VouchersByAimStatsResponse {
+                    Generated = a.TotalCount,
+                    Redeemed = a.RedeemedCount,
+                    Available = a.AvailableCount,
+                    Spent = a.TotalCount - a.AvailableCount
+                }
+            )
+        });
+    }
+
+    /// <summary>
+    ///     Provides a count of vouchers produced by a given source.
+    ///     Request must be authorized by a user who is an administrator of the source.
+    /// </summary>
+    [HttpGet("vouchers/{sourceId}")]
+    [Authorize]
+    [Produces(MediaTypeNames.Application.Json)]
+    [ProducesResponseType(typeof(VoucherSourceStatsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSourceVoucherStats(
+        [FromRoute] ObjectId sourceId
+    ) {
+        var source = await SourceService.GetSourceById(sourceId);
+        if(source == null) {
+            return NotFound();
         }
 
-        /// <summary>
-        ///     Provides a count of all existing vouchers.
-        /// </summary>
-        [HttpGet("vouchers")]
-        [Produces(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(typeof(VouchersGeneralStatsResponse), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetVoucherStats() {
-            List<StatsService.VoucherCountByAimResult> results = await StatsService.GetVoucherCountByAim();
-
-            long totalGenerated = results.Sum(a => a.TotalCount);
-            long totalAvailable = results.Sum(a => a.AvailableCount);
-
-            return Ok(new VouchersGeneralStatsResponse {
-                TotalVouchersGenerated = totalGenerated,
-                TotalVouchersRedeemed = results.Sum(a => a.RedeemedCount),
-                TotalVouchersAvailable = totalAvailable,
-                TotalVouchersSpent = totalGenerated - totalAvailable,
-                Aims = results.ToDictionary(
-                    a => a.AimCode,
-                    a => new VouchersGeneralStatsResponse.VouchersByAimStatsResponse {
-                        Generated = a.TotalCount,
-                        Redeemed = a.RedeemedCount,
-                        Available = a.AvailableCount,
-                        Spent = a.TotalCount - a.AvailableCount
-                    }
-                )
-            });
+        if(!User.GetUserId(out var loggedUserId) || !source.AdministratorUserIds.Contains(loggedUserId)) {
+            return Forbid();
         }
 
-        /// <summary>
-        ///     Provides a count of vouchers produced by a given source.
-        ///     Request must be authorized by a user who is an administrator of the source.
-        /// </summary>
-        [HttpGet("vouchers/{sourceId}")]
-        [Authorize]
-        [Produces(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(typeof(VoucherSourceStatsResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetSourceVoucherStats(
-            [FromRoute] ObjectId sourceId
-        ) {
-            Source source = await SourceService.GetSourceById(sourceId);
-            if(source == null) {
-                return NotFound();
-            }
+        var result = await StatsService.GetVoucherCountBySource(sourceId);
 
-            if(!User.GetUserId(out ObjectId loggedUserId) || !source.AdministratorUserIds.Contains(loggedUserId)) {
-                return Forbid();
-            }
-
-            StatsService.VoucherCountBySourceResult result = await StatsService.GetVoucherCountBySource(sourceId);
-
-            return Ok(new VoucherSourceStatsResponse {
-                GenerationRequests = result?.GenerationRequests ?? 0,
-                TotalVouchersGenerated = result?.TotalCount ?? 0
-            });
-        }
+        return Ok(new VoucherSourceStatsResponse {
+            GenerationRequests = result?.GenerationRequests ?? 0,
+            TotalVouchersGenerated = result?.TotalCount ?? 0,
+        });
+    }
 
         // API to send back the data for generation and redeemed vouchers
         [HttpPost("vouchers/generated-redeemed-statistics")]
@@ -226,14 +227,14 @@ namespace WomPlatform.Web.Api.Controllers {
             ObjectId[] sourceObjectIds = request.SourceId?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
 
             // if dates present check dates are valid and in case parse them
-            (DateTime? parsedStartDate, DateTime? parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
+            var (parsedStartDate, parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 
             // create general API to call them and save the data
-            VoucherGenerationRedemptionStatsResponse genRedResponse = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, sourceObjectIds, request.AimListFilter, request.Latitude, request.Longitude, request.Radius, true);
-            VoucherConsumptionStatsResponse consumedResponse = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, merchantObjectIds, true);
-            int availableResponse = await GenerationService.FetchVouchersAvailable(request.Latitude, request.Longitude, request.Radius);
+            var genRedResponse = await GenerationService.FetchTotalVouchersGeneratedAndRedeemedStats(parsedStartDate, parsedEndDate, sourceObjectIds, request.AimListFilter, request.Latitude, request.Longitude, request.Radius, true);
+            var consumedResponse = await PaymentService.FetchTotalVouchersConsumedStats(parsedStartDate, parsedEndDate, merchantObjectIds, true);
+            var availableResponse = await GenerationService.FetchVouchersAvailable(request.Latitude, request.Longitude, request.Radius);
 
-            FiltersDTO filters = new FiltersDTO {
+            var filters = new FiltersDTO {
                 StartDate = parsedStartDate,
                 EndDate = parsedEndDate,
                 SourceIds = sourceObjectIds,
@@ -243,9 +244,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 AimFilter = request.AimListFilter
             };
 
-            byte[] records = CsvFileHelper.GenerateCsvContent(genRedResponse, consumedResponse, availableResponse, filters);
+            var records = CsvFileHelper.GenerateCsvContent(genRedResponse, consumedResponse, availableResponse, filters);
 
             return File(records, "text/csv", $"{DateTime.Now:yyyy-M-d dddd}_stats.csv");
         }
-    }
+
 }

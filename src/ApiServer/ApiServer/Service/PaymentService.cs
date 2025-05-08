@@ -456,7 +456,7 @@ namespace WomPlatform.Web.Api.Service {
             BsonDocument totalAmountConsumedDoc = await result.FirstOrDefaultAsync();
 
             // If no data was found
-            if(totalAmountConsumedDoc == null) {
+            if (totalAmountConsumedDoc == null) {
                 return new VouchersConsumedDTO {
                     TransactionNumber = 0,
                     TotalAmount = 0
@@ -489,7 +489,7 @@ namespace WomPlatform.Web.Api.Service {
                 }));
 
             // check if user is filtering for merchant name
-            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchantId", merchantIds));
+            pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchantId",merchantIds));
 
             // Project relevant fields
             pipeline.Add(
@@ -611,8 +611,7 @@ namespace WomPlatform.Web.Api.Service {
                                         0
                                     }))
                         }
-                    }
-                )
+                    })
             );
 
             pipeline.Add(
@@ -902,13 +901,13 @@ namespace WomPlatform.Web.Api.Service {
             Func<DateTime, DateTime> incrementDate = DateRangeHelper.SetDateIncrement(netFormatDate);
 
             // Validate essential variables before calling the method
-            if(PaymentRequestCollection == null) {
+            if (PaymentRequestCollection == null) {
                 throw new NullReferenceException("PaymentRequestCollection is null");
             }
-            if(basePipeline == null) {
+            if (basePipeline == null) {
                 throw new NullReferenceException("basePipeline is null");
             }
-            if(incrementDate == null) {
+            if (incrementDate == null) {
                 throw new NullReferenceException("incrementDate function is null");
             }
 
