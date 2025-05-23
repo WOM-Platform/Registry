@@ -7,6 +7,8 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
+using Google.Cloud.Diagnostics.AspNetCore3;
+using Google.Cloud.Diagnostics.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -35,28 +37,38 @@ namespace WomPlatform.Web.Api {
     public class Startup {
 
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _env;
 
         public Startup(
-            IConfiguration configuration
+            IConfiguration configuration,
+            IWebHostEnvironment env
+
         ) {
             _configuration = configuration;
+            _env = env;
         }
 
         private static string _selfDomain = null;
+
         public static string SelfDomain {
             get {
-                if(_selfDomain == null) {
-                    _selfDomain = Environment.GetEnvironmentVariable("SELF_HOST");
-                }
+                _selfDomain ??= Environment.GetEnvironmentVariable("SELF_HOST");
                 return _selfDomain;
             }
         }
+
         public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
 
         public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
         public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
 
         public void ConfigureServices(IServiceCollection services) {
+            services.AddGoogleDiagnosticsForAspNetCore(
+                projectId: Environment.GetEnvironmentVariable("GOOGLE_PROJECT_ID"),
+                serviceName: _env.IsDevelopment() ? "Registry-Dev" : "Registry-Prod",
+                loggingOptions: LoggingOptions.Create(logLevel: LogLevel.Information)
+            );
+
             services.AddCors(options => {
                 options.AddDefaultPolicy(builder => {
                     builder
@@ -143,7 +155,7 @@ namespace WomPlatform.Web.Api {
                         return ((ReadOnlyCollection<CustomAttributeTypedArgument>)attr.ConstructorArguments[0].Value).Select(a => (string)a.Value).ToArray();
                     }
                     else {
-                        return new[] { controller.ControllerName };
+                        return [controller.ControllerName];
                     }
                 });
             });
