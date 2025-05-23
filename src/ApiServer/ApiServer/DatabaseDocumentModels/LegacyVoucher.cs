@@ -4,9 +4,7 @@ using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
-
     public class LegacyVoucher {
-
         [BsonId(IdGenerator = typeof(NullIdChecker))]
         public long Id { get; set; }
 
@@ -27,7 +25,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonDefaultValue(false)]
         [BsonIgnoreIfDefault]
         public bool Spent { get; set; } = false;
-
     }
-
 }

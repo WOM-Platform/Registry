@@ -20,7 +20,6 @@ using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
-
     [Route("v1/pos")]
     [OperationsTags("Point of service")]
     [RequireHttpsInProd]

@@ -5,9 +5,7 @@ using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
-
     public class Voucher {
-
         [BsonId(IdGenerator = typeof(ObjectIdGenerator))]
         public ObjectId Id { get; set; }
 
@@ -41,7 +39,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonDefaultValue(VoucherCreationMode.Standard)]
         [BsonIgnoreIfDefault]
         public VoucherCreationMode Mode { get; set; } = VoucherCreationMode.Standard;
-
     }
-
 }

@@ -4,7 +4,6 @@ using MongoDB.Bson.Serialization.IdGenerators;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
     public class ApiKey {
-
         [BsonId(IdGenerator = typeof(ObjectIdGenerator))]
         public ObjectId Id { get; set; }
 
@@ -42,6 +41,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
-
     }
 }

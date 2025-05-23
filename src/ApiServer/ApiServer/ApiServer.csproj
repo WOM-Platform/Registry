@@ -9,6 +9,7 @@
   <PropertyGroup>
     <DocumentationFile>ApiServer.xml</DocumentationFile>
     <UserSecretsId>317447f3-198c-4f16-9a1a-b95d843cfafb</UserSecretsId>
+    <Nullable>annotations</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

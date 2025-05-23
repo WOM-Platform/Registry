@@ -2,12 +2,10 @@
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
-
     /// <summary>
     /// Filter model that encloses supported filter types (only simple ATM).
     /// </summary>
     public class Filter {
-
         [BsonElement("aims")]
         [BsonIgnoreIfNull]
         public string Aims { get; set; }
@@ -24,7 +22,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
-
     }
-
 }
