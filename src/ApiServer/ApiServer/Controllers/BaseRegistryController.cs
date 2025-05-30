@@ -73,6 +73,12 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        protected BadgeService BadgeService {
+            get {
+                return _serviceProvider.GetRequiredService<BadgeService>();
+            }
+        }
+
         protected GenerationService GenerationService {
             get {
                 return _serviceProvider.GetRequiredService<GenerationService>();

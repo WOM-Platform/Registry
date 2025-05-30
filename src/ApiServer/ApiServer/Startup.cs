@@ -85,7 +85,7 @@ namespace WomPlatform.Web.Api {
             services.AddControllers()
                 .AddMvcOptions(options => {
                     options.ModelBinderProviders.Insert(0, new ObjectIdModelBinderProvider());
-                    options.InputFormatters.Add(new PermissiveInputFormatter());
+                    options.InputFormatters.Add(new RawStreamInputFormatter());
                 })
                 .AddJsonOptions(options => {
                     options.JsonSerializerOptions.AllowTrailingCommas = true;
@@ -229,6 +229,7 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<AimService>();
             services.AddScoped<ApiKeyService>();
             services.AddScoped<BackupService>();
+            services.AddScoped<BadgeService>();
             services.AddScoped<GenerationService>();
             services.AddScoped<MapService>();
             services.AddScoped<MerchantService>();
@@ -316,11 +317,8 @@ namespace WomPlatform.Web.Api {
             }
 
             app.UseStaticFiles();
-
             app.UseCors();
-
             app.UseRouting();
-
             app.UseAuthentication();
             app.UseAuthorization();
 

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WomPlatform.Web.Api {
     public class ServiceProblemException : Exception {
-
         public ServiceProblemException(
             string title,
             int statusCode = StatusCodes.Status500InternalServerError,
@@ -157,5 +156,10 @@ namespace WomPlatform.Web.Api {
             type: "https://wom.social/api/problems/token-not-valid"
         );
 
+        public readonly static ServiceProblemException BadgeNotFound = new(
+            "Badge not found",
+            StatusCodes.Status404NotFound,
+            type: "https://wom.social/api/problems/badge-not-found"
+        );
     }
 }
