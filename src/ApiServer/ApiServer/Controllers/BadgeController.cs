@@ -1,6 +1,6 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -9,9 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.DTO;
 using WomPlatform.Web.Api.InputModels.Badge;
 using WomPlatform.Web.Api.OutputModels.Badge;
-using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -24,6 +24,24 @@ namespace WomPlatform.Web.Api.Controllers {
             ILogger<BaseRegistryController> logger
         )
             : base(serviceProvider, logger) {
+        }
+
+        [HttpGet()]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(BadgeOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetAllBadges() {
+            var badges = await BadgeService.GetAllBadges();
+
+            var badgeOutputs = badges.Select(badge =>
+            {
+                var imageOutput = badge.ImagePath != null
+                    ? PicturesService.GetPictureOutput(badge.ImagePath, badge.ImageBlurHash)
+                    : null;
+                return badge.ToOutput(imageOutput);
+            }).ToList();
+
+            return Ok(badgeOutputs);
         }
 
         [HttpGet("{badgeId}")]
@@ -78,6 +96,39 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        [HttpDelete("{badgeId}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteBadge([FromRoute] ObjectId badgeId)
+        {
+            var success = await BadgeService.DeleteBadge(badgeId);
+
+            if (!success)
+            {
+                return NotFound(new { message = $"Badge with ID {badgeId} not found." });
+            }
+
+            return NoContent();
+        }
+
+
+        [HttpPut("{badgeId}")]
+        [ProducesResponseType(typeof(BadgeOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateBadge(
+            [FromRoute] ObjectId badgeId,
+            [FromBody] BadgeDTO badge
+        )
+        {
+            var updatedBadge = await BadgeService.UpdateBadge(badgeId, badge);
+
+            if (updatedBadge == null)
+            {
+                return NotFound(new { message = "Badge not found" });
+            }
+
+            return Ok(updatedBadge);
+        }
+
         [HttpPut("{badgeId}/image")]
         [Authorize]
         [DisableRequestSizeLimit]
@@ -108,4 +159,5 @@ namespace WomPlatform.Web.Api.Controllers {
             return Accepted();
         }
     }
+
 }
