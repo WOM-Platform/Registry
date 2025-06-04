@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
@@ -28,8 +29,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpGet()]
         [AllowAnonymous]
-        [ProducesResponseType(typeof(BadgeOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(List<BadgeOutput>), StatusCodes.Status200OK)]
         public async Task<ActionResult> GetAllBadges() {
             var badges = await BadgeService.GetAllBadges();
 
