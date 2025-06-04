@@ -2,9 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace WomPlatform.Web.Api.InputModels.Badge {
-    public class RegisterBadgeInput {
-        public string? ChallengeId { get; init; }
-
+    public class RegisterBadgeChallengeInput {
         [Required]
         public bool IsPublic { get; init; }
 

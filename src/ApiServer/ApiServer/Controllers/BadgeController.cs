@@ -8,9 +8,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
-using WomPlatform.Web.Api.DTO;
+using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.InputModels.Badge;
 using WomPlatform.Web.Api.OutputModels.Badge;
 using WomPlatform.Web.Api.Service;
@@ -27,21 +28,22 @@ namespace WomPlatform.Web.Api.Controllers {
             : base(serviceProvider, logger) {
         }
 
-        [HttpGet()]
+        [HttpGet]
         [AllowAnonymous]
-        [ProducesResponseType(typeof(List<BadgeOutput>), StatusCodes.Status200OK)]
-        public async Task<ActionResult> GetAllBadges() {
-            var badges = await BadgeService.GetAllBadges();
+        [ProducesResponseType(typeof(BadgeOutput[]), StatusCodes.Status200OK)]
+        public async Task<ActionResult> GetBadges(
+            [FromQuery] VisibilityFilter? visibility
+        ) {
+            var badges = await BadgeService.GetBadges(
+                isPublic: visibility switch {
+                    VisibilityFilter.Private => false,
+                    VisibilityFilter.Public => true,
+                    _ => null,
+                }
+            );
 
-            var badgeOutputs = badges.Select(badge =>
-            {
-                var imageOutput = badge.ImagePath != null
-                    ? PicturesService.GetPictureOutput(badge.ImagePath, badge.ImageBlurHash)
-                    : null;
-                return badge.ToOutput(imageOutput);
-            }).ToList();
-
-            return Ok(badgeOutputs);
+            return Ok(from badge in badges
+                      select badge.ToOutput(PicturesService));
         }
 
         [HttpGet("{badgeId}")]
@@ -56,22 +58,32 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var imageOutput = badge.ImagePath != null ? PicturesService.GetPictureOutput(badge.ImagePath, badge.ImageBlurHash) : null;
-
-            return Ok(badge.ToOutput(imageOutput));
+            return Ok(badge.ToOutput(PicturesService));
         }
 
         [HttpPost]
         [Authorize]
         [ProducesResponseType(typeof(BadgeOutput), StatusCodes.Status201Created)]
-        public async Task<ActionResult> RegisterBadge(
-            [FromBody] RegisterBadgeInput input
+        public async Task<IActionResult> RegisterBadge(
+            [FromBody] RegisterBadgeInput input,
+            [FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions
         ) {
             await VerifyUserIsAdmin();
 
             ObjectId? challengeId = null;
             if(input.ChallengeId != null) {
-                // TODO: load challenge and verify it exists
+                var challenge = await BadgeService.GetBadgeChallengeById(ObjectId.Parse(input.ChallengeId));
+                if(challenge == null) {
+                    ModelState.AddModelError(nameof(input.ChallengeId), "Challenge does not exist");
+                    return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
+                }
+
+                if(challenge.IsPublic != input.IsPublic) {
+                    ModelState.AddModelError(nameof(input.IsPublic), "Badge must share same isPublic setting as challenge");
+                    return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
+                }
+
+                challengeId = challenge.Id;
             }
 
             try {
@@ -87,7 +99,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 return Created(
                     Url.Action(nameof(GetBadge), new { badgeId = badge.Id }),
-                    badge.ToOutput(null)
+                    badge.ToOutput(PicturesService)
                 );
             }
             catch(Exception) {
@@ -98,35 +110,64 @@ namespace WomPlatform.Web.Api.Controllers {
 
         [HttpDelete("{badgeId}")]
         [Authorize]
-        public async Task<IActionResult> DeleteBadge([FromRoute] ObjectId badgeId)
-        {
-            var success = await BadgeService.DeleteBadge(badgeId);
+        [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteBadge(
+            [FromRoute] ObjectId badgeId
+        ) {
+            await VerifyUserIsAdmin();
 
-            if (!success)
-            {
-                return NotFound(new { message = $"Badge with ID {badgeId} not found." });
+            var success = await BadgeService.DeleteBadge(badgeId);
+            if(!success) {
+                return NotFound();
             }
 
             return NoContent();
         }
 
-
         [HttpPut("{badgeId}")]
+        [Authorize]
         [ProducesResponseType(typeof(BadgeOutput), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateBadge(
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ReplaceBadge(
             [FromRoute] ObjectId badgeId,
-            [FromBody] BadgeDTO badge
-        )
-        {
-            var updatedBadge = await BadgeService.UpdateBadge(badgeId, badge);
+            [FromBody] RegisterBadgeInput input,
+            [FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions
+        ) {
+            await VerifyUserIsAdmin();
 
-            if (updatedBadge == null)
-            {
-                return NotFound(new { message = "Badge not found" });
+            var existingBadge = await BadgeService.GetBadgeById(badgeId);
+            if(existingBadge == null) {
+                return NotFound();
             }
 
-            return Ok(updatedBadge);
+            ObjectId? challengeId = null;
+            if(input.ChallengeId != null) {
+                var challenge = await BadgeService.GetBadgeChallengeById(ObjectId.Parse(input.ChallengeId));
+                if(challenge == null) {
+                    ModelState.AddModelError(nameof(input.ChallengeId), "Challenge does not exist");
+                    return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
+                }
+
+                if(challenge.IsPublic != input.IsPublic) {
+                    ModelState.AddModelError(nameof(input.IsPublic), "Badge must share same isPublic setting as challenge");
+                    return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
+                }
+
+                challengeId = challenge.Id;
+            }
+
+            existingBadge.ChallengeId = challengeId;
+            existingBadge.IsPublic = input.IsPublic;
+            existingBadge.Name = input.Name;
+            existingBadge.Description = input.Description;
+            existingBadge.InformationUrl = input.InformationUrl;
+
+            if(!await BadgeService.ReplaceBadge(existingBadge)) {
+                return this.UnexpectedError();
+            }
+
+            return Ok(existingBadge.ToOutput(PicturesService));
         }
 
         [HttpPut("{badgeId}/image")]

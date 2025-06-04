@@ -79,6 +79,12 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        protected IMongoCollection<BadgeChallenge> BadgeChallengeCollection {
+            get {
+                return MainDatabase.GetCollection<BadgeChallenge>("BadgeChallenges");
+            }
+        }
+
         protected ILogger<BaseService> Logger { get { return _logger; } }
 
         protected Random Random { get { return _random; } }

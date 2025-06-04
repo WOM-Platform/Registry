@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.OutputModels.Badge {
     public class BadgeOutput {
@@ -30,14 +31,14 @@ namespace WomPlatform.Web.Api.OutputModels.Badge {
     }
 
     public static class BadgeOutputExtensions {
-        public static BadgeOutput ToOutput(this DatabaseDocumentModels.Badge badge, PictureOutput? imageOutput) {
+        public static BadgeOutput ToOutput(this DatabaseDocumentModels.Badge badge, PicturesService pictureService) {
             return new BadgeOutput {
                 Id = badge.Id.ToString(),
-                ChallengeId = badge.ChallengeId != null ? badge.ChallengeId.ToString() : null,
+                ChallengeId = badge.ChallengeId?.ToString(),
                 IsPublic = badge.IsPublic,
                 Name = badge.Name,
-                Image = imageOutput,
-                Description = badge.Description,
+                Image = pictureService.GetPictureOutput(badge.ImagePath, badge.ImageBlurHash),
+                Description = badge.Description ?? new Dictionary<string, string>(),
                 InformationUrl = badge.InformationUrl,
                 CreatedAt = badge.CreatedAt,
                 LastUpdate = badge.LastUpdate,
