@@ -220,6 +220,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Updates the cover of an existing POS.
         /// </summary>
         [HttpPost("{posId}/cover")]
+        [HttpPut("{posId}/cover")]
         [Authorize]
         [DisableRequestSizeLimit]
         [Produces(MediaTypeNames.Application.Json)]

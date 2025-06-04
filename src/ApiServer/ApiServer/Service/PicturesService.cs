@@ -180,10 +180,12 @@ namespace WomPlatform.Web.Api.Service {
                 GetPictureOutput(basePath, blurHash);
         }
 
-        public PictureOutput GetPictureOutput(string basePath, string blurHash, string pathSuffix = JpegPathPart) {
+        public PictureOutput GetPictureOutput(string? basePath, string? blurHash, string pathSuffix = JpegPathPart) {
             if(string.IsNullOrWhiteSpace(basePath)) {
                 return null;
             }
+
+            ArgumentNullException.ThrowIfNullOrEmpty(blurHash, nameof(blurHash));
 
             return new PictureOutput {
                 FullSizeUrl = _baseUrl + basePath + _resolutionFullPartPath + pathSuffix,

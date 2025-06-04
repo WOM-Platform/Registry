@@ -107,10 +107,10 @@ namespace WomPlatform.Web.Api.Service {
 
         public Task<User> UpdateUser(
             ObjectId userId,
-            string name = null,
-            string surname = null,
-            string email = null,
-            string password = null,
+            string? name = null,
+            string? surname = null,
+            string? email = null,
+            string? password = null,
             PlatformRole? role = null
         ) {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
@@ -119,23 +119,18 @@ namespace WomPlatform.Web.Api.Service {
             if(name != null) {
                 chain.Set(u => u.Name, name);
             }
-
             if(surname != null) {
                 chain.Set(u => u.Surname, surname);
             }
-
             if(email != null) {
                 chain.Set(u => u.Email, email);
             }
-
             if(password != null) {
                 chain.Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(password));
             }
-
             if(role.HasValue) {
                 chain.Set(u => u.Role, role.Value);
             }
-
             chain.Set(u => u.LastUpdate, DateTime.UtcNow);
 
             return UserCollection.FindOneAndUpdateAsync(filter, chain.End(), new FindOneAndUpdateOptions<User, User> { ReturnDocument = ReturnDocument.After });
