@@ -25,8 +25,8 @@ namespace WomPlatform.Web.Api.OutputModels.Badge {
             return new BadgeChallengeOutput {
                 Id = challenge.Id.ToString(),
                 IsPublic = challenge.IsPublic,
-                Name = challenge.Name,
-                Description = challenge.Description,
+                Name = challenge.Name.ToOutput(),
+                Description = challenge.Description.ToOutput(),
                 InformationUrl = challenge.InformationUrl,
                 Badges = badges.Any() ?
                     (from badge in badges select badge.ToOutput(pictureService)).ToArray() :
