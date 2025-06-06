@@ -13,6 +13,8 @@ namespace WomPlatform.Web.Api.InputModels.Badge {
 
         public Dictionary<string, string>? Description { get; init; }
 
+        public BadgeSimpleFilterInput? SimpleFilter { get; init; }
+
         [Url]
         [MaxLength(2048)]
         public string? InformationUrl { get; init; }

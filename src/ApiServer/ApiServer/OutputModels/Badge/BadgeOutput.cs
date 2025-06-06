@@ -14,7 +14,7 @@ namespace WomPlatform.Web.Api.OutputModels.Badge {
 
         public Dictionary<string, string> Name { get; init; }
 
-        // public BadgeSimpleFilter? SimpleFilter { get; init; }
+        public BadgeSimpleFilterOutput? SimpleFilter { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public PictureOutput? Image { get; init; }
@@ -37,6 +37,7 @@ namespace WomPlatform.Web.Api.OutputModels.Badge {
                 ChallengeId = badge.ChallengeId?.ToString(),
                 IsPublic = badge.IsPublic,
                 Name = badge.Name.ToOutput(),
+                SimpleFilter = badge.SimpleFilter.ToOutput(),
                 Image = pictureService.GetPictureOutput(badge.ImagePath, badge.ImageBlurHash),
                 Description = badge.Description.ToOutput(),
                 InformationUrl = badge.InformationUrl,

@@ -36,6 +36,12 @@ namespace WomPlatform.Web.Api.Controllers {
             SelfLinkDomain = Environment.GetEnvironmentVariable("LINK_HOST");
         }
 
+        protected IServiceProvider ServiceProvider {
+            get {
+                return _serviceProvider;
+            }
+        }
+
         protected IConfiguration Configuration {
             get {
                 return _serviceProvider.GetRequiredService<IConfiguration>();

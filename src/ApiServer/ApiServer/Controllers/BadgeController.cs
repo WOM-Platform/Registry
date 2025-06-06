@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -26,6 +26,32 @@ namespace WomPlatform.Web.Api.Controllers {
             ILogger<BaseRegistryController> logger
         )
             : base(serviceProvider, logger) {
+        }
+
+        private async Task<(IActionResult?, ObjectId?)> ProcessAndValidate(RegisterBadgeInput input) {
+            var apiBehaviorOptions = ServiceProvider.GetRequiredService<IOptions<ApiBehaviorOptions>>();
+
+            ObjectId? challengeId = null;
+            if(input.ChallengeId != null) {
+                var challenge = await BadgeService.GetBadgeChallengeById(ObjectId.Parse(input.ChallengeId));
+                if(challenge == null) {
+                    ModelState.AddModelError(nameof(input.ChallengeId), "Challenge does not exist");
+                    return (apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext), null);
+                }
+
+                if(challenge.IsPublic != input.IsPublic) {
+                    ModelState.AddModelError(nameof(input.IsPublic), "Badge must share same isPublic setting as challenge");
+                    return (apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext), challenge.Id);
+                }
+
+                challengeId = challenge.Id;
+            }
+
+            if(input.SimpleFilter == null) {
+                return (Problem(statusCode: StatusCodes.Status400BadRequest, title: "Badge must include a simple filter"), null);
+            }
+
+            return (null, challengeId);
         }
 
         [HttpGet]
@@ -65,25 +91,13 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         [ProducesResponseType(typeof(BadgeOutput), StatusCodes.Status201Created)]
         public async Task<IActionResult> RegisterBadge(
-            [FromBody] RegisterBadgeInput input,
-            [FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions
+            [FromBody] RegisterBadgeInput input
         ) {
             await VerifyUserIsAdmin();
 
-            ObjectId? challengeId = null;
-            if(input.ChallengeId != null) {
-                var challenge = await BadgeService.GetBadgeChallengeById(ObjectId.Parse(input.ChallengeId));
-                if(challenge == null) {
-                    ModelState.AddModelError(nameof(input.ChallengeId), "Challenge does not exist");
-                    return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
-                }
-
-                if(challenge.IsPublic != input.IsPublic) {
-                    ModelState.AddModelError(nameof(input.IsPublic), "Badge must share same isPublic setting as challenge");
-                    return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
-                }
-
-                challengeId = challenge.Id;
+            (var error, var challengeId) = await ProcessAndValidate(input);
+            if(error != null) {
+                return error;
             }
 
             try {
@@ -91,6 +105,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     ChallengeId = challengeId,
                     IsPublic = input.IsPublic,
                     Name = input.Name,
+                    SimpleFilter = input.SimpleFilter.ToDocument(),
                     Description = input.Description,
                     InformationUrl = input.InformationUrl,
                     CreatedAt = DateTime.UtcNow,
@@ -160,6 +175,7 @@ namespace WomPlatform.Web.Api.Controllers {
             existingBadge.ChallengeId = challengeId;
             existingBadge.IsPublic = input.IsPublic;
             existingBadge.Name = input.Name;
+            existingBadge.SimpleFilter = input.SimpleFilter.ToDocument();
             existingBadge.Description = input.Description;
             existingBadge.InformationUrl = input.InformationUrl;
 
