@@ -52,7 +52,10 @@ namespace WomPlatform.Web.Api.Service {
 
             return BadgeCollection
                 .Find(Builders<Badge>.Filter.And(filters))
-                .Sort(Builders<Badge>.Sort.Ascending(b => b.CreatedAt))
+                .Sort(Builders<Badge>.Sort.Combine(
+                    Builders<Badge>.Sort.Ascending(b => b.SortName),
+                    Builders<Badge>.Sort.Ascending(b => b.CreatedAt)
+                ))
                 .ToListAsync();
         }
 

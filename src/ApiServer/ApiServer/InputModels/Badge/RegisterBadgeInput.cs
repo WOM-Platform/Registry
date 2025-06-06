@@ -3,6 +3,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WomPlatform.Web.Api.InputModels.Badge {
     public class RegisterBadgeInput {
+        public string? SortName { get; init; }
+
         public string? ChallengeId { get; init; }
 
         [Required]

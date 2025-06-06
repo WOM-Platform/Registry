@@ -8,6 +8,9 @@ namespace WomPlatform.Web.Api.OutputModels.Badge {
         public string Id { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? SortName { get; init; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? ChallengeId { get; init; }
 
         public bool IsPublic { get; init; }
@@ -34,6 +37,7 @@ namespace WomPlatform.Web.Api.OutputModels.Badge {
         public static BadgeOutput ToOutput(this DatabaseDocumentModels.Badge badge, PicturesService pictureService) {
             return new BadgeOutput {
                 Id = badge.Id.ToString(),
+                SortName = badge.SortName,
                 ChallengeId = badge.ChallengeId?.ToString(),
                 IsPublic = badge.IsPublic,
                 Name = badge.Name.ToOutput(),

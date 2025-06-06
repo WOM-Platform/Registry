@@ -9,6 +9,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonId(IdGenerator = typeof(ObjectIdGenerator))]
         public ObjectId Id { get; set; }
 
+        [BsonElement("sortName")]
+        [BsonIgnoreIfNull]
+        public string SortName { get; set; }
+
         [BsonElement("challengeId")]
         [BsonIgnoreIfNull]
         public ObjectId? ChallengeId { get; set; }

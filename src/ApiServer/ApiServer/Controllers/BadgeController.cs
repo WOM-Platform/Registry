@@ -109,6 +109,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             try {
                 var badge = new Badge {
+                    SortName = input.SortName,
                     ChallengeId = challengeId,
                     IsPublic = input.IsPublic,
                     Name = input.Name,
@@ -179,6 +180,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 challengeId = challenge.Id;
             }
 
+            existingBadge.SortName = string.IsNullOrWhiteSpace(input.SortName) ? null : input.SortName;
             existingBadge.ChallengeId = challengeId;
             existingBadge.IsPublic = input.IsPublic;
             existingBadge.Name = input.Name;
