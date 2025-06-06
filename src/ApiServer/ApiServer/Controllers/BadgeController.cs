@@ -187,6 +187,7 @@ namespace WomPlatform.Web.Api.Controllers {
             existingBadge.SimpleFilter = input.SimpleFilter.ToDocument();
             existingBadge.Description = input.Description;
             existingBadge.InformationUrl = input.InformationUrl;
+            existingBadge.LastUpdate = DateTime.UtcNow;
 
             if(!await BadgeService.ReplaceBadge(existingBadge)) {
                 return this.UnexpectedError();
