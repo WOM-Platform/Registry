@@ -6,8 +6,12 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("count")]
         public int Count { get; set; }
 
+        [BsonElement("sourceId")]
+        [BsonIgnoreIfNull]
+        public ObjectId? SourceId { get; set; }
+
         [BsonElement("aim")]
-        [BsonIgnoreIfDefault]
+        [BsonIgnoreIfNull]
         public string? Aim { get; set; }
 
         [BsonElement("bounds")]

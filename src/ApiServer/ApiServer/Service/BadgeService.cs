@@ -50,7 +50,10 @@ namespace WomPlatform.Web.Api.Service {
                 filters.Add(Builders<Badge>.Filter.Eq(b => b.IsPublic, isPublic));
             }
 
-            return BadgeCollection.Find(Builders<Badge>.Filter.And(filters)).ToListAsync();
+            return BadgeCollection
+                .Find(Builders<Badge>.Filter.And(filters))
+                .Sort(Builders<Badge>.Sort.Ascending(b => b.CreatedAt))
+                .ToListAsync();
         }
 
         public Task<Badge> GetBadgeById(ObjectId id) {

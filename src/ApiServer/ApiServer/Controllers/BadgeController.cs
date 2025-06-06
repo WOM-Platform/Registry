@@ -51,6 +51,13 @@ namespace WomPlatform.Web.Api.Controllers {
                 return (Problem(statusCode: StatusCodes.Status400BadRequest, title: "Badge must include a simple filter"), null);
             }
 
+            if(input.SimpleFilter.SourceId != null) {
+                var source = await SourceService.GetSourceById(input.SimpleFilter.SourceId.Value);
+                if(source == null) {
+                    return (Problem(statusCode: StatusCodes.Status400BadRequest, title: "Source in simple filter does not exist"), null);
+                }
+            }
+
             return (null, challengeId);
         }
 
