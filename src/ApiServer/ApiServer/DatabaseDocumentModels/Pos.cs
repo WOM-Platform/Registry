@@ -5,9 +5,7 @@ using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
-
     public class Pos {
-
         [BsonId(IdGenerator = typeof(ObjectIdGenerator))]
         public ObjectId Id { get; set; }
 
@@ -70,7 +68,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
-
     }
-
 }

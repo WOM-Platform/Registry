@@ -17,7 +17,7 @@ namespace WomPlatform.Web.Api.InputModels.Merchant {
         [Required]
         public string Address { get; set; }
 
-        public string StreetNumber { get; set; }
+        public string? StreetNumber { get; set; }
 
         [Required]
         public string ZipCode { get; set; }
@@ -28,14 +28,14 @@ namespace WomPlatform.Web.Api.InputModels.Merchant {
         [Required]
         public string Country { get; set; }
 
-        public string FormattedAddress { get; set; }
+        public string? FormattedAddress { get; set; }
 
-        public string GoogleMapsPlaceId { get; set; }
+        public string? GoogleMapsPlaceId { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [Url]
-        public string Url { get; set; }
+        public string? Url { get; set; }
 
         public string ActivationCode { get; set; }
     }

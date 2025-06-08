@@ -6,14 +6,18 @@
     }
 
     public static class GeoBoundsOutputExtensions {
-        public static GeoBoundsOutput ToOutput(this DatabaseDocumentModels.Bounds bounds) {
-            return (bounds == null) ? null : new GeoBoundsOutput {
-                LeftTop = new double[] {
+        public static GeoBoundsOutput ToOutput(this DatabaseDocumentModels.Bounds? bounds) {
+            if(bounds == null) {
+                return null;
+            }
+
+            return new GeoBoundsOutput {
+                LeftTop = [
                     bounds.LeftTop.Latitude, bounds.LeftTop.Longitude
-                },
-                RightBottom = new double[] {
+                ],
+                RightBottom = [
                     bounds.RightBottom.Latitude, bounds.RightBottom.Longitude
-                }
+                ]
             };
         }
     }

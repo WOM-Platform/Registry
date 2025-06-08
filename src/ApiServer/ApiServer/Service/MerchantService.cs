@@ -21,6 +21,8 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public Task CreateMerchant(Merchant merchant) {
+            ArgumentNullException.ThrowIfNull(merchant);
+
             return MerchantCollection.InsertOneAsync(merchant);
         }
 

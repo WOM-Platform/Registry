@@ -1,5 +1,4 @@
-﻿using System;
-using WomPlatform.Connector.Models;
+﻿using WomPlatform.Connector.Models;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
     public enum VoucherCreationMode {

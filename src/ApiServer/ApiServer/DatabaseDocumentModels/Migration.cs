@@ -5,7 +5,6 @@ using System;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
     public class Migration {
-
         [BsonId(IdGenerator = typeof(GuidGenerator))]
         public Guid Id { get; set; }
 
@@ -28,6 +27,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
-
     }
 }

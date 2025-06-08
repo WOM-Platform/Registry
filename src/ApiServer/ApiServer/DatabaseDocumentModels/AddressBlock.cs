@@ -3,7 +3,6 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
     public class AddressBlock {
-
         [BsonElement("streetName")]
         public string StreetName { get; set; }
 
@@ -30,6 +29,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
-
     }
 }

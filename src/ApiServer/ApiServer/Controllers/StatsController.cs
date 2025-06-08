@@ -93,7 +93,7 @@ public class StatsController : BaseRegistryController {
         public async Task<ActionResult> FetchVouchersGeneratedAndRedeemedStats([FromBody] StatisticsRequestDto request) {
             try {
                 ObjectId[] sourceObjectIds = request.SourceId?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
-                // check if user is admin or owner of the source
+                // Check if user is admin or owner of the source
                 await IsUserAdminOrOwnerSource(sourceObjectIds);
 
                 (DateTime? parsedStartDate, DateTime? parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);

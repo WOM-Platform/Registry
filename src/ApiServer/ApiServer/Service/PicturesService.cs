@@ -134,6 +134,7 @@ namespace WomPlatform.Web.Api.Service {
         public enum PictureUsage {
             PosCover,
             SourceLogo,
+            BadgeImage,
         }
 
         private static string GenerateNewPath(string basePath, PictureUsage usage) {
@@ -144,6 +145,7 @@ namespace WomPlatform.Web.Api.Service {
             return usage switch {
                 PictureUsage.PosCover => $"pos-covers/{basePath}/{Guid.NewGuid():N}",
                 PictureUsage.SourceLogo => $"source-logos/{basePath}/{Guid.NewGuid():N}",
+                PictureUsage.BadgeImage => $"badge-images/{basePath}/{Guid.NewGuid():N}",
                 _ => throw new ArgumentException("Unsupported picture usage"),
             };
         }
@@ -178,10 +180,12 @@ namespace WomPlatform.Web.Api.Service {
                 GetPictureOutput(basePath, blurHash);
         }
 
-        public PictureOutput GetPictureOutput(string basePath, string blurHash, string pathSuffix = JpegPathPart) {
+        public PictureOutput GetPictureOutput(string? basePath, string? blurHash, string pathSuffix = JpegPathPart) {
             if(string.IsNullOrWhiteSpace(basePath)) {
                 return null;
             }
+
+            ArgumentNullException.ThrowIfNullOrEmpty(blurHash, nameof(blurHash));
 
             return new PictureOutput {
                 FullSizeUrl = _baseUrl + basePath + _resolutionFullPartPath + pathSuffix,

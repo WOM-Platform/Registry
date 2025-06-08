@@ -20,7 +20,6 @@ using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
-
     [Route("v1/pos")]
     [OperationsTags("Point of service")]
     [RequireHttpsInProd]
@@ -221,6 +220,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Updates the cover of an existing POS.
         /// </summary>
         [HttpPost("{posId}/cover")]
+        [HttpPut("{posId}/cover")]
         [Authorize]
         [DisableRequestSizeLimit]
         [Produces(MediaTypeNames.Application.Json)]

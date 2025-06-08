@@ -22,8 +22,16 @@ namespace WomPlatform.Web.Api.OutputModels {
     }
 
     public static class SimpleFilterExtensions {
-        public static SimpleFilter ToOutput(this DatabaseDocumentModels.Filter filter) {
-            return (filter == null || (filter.Aims == null && filter.Bounds == null && filter.MaxAge == null)) ? null : new SimpleFilter {
+        public static SimpleFilter ToOutput(this DatabaseDocumentModels.Filter? filter) {
+            if(filter == null) {
+                return null;
+            }
+
+            if(filter.Aims == null && filter.Bounds == null && filter.MaxAge == null) {
+                return null;
+            }
+
+            return new SimpleFilter {
                 Aim = filter.Aims,
                 Bounds = filter.Bounds.ToOutput(),
                 MaxAge = filter.MaxAge,

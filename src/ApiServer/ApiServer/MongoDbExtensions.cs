@@ -13,7 +13,7 @@ namespace WomPlatform.Web.Api {
                 throw new InvalidOperationException("Database operation not acknowledged");
             }
             if(results.MatchedCount != expectedMatchesAndUpdates || results.ModifiedCount != expectedMatchesAndUpdates) {
-                throw new InvalidOperationException($"Failed to decrement request attempts (matched {results.MatchedCount}, modified {results.ModifiedCount})");
+                throw new InvalidOperationException($"Failed to verify database operation (matched {results.MatchedCount}, modified {results.ModifiedCount})");
             }
         }
 

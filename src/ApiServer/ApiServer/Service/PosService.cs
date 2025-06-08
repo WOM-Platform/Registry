@@ -50,6 +50,8 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public Task CreatePos(Pos pos) {
+            ArgumentNullException.ThrowIfNull(pos);
+
             return PosCollection.InsertOneAsync(pos);
         }
 

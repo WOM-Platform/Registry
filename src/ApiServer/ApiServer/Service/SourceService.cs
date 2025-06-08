@@ -130,21 +130,15 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         public async Task<bool> ReplaceSource(Source source) {
-            var filter = Builders<Source>.Filter.And(
-                Builders<Source>.Filter.Eq(s => s.Id, source.Id),
-                Builders<Source>.Filter.Ne(s => s.IsDeleted, true)
-            );
+            var filter = Builders<Source>.Filter.Eq(s => s.Id, source.Id);
             var result = await SourceCollection.ReplaceOneAsync(filter, source);
-            return (result.ModifiedCount == 1);
+            return result.IsAcknowledged && result.MatchedCount == 1;
         }
 
         public async Task<bool> DeleteSource(ObjectId sourceId) {
-            var filter = Builders<Source>.Filter.And(
-                Builders<Source>.Filter.Eq(s => s.Id, sourceId),
-                Builders<Source>.Filter.Ne(s => s.IsDeleted, true)
-            );
+            var filter = Builders<Source>.Filter.Eq(s => s.Id, sourceId);
             var result = await SourceCollection.UpdateOneAsync(filter, Builders<Source>.Update.Set(s => s.IsDeleted, true));
-            return result.ModifiedCount == 1;
+            return result.IsAcknowledged && result.MatchedCount == 1;
         }
 
         public async Task AddUserAsAdministrator(IClientSessionHandle session, ObjectId sourceId, User user) {

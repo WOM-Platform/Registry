@@ -4,7 +4,6 @@ using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
     public class SourceCustomGenerator {
-
         [BsonElement("title")]
         public string Title { get; set; }
 
@@ -20,7 +19,6 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public bool EnableCustomGeneration { get; set; } = true;
 
         public class TemplateInfo {
-
             [BsonElement("name")]
             public string Name { get; set; }
 
@@ -50,7 +48,6 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
             [BsonExtraElements]
             public BsonDocument CatchAll { get; set; }
-
         }
 
         [BsonElement("templates")]
@@ -59,6 +56,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
-
     }
 }

@@ -5,9 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
-
     public class PaymentRequest {
-
         [BsonId(IdGenerator = typeof(GuidGenerator))]
         public Guid Otc { get; set; }
 
@@ -58,7 +56,5 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
-
     }
-
 }
