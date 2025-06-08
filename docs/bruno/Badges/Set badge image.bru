@@ -1,0 +1,43 @@
+meta {
+  name: Set badge image
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/:badgeId/image
+  body: file
+  auth: bearer
+}
+
+params:path {
+  badgeId: 683909820b2f622f6f07f241
+}
+
+headers {
+  Content-Type: image/jpeg
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "challengeId": null,
+    "isPublic": true,
+    "name": {
+      "it": "Il mio nuovo badge",
+      "en": "My new badge"
+    },
+    "description": {
+      "it": "Descrizione del nuovo badge.",
+      "en": "Description of the new badge."
+    },
+    "informationUrl": "https://example.org"
+  }
+}
+
+body:file {
+  file: @file(C:\Users\loren\Downloads\A surreal construction site scene with builders in safety gear working around a massive, mysterious .jpeg) @contentType(image/jpeg)
+}

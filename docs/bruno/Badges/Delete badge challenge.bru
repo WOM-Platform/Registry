@@ -1,0 +1,19 @@
+meta {
+  name: Delete badge challenge
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/challenge/:badgeChallengeId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  badgeChallengeId: 6840d4f89c11312675e27f0c
+}
+
+auth:bearer {
+  token: {{token}}
+}

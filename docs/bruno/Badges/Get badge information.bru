@@ -1,0 +1,15 @@
+meta {
+  name: Get badge information
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/:badgeId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  badgeId: 6840d0c1df0a3c598369ffb9
+}

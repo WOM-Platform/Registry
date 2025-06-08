@@ -1,0 +1,49 @@
+meta {
+  name: Replace badge
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/:badgeId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  badgeId: 683909820b2f622f6f07f241
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "id": "683909820b2f622f6f07f241",
+    "sortName": "base-01",
+    
+      "isPublic": true,
+      "name": {
+        "it": "Il mio nuovo badgee",
+        "en": "My new badge"
+      },
+      "simpleFilter": {
+        "count": 100
+      },
+      "image": {
+        "fullSizeUrl": "https://pictures.dev.wom.social/badge-images/683909820b2f622f6f07f241/010faf19e9f74a67989ef8d114f5069d-full.jpg",
+        "midDensityFullWidthUrl": "https://pictures.dev.wom.social/badge-images/683909820b2f622f6f07f241/010faf19e9f74a67989ef8d114f5069d-mid.jpg",
+        "highDensityFullWidthUrl": "https://pictures.dev.wom.social/badge-images/683909820b2f622f6f07f241/010faf19e9f74a67989ef8d114f5069d-high.jpg",
+        "squareThumbnailUrl": "https://pictures.dev.wom.social/badge-images/683909820b2f622f6f07f241/010faf19e9f74a67989ef8d114f5069d-thumb.jpg",
+        "blurHash": "KLHx$jaJIB.mDj%L?uIVkB"
+      },
+      "description": {
+        "it": "Descrizione del nuovo badge.",
+        "en": "Description of the new badge."
+      },
+      "informationUrl": "https://example.org",
+      "createdAt": "2025-05-30T01:27:30.267Z",
+      "lastUpdate": "2025-06-01T09:23:04.258Z"
+    }
+}
