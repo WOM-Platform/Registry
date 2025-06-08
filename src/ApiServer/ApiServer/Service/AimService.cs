@@ -58,6 +58,7 @@ namespace WomPlatform.Web.Api.Service {
             new Aim("S", Titles("Safety", "Sicurezza")),
             new Aim("T", Titles("Cultural Heritage", "Patrimonio culturale")),
             new Aim("U", Titles("Urban Environment", "Ambiente urbano"), [
+                new Aim("UE", Titles("Urban Economy", "Economia urbana")),
                 new Aim("UM", Titles("Urban Mobility", "Mobilità urbana")),
             ]),
             new Aim("X", Titles("Social Cohesion", "Coesione sociale"), [
