@@ -46,6 +46,9 @@ namespace WomPlatform.Web.Api.Service {
             if(challengeId != null) {
                 filters.Add(Builders<Badge>.Filter.Eq(b => b.ChallengeId, challengeId));
             }
+            else {
+                filters.Add(Builders<Badge>.Filter.Eq(b => b.ChallengeId, null));
+            }
             if(isPublic != null) {
                 filters.Add(Builders<Badge>.Filter.Eq(b => b.IsPublic, isPublic));
             }

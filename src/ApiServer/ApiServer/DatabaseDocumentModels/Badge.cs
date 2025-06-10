@@ -10,11 +10,9 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public ObjectId Id { get; set; }
 
         [BsonElement("sortName")]
-        [BsonIgnoreIfNull]
         public string SortName { get; set; }
 
         [BsonElement("challengeId")]
-        [BsonIgnoreIfNull]
         public ObjectId? ChallengeId { get; set; }
 
         [BsonElement("isPublic")]
@@ -24,8 +22,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public Dictionary<string, string> Name { get; set; }
 
         [BsonElement("simpleFilter")]
-        [BsonIgnoreIfNull]
-        public BadgeSimpleFilter? SimpleFilter { get; set; }
+        public BadgeSimpleFilter SimpleFilter { get; set; }
 
         [BsonElement("imagePath")]
         [BsonIgnoreIfNull]
