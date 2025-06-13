@@ -473,7 +473,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         #endregion
 
-        public record UserLoginInput(string Email, string Password, string ClientName);
+        public record UserLoginInput(string Email, string Password, string? ClientName);
 
         public record UserLoginOutput(string Id, string Token, DateTime LoginUntil, bool Verified);
 
