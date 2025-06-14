@@ -23,10 +23,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public AddressBlock Address { get; set; }
 
         [BsonElement("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [BsonElement("website")]
-        public string WebsiteUrl { get; set; }
+        public string? WebsiteUrl { get; set; }
 
         [BsonElement("createdOn")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
@@ -39,7 +39,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public DateTime? LastUpdate { get; set; }
 
         [BsonElement("access")]
-        public List<AccessControlEntry<MerchantRole>> Access { get; set; } = new();
+        public List<AccessControlEntry<MerchantRole>> Access { get; set; } = [];
 
         [BsonElement("isDummy")]
         [BsonDefaultValue(false)]
@@ -52,7 +52,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("activationCode")]
         [BsonIgnoreIfNull]
-        public string ActivationCode { get; set; }
+        public string? ActivationCode { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }

@@ -17,7 +17,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("selector")]
         [BsonIgnoreIfNull]
-        public string KeySelector { get; set; }
+        public string? KeySelector { get; set; }
 
         public enum KindOfKey {
             SourceAdministrator

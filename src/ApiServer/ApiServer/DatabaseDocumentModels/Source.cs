@@ -52,7 +52,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("aims")]
         [BsonIgnoreIfNull]
-        public SourceAims Aims { get; set; }
+        public SourceAims? Aims { get; set; }
 
         public class SourceLocation {
             [BsonElement("default")]
@@ -66,15 +66,15 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("location")]
         [BsonIgnoreIfNull]
-        public SourceLocation Location { get; set; }
+        public SourceLocation? Location { get; set; }
 
         [BsonElement("adminUserIds")]
         [BsonIgnoreIfNull]
-        public ObjectId[] AdministratorUserIds { get; set; }
+        public ObjectId[]? AdministratorUserIds { get; set; }
 
         [BsonElement("customGenerator")]
         [BsonIgnoreIfNull]
-        public SourceCustomGenerator CustomGenerator { get; set; }
+        public SourceCustomGenerator? CustomGenerator { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }

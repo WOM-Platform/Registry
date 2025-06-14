@@ -22,11 +22,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("verificationToken")]
         [BsonIgnoreIfNull]
-        public string VerificationToken { get; set; }
+        public string? VerificationToken { get; set; }
 
         [BsonElement("passwordResetToken")]
         [BsonIgnoreIfNull]
-        public string PasswordResetToken { get; set; }
+        public string? PasswordResetToken { get; set; }
 
         [BsonElement("role")]
         [BsonDefaultValue(PlatformRole.User)]

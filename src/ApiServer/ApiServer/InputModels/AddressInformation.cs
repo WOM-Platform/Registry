@@ -4,24 +4,24 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 namespace WomPlatform.Web.Api.InputModels {
     public class AddressInformation {
         [StringLength(256)]
-        public string StreetName { get; set; }
+        public string? StreetName { get; set; }
 
         [StringLength(16)]
-        public string StreetNumber { get; set; }
+        public string? StreetNumber { get; set; }
 
         [StringLength(16)]
-        public string ZipCode { get; set; }
+        public string? ZipCode { get; set; }
 
         [StringLength(128)]
-        public string City { get; set; }
+        public string? City { get; set; }
 
         [StringLength(64)]
-        public string Country { get; set; }
+        public string? Country { get; set; }
 
         [StringLength(1024)]
-        public string FormattedAddress { get; set; }
+        public string? FormattedAddress { get; set; }
 
-        public string GoogleMapsPlaceId { get; set; }
+        public string? GoogleMapsPlaceId { get; set; }
     }
 
     public static class AddressInformationExtensions {

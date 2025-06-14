@@ -18,7 +18,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("position")]
         [BsonDefaultValue(null)]
         [BsonIgnoreIfDefault]
-        public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
+        public GeoJsonPoint<GeoJson2DGeographicCoordinates>? Position { get; set; }
 
         [BsonElement("timestamp")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]

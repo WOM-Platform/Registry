@@ -11,16 +11,16 @@ namespace WomPlatform.Web.Api.InputModels.Pos {
         public string Name { get; set; }
 
         [StringLength(4096)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public double? Latitude { get; set; }
 
         public double? Longitude { get; set; }
 
-        public AddressInformation Address { get; set; }
+        public AddressInformation? Address { get; set; }
 
         [Url]
-        public string Url { get; set; }
+        public string? Url { get; set; }
 
         public bool? IsActive { get; set; }
     }

@@ -17,7 +17,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("description")]
         [BsonIgnoreIfNull]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [BsonElement("publicKey")]
         public string PublicKey { get; set; }
@@ -32,19 +32,19 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("addressDetails")]
         [BsonIgnoreIfNull]
-        public AddressBlock Address { get; set; }
+        public AddressBlock? Address { get; set; }
 
         [BsonElement("coverPath")]
         [BsonIgnoreIfNull]
-        public string CoverPath { get; set; }
+        public string? CoverPath { get; set; }
 
         [BsonElement("coverBlurHash")]
         [BsonIgnoreIfNull]
-        public string CoverBlurHash { get; set; }
+        public string? CoverBlurHash { get; set; }
 
         [BsonElement("url")]
         [BsonIgnoreIfNull]
-        public string Url { get; set; }
+        public string? Url { get; set; }
 
         [BsonElement("createdOn")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]

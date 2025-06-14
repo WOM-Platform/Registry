@@ -14,7 +14,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("filter")]
         [BsonIgnoreIfNull]
-        public Filter Filter { get; set; }
+        public Filter? Filter { get; set; }
 
         [BsonElement("createdAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
@@ -37,22 +37,22 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("nonce")]
         [BsonIgnoreIfNull]
-        public string Nonce { get; set; }
+        public string? Nonce { get; set; }
 
         [BsonElement("password")]
         public string Password { get; set; }
 
         [BsonElement("ackUrlPocket")]
         [BsonIgnoreIfNull]
-        public string AckUrlPocket { get; set; }
+        public string? AckUrlPocket { get; set; }
 
         [BsonElement("ackUrlPos")]
         [BsonIgnoreIfNull]
-        public string AckUrlPos { get; set; }
+        public string? AckUrlPos { get; set; }
 
         [BsonElement("confirmations")]
         [BsonIgnoreIfNull]
-        public List<PaymentConfirmation> Confirmations { get; set; } = null;
+        public List<PaymentConfirmation>? Confirmations { get; set; } = null;
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }

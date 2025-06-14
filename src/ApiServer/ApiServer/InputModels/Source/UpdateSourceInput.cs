@@ -2,11 +2,12 @@
 
 namespace WomPlatform.Web.Api.InputModels.Source {
     public class UpdateSourceInput {
+        [Required]
         [StringLength(64, MinimumLength = 4)]
         public string Name { get; set; }
 
         [Url]
-        public string Url { get; set; }
+        public string? Url { get; set; }
 
         public class AimDetails {
             public string[] Enabled { get; set; }
@@ -16,7 +17,7 @@ namespace WomPlatform.Web.Api.InputModels.Source {
             // TODO: aim budget
         }
 
-        public AimDetails Aims { get; set; }
+        public AimDetails? Aims { get; set; }
 
         // TODO: source location stuff
     }

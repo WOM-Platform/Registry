@@ -9,11 +9,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("logoPath")]
         [BsonIgnoreIfNull]
-        public string LogoPath { get; set; }
+        public string? LogoPath { get; set; }
 
         [BsonElement("logoBlurHash")]
         [BsonIgnoreIfNull]
-        public string LogoBlurHash { get; set; }
+        public string? LogoBlurHash { get; set; }
 
         [BsonElement("enableCustomGeneration")]
         public bool EnableCustomGeneration { get; set; } = true;
@@ -24,11 +24,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
             [BsonElement("description")]
             [BsonIgnoreIfNull]
-            public string Description { get; set; }
+            public string? Description { get; set; }
 
             [BsonElement("guide")]
             [BsonIgnoreIfNull]
-            public string Guide { get; set; }
+            public string? Guide { get; set; }
 
             [BsonElement("presetWomCount")]
             [BsonIgnoreIfNull]
@@ -36,11 +36,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
             [BsonElement("presetWomAim")]
             [BsonIgnoreIfNull]
-            public string PresetWomAim { get; set; }
+            public string? PresetWomAim { get; set; }
 
             [BsonElement("presetWomLocation")]
             [BsonIgnoreIfNull]
-            public GeoJsonPoint<GeoJson2DGeographicCoordinates> PresetWomLocation { get; set; }
+            public GeoJsonPoint<GeoJson2DGeographicCoordinates>? PresetWomLocation { get; set; }
 
             [BsonElement("batchGeneration")]
             [BsonDefaultValue(false)]
@@ -52,7 +52,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("templates")]
         [BsonIgnoreIfDefault]
-        public TemplateInfo[] Templates { get; set; }
+        public TemplateInfo[]? Templates { get; set; }
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }

@@ -8,11 +8,11 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
     public class Filter {
         [BsonElement("aims")]
         [BsonIgnoreIfNull]
-        public string Aims { get; set; }
+        public string? Aims { get; set; }
 
         [BsonElement("bounds")]
         [BsonIgnoreIfNull]
-        public Bounds Bounds { get; set; }
+        public Bounds? Bounds { get; set; }
 
         [BsonElement("maxAge")]
         [BsonIgnoreIfNull]
