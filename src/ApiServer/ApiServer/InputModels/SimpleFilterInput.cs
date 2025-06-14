@@ -5,12 +5,12 @@ namespace WomPlatform.Web.Api.InputModels {
         /// <summary>
         /// Optional aim filter, expressed as an aim code (prefix).
         /// </summary>
-        public string Aim { get; set; }
+        public string? Aim { get; set; }
 
         /// <summary>
         /// Optional geographical bounds filter.
         /// </summary>
-        public GeoBoundsInput Bounds { get; set; }
+        public GeoBoundsInput? Bounds { get; set; }
 
         /// <summary>
         /// Optional voucher freshness filter, expressed in days of age.

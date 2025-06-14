@@ -13,7 +13,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         public string Title { get; set; }
 
         [BsonElement("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public class PaymentInformation {
             [BsonElement("otc")]
@@ -27,7 +27,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
             [BsonElement("filter")]
             [BsonIgnoreIfNull]
-            public Filter Filter { get; set; }
+            public Filter? Filter { get; set; }
         }
 
         [BsonElement("payment")]
@@ -36,7 +36,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("paymentRequestId")]
         [BsonIgnoreIfDefault]
         [Obsolete]
-        public Guid PaymentRequestId { get; set; }
+        public Guid? PaymentRequestId { get; set; }
 
         [BsonElement("cost")]
         [BsonIgnoreIfDefault]
@@ -46,7 +46,7 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("filter")]
         [BsonIgnoreIfNull]
         [Obsolete]
-        public Filter Filter { get; set; }
+        public Filter? Filter { get; set; }
 
         public class PosInformation {
             [BsonElement("id")]
@@ -57,22 +57,22 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
             [BsonElement("description")]
             [BsonIgnoreIfNull]
-            public string Description { get; set; }
+            public string? Description { get; set; }
 
             [BsonElement("coverPath")]
             [BsonIgnoreIfNull]
-            public string CoverPath { get; set; }
+            public string? CoverPath { get; set; }
 
             [BsonElement("coverBlurHash")]
             [BsonIgnoreIfNull]
-            public string CoverBlurHash { get; set; }
+            public string? CoverBlurHash { get; set; }
 
             [BsonElement("position")]
             public GeoJsonPoint<GeoJson2DGeographicCoordinates> Position { get; set; }
 
             [BsonElement("url")]
             [BsonIgnoreIfNull]
-            public string Url { get; set; }
+            public string? Url { get; set; }
         }
 
         [BsonElement("pos")]

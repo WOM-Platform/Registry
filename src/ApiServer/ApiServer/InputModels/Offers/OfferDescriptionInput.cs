@@ -7,6 +7,6 @@ namespace WomPlatform.Web.Api.InputModels.Offers {
         public string Title { get; set; }
 
         [StringLength(1024)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
     }
 }

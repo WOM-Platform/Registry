@@ -7,12 +7,12 @@ namespace WomPlatform.Web.Api.InputModels.Offers {
         public string Title { get; set; }
 
         [StringLength(1024)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [Required]
         [Range(1, 10000)]
         public int Cost { get; set; }
 
-        public SimpleFilterInput Filter { get; set; }
+        public SimpleFilterInput? Filter { get; set; }
     }
 }
