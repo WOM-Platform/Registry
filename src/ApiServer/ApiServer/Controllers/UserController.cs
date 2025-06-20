@@ -111,9 +111,9 @@ namespace WomPlatform.Web.Api.Controllers {
         [HttpGet]
         [Authorize]
         public async Task<ActionResult> ListUsers(
-            [FromQuery] string name,
-            [FromQuery] string email,
-            [FromQuery] string globalSearch,
+            [FromQuery] string? name,
+            [FromQuery] string? email,
+            [FromQuery] string? globalSearch,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10
         ) {

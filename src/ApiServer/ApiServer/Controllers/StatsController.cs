@@ -90,7 +90,7 @@ public class StatsController : BaseRegistryController {
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> FetchVouchersGeneratedAndRedeemedStats([FromBody] StatisticsRequestDto request) {
+        public async Task<ActionResult> FetchVouchersGeneratedAndRedeemedStats([FromBody] SourceStatisticsRequestDto request) {
             try {
                 ObjectId[] sourceObjectIds = request.SourceId?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
                 // Check if user is admin or owner of the source
@@ -114,7 +114,7 @@ public class StatsController : BaseRegistryController {
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> FetchVouchersConsumedStats([FromBody] StatisticsRequestDto request) {
+        public async Task<ActionResult> FetchVouchersConsumedStats([FromBody] MerchantStatisticsRequestDto request) {
             try {
                 ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
 
@@ -140,7 +140,7 @@ public class StatsController : BaseRegistryController {
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GetListActiveMerchants([FromBody] StatisticsRequestDto request) {
+        public async Task<ActionResult> GetListActiveMerchants([FromBody] MerchantStatisticsRequestDto request) {
             try {
                 ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
 
@@ -176,7 +176,7 @@ public class StatsController : BaseRegistryController {
         }
 
         [HttpPost("offers/rank")]
-        public async Task<ActionResult<List<Offer>>> GetOffersRank([FromBody] StatisticsRequestDto request) {
+        public async Task<ActionResult<List<Offer>>> GetOffersRank([FromBody] MerchantStatisticsRequestDto request) {
             try {
                 ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
 
@@ -204,7 +204,7 @@ public class StatsController : BaseRegistryController {
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         public async Task<ActionResult> FetchVouchersAvailable(
-            [FromBody] StatisticsRequestDto request
+            [FromBody] MerchantStatisticsRequestDto request
         ) {
             ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
 
@@ -220,7 +220,7 @@ public class StatsController : BaseRegistryController {
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DownloadCsv([FromBody] StatisticsRequestDto request) {
+        public async Task<IActionResult> DownloadCsv([FromBody] CombinedStatisticsRequestDto request) {
             await VerifyUserIsAdmin(); // check if user is an admin
 
             ObjectId[] merchantObjectIds = request.MerchantIds?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
