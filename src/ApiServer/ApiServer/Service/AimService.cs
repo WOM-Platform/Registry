@@ -54,6 +54,7 @@ namespace WomPlatform.Web.Api.Service {
             ]),
             new Aim("N", Titles("Natural Environment", "Ambiente naturale")),
             new Aim("P", Titles("Participation", "Partecipazione")),
+            new Aim("PR", Titles("Research", "Ricerca")),
             new Aim("R", Titles("Human Rights", "Diritti umani")),
             new Aim("S", Titles("Safety", "Sicurezza")),
             new Aim("T", Titles("Cultural Heritage", "Patrimonio culturale")),
