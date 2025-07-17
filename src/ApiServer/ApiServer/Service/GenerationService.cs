@@ -79,8 +79,7 @@ namespace WomPlatform.Web.Api.Service {
             var totalVouchers = voucherSpecifications.Sum(spec => spec.Count);
             var vouchers = voucherSpecifications.Select(spec => {
                 if(spec.Count <= 0) {
-                    throw new ArgumentException(
-                        "Voucher specification cannot generate 0 or negative amount of vouchers");
+                    throw new ArgumentException("Voucher specification cannot generate 0 or negative amount of vouchers");
                 }
 
                 if(spec.CreationMode == VoucherCreationMode.Standard && spec.Location == null) {
