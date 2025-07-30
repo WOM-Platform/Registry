@@ -52,7 +52,7 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
     <PackageReference Include="WomPlatform.Connector" Version="4.4.5" />
     <PackageReference Include="Blurhash.ImageSharp" Version="4.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>
 
 </Project>
