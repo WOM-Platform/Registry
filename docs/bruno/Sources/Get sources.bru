@@ -1,0 +1,20 @@
+meta {
+  name: Get sources
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/source?search=Pesaro
+  body: none
+  auth: bearer
+}
+
+params:query {
+  search: Pesaro
+  ~page: 2
+}
+
+auth:bearer {
+  token: {{token}}
+}

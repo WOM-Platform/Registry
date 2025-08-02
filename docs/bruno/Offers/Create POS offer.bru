@@ -1,0 +1,39 @@
+meta {
+  name: Create POS offer
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers
+  body: json
+  auth: bearer
+}
+
+params:path {
+  posId: 65dc70732a0e94c0dc1f781c
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "La mia offerta di prova",
+    "description": "Bellissima offerta di prova.",
+    "cost": 120,
+    "filter_off": {
+      "aim": "string",
+      "bounds": {
+        "leftTop": [
+          0
+        ],
+        "rightBottom": [
+          0
+        ]
+      },
+      "maxAge": 0
+    }
+  }
+}

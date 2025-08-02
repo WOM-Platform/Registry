@@ -1,0 +1,15 @@
+meta {
+  name: Get badge challenges
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/challenge?visibility=private
+  body: none
+  auth: inherit
+}
+
+params:query {
+  visibility: private
+}

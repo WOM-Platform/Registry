@@ -1,0 +1,11 @@
+meta {
+  name: Get anonymous POS keys
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v2/auth/key
+  body: none
+  auth: inherit
+}

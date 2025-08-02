@@ -1,0 +1,18 @@
+meta {
+  name: Search offers
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/offer/search/distance?latitude=43.845776&longitude=13.017945&range=10&orderBy=distance
+  body: none
+  auth: inherit
+}
+
+params:query {
+  latitude: 43.845776
+  longitude: 13.017945
+  range: 10
+  orderBy: distance
+}

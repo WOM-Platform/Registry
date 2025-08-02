@@ -1,0 +1,19 @@
+meta {
+  name: Delete badge
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/:badgeId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  badgeId: 6840d0995e5c815f482f27ef
+}
+
+auth:bearer {
+  token: {{token}}
+}

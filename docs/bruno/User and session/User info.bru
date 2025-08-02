@@ -1,0 +1,20 @@
+meta {
+  name: User info
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/user/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+vars:post-response {
+  token: res.body.token
+  user_id: res.body.id
+}

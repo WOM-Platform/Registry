@@ -1,0 +1,15 @@
+meta {
+  name: Get badge challenge
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/challenge/:badgeChallengeId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  badgeChallengeId: 6842708d101719fdfca75768
+}

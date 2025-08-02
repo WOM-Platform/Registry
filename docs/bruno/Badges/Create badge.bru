@@ -1,0 +1,30 @@
+meta {
+  name: Create badge
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "isPublic": false,
+      "challengeId": "6842708d101719fdfca75768",
+      "name": {
+        "it": "Bilanciatissimo"
+      },
+      "simpleFilter": {
+        "count": 100,
+        "sourceId": "61ac84032c69b3b17893fe5d"
+      },
+      "description": null
+    }
+}

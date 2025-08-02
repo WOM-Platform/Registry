@@ -1,0 +1,19 @@
+meta {
+  name: Get source by ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/source/:sourceId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  sourceId: 67e3da737219fcbcb9d1cb0d
+}
+
+auth:bearer {
+  token: {{token}}
+}

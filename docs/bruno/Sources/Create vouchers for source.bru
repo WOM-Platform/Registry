@@ -1,0 +1,43 @@
+meta {
+  name: Create vouchers for source
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/source/:sourceId/vouchers
+  body: json
+  auth: apikey
+}
+
+params:path {
+  sourceId: 5e737c3a9036edb02d61ee34
+}
+
+auth:apikey {
+  key: X-WOM-ApiKey
+  value: c3b89651-9ed5-43a4-b1e5-84d806f83b7b
+  placement: header
+}
+
+body:json {
+  {
+    "vouchers": [
+      {
+        "count": 200,
+        "aim": "IS",
+        "timestamp": "2025-06-14T12:00:00.000+02:00",
+        "creationMode": "SetLocationOnRedeem"
+      },
+      {
+        "count": 123,
+        "aim": "C",
+        "location": {
+          "latitude": 43.724698,
+          "longitude": 12.635789
+        },
+        "timestamp": "2025-06-14T12:00:00.000+02:00"
+      }
+    ]
+  }
+}

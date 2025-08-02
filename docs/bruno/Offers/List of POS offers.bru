@@ -1,0 +1,19 @@
+meta {
+  name: List of POS offers
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers
+  body: none
+  auth: bearer
+}
+
+params:path {
+  posId: 65dc70732a0e94c0dc1f781c
+}
+
+auth:bearer {
+  token: {{token}}
+}

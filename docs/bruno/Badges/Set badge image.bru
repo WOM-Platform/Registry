@@ -1,0 +1,43 @@
+meta {
+  name: Set badge image
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/:badgeId/image
+  body: file
+  auth: bearer
+}
+
+params:path {
+  badgeId: 6846ea0fb51528e329a9da72
+}
+
+headers {
+  Content-Type: image/jpeg
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "challengeId": null,
+    "isPublic": true,
+    "name": {
+      "it": "Il mio nuovo badge",
+      "en": "My new badge"
+    },
+    "description": {
+      "it": "Descrizione del nuovo badge.",
+      "en": "Description of the new badge."
+    },
+    "informationUrl": "https://example.org"
+  }
+}
+
+body:file {
+  file: @file(C:\Users\loren\Downloads\wom-badges\wom-welcome.jpg) @contentType(image/jpeg)
+}

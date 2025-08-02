@@ -1,0 +1,29 @@
+meta {
+  name: Create badge challenge
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/badge/challenge
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": {
+      "it": "Balance",
+      "en": "Balance"
+    },
+    "description": {
+      "it": "Sfida il tuo equilibrio.",
+      "en": "Challenge your balance."
+    },
+    "informationUrl_off": "https://example.org"
+  }
+}
