@@ -1,7 +1,8 @@
 SHELL := /bin/bash
 
-DC := docker compose -f docker-compose.yml -f docker-compose.custom.yml
+DC := docker compose -f docker-compose.yml -f docker-compose.local.yml -f docker-compose.custom.yml
 DC_RUN := ${DC} run --rm
+DB_GCLOUD := docker compose -f docker-compose.yml -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env
 
 include gcloud.env
 include config.env
@@ -83,7 +84,7 @@ rs:
 rebuild:
 	${DC} build api
 	${DC} rm -sf api
-	${DC} up -d api
+	${DC} up -d api well-known
 
 .PHONY: stop
 stop:
@@ -99,8 +100,8 @@ logs:
 
 .PHONY: gcloud-deploy
 gcloud-deploy:
-	docker compose -f docker-compose.yml -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env up -d api well-known
-	docker compose -f docker-compose.yml -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env ps
+	${DC_GCLOUD} up -d api well-known
+	${DC_GCLOUD} ps
 	@echo
 	@echo 'WOM registry service deployed'
 	@echo
