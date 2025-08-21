@@ -3,7 +3,7 @@
 namespace WomPlatform.Web.Api.InputModels.Merchant {
     public class CreateMerchantInput {
         [Required]
-        [MinLength(8)]
+        [MinLength(4)]
         public string Name { get; set; }
 
         [Required]
@@ -37,6 +37,6 @@ namespace WomPlatform.Web.Api.InputModels.Merchant {
         [Url]
         public string? Url { get; set; }
 
-        public string ActivationCode { get; set; }
+        public string? ActivationCode { get; set; }
     }
 }

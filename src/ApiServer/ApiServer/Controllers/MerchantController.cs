@@ -170,7 +170,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         public record MerchantUpdateInput(
             [Required]
-            [MinLength(8)]
+            [MinLength(4)]
             string Name,
             [Required]
             MerchantActivityType PrimaryActivity,
@@ -184,10 +184,10 @@ namespace WomPlatform.Web.Api.Controllers {
             [Required]
             string Country,
             string FormattedAddress,
-            string GoogleMapsPlaceId,
-            string Description,
+            string? GoogleMapsPlaceId,
+            string? Description,
             [Url]
-            string Url,
+            string? Url,
             bool Enabled
         );
 
