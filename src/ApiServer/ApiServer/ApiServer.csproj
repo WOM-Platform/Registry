@@ -36,10 +36,6 @@
     <EmbeddedResource Include="Resources\base-offer.jpeg" />
     <None Remove="Resources\test2.jpg" />
     <None Include="Resources\base-offer-bw.jpeg" />
-    <None Remove="Resources\HelveticaNeueBold.otf" />
-    <EmbeddedResource Include="Resources\HelveticaNeue-Bold.otf" />
-    <None Remove="Resources\HelveticaNeueRoman.otf" />
-    <EmbeddedResource Include="Resources\HelveticaNeue-Regular.otf" />
     <None Remove="Resources\HelveticaNeue-Bold.ttf" />
     <EmbeddedResource Include="Resources\HelveticaNeue-Bold.ttf" />
     <None Remove="Resources\HelveticaNeue-Regular.ttf" />
