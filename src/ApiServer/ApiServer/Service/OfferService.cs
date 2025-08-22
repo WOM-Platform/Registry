@@ -12,6 +12,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.DTO;
+using WomPlatform.Web.Api.OutputModels.Offers;
 using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Service {
@@ -273,6 +274,73 @@ namespace WomPlatform.Web.Api.Service {
         /// </summary>
         public Task<List<Offer>> GetOffersOfPos(ObjectId posId) {
             return OfferCollection.Find(Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId)).ToListAsync();
+        }
+
+        /// <summary>
+        /// Retrieve all offers of a POS with extra admin lookup.
+        /// </summary>
+        public async Task<List<OfferAdminOutput>> GetOffersOfPosForAdmin(ObjectId posId)
+        {
+            var pipeline = new BsonDocument[]
+            {
+                new BsonDocument("$match",
+                    new BsonDocument("pos._id", new BsonDocument("$eq", posId))
+                ),
+
+                new BsonDocument("$lookup",
+                    new BsonDocument
+                    {
+                        { "from", "PaymentRequests" },
+                        { "let", new BsonDocument("prId", "$paymentRequestId") },
+                        { "pipeline", new BsonArray
+                            {
+                                new BsonDocument("$match",
+                                    new BsonDocument("$expr",
+                                        new BsonDocument("$eq", new BsonArray { "$_id", "$$prId" })
+                                    )
+                                ),
+                                new BsonDocument("$unwind", "$confirmations"),
+                                new BsonDocument("$sort",
+                                    new BsonDocument("confirmations.performedAt", -1)
+                                ),
+                                new BsonDocument("$limit", 1),
+                                new BsonDocument("$project",
+                                    new BsonDocument
+                                    {
+                                        { "_id", 0 },
+                                        { "lastConfirmation", "$confirmations.performedAt" }
+                                    }
+                                )
+                            }
+                        },
+                        { "as", "lastPaymentConfirmation" }
+                    }
+                ),
+
+                new BsonDocument("$unwind",
+                    new BsonDocument
+                    {
+                        { "path", "$lastPaymentConfirmation" },
+                        { "preserveNullAndEmptyArrays", true }
+                    }
+                ),
+
+                new BsonDocument("$addFields",
+                    new BsonDocument("lastPaymentConfirmation", "$lastPaymentConfirmation.lastConfirmation")
+                )
+            };
+
+            // Run the aggregation
+            var offersWithPaymentRequest = await OfferCollection
+                .Aggregate<BsonDocument>(pipeline)
+                .ToListAsync();
+
+            // Map to OfferAdminOutput
+            var result = await OfferCollection
+                .Aggregate<OfferAdminOutput>(pipeline)
+                .ToListAsync();
+
+            return result;
         }
 
         /// <summary>

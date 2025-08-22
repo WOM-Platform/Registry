@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -39,9 +40,16 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            var results = await OfferService.GetOffersOfPos(pos.Id);
-
-            return Ok((from result in results select result.ToDetailsOutput()).ToArray());
+            if(await IsUserAdmin())
+            {
+                var results = await OfferService.GetOffersOfPosForAdmin(pos.Id);
+                return Ok(results); // returns OfferAdminOutput[]
+            }
+            else
+            {
+                var results = await OfferService.GetOffersOfPos(pos.Id);
+                return Ok(results.Select(r => r.ToDetailsOutput()).ToArray());
+            } ;
         }
 
         /// <summary>
