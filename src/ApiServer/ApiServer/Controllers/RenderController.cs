@@ -47,15 +47,28 @@ namespace WomPlatform.Web.Api.Controllers {
         private static FontCollection _customFontCollection;
 
         private static FontCollection CustomFontCollection {
+
             get {
                 if(_customFontCollection == null) {
                     FontCollection fonts = new();
-                    foreach(var fontName in new[] { "WomPlatform.Web.Api.Resources.Raleway-Regular.ttf", "WomPlatform.Web.Api.Resources.Raleway-Bold.ttf" }) {
+                    foreach(var fontName in new[] { "WomPlatform.Web.Api.Resources.HelveticaNeue-Regular.ttf", "WomPlatform.Web.Api.Resources.HelveticaNeue-Bold.ttf" }) {
                         using var fontStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(fontName);
                         fonts.Add(fontStream);
                     }
 
+
+                    foreach (var family in fonts.Families)
+                    {
+                        Console.WriteLine($"[Font Debug] Family: {family.Name}");
+                        foreach (var style in family.GetAvailableStyles())
+                        {
+                            Console.WriteLine($"   -> Style: {style}");
+                        }
+                    }
+
                     _customFontCollection = fonts;
+
+
                 }
 
                 return _customFontCollection;
@@ -64,7 +77,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         private static Color WomBlue {
             get {
-                return Color.FromRgb(42, 104, 246);
+                return Color.FromRgb(0, 159, 227);
             }
         }
 
@@ -74,7 +87,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
-        private const float PaddingTopSizeFraction = 0.12f;
+        private const float PaddingTopSizeFraction = 0.18f;
         private const float PaddingBottomSizeFraction = 0.1f;
         private const float PaddingAmountSizeFraction = 0.035f;
 
@@ -169,8 +182,8 @@ namespace WomPlatform.Web.Api.Controllers {
             var qrCode = Net.Codecrete.QrCodeGenerator.QrCode.EncodeText($"https://{SelfLinkDomain}/payment/{offer.Payment.Otc:D}", Net.Codecrete.QrCodeGenerator.QrCode.Ecc.Medium);
 
             var outputImage = await (style switch {
-                "print" => GenerateOfferImage(offer, qrCode, "WomPlatform.Web.Api.Resources.base-offer-bw.jpg", Color.Black),
-                _ => GenerateOfferImage(offer, qrCode, "WomPlatform.Web.Api.Resources.base-offer.jpg", WomBlue),
+                "print" => GenerateOfferImage(offer, qrCode, "WomPlatform.Web.Api.Resources.base-offer-bw.jpeg", Color.Black),
+                _ => GenerateOfferImage(offer, qrCode, "WomPlatform.Web.Api.Resources.base-offer.jpeg", Color.Black),
             });
 
             var outputStream = new MemoryStream();
@@ -184,10 +197,12 @@ namespace WomPlatform.Web.Api.Controllers {
             var backgroundStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(backgroundResourceName);
             var backgroundImage = await Image.LoadAsync(backgroundStream);
 
-            var ralewayFont = CustomFontCollection.Get("Raleway");
-            var titleFont = ralewayFont.CreateFont(backgroundImage.Width * TitleFontSizeFraction, FontStyle.Bold);
-            var descriptionFont = ralewayFont.CreateFont(backgroundImage.Width * DescriptionFontSizeFraction, FontStyle.Regular);
-            var amountFont = ralewayFont.CreateFont(backgroundImage.Width * AmountFontSizeFraction, FontStyle.Bold);
+
+            var helvetiaFont = CustomFontCollection.Get("Helvetica Neue");
+
+            var titleFont = helvetiaFont.CreateFont(backgroundImage.Width * TitleFontSizeFraction, FontStyle.Bold);
+            var descriptionFont = helvetiaFont.CreateFont(backgroundImage.Width * DescriptionFontSizeFraction, FontStyle.Regular);
+            var amountFont = helvetiaFont.CreateFont(backgroundImage.Width * AmountFontSizeFraction, FontStyle.Bold);
 
             backgroundImage.Mutate(ctx => {
                 var paddingTop = backgroundImage.Height * PaddingTopSizeFraction;
@@ -195,26 +210,37 @@ namespace WomPlatform.Web.Api.Controllers {
                 var paddingAmount = backgroundImage.Height * PaddingAmountSizeFraction;
 
                 (_, var titleHeight) = MeasureAndDraw(ctx, offer.Title, titleColor, new RichTextOptions(titleFont) {
-                    Origin = new Vector2(paddingTop, paddingTop),
+                    Origin = new Vector2(backgroundImage.Width / 2, paddingTop),
                     WrappingLength = backgroundImage.Width - (paddingTop * 2),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    TextAlignment = TextAlignment.Center
                 });
 
-                float descriptionOffsetFromTop = paddingTop + titleHeight + MarginBelowTitle;
+                float currentOffsetY = paddingTop + titleHeight + MarginBelowTitle;
+
+                var qrCodeSize = backgroundImage.Width * 0.5f;
+                float qrCodeX = (backgroundImage.Width - qrCodeSize) / 2f;
+                float qrCodeY = currentOffsetY + QrCodeMargin;
+
+                DrawQrCode(ctx, qrCode, Color.White, Color.Black, new Vector2(qrCodeX, qrCodeY), new Vector2(qrCodeSize, qrCodeSize), QrCodePadding);
+
+                currentOffsetY = qrCodeY + qrCodeSize + QrCodeMargin;
+
                 if(!string.IsNullOrEmpty(offer.Description)) {
-                    var descriptionHeight = DrawLeft(ctx, descriptionFont, offer.Description, Color.Black, backgroundImage.Width, descriptionOffsetFromTop);
-                    descriptionOffsetFromTop += descriptionHeight;
+                    (_, var descriptionHeight) = MeasureAndDraw(ctx, offer.Description, Color.Black, new RichTextOptions(descriptionFont) {
+                        Origin = new Vector2(backgroundImage.Width / 2, currentOffsetY),
+                        WrappingLength = backgroundImage.Width - (paddingTop * 2),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        TextAlignment = TextAlignment.Center
+                    });
+                    currentOffsetY += descriptionHeight + MarginBelowTitle;
                 }
 
                 var passwordHeight = DrawCenteredFromBottom(ctx, descriptionFont, "Password: " + offer.Payment.Password, Color.Black, backgroundImage.Width, backgroundImage.Height - paddingBottom);
 
-                var qrCodeHeight = backgroundImage.Height - descriptionOffsetFromTop - paddingBottom - passwordHeight - (QrCodeMargin * 2);
-                float qrCodeX = (backgroundImage.Width - qrCodeHeight) / 2f;
-                float qrCodeY = descriptionOffsetFromTop + QrCodeMargin;
-                DrawQrCode(ctx, qrCode, Color.White, Color.Black, new Vector2(qrCodeX, qrCodeY), new Vector2(qrCodeHeight, qrCodeHeight), QrCodePadding);
-
                 var amountString = $"{offer.Payment.Cost}W";
-                MeasureAndDraw(ctx, amountString, Color.Black, new RichTextOptions(amountFont) {
-                    Origin = new Vector2(paddingAmount, backgroundImage.Height - paddingAmount - 130),
+                MeasureAndDraw(ctx, amountString, Color.White, new RichTextOptions(amountFont) {
+                    Origin = new Vector2(paddingAmount, backgroundImage.Height - paddingAmount - 90),
                     TextRuns = new[] { new RichTextRun { Start = amountString.Length - 1, End = amountString.Length, Font = descriptionFont } }
                 });
             });
