@@ -183,7 +183,7 @@ namespace WomPlatform.Web.Api.Controllers {
             string City,
             [Required]
             string Country,
-            string FormattedAddress,
+            string? FormattedAddress,
             string? GoogleMapsPlaceId,
             string? Description,
             [Url]
