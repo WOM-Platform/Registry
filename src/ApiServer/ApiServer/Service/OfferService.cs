@@ -332,20 +332,15 @@ namespace WomPlatform.Web.Api.Service {
                         }
                     }
                 )
-
             };
 
             // Run the aggregation
             var offersWithPaymentRequest = await OfferCollection
-                .Aggregate<BsonDocument>(pipeline)
-                .ToListAsync();
-
-            // Map to OfferAdminOutput
-            var result = await OfferCollection
                 .Aggregate<OfferAdminOutput>(pipeline)
                 .ToListAsync();
 
-            return result;
+
+            return offersWithPaymentRequest;
         }
 
         /// <summary>
@@ -588,7 +583,7 @@ namespace WomPlatform.Web.Api.Service {
                     Pos = doc.Contains("pos") && !doc["pos"].IsBsonNull ? BsonSerializer.Deserialize<Pos>(doc["pos"].AsBsonDocument) : null,
                     Merchant = doc.Contains("merchant") && !doc["merchant"].IsBsonNull ? BsonSerializer.Deserialize<Merchant>(doc["merchant"].AsBsonDocument) : null,
                     TotalAmount = doc.Contains("totalAmount") && !doc["totalAmount"].IsBsonNull ? doc["totalAmount"].ToInt32() : 0,
-                    TransactionsNumber = doc.Contains("transactionsNumber") && !doc["transactionsNumber"].IsBsonNull ? doc["transactionsNumber"].ToInt32() : 0,
+                    TransactionsNumber = doc.Contains("transactionCount") && !doc["transactionCount"].IsBsonNull ? doc["transactionCount"].ToInt32() : 0,
 
 
                 }).ToList();

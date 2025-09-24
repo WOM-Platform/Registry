@@ -102,10 +102,8 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime LastUpdate { get; set; }
 
-        [BsonElement("lastPaymentConfirmation")]
+        [BsonElement("latestPaymentConfirmation")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
-        public DateTime LastPaymentConfirmation { get; set; }
-
-
+        public DateTime? LastPaymentConfirmation { get; set; }
     }
 }
