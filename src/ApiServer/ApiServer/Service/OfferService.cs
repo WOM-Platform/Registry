@@ -287,47 +287,52 @@ namespace WomPlatform.Web.Api.Service {
                     new BsonDocument("pos._id", new BsonDocument("$eq", posId))
                 ),
 
+                // $lookup – join con PaymentRequests
                 new BsonDocument("$lookup",
-                    new BsonDocument
-                    {
-                        { "from", "PaymentRequests" },
-                        { "let", new BsonDocument("prId", "$paymentRequestId") },
-                        { "pipeline", new BsonArray
-                            {
-                                new BsonDocument("$match",
-                                    new BsonDocument("$expr",
-                                        new BsonDocument("$eq", new BsonArray { "$_id", "$$prId" })
-                                    )
-                                ),
-                                new BsonDocument("$unwind", "$confirmations"),
-                                new BsonDocument("$sort",
-                                    new BsonDocument("confirmations.performedAt", -1)
-                                ),
-                                new BsonDocument("$limit", 1),
-                                new BsonDocument("$project",
-                                    new BsonDocument
-                                    {
-                                        { "_id", 0 },
-                                        { "lastConfirmation", "$confirmations.performedAt" }
-                                    }
-                                )
-                            }
-                        },
-                        { "as", "lastPaymentConfirmation" }
-                    }
+                new BsonDocument
+                {
+                    { "from", "PaymentRequests" },
+                    { "localField", "paymentRequestId" },
+                    { "foreignField", "_id" },
+                    { "as", "paymentRequests" }
+                }
                 ),
 
-                new BsonDocument("$unwind",
-                    new BsonDocument
-                    {
-                        { "path", "$lastPaymentConfirmation" },
-                        { "preserveNullAndEmptyArrays", true }
-                    }
-                ),
-
+                // $addFields – estrae il primo elemento dell'array
                 new BsonDocument("$addFields",
-                    new BsonDocument("lastPaymentConfirmation", "$lastPaymentConfirmation.lastConfirmation")
+                    new BsonDocument("paymentRequest",
+                        new BsonDocument("$arrayElemAt",
+                            new BsonArray { "$paymentRequests", 0 }
+                        )
+                    )
+                ),
+
+                // $project – proiezione campi + ultima data conferma pagamento
+                new BsonDocument("$project",
+                    new BsonDocument
+                    {
+                        { "_id", 1 },
+                        { "title", 1 },
+                        { "deactivated", 1 },
+                        { "createdOn", 1 },
+                        { "lastUpdate", 1 },
+                        { "description", 1 },
+                        { "payment", 1 },
+                        { "pos", 1 },
+                        { "merchant", 1 },
+                        {
+                            "latestPaymentConfirmation",
+                            new BsonDocument("$arrayElemAt",
+                                new BsonArray
+                                {
+                                    "$paymentRequest.confirmations.performedAt",
+                                    -1
+                                }
+                            )
+                        }
+                    }
                 )
+
             };
 
             // Run the aggregation
@@ -489,80 +494,88 @@ namespace WomPlatform.Web.Api.Service {
             DateTime? endDate,
             ObjectId[] merchantId) {
             try {
-                List<BsonDocument> pipeline = new List<BsonDocument>();
-
-                // check if user is filtering for merchant name
-                pipeline.AddRange(MongoQueryHelper.MerchantMatchFromPaymentRequestsCondition("merchant._id", merchantId));
-                // match stage
-                pipeline.Add(
+                var pipeline = new List<BsonDocument> {
+                    // $match – filtra le offerte disattivate
                     new BsonDocument("$match",
-                        new BsonDocument("$or",
-                            new BsonArray
-                            {
-                                new BsonDocument("deactivated", false),
-                                new BsonDocument("deactivated",
-                                    new BsonDocument("$exists", false))
-                            }))
-                    );
-                // $lookup stage
-                pipeline.Add(new BsonDocument("$lookup",
-                    new BsonDocument
-                    {
-                        { "from", "PaymentRequests" },
-                        { "let", new BsonDocument("paymentRequestId", "$paymentRequestId") },
-                        { "pipeline", new BsonArray
-                            {
-                                new BsonDocument("$match",
-                                    new BsonDocument("$expr",
-                                        new BsonDocument("$eq",
-                                            new BsonArray { "$_id", "$$paymentRequestId" }))),
-                                new BsonDocument("$limit", 1)
-                            }
-                        },
-                        { "as", "paymentRequest" }
-                    }));
+                        new BsonDocument("deactivated",
+                            new BsonDocument("$ne", true))
+                    ),
 
-                // $set stage
-                pipeline.Add(new BsonDocument("$set",
-                    new BsonDocument("paymentRequest",
-                        new BsonDocument("$first", "$paymentRequest"))));
 
-                // $addFields stage
-                pipeline.Add(
+                    //  Carica la PaymentRequest relativa.
+                    new BsonDocument("$lookup",
+                        new BsonDocument {
+                            { "from", "PaymentRequests" },
+                            { "localField", "paymentRequestId" },
+                            { "foreignField", "_id" },
+                            { "as", "paymentRequests" }
+                        }
+                    ),
+
+                    // Trasforma array $paymentRequests in campo singolo.
                     new BsonDocument("$addFields",
-                        new BsonDocument
-                        {
-                            { "totalAmount",
+                        new BsonDocument("paymentRequest",
+                            new BsonDocument("$arrayElemAt",
+                                new BsonArray { "$paymentRequests", 0 }
+                            )
+                        )
+                    ),
+
+                    // Calcolo delle statistiche e proiezione dell'output.
+                    new BsonDocument("$project",
+                        new BsonDocument {
+                            { "_id", 1 },
+                            { "title", 1 },
+                            { "deactivated", 1 },
+                            { "createdOn", 1 },
+                            { "lastUpdate", 1 },
+                            { "description", 1 },
+                            { "payment", 1 },
+                            { "pos", 1 },
+                            { "merchant", 1 }, {
+                                "totalAmount",
                                 new BsonDocument("$sum",
                                     new BsonDocument("$multiply",
-                                        new BsonArray
-                                        {
+                                        new BsonArray {
                                             "$paymentRequest.amount",
                                             new BsonDocument("$cond",
-                                                new BsonDocument
-                                                {
-                                                    { "if",
-                                                        new BsonDocument("$isArray", "$paymentRequest.confirmations") },
-                                                    { "then",
-                                                        new BsonDocument("$size", "$paymentRequest.confirmations") },
+                                                new BsonDocument {
+                                                    {
+                                                        "if",
+                                                        new BsonDocument("$isArray", "$paymentRequest.confirmations")
+                                                    }, {
+                                                        "then",
+                                                        new BsonDocument("$size", "$paymentRequest.confirmations")
+                                                    },
                                                     { "else", 0 }
-                                                })
-                                        })) },
-                            { "transactionsNumber",
+                                                }
+                                            )
+                                        }
+                                    )
+                                )
+                            }, {
+                                "transactionCount",
                                 new BsonDocument("$cond",
-                                    new BsonDocument
-                                    {
-                                        { "if",
-                                            new BsonDocument("$isArray", "$paymentRequest.confirmations") },
-                                        { "then",
-                                            new BsonDocument("$size", "$paymentRequest.confirmations") },
+                                    new BsonDocument {
+                                        {
+                                            "if",
+                                            new BsonDocument("$isArray", "$paymentRequest.confirmations")
+                                        }, {
+                                            "then",
+                                            new BsonDocument("$size", "$paymentRequest.confirmations")
+                                        },
                                         { "else", 0 }
-                                    }) }
-                        }));
+                                    }
+                                )
+                            }
+                        }
+                    ),
 
-                // $sort stage
-                pipeline.Add(new BsonDocument("$sort",
-                    new BsonDocument("totalAmount", -1)));
+                    // ordina per totalAmount discendente
+                    new BsonDocument("$sort",
+                        new BsonDocument("totalAmount", -1)
+                    )
+                };
 
 
                 IAsyncCursor<BsonDocument> result = await OfferCollection.AggregateAsync<BsonDocument>(pipeline);
