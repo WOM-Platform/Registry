@@ -88,7 +88,7 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         private const float PaddingTopSizeFraction = 0.18f;
-        private const float PaddingBottomSizeFraction = 0.1f;
+        private const float PaddingBottomSizeFraction = 0.16f;
         private const float PaddingAmountSizeFraction = 0.035f;
 
         private const float MarginBelowTitle = 8f;
@@ -97,7 +97,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
         private const float TitleFontSizeFraction = 0.075f;
         private const float DescriptionFontSizeFraction = 0.038f;
-        private const float AmountFontSizeFraction = 0.1f;
+        private const float AmountFontSizeFraction = 0.08f;
 
         private void DrawQrCode(IImageProcessingContext ctx, QrCode qrCode, Color background, Color foreground, Vector2 origin, Vector2 size, float backgroundPadding = 0) {
             if(size.X != size.Y) {
@@ -224,23 +224,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 DrawQrCode(ctx, qrCode, Color.White, Color.Black, new Vector2(qrCodeX, qrCodeY), new Vector2(qrCodeSize, qrCodeSize), QrCodePadding);
 
-                currentOffsetY = qrCodeY + qrCodeSize + QrCodeMargin;
-
-                if(!string.IsNullOrEmpty(offer.Description)) {
-                    (_, var descriptionHeight) = MeasureAndDraw(ctx, offer.Description, Color.Black, new RichTextOptions(descriptionFont) {
-                        Origin = new Vector2(backgroundImage.Width / 2, currentOffsetY),
-                        WrappingLength = backgroundImage.Width - (paddingTop * 2),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        TextAlignment = TextAlignment.Center
-                    });
-                    currentOffsetY += descriptionHeight + MarginBelowTitle;
-                }
 
                 var passwordHeight = DrawCenteredFromBottom(ctx, descriptionFont, "Password: " + offer.Payment.Password, Color.Black, backgroundImage.Width, backgroundImage.Height - paddingBottom);
 
                 var amountString = $"{offer.Payment.Cost}W";
                 MeasureAndDraw(ctx, amountString, Color.White, new RichTextOptions(amountFont) {
-                    Origin = new Vector2(paddingAmount, backgroundImage.Height - paddingAmount - 90),
+                    Origin = new Vector2(paddingAmount - 15, backgroundImage.Height - paddingAmount - 50),
                     TextRuns = new[] { new RichTextRun { Start = amountString.Length - 1, End = amountString.Length, Font = descriptionFont } }
                 });
             });
