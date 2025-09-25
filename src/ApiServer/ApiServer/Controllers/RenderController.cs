@@ -95,7 +95,7 @@ namespace WomPlatform.Web.Api.Controllers {
         private const float QrCodeMargin = 24f;
         private const float QrCodePadding = 24f;
 
-        private const float TitleFontSizeFraction = 0.075f;
+        private const float TitleFontSizeFraction = 0.05f;
         private const float DescriptionFontSizeFraction = 0.038f;
         private const float AmountFontSizeFraction = 0.08f;
 
