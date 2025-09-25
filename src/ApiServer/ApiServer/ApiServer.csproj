@@ -33,13 +33,14 @@
     <EmbeddedResource Include="Resources\wom-logo-240w.jpg" />
     <EmbeddedResource Include="Resources\wom-logo-540w.jpg" />
     <None Remove="Resources\test.jpeg" />
-    <EmbeddedResource Include="Resources\base-offer.jpeg" />
     <None Remove="Resources\test2.jpg" />
     <None Include="Resources\base-offer-bw.jpeg" />
     <None Remove="Resources\HelveticaNeue-Bold.ttf" />
     <EmbeddedResource Include="Resources\HelveticaNeue-Bold.ttf" />
     <None Remove="Resources\HelveticaNeue-Regular.ttf" />
     <EmbeddedResource Include="Resources\HelveticaNeue-Regular.ttf" />
+    <None Remove="Resources\base-offer.jpeg" />
+    <EmbeddedResource Include="Resources\base-offer.jpeg" />
   </ItemGroup>
 
   <ItemGroup>
