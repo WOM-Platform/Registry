@@ -86,6 +86,44 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        [HttpPut("{badgeChallengeId}")]
+        [Authorize]
+        [ProducesResponseType(typeof(BadgeChallengeOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult> UpdateBadgeChallenge(
+            [FromRoute] ObjectId badgeChallengeId,
+            [FromBody] RegisterBadgeChallengeInput input
+        ) {
+            await VerifyUserIsAdmin();
+
+            if (input == null) {
+                return BadRequest("Input cannot be null.");
+            }
+
+            var challenge = await BadgeService.GetBadgeChallengeById(badgeChallengeId);
+            if (challenge == null) {
+                return NotFound();
+            }
+
+            // Update fields
+            challenge.Name = input.Name;
+            challenge.Description = input.Description ?? challenge.Description;
+            challenge.InformationUrl = input.InformationUrl ?? challenge.InformationUrl;
+            challenge.IsPublic = input.IsPublic;
+
+            // Save back to database
+            var success = await BadgeService.ReplaceBadgeChallenge(challenge);
+            if (!success) {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Failed to update the badge challenge.");
+            }
+
+            var badges = await BadgeService.GetBadges(challenge.Id);
+            return Ok(challenge.ToOutput(badges, PicturesService));
+        }
+
+
         [HttpDelete("{badgeChallengeId}")]
         [Authorize]
         [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
