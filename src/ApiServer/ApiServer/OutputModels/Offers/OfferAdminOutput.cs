@@ -45,6 +45,9 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         [Obsolete]
         public int Cost { get; set; }
 
+        [BsonElement("deactivated")]
+        public bool Deactivated { get; set; }
+
         [BsonElement("filter")]
         [BsonIgnoreIfNull]
         [Obsolete]
@@ -105,5 +108,8 @@ namespace WomPlatform.Web.Api.OutputModels.Offers {
         [BsonElement("latestPaymentConfirmation")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime? LastPaymentConfirmation { get; set; }
+
+        [BsonExtraElements]
+        public BsonDocument CatchAll { get; set; }
     }
 }

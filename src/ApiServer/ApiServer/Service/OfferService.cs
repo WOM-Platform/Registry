@@ -281,66 +281,77 @@ namespace WomPlatform.Web.Api.Service {
         /// </summary>
         public async Task<List<OfferAdminOutput>> GetOffersOfPosForAdmin(ObjectId posId)
         {
-            var pipeline = new BsonDocument[]
-            {
-                new BsonDocument("$match",
-                    new BsonDocument("pos._id", new BsonDocument("$eq", posId))
-                ),
+            try {
+                var pipeline = new BsonDocument[] {
+                    new BsonDocument("$match",
+                        new BsonDocument("pos._id", new BsonDocument("$eq", posId))
+                    ),
 
-                // $lookup – join con PaymentRequests
-                new BsonDocument("$lookup",
-                new BsonDocument
-                {
-                    { "from", "PaymentRequests" },
-                    { "localField", "paymentRequestId" },
-                    { "foreignField", "_id" },
-                    { "as", "paymentRequests" }
-                }
-                ),
-
-                // $addFields – estrae il primo elemento dell'array
-                new BsonDocument("$addFields",
-                    new BsonDocument("paymentRequest",
-                        new BsonDocument("$arrayElemAt",
-                            new BsonArray { "$paymentRequests", 0 }
-                        )
-                    )
-                ),
-
-                // $project – proiezione campi + ultima data conferma pagamento
-                new BsonDocument("$project",
-                    new BsonDocument
-                    {
-                        { "_id", 1 },
-                        { "title", 1 },
-                        { "deactivated", 1 },
-                        { "createdOn", 1 },
-                        { "lastUpdate", 1 },
-                        { "description", 1 },
-                        { "payment", 1 },
-                        { "pos", 1 },
-                        { "merchant", 1 },
-                        {
-                            "latestPaymentConfirmation",
-                            new BsonDocument("$arrayElemAt",
-                                new BsonArray
-                                {
-                                    "$paymentRequest.confirmations.performedAt",
-                                    -1
-                                }
-                            )
+                    // $lookup – join con PaymentRequests
+                    new BsonDocument("$lookup",
+                        new BsonDocument {
+                            { "from", "PaymentRequests" },
+                            { "localField", "paymentRequestId" },
+                            { "foreignField", "_id" },
+                            { "as", "paymentRequests" }
                         }
+                    ),
+
+                    // $addFields – estrae il primo elemento dell'array
+                    new BsonDocument("$addFields",
+                        new BsonDocument("paymentRequest",
+                            new BsonDocument("$arrayElemAt",
+                                new BsonArray { "$paymentRequests", 0 }
+                            )
+                        )
+                    ),
+
+                    // $project – proiezione campi + ultima data conferma pagamento
+                    new BsonDocument("$project",
+                        new BsonDocument {
+                            { "_id", 1 },
+                            { "title", 1 },
+                            { "deactivated", 1 },
+                            { "createdOn", 1 },
+                            { "lastUpdate", 1 },
+                            { "description", 1 },
+                            { "payment", 1 },
+                            { "pos", 1 },
+                            { "merchant", 1 }, {
+                                "latestPaymentConfirmation",
+                                new BsonDocument("$arrayElemAt",
+                                    new BsonArray {
+                                        "$paymentRequest.confirmations.performedAt",
+                                        -1
+                                    }
+                                )
+                            }
+                        }
+                    )
+                };
+
+                var bsonResults = await OfferCollection.Aggregate<BsonDocument>(pipeline).ToListAsync();
+
+                var offersWithPaymentRequest = new List<OfferAdminOutput>();
+
+                foreach (var doc in bsonResults)
+                {
+                    try
+                    {
+                        var offer = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<OfferAdminOutput>(doc);
+                        offersWithPaymentRequest.Add(offer);
                     }
-                )
-            };
+                    catch (InvalidCastException ex)
+                    {
+                        // Handle or log the error, skip bad documents
+                        Console.WriteLine($"Skipping invalid offer {doc.GetValue("_id", BsonNull.Value)}: {ex.Message}");
+                    }
+                }
 
-            // Run the aggregation
-            var offersWithPaymentRequest = await OfferCollection
-                .Aggregate<OfferAdminOutput>(pipeline)
-                .ToListAsync();
-
-
-            return offersWithPaymentRequest;
+                return offersWithPaymentRequest;
+            } catch(Exception ex) {
+                throw new ApplicationException("An error occurred while processing offer data.");
+            }
         }
 
         /// <summary>
