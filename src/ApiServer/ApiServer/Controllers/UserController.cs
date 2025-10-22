@@ -198,7 +198,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(user.ToOutput(userId != myself));
         }
 
-        public record UserUpdateInformationInput(string Email, string Password, string Name, string Surname, PlatformRole? Role);
+        public record UserUpdateInformationInput(string? Email, string? Password, string? Name, string? Surname, PlatformRole? Role);
 
         /// <summary>
         /// Updates information about an existing user.
