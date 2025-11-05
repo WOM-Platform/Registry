@@ -13,8 +13,3 @@ get {
 auth:bearer {
   token: {{token}}
 }
-
-vars:post-response {
-  token: res.body.token
-  user_id: res.body.id
-}

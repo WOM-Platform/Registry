@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 namespace WomPlatform.Web.Api {
 
     public static class CollectionExtensions {
-
         /// <summary>
         /// Convert to list or an empty list if null or empty.
         /// </summary>
@@ -50,6 +49,19 @@ namespace WomPlatform.Web.Api {
             return true;
         }
 
+        /// <summary>
+        /// Safely gets a value by key, if it exists. If it doesn't exist, returns null.
+        /// </summary>
+        public static Nullable<V> SafeGet<K, V>(this IDictionary<K, V> dictionary, K key) where V : struct {
+            if(dictionary == null) {
+                return null;
+            }
+            if(dictionary.ContainsKey(key)) {
+                return dictionary[key];
+            }
+            else {
+                return null;
+            }
+        }
     }
-
 }

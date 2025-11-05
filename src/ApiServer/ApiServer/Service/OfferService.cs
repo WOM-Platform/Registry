@@ -277,81 +277,69 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         /// <summary>
-        /// Retrieve all offers of a POS with extra admin lookup.
+        /// Retrieve all offers of a POS with an optional last usage date.
         /// </summary>
-        public async Task<List<OfferAdminOutput>> GetOffersOfPosForAdmin(ObjectId posId)
-        {
-            try {
-                var pipeline = new BsonDocument[] {
-                    new BsonDocument("$match",
-                        new BsonDocument("pos._id", new BsonDocument("$eq", posId))
-                    ),
-
-                    // $lookup – join con PaymentRequests
-                    new BsonDocument("$lookup",
-                        new BsonDocument {
-                            { "from", "PaymentRequests" },
-                            { "localField", "payment.otc" },
-                            { "foreignField", "_id" },
-                            { "as", "paymentRequests" }
-                        }
-                    ),
-
-                    // $addFields – estrae il primo elemento dell'array
-                    new BsonDocument("$addFields",
-                        new BsonDocument("paymentRequest",
-                            new BsonDocument("$arrayElemAt",
-                                new BsonArray { "$paymentRequests", 0 }
-                            )
+        public async Task<(List<Offer>, Dictionary<ObjectId, DateTime> lastUsage)> GetOffersOfPosForAdmin(ObjectId posId) {
+            var pipeline = new BsonDocument[] {
+                new("$match",
+                    new BsonDocument("pos._id", new BsonDocument("$eq", posId))
+                ),
+                new("$lookup",
+                    new BsonDocument {
+                        { "from", "PaymentRequests" },
+                        { "localField", "payment.otc" },
+                        { "foreignField", "_id" },
+                        { "as", "paymentRequests" }
+                    }
+                ),
+                new ("$addFields",
+                    // Extract first element of array as separate field
+                    new BsonDocument("paymentRequest",
+                        new BsonDocument("$arrayElemAt",
+                            new BsonArray { "$paymentRequests", 0 }
                         )
-                    ),
-
-                    // $project – proiezione campi + ultima data conferma pagamento
-                    new BsonDocument("$project",
-                        new BsonDocument {
-                            { "_id", 1 },
-                            { "title", 1 },
-                            { "deactivated", 1 },
-                            { "createdOn", 1 },
-                            { "lastUpdate", 1 },
-                            { "description", 1 },
-                            { "payment", 1 },
-                            { "pos", 1 },
-                            { "merchant", 1 }, {
-                                "latestPaymentConfirmation",
-                                new BsonDocument("$arrayElemAt",
-                                    new BsonArray {
-                                        "$paymentRequest.confirmations.performedAt",
-                                        -1
-                                    }
-                                )
-                            }
-                        }
                     )
-                };
+                ),
+                new("$project",
+                    new BsonDocument {
+                        // Include basic structure of the Offer class
+                        { "_id", 1 },
+                        { "title", 1 },
+                        { "description", 1 },
+                        { "payment", 1 },
+                        { "pos", 1 },
+                        { "merchant", 1 },
+                        { "createdOn", 1 },
+                        { "lastUpdate", 1 },
+                        { "deactivated", 1 },
 
-                var bsonResults = await OfferCollection.Aggregate<BsonDocument>(pipeline).ToListAsync();
-
-                var offersWithPaymentRequest = new List<OfferAdminOutput>();
-
-                foreach (var doc in bsonResults)
-                {
-                    try
-                    {
-                        var offer = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<OfferAdminOutput>(doc);
-                        offersWithPaymentRequest.Add(offer);
+                        // Extended information
+                        { "latestPaymentConfirmation",
+                            new BsonDocument("$arrayElemAt",
+                                new BsonArray {
+                                    "$paymentRequest.confirmations.performedAt",
+                                    -1
+                                }
+                            )
+                        },
                     }
-                    catch (InvalidCastException ex)
-                    {
-                        // Handle or log the error, skip bad documents
-                        Console.WriteLine($"Skipping invalid offer {doc.GetValue("_id", BsonNull.Value)}: {ex.Message}");
-                    }
+                )
+            };
+
+            var bsonResults = await OfferCollection.Aggregate<BsonDocument>(pipeline).ToListAsync();
+
+            List<Offer> offers = [];
+            Dictionary<ObjectId, DateTime> lastUsages = [];
+            foreach(BsonDocument bsonDocument in bsonResults) {
+                var offer = BsonSerializer.Deserialize<Offer>(bsonDocument);
+                offers.Add(offer);
+
+                if(bsonDocument.Contains("latestPaymentConfirmation") && bsonDocument["latestPaymentConfirmation"].IsBsonDateTime) {
+                    lastUsages.Add(offer.Id, bsonDocument["latestPaymentConfirmation"].AsBsonDateTime.ToUniversalTime());
                 }
-
-                return offersWithPaymentRequest;
-            } catch(Exception ex) {
-                throw new ApplicationException("An error occurred while processing offer data.");
             }
+
+            return (offers, lastUsages);
         }
 
         /// <summary>

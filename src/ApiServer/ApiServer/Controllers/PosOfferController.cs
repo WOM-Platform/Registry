@@ -40,16 +40,16 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            if(await IsUserAdmin())
-            {
-                var results = await OfferService.GetOffersOfPosForAdmin(pos.Id);
-                return Ok(results); // returns OfferAdminOutput[]
+            if(IsUserLoggedIn() && await IsUserAdmin()) {
+                var (results, lastPaymentConfirmations) = await OfferService.GetOffersOfPosForAdmin(posId);
+
+                return Ok((from result in results select result.ToDetailsOutput(lastPaymentConfirmations.SafeGet(result.Id))).ToArray());
             }
-            else
-            {
+            else {
                 var results = await OfferService.GetOffersOfPos(pos.Id);
-                return Ok(results.Select(r => r.ToDetailsOutput()).ToArray());
-            } ;
+
+                return Ok((from result in results select result.ToDetailsOutput()).ToArray());
+            }
         }
 
         /// <summary>

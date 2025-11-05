@@ -186,6 +186,10 @@ namespace WomPlatform.Web.Api.Controllers {
             return true;
         }
 
+        protected bool IsUserLoggedIn() {
+            return User.GetUserId(out var _);
+        }
+
         /// <summary>
         /// Checks whether the user is logged-in and whether they are an administrator.
         /// </summary>
