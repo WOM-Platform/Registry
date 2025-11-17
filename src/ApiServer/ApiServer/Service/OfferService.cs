@@ -500,7 +500,7 @@ namespace WomPlatform.Web.Api.Service {
                     new BsonDocument("$lookup",
                         new BsonDocument {
                             { "from", "PaymentRequests" },
-                            { "localField", "paymentRequestId" },
+                            { "localField", "payment.otc" },
                             { "foreignField", "_id" },
                             { "as", "paymentRequests" }
                         }
