@@ -1,18 +1,19 @@
 meta {
   name: Get sources
   type: http
-  seq: 1
+  seq: 2
 }
 
 get {
-  url: {{protocol}}://{{baseUrl}}/api/v1/source?search=Pesaro
+  url: {{protocol}}://{{baseUrl}}/api/v1/source?page=3&pageSize=10
   body: none
   auth: bearer
 }
 
 params:query {
-  search: Pesaro
-  ~page: 2
+  page: 3
+  pageSize: 10
+  ~search: Pesaro
 }
 
 auth:bearer {
