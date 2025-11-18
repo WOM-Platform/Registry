@@ -40,14 +40,27 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(SourceOutput), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> CreateSource(
             [FromBody] CreateSourceInput input
         ) {
             await VerifyUserIsAdmin();
 
+            if(!input.Aims.EnableAll) {
+                if(!input.Aims.Enabled.AreAllContainedIn(AimService.GetAllAimCodes())) {
+                    ModelState.AddModelError(nameof(input.Aims.Enabled), "One or more aim codes are not valid");
+                    return ValidationProblem();
+                }
+            }
+
             var keys = CryptoHelper.CreateKeyPair();
-            var source = await SourceService.CreateNewSource(input.Name, input.Url, keys,
-                input.Aims.Enabled, input.Aims.EnableAll);
+            var source = await SourceService.CreateNewSource(
+                input.Name,
+                input.Url,
+                keys,
+                input.Aims.Enabled,
+                input.Aims.EnableAll
+            );
 
             Logger.LogInformation("Source {0} created with ID {1}", input.Name, source.Id);
 

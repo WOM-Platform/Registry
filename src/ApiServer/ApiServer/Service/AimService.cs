@@ -6,21 +6,14 @@ using Microsoft.Extensions.Logging;
 namespace WomPlatform.Web.Api.Service {
     public class AimService {
 
-        public class Aim {
-            public Aim(string code, Dictionary<string, string> titles, Aim[] subaims = null, bool hidden = false) {
-                Code = code;
-                Titles = titles;
-                Aims = subaims ?? [];
-                Hidden = hidden;
-            }
+        public class Aim(string code, Dictionary<string, string> titles, Aim[] subaims = null, bool hidden = false) {
+            public string Code { get; init; } = code;
 
-            public string Code { get; init; }
+            public Dictionary<string, string> Titles { get; init; } = titles;
 
-            public Dictionary<string, string> Titles { get; init; }
+            public Aim[] Aims { get; init; } = subaims ?? [];
 
-            public Aim[] Aims { get; init; }
-
-            public bool Hidden { get; init; }
+            public bool Hidden { get; init; } = hidden;
         }
 
         private static Dictionary<string, string> Titles(string singleTitle) {

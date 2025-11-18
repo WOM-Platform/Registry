@@ -12,18 +12,12 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 
 namespace WomPlatform.Web.Api.Service {
 
-    public class SourceService {
-
-        private readonly MongoClient _client;
-        private readonly ILogger<SourceService> _logger;
-
-        public SourceService(
-            MongoClient client,
-            ILogger<SourceService> logger
+    public class SourceService(
+        MongoClient client,
+        ILogger<SourceService> logger
         ) {
-            _client = client;
-            _logger = logger;
-        }
+        private readonly MongoClient _client = client;
+        private readonly ILogger<SourceService> _logger = logger;
 
         private IMongoDatabase MainDatabase {
             get {
@@ -51,9 +45,14 @@ namespace WomPlatform.Web.Api.Service {
             return filters;
         }
 
-        public async Task<Source> CreateNewSource(string name, string url, AsymmetricCipherKeyPair keys,
-            string[] enabledAimCodes = null, bool enableAllAims = true,
-            GeoCoords? location = null, bool locationIsFixed = false
+        public async Task<Source> CreateNewSource(
+            string name,
+            string url,
+            AsymmetricCipherKeyPair keys,
+            string[] enabledAimCodes = null,
+            bool enableAllAims = true,
+            GeoCoords? location = null,
+            bool locationIsFixed = false
         ) {
             var source = new Source {
                 Name = name,

@@ -10,9 +10,9 @@ namespace WomPlatform.Web.Api.InputModels.Source {
         public string? Url { get; set; }
 
         public class AimDetails {
-            public string[] Enabled { get; set; }
+            public string[]? Enabled { get; set; }
 
-            public bool EnableAll { get; set; }
+            public bool EnableAll { get; set; } = false;
 
             // TODO: aim budget
         }
