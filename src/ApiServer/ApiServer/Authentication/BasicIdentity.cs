@@ -2,7 +2,7 @@
 using System.Security.Principal;
 using MongoDB.Bson;
 
-namespace WomPlatform.Web.Api {
+namespace WomPlatform.Web.Api.Authentication {
 
     public class BasicIdentity : GenericIdentity {
 

@@ -15,7 +15,7 @@ namespace WomPlatform.Web.Api.InputModels.Generation {
 
             public string Aim { get; set; }
 
-            public GeoCoordsInput Location { get; set; }
+            public GeoCoordsInput? Location { get; set; }
 
             public DateTime Timestamp { get; set; }
 

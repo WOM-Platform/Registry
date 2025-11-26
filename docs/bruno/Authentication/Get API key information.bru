@@ -1,0 +1,17 @@
+meta {
+  name: Get API key information
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v2/auth/apikey
+  body: none
+  auth: apikey
+}
+
+auth:apikey {
+  key: X-WOM-ApiKey
+  value: c3b89651-9ed5-43a4-b1e5-84d806f83b7b
+  placement: header
+}

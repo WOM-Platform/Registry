@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Primitives;
 
-namespace WomPlatform.Web.Api {
+namespace WomPlatform.Web.Api.Authentication {
 
     public class BasicAuthenticationSchemeOptions : AuthenticationSchemeOptions {
 

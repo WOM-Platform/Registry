@@ -1,21 +1,17 @@
 ﻿using System.Security.Claims;
 using MongoDB.Bson;
+using WomPlatform.Web.Api.Authentication;
 
 namespace WomPlatform.Web.Api {
-
     public static class UserExtensions {
-
-        /// <summary>
-        /// Retrives the user ID of the logged in user.
-        /// </summary>
-        public static bool GetUserId(this ClaimsPrincipal principal, out ObjectId userId) {
-            userId = ObjectId.Empty;
+        private static bool GetClaimValue(this ClaimsPrincipal principal, string claimType, out ObjectId claimValue) {
+            claimValue = ObjectId.Empty;
 
             if(principal == null) {
                 return false;
             }
 
-            var nameId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var nameId = principal.FindFirstValue(claimType);
             if(nameId == null) {
                 return false;
             }
@@ -24,8 +20,18 @@ namespace WomPlatform.Web.Api {
                 return false;
             }
 
-            userId = result;
+            claimValue = result;
             return true;
+        }
+
+        /// <summary>
+        /// Retrieves the user ID of the logged in user.
+        /// </summary>
+        /// <remarks>
+        /// This will fail for API key authenticated requests, as those do not have a user ID (<see cref="ClaimTypes.NameIdentifier"/>).
+        /// </remarks>
+        public static bool GetUserId(this ClaimsPrincipal principal, out ObjectId userId) {
+            return GetClaimValue(principal, ClaimTypes.NameIdentifier, out userId);
         }
 
         /// <summary>
@@ -39,6 +45,14 @@ namespace WomPlatform.Web.Api {
             return valUserId.Equals(refUserId);
         }
 
+        /// <summary>
+        /// Retrieves the source ID of the logged in user.
+        /// </summary>
+        /// <remarks>
+        /// This will fail for Bearer token authenticated requests, as those do not have an unique controlled source ID.
+        /// </remarks>
+        public static bool GetSourceId(this ClaimsPrincipal principal, out ObjectId sourceId) {
+            return GetClaimValue(principal, RegistryClaims.SourceId, out sourceId);
+        }
     }
-
 }

@@ -10,20 +10,16 @@ using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using WomPlatform.Web.Api.Service;
 
-namespace WomPlatform.Web.Api {
-
+namespace WomPlatform.Web.Api.Authentication {
     public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticationSchemeOptions> {
-
         private readonly UserService _userService;
 
         public BasicAuthenticationHandler(
             UserService userService,
             IOptionsMonitor<BasicAuthenticationSchemeOptions> options,
             ILoggerFactory logger,
-            UrlEncoder encoder,
-            ISystemClock clock)
-            : base(options, logger, encoder, clock)
-        {
+            UrlEncoder encoder
+        ) : base(options, logger, encoder) {
             _userService = userService;
         }
 
@@ -62,9 +58,7 @@ namespace WomPlatform.Web.Api {
         protected override Task HandleChallengeAsync(AuthenticationProperties properties) {
             if(!Request.Headers.ContainsKey(HeaderNames.Authorization)) {
                 Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                Response.Headers.Add(HeaderNames.WWWAuthenticate,
-                    new StringValues("Basic realm=\"WOM\"")
-                );
+                Response.Headers[HeaderNames.WWWAuthenticate] = new StringValues("Basic realm=\"WOM\"");
             }
             else {
                 Response.StatusCode = (int)HttpStatusCode.Forbidden;
@@ -72,7 +66,5 @@ namespace WomPlatform.Web.Api {
 
             return Task.CompletedTask;
         }
-
     }
-
 }
