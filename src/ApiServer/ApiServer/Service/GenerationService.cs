@@ -762,35 +762,62 @@ namespace WomPlatform.Web.Api.Service {
                 )
             );
 
-            // $group: Aggregate totals
+            // $group: Aggregate totals by source and aimCode
             pipeline.Add(
-                new BsonDocument("$group",
-                    new BsonDocument {
-                        { "_id", "$source._id" },
-                        { "name", new BsonDocument("$first", "$source.name") },
-                        { "totalGeneratedAmount", new BsonDocument("$sum", "$initialCount") }, {
-                            "totalRedeemedAmount",
+                    new BsonDocument("$group",
+                    new BsonDocument
+                    {
+                        { "_id",
+                            new BsonDocument
+                            {
+                                { "sourceId", "$source._id" },
+                                { "aimCode", "$aimCode" }
+                            } },
+                        { "name",
+                            new BsonDocument("$first", "$source.name") },
+                        { "totalGeneratedAmount",
+                            new BsonDocument("$sum", "$initialCount") },
+                        { "totalRedeemedAmount",
                             new BsonDocument("$sum",
                                 new BsonDocument("$cond",
-                                    new BsonDocument {
-                                        {
-                                            "if",
+                                    new BsonDocument
+                                    {
+                                        { "if",
                                             new BsonDocument("$gt",
-                                                new BsonArray {
+                                                new BsonArray
+                                                {
                                                     "$generationRequest.performedAt",
                                                     BsonNull.Value
-                                                }
-                                            )
-                                        },
+                                                }) },
                                         { "then", "$initialCount" },
                                         { "else", 0 }
-                                    }
-                                )
-                            )
-                        }
-                    }
-                )
+                                    })) },
+                        { "aimSum",
+                            new BsonDocument("$sum", "$initialCount") }
+                    })
             );
+
+            pipeline.Add(
+                new BsonDocument("$group",
+                    new BsonDocument
+                    {
+                        { "_id", "$_id.sourceId" },
+                        { "name",
+                            new BsonDocument("$first", "$name") },
+                        { "totalGeneratedAmount",
+                            new BsonDocument("$sum", "$totalGeneratedAmount") },
+                        { "totalRedeemedAmount",
+                            new BsonDocument("$sum", "$totalRedeemedAmount") },
+                        { "aimBreakdown",
+                            new BsonDocument("$push",
+                                new BsonDocument
+                                {
+                                    { "aimCode", "$_id.aimCode" },
+                                    { "sum", "$aimSum" }
+                                }) }
+                    })
+            );
+
             if(sourceId.Length == 0) {
                 pipeline.Add(
                     new BsonDocument(
@@ -805,7 +832,9 @@ namespace WomPlatform.Web.Api.Service {
                                             { "name", "$name" }, {
                                                 "totalGeneratedAmount",
                                                 new BsonDocument("$literal", 0)
-                                            }, {
+                                            },
+                                            {"aimBreakdown", $"$aimBreakdown"},
+                                            {
                                                 "totalRedeemedAmount",
                                                 new BsonDocument("$literal", 0)
                                             }
@@ -816,22 +845,6 @@ namespace WomPlatform.Web.Api.Service {
                     )
                 );
             }
-
-            pipeline.Add(
-                new BsonDocument("$group",
-                    new BsonDocument {
-                        { "_id", "$_id" }, {
-                            "name",
-                            new BsonDocument("$first", "$name")
-                        }, {
-                            "totalGeneratedAmount",
-                            new BsonDocument("$max", "$totalGeneratedAmount")
-                        }, {
-                            "totalRedeemedAmount",
-                            new BsonDocument("$max", "$totalRedeemedAmount")
-                        }
-                    })
-            );
 
             // $sort: totalRedeemedAmount descending
             pipeline.Add(
@@ -861,6 +874,14 @@ namespace WomPlatform.Web.Api.Service {
                 List<SourceRankDTO> sourceRank = sourceRankList.Select(doc => new SourceRankDTO {
                     Id = doc["_id"].IsBsonNull ? ObjectId.Empty : doc["_id"].AsObjectId,
                     Name = doc["name"].AsString,
+                    AimBreakdown = doc.Contains("aimBreakdown") && doc["aimBreakdown"].IsBsonArray
+                        ? doc["aimBreakdown"].AsBsonArray
+                            .Select(aim => new AimBreakdownDTO {
+                                AimCode = aim["aimCode"].AsString,
+                                Sum = aim["sum"].ToInt32()   // safe for int32/int64
+                            })
+                            .ToList()
+                        : new List<AimBreakdownDTO>(),
                     TotalGeneratedAmount = doc["totalGeneratedAmount"].AsInt32,
                     TotalRedeemedAmount = doc["totalRedeemedAmount"].AsInt32,
                     Rank = doc["rank"].AsInt32

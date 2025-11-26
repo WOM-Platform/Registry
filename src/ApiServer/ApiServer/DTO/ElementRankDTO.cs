@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MongoDB.Bson;
 
 namespace WomPlatform.Web.Api.DTO {
@@ -10,6 +11,13 @@ namespace WomPlatform.Web.Api.DTO {
     public class SourceRankDTO : RankDTO {
         public int TotalGeneratedAmount { get; set; }
         public int TotalRedeemedAmount { get; set; }
+
+        public List<AimBreakdownDTO> AimBreakdown { get; set; }
+    }
+
+    public class AimBreakdownDTO {
+        public string AimCode { get; set; }
+        public int Sum { get; set; }
     }
 
     public class MerchantRankDTO : RankDTO {
