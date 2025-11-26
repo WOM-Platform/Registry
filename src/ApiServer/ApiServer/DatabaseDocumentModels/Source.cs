@@ -76,6 +76,10 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonIgnoreIfNull]
         public SourceCustomGenerator? CustomGenerator { get; set; }
 
+        [BsonElement("countMeInProvider")]
+        [BsonIgnoreIfNull]
+        public string? CountMeInProvider { get; set; }
+
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
     }

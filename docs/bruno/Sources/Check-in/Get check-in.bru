@@ -1,0 +1,21 @@
+meta {
+  name: Get check-in
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/source/:sourceId/checkin/abc123
+  body: none
+  auth: apikey
+}
+
+params:path {
+  sourceId: 691c190f7d24fb44c599403a
+}
+
+auth:apikey {
+  key: X-WOM-ApiKey
+  value: 80h2ER9ClzqP4ul1URnA
+  placement: header
+}

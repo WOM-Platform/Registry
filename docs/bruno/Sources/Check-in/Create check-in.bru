@@ -1,0 +1,41 @@
+meta {
+  name: Create check-in
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/source/:sourceId/checkin
+  body: json
+  auth: apikey
+}
+
+params:path {
+  sourceId: 691c190f7d24fb44c599403a
+}
+
+auth:apikey {
+  key: X-WOM-ApiKey
+  value: 80h2ER9ClzqP4ul1URnA
+  placement: header
+}
+
+body:json {
+  {
+    "eventTitle": "Test event",
+    "eventStart": "2026-01-01T11:30:00.000+01:00",
+    "eventEnd": "2026-01-01T12:30:00.000+01:00",
+    "location": {
+      "name": "Location name",
+      "coords": {
+        "latitude": 12.34,
+        "longitude": 23.34
+      }
+    },
+    "totemId_off": "zsDfb01JGGTevDoynxKw",
+    "womGeneration": {
+      "aim": "X",
+      "count": 100
+    }
+  }
+}
