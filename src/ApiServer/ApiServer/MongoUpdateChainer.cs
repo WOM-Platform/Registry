@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using MongoDB.Driver;
 
 namespace WomPlatform.Web.Api {
 
     public class MongoUpdateChainer<T> {
-
-        private List<UpdateDefinition<T>> _updates = new List<UpdateDefinition<T>>();
+        private List<UpdateDefinition<T>> _updates = [];
         private readonly UpdateDefinitionBuilder<T> _builder;
 
         public MongoUpdateChainer(UpdateDefinitionBuilder<T> builder) {
@@ -29,15 +26,14 @@ namespace WomPlatform.Web.Api {
         public UpdateDefinition<T> End() {
             return _builder.Combine(_updates);
         }
-
     }
 
     public static class MongoUpdateChainerExtensions {
-
+        /// <summary>
+        /// Combine multiple update definitions in a fluent manner.
+        /// </summary>
         public static MongoUpdateChainer<T> Chain<T>(this UpdateDefinitionBuilder<T> b) {
             return new MongoUpdateChainer<T>(b);
         }
-
     }
-
 }

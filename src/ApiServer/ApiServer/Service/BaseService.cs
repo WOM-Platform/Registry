@@ -31,6 +31,24 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        protected IMongoCollection<Badge> BadgeCollection {
+            get {
+                return MainDatabase.GetCollection<Badge>("Badges");
+            }
+        }
+
+        protected IMongoCollection<BadgeChallenge> BadgeChallengeCollection {
+            get {
+                return MainDatabase.GetCollection<BadgeChallenge>("BadgeChallenges");
+            }
+        }
+
+        protected IMongoCollection<CheckInTotem> CheckInTotemCollection {
+            get {
+                return MainDatabase.GetCollection<CheckInTotem>("CheckInTotems");
+            }
+        }
+
         protected IMongoCollection<GenerationRequest> GenerationRequestCollection {
             get {
                 return MainDatabase.GetCollection<GenerationRequest>("GenerationRequests");
@@ -70,18 +88,6 @@ namespace WomPlatform.Web.Api.Service {
         protected IMongoCollection<User> UserCollection {
             get {
                 return MainDatabase.GetCollection<User>("Users");
-            }
-        }
-
-        protected IMongoCollection<Badge> BadgeCollection {
-            get {
-                return MainDatabase.GetCollection<Badge>("Badges");
-            }
-        }
-
-        protected IMongoCollection<BadgeChallenge> BadgeChallengeCollection {
-            get {
-                return MainDatabase.GetCollection<BadgeChallenge>("BadgeChallenges");
             }
         }
 

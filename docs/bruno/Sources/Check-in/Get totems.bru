@@ -1,0 +1,21 @@
+meta {
+  name: Get totems
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/source/:sourceId/checkin/totems
+  body: none
+  auth: apikey
+}
+
+params:path {
+  sourceId: 691c190f7d24fb44c599403a
+}
+
+auth:apikey {
+  key: X-WOM-ApiKey
+  value: DcPC2CWCi7EYMubpF1Na
+  placement: header
+}

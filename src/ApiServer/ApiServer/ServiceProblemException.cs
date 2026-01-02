@@ -161,5 +161,17 @@ namespace WomPlatform.Web.Api {
             StatusCodes.Status404NotFound,
             type: "https://wom.social/api/problems/badge-not-found"
         );
+
+        public readonly static ServiceProblemException CmiNotEnabled = new(
+            "Count Me In not enabled",
+            StatusCodes.Status503ServiceUnavailable,
+            type: "https://wom.social/api/problems/cmi-not-enabled"
+        );
+
+        public readonly static ServiceProblemException SourceHasNoCmiProvider = new(
+            "Source has no linked Count Me In provider",
+            StatusCodes.Status400BadRequest,
+            type: "https://wom.social/api/problems/source-has-no-cmi-provider"
+        );
     }
 }

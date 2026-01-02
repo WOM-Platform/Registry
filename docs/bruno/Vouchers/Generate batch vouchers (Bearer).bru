@@ -1,0 +1,31 @@
+meta {
+  name: Generate batch vouchers (Bearer)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/voucher/batch/generate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "sourceId": "5e737c3a9036edb02d61ee34",
+    "title": "Test generation",
+    "users": [
+      {
+        "email": "lck@klopfenstein.net",
+        "count": 60,
+        "aim": "X",
+        "timestamp": "2025-11-26T02:56:00.000Z",
+        "creationMode": "SetLocationOnRedeem"
+      }
+    ]
+  }
+}

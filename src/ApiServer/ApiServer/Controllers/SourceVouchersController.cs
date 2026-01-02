@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.Authentication;
 using WomPlatform.Web.Api.InputModels.Generation;
 using WomPlatform.Web.Api.OutputModels.Vouchers;
 
@@ -26,6 +26,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public record GenerateVouchersInput(VoucherGenerationSpecification[] Vouchers);
 
         [HttpPost]
+        [Authorize(AuthenticationSchemes = ApiKeyAuthenticationSchemeOptions.SchemeName)]
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(GenerationRequestOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -34,24 +35,14 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId sourceId,
             [FromBody] GenerateVouchersInput input
         ) {
-            if(!Request.Headers.TryGetValue("X-WOM-ApiKey", out var apiKeyHeader)) {
-                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Request does not contain X-WOM-ApiKey header");
+            if(!User.GetSourceId(out var controlledSourceId)) {
+                return Unauthorized();
+            }
+            if(sourceId != controlledSourceId) {
+                return Forbid();
             }
 
-            var apiKey = apiKeyHeader.ToString();
-            var entry = await ApiKeyService.RetrieveApiKey(apiKey);
-            if(entry == null || entry.Expired) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "API key not valid");
-            }
-            if(entry.Kind != ApiKey.KindOfKey.SourceAdministrator) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "API key does not control source");
-            }
-            if(entry.ControlledEntityId != sourceId) {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: $"API key does not allow control of source {sourceId}");
-            }
-
-            var source = await SourceService.GetSourceById(entry.ControlledEntityId);
-            // TODO: other checks?
+            var source = await SourceService.GetSourceById(sourceId);
 
             (var generationRequest, _) = await GenerationService.CreateGenerationRequest(source, input.Vouchers, isPreVerified: true);
 

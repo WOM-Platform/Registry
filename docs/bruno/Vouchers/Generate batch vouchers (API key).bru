@@ -1,0 +1,33 @@
+meta {
+  name: Generate batch vouchers (API key)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v1/voucher/batch/generate
+  body: json
+  auth: apikey
+}
+
+auth:apikey {
+  key: X-WOM-ApiKey
+  value: c3b89651-9ed5-43a4-b1e5-84d806f83b7b
+  placement: header
+}
+
+body:json {
+  {
+    "sourceId": "5e737c3a9036edb02d61ee34",
+    "title": "Test generation",
+    "users": [
+      {
+        "email": "lck@klopfenstein.net",
+        "count": 60,
+        "aim": "X",
+        "timestamp": "2025-11-26T02:56:00.000Z",
+        "creationMode": "SetLocationOnRedeem"
+      }
+    ]
+  }
+}

@@ -19,7 +19,6 @@ namespace WomPlatform.Web.Api.Controllers {
     [ApiController]
     [Produces("application/json")]
     public class BaseRegistryController : ControllerBase {
-
         protected readonly string SelfHostDomain;
         protected readonly string SelfLinkDomain;
 
@@ -193,6 +192,9 @@ namespace WomPlatform.Web.Api.Controllers {
         /// <summary>
         /// Checks whether the user is logged-in and whether they are an administrator.
         /// </summary>
+        /// <remarks>
+        /// API key authenticated requests are not considered as logged-in users.
+        /// </remarks>
         protected async Task<(User UserProfile, bool IsAdmin)> RequireLoggedUser() {
             if(!User.GetUserId(out var loggedUserId)) {
                 throw ServiceProblemException.UserIsNotLoggedIn;
@@ -328,7 +330,19 @@ namespace WomPlatform.Web.Api.Controllers {
             return merchant;
         }
 
+        /// <summary>
+        /// Checks whether the current user is an administrator of the given source.
+        /// </summary>
+        /// <remarks>
+        /// This works for both logged-in users and API key authenticated requests.
+        /// </remarks>
         protected async Task<Source> VerifyUserIsAdminOfSource(ObjectId sourceId) {
+            if(User.GetSourceId(out var controlledSourceId)) {
+                if(sourceId == controlledSourceId) {
+                    return await SourceService.GetSourceById(controlledSourceId);
+                }
+            }
+
             (var userProfile, bool isAdmin) = await RequireLoggedUser();
 
             var source = await SourceService.GetSourceById(sourceId);

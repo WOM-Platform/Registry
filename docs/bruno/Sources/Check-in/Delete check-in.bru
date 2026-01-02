@@ -1,0 +1,22 @@
+meta {
+  name: Delete check-in
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{protocol}}://{{baseUrl}}/api/v1/source/:sourceId/checkin/:eventId
+  body: none
+  auth: apikey
+}
+
+params:path {
+  eventId: ipWD82jFtWRnNSIajFNO
+  sourceId: 69450c3c62352df39746c9a5
+}
+
+auth:apikey {
+  key: X-WOM-ApiKey
+  value: DcPC2CWCi7EYMubpF1Na
+  placement: header
+}

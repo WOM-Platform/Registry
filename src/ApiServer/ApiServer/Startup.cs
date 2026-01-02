@@ -29,6 +29,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using WomPlatform.Connector;
+using WomPlatform.Web.Api.Authentication;
 using WomPlatform.Web.Api.Conversion;
 using WomPlatform.Web.Api.Service;
 
@@ -176,7 +177,8 @@ namespace WomPlatform.Web.Api {
                     ClockSkew = TimeSpan.Zero
                 };
             })
-            .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.SchemeName, null);
+            .AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationSchemeOptions.SchemeName, null)
+            .AddScheme<ApiKeyAuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationSchemeOptions.SchemeName, null);
 
             services.AddAuthorization(options => {
                 options.AddPolicy(TokenSessionAuthPolicy,
@@ -241,6 +243,7 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<SourceService>();
             services.AddScoped<StatsService>();
             services.AddScoped<UserService>();
+            services.AddScoped<CountMeInService>();
 
             services.AddMailComposer();
         }
