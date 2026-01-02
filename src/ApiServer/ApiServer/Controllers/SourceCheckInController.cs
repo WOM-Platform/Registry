@@ -174,22 +174,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
             // TODO
 
-            return Ok(new GetTotemsOutput(
-                [
-                    new GetTotemsEntryOutput(
-                        "zsDfb01JGGTevDoynxKw",
-                        "Totem fisso A"
-                    ),
-                    new GetTotemsEntryOutput(
-                        "buG0GbKV65y0eO0k1CZg",
-                        "Totem fisso B"
-                    ),
-                    new GetTotemsEntryOutput(
-                        "2MmDLmF3Q1I0uFr5TlC6",
-                        "Totem fisso C"
-                    )
-                ]
-            ));
+            return Ok(new GetTotemsOutput([]));
         }
     }
 }
