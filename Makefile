@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 DC := docker compose -f docker-compose.yml -f docker-compose.local.yml -f docker-compose.custom.yml
 DC_RUN := ${DC} run --rm
-DB_GCLOUD := docker compose -f docker-compose.yml -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env
+DC_GCLOUD := docker compose -f docker-compose.yml -f docker-compose.gcloud.yml -f docker-compose.custom.yml --env-file=gcloud.env
 
 include gcloud.env
 include config.env
