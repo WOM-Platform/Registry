@@ -126,26 +126,16 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] [Required] string selector,
             [FromQuery] ApiKey.KindOfKey kind = ApiKey.KindOfKey.SourceAdministrator
         ) {
-            Logger.LogDebug("Create source API key");
-
-            if(!User.GetUserId(out var userId)) {
-                return Forbid();
-            }
-
-            var source = await SourceService.GetSourceById(sourceId);
-            if(source == null) {
-                return NotFound();
-            }
-            if(!source.AdministratorUserIds.Contains(userId)) {
-                return Forbid();
-            }
-
             if(string.IsNullOrWhiteSpace(selector)) {
                 return Problem(statusCode: 400, title: "API key selector cannot be null or empty");
             }
             if(!Enum.IsDefined(kind)) {
                 return Problem(statusCode: 400, title: "API key kind is not valid");
             }
+
+            var source = VerifyUserIsAdminOfSource(sourceId);
+
+            Logger.LogInformation("Creating new API key of {ApiKeyKind} and selector {ApiKeySelector} on source {SourceId}", kind, selector, sourceId);
 
             var apiKey = await ApiKeyService.CreateOrGetApiKey(sourceId, selector, kind);
 

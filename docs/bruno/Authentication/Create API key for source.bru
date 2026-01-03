@@ -1,0 +1,23 @@
+meta {
+  name: Create API key for source
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/api/v2/auth/source/:sourceId/apikey?selector=VisitPesaro-integration
+  body: none
+  auth: bearer
+}
+
+params:query {
+  selector: VisitPesaro-integration
+}
+
+params:path {
+  sourceId: 69450c3c62352df39746c9a5
+}
+
+auth:bearer {
+  token: {{token}}
+}
