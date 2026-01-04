@@ -93,6 +93,7 @@ namespace WomPlatform.Web.Api {
                     options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonObjectIdConverter());
+                    options.JsonSerializerOptions.Converters.Add(new JsonPermissiveNumericConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonWomIdentifierConverter());
                 })
                 .ConfigureApiBehaviorOptions(options => {
