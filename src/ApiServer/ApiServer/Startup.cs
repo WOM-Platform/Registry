@@ -90,6 +90,7 @@ namespace WomPlatform.Web.Api {
                 })
                 .AddJsonOptions(options => {
                     options.JsonSerializerOptions.AllowTrailingCommas = true;
+                    options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonObjectIdConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonWomIdentifierConverter());
@@ -99,8 +100,10 @@ namespace WomPlatform.Web.Api {
 
                     options.InvalidModelStateResponseFactory = context => {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Startup>>();
-                        logger.LogInformation("Model binding error: {0}",
+                        logger.LogWarning("Model binding error on action {Action}: {1}",
+                            context.ActionDescriptor.DisplayName,
                             string.Join(", ", from modelState in context.ModelState
+                                              where modelState.Value.Errors.Any()
                                               select string.Format("{0} ({1})", modelState.Key, string.Join(", ", from error in modelState.Value.Errors
                                                                                                                   select error.ErrorMessage)))
                         );
