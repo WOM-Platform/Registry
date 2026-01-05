@@ -5,7 +5,7 @@ services:
     environment:
     - ASPNETCORE_ENVIRONMENT=Production
     volumes:
-    - ./keys:/testkeys:ro
+    - ./testkeys:/testkeys:ro
     - ./keys:/keys:ro
     labels:
     - "traefik.enable=true"
@@ -15,7 +15,6 @@ services:
     - "traefik.http.routers.wom-registry-api.entrypoints=web,websecure"
     - "traefik.http.routers.wom-registry-api.middlewares=wom-registry-api-strip"
     - "traefik.http.middlewares.wom-registry-api-strip.stripprefix.prefixes=/api"
-    - "traefik.http.middlewares.wom-registry-api-strip.stripprefix.forceslash=false"
 
     - "traefik.http.routers.wom-landing-api.rule=Host(`wom.social`) && (PathPrefix(`/payment`) || PathPrefix(`/vouchers`) || PathPrefix(`/migration`))"
     - "traefik.http.routers.wom-landing-api.entrypoints=websecure"
@@ -30,5 +29,4 @@ services:
     - "traefik.http.routers.wom-registry-wellknown.entrypoints=websecure"
     - "traefik.http.routers.wom-registry-wellknown.middlewares=wom-registry-wellknown-strip"
     - "traefik.http.middlewares.wom-registry-wellknown-strip.stripprefix.prefixes=/.well-known"
-    - "traefik.http.middlewares.wom-registry-wellknown-strip.stripprefix.forceslash=false"
     restart: unless-stopped
