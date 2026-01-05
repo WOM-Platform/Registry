@@ -28,7 +28,7 @@ namespace WomPlatform.Web.Api.Service {
             SourceService sourceService,
             MongoClient client,
             IConfiguration configuration,
-            ILogger<BackupService> logger
+            ILogger<GenerationService> logger
             ) : base(client, logger) {
             _aimService = aimService;
             _sourceService = sourceService;
@@ -38,8 +38,6 @@ namespace WomPlatform.Web.Api.Service {
             DefaultSecretLength = Convert.ToInt32(voucherSecuritySection["SecretLength"]);
             RequestInitialAttempts = Convert.ToInt32(voucherSecuritySection["RequestInitialAttempts"]);
         }
-
-        private IMongoCollection<Source> SourceCollection => MainDatabase.GetCollection<Source>("Sources");
 
         public Task<GenerationRequest> GetGenerationRequestByOtc(Guid otc) {
             var filter = Builders<GenerationRequest>.Filter.Eq(r => r.Otc, otc);
@@ -200,8 +198,8 @@ namespace WomPlatform.Web.Api.Service {
             }
 
             if(request.Attempts <= 0) {
-                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {0} has no more attempts available",
-                    request.Otc);
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {GenOtc} has no more attempts available", request.Otc);
+
                 throw new ServiceProblemException(
                     "Request instance is void",
                     StatusCodes.Status410Gone,
@@ -215,7 +213,8 @@ namespace WomPlatform.Web.Api.Service {
                     Builders<GenerationRequest>.Update.Inc(gr => gr.Attempts, -1)
                 )).Verify(1);
 
-                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation password does not match");
+                Logger.LogInformation(LoggingEvents.Operations, "Voucher generation {GenOtc} password does not match", request.Otc);
+
                 throw new ServiceProblemException(
                     "Wrong password",
                     StatusCodes.Status422UnprocessableEntity,

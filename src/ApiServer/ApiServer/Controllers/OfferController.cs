@@ -41,7 +41,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Search range cannot be greater than 30 kms");
             }
 
-            Logger.LogInformation("Searching for POS offers at {0} kms from ({1},{2})", range, latitude, longitude);
+            Logger.LogDebug("Searching for POS offers at {0} kms from ({1},{2})", range, latitude, longitude);
 
             var results = await OfferService.GetOffersWithDistance(latitude, longitude, range, orderBy);
 
@@ -78,7 +78,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] double llx, [FromQuery] double lly,
             [FromQuery] double urx, [FromQuery] double ury
         ) {
-            Logger.LogInformation("Searching for POS offers between ({0},{1}) and ({2},{3})", llx, lly, urx, ury);
+            Logger.LogDebug("Searching for POS offers between ({0},{1}) and ({2},{3})", llx, lly, urx, ury);
 
             var results = await OfferService.GetOffersInBox(llx, lly, urx, ury);
 
