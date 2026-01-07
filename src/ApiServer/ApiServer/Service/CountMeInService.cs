@@ -102,11 +102,7 @@ namespace WomPlatform.Web.Api.Service {
                 source.CountMeInProvider,
                 input.EventStart,
                 input.EventEnd,
-                input.Location == null ? new CreateEventLocationRequest(
-                    "Fixed totem",
-                    new GeoCoords(0, 0),
-                    1000
-                ) : new CreateEventLocationRequest(
+                input.Location == null ? null : new CreateEventLocationRequest(
                     input.Location.Name,
                     new GeoCoords(input.Location.Coords.Latitude, input.Location.Coords.Longitude),
                     1000
