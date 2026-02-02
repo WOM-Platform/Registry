@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -172,23 +173,13 @@ namespace WomPlatform.Web.Api.Controllers {
         ) {
             var source = await VerifyUserIsAdminOfSource(sourceId);
 
-            // TODO
+            if(source.CountMeIn == null || source.CountMeIn.FixedTotemInstallations == null) {
+                return Ok(new GetTotemsOutput([]));    
+            }
 
             return Ok(new GetTotemsOutput(
-                [
-                    new GetTotemsEntryOutput(
-                        "zsDfb01JGGTevDoynxKw",
-                        "Totem fisso A"
-                    ),
-                    new GetTotemsEntryOutput(
-                        "buG0GbKV65y0eO0k1CZg",
-                        "Totem fisso B"
-                    ),
-                    new GetTotemsEntryOutput(
-                        "2MmDLmF3Q1I0uFr5TlC6",
-                        "Totem fisso C"
-                    )
-                ]
+                (from totem in source.CountMeIn.FixedTotemInstallations
+                 select new GetTotemsEntryOutput(totem.TotemId, totem.Name)).ToArray()
             ));
         }
     }

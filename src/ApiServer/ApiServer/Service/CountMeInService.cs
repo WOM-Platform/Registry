@@ -53,7 +53,7 @@ namespace WomPlatform.Web.Api.Service {
                 throw ServiceProblemException.CmiNotEnabled;
             }
 
-            if(source.CountMeInProvider == null) {
+            if(source.CountMeIn == null) {
                 Logger.LogError("Cannot manage check-in totems for source {SourceId} because it is not linked to any Count Me In provider", source.Id);
 
                 throw ServiceProblemException.SourceHasNoCmiProvider;
@@ -95,11 +95,11 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<CheckInTotem> CreateEvent(Source source, CreateCheckinInput input) {
             CheckSource(source);
 
-            _logger.LogInformation("Creating CountMeIn event for source {SourceId} and {ProviderId}", source.Id, source.CountMeInProvider);
+            _logger.LogInformation("Creating CountMeIn event for source {SourceId} and {ProviderId}", source.Id, source.CountMeIn.ProviderId);
 
             var payload = new CreateEventRequest(
                 input.EventTitle,
-                source.CountMeInProvider,
+                source.CountMeIn.ProviderId,
                 input.EventStart,
                 input.EventEnd,
                 input.Location == null ? null : new CreateEventLocationRequest(
@@ -157,7 +157,7 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<bool> DeleteEvent(Source source, string eventId) {
             CheckSource(source);
 
-            _logger.LogInformation("Deleting CountMeIn event {EventId} for source {SourceId} and {ProviderId}", eventId, source.Id, source.CountMeInProvider);
+            _logger.LogInformation("Deleting CountMeIn event {EventId} for source {SourceId} and {ProviderId}", eventId, source.Id, source.CountMeIn.ProviderId);
 
             // Try to update existing document, if any
             var filter = Builders<CheckInTotem>.Filter.And(
@@ -177,7 +177,7 @@ namespace WomPlatform.Web.Api.Service {
             }
 
             var request = new RestRequest("womRegistry-deleteEvent", Method.Delete);
-            request.AddJsonBody(new DeleteEventRequest(eventId, source.CountMeInProvider));
+            request.AddJsonBody(new DeleteEventRequest(eventId, source.CountMeIn.ProviderId));
 
             var response = await _cmiClient.ExecuteAsync(request);
             if(!response.IsSuccessStatusCode) {
