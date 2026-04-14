@@ -8,6 +8,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
+using WomPlatform.Web.Api.DTO;
 
 namespace WomPlatform.Web.Api.Service {
 
@@ -166,6 +167,71 @@ namespace WomPlatform.Web.Api.Service {
 
         public Task DeleteMerchant(ObjectId merchantId) {
             return MerchantCollection.DeleteOneAsync(Builders<Merchant>.Filter.Eq(m => m.Id, merchantId));
+        }
+
+        public async Task<List<MerchantReportDto>> GetMerchantReportDataAsync()
+        {
+            var pipeline = new BsonDocument[]
+            {
+                new BsonDocument("$lookup", new BsonDocument
+                {
+                    { "from", "Users" },
+                    { "localField", "access.userId" },
+                    { "foreignField", "_id" },
+                    { "as", "user_details" }
+                }),
+
+                new BsonDocument("$unwind",
+                    new BsonDocument
+                    {
+                        { "path", "$user_details" },
+                        { "preserveNullAndEmptyArrays", true }
+                    }),
+                // 2. Lookup POS
+                new BsonDocument("$lookup", new BsonDocument
+                {
+                    { "from", "Pos" },
+                    { "localField", "_id" },
+                    { "foreignField", "merchantId" },
+                    { "as", "pos_details" }
+                }),
+                new BsonDocument("$unwind", new BsonDocument
+                {
+                    { "path", "$pos_details" },
+                    { "preserveNullAndEmptyArrays", true }
+                }),
+
+                // 3. Lookup Offerte (usando merchant._id come nella tua query funzionante)
+                new BsonDocument("$lookup", new BsonDocument
+                {
+                    { "from", "Offers" },
+                    { "localField", "_id" },
+                    { "foreignField", "merchant._id" },
+                    { "as", "offerte_details" }
+                }),
+                new BsonDocument("$unwind", new BsonDocument
+                {
+                    { "path", "$offerte_details" },
+                    { "preserveNullAndEmptyArrays", true }
+                }),
+
+                // 4. Proiezione finale
+                new BsonDocument("$project", new BsonDocument
+                {
+                    { "_id", 0 },
+                    { "MerchantName", "$name" },
+                    { "MerchantFiscalCode", "$fiscalCode" },
+                    { "UserEmail", "$user_details.email" },
+                    { "UserName", "$user_details.name" },
+                    { "UserSurname", "$user_details.surname" },
+                    { "PosName", "$pos_details.name" },
+                    { "OfferTitle", "$offerte_details.title" },
+                    { "OfferCost", "$offerte_details.payment.cost" }
+                })
+
+            };
+            return await MerchantCollection.Aggregate<MerchantReportDto>(pipeline).ToListAsync();
+
         }
 
     }
