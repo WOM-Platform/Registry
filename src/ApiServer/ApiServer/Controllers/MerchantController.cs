@@ -18,6 +18,7 @@ using WomPlatform.Web.Api.OutputModels.Merchant;
 using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.OutputModels.Source;
 using WomPlatform.Web.Api.Service;
+using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Controllers {
 
@@ -401,6 +402,16 @@ namespace WomPlatform.Web.Api.Controllers {
             });
         }
 
+        [HttpGet("download-merchants-report")]
+        public async Task<IActionResult> DownloadMerchantsCsv()
+        {
+            await VerifyUserIsAdmin();
+            var reportData = await MerchantService.GetMerchantReportDataAsync();
+
+            var records = CsvFileHelper.GenerateMerchantCsvContent(reportData);
+
+            return File(records, "text/csv", $"{DateTime.Now:yyyy-MM-dd}_merchant_pos_offers.csv");
+        }
     }
 
 }

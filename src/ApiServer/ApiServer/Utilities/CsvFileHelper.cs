@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using CsvHelper;
 using WomPlatform.Web.Api.DTO;
 
@@ -146,6 +147,18 @@ namespace WomPlatform.Web.Api.Utilities {
             using (StreamWriter writer = new StreamWriter(memoryStream, leaveOpen: true))
             using (CsvWriter csv = new CsvWriter(writer, CultureInfo.InvariantCulture)) {
                 csv.WriteRecords(csvData);
+                writer.Flush();
+                return memoryStream.ToArray();
+            }
+        }
+
+        public static byte[] GenerateMerchantCsvContent(List<MerchantReportDto> data)
+        {
+            using (var memoryStream = new MemoryStream())
+            using (var writer = new StreamWriter(memoryStream, Encoding.UTF8))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                csv.WriteRecords(data);
                 writer.Flush();
                 return memoryStream.ToArray();
             }
