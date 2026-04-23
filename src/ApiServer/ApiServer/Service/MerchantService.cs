@@ -80,12 +80,7 @@ namespace WomPlatform.Web.Api.Service {
             var filter = Builders<Merchant>.Filter.Eq(m => m.Name, merchantName);
             var merchant = await MerchantCollection.Find(filter).FirstOrDefaultAsync();
 
-            if (merchant == null)
-            {
-                throw new ApplicationException($"Merchant with name '{merchantName}' not found.");
-            }
-
-            return merchant;
+            return merchant ?? throw new ApplicationException($"Merchant with name '{merchantName}' not found.");
         }
 
         /// <summary>
@@ -107,9 +102,9 @@ namespace WomPlatform.Web.Api.Service {
             return MerchantCollection.Find(
                 Builders<Merchant>.Filter.And(
                     Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", userId),
-                    Builders<Merchant>.Filter.In($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.Role)}", new MerchantRole[] {
+                    Builders<Merchant>.Filter.In($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.Role)}", [
                         MerchantRole.User, MerchantRole.Admin
-                    })
+                    ])
                 )
             ).ToListAsync();
         }
@@ -133,14 +128,13 @@ namespace WomPlatform.Web.Api.Service {
         /// </summary>
         public Task<List<MerchantWithAdmins>> GetAllMerchantsAndUsers() {
             var pipeline = new EmptyPipelineDefinition<Merchant>()
-                .AppendStage<Merchant, Merchant, MerchantWithAdmins>(BsonDocument.Parse(@"{
-                    $lookup: {
-                        from: 'Users',
-                        localField: 'access.userId',
-                        foreignField: '_id',
-                        as: 'adminUsers'
-                    }
-                }"))
+                .AppendStage<Merchant, Merchant, MerchantWithAdmins>(new BsonDocument("$lookup", new BsonDocument
+                {
+                    { "from", UserCollectionName },
+                    { "localField", "access.userId" },
+                    { "foreignField", "_id" },
+                    { "as", "adminUsers" }
+                }))
                 .Sort(Builders<MerchantWithAdmins>.Sort.Ascending(m => m.Name))
             ;
 
@@ -169,66 +163,56 @@ namespace WomPlatform.Web.Api.Service {
             return MerchantCollection.DeleteOneAsync(Builders<Merchant>.Filter.Eq(m => m.Id, merchantId));
         }
 
-        public async Task<List<MerchantReportDto>> GetMerchantReportDataAsync()
-        {
-            var pipeline = new BsonDocument[]
-            {
-                new BsonDocument("$lookup", new BsonDocument
-                {
-                    { "from", "Users" },
+        public async Task<List<MerchantReportDto>> GetMerchantReportDataAsync() {
+            var pipeline = new BsonDocument[] {
+                // 1. Filter disabled merchants
+                new("$match", new BsonDocument {
+                    { "enabled", new BsonDocument{
+                        { "$ne", false }
+                    }},
+                }),
+
+                // 2. Load user details and unwind for each user
+                new("$lookup", new BsonDocument {
+                    { "from", UserCollectionName },
                     { "localField", "access.userId" },
                     { "foreignField", "_id" },
-                    { "as", "user_details" }
+                    { "as", "userDetails" }
                 }),
-
-                new BsonDocument("$unwind",
-                    new BsonDocument
-                    {
-                        { "path", "$user_details" },
-                        { "preserveNullAndEmptyArrays", true }
-                    }),
-                // 2. Lookup POS
-                new BsonDocument("$lookup", new BsonDocument
+                new("$unwind", new BsonDocument
                 {
-                    { "from", "Pos" },
-                    { "localField", "_id" },
-                    { "foreignField", "merchantId" },
-                    { "as", "pos_details" }
-                }),
-                new BsonDocument("$unwind", new BsonDocument
-                {
-                    { "path", "$pos_details" },
+                    { "path", "$userDetails" },
                     { "preserveNullAndEmptyArrays", true }
                 }),
-
-                // 3. Lookup Offerte (usando merchant._id come nella tua query funzionante)
-                new BsonDocument("$lookup", new BsonDocument
-                {
-                    { "from", "Offers" },
+                
+                // 3. Load offers and unwind
+                new("$lookup", new BsonDocument {
+                    { "from", OfferCollectionName },
                     { "localField", "_id" },
                     { "foreignField", "merchant._id" },
-                    { "as", "offerte_details" }
+                    { "as", "offer" }
                 }),
-                new BsonDocument("$unwind", new BsonDocument
+                new("$unwind", new BsonDocument
                 {
-                    { "path", "$offerte_details" },
+                    { "path", "$offer" },
                     { "preserveNullAndEmptyArrays", true }
                 }),
 
                 // 4. Proiezione finale
-                new BsonDocument("$project", new BsonDocument
-                {
+                new("$project", new BsonDocument {
                     { "_id", 0 },
+                    { "MerchantId", "$_id" },
                     { "MerchantName", "$name" },
                     { "MerchantFiscalCode", "$fiscalCode" },
-                    { "UserEmail", "$user_details.email" },
-                    { "UserName", "$user_details.name" },
-                    { "UserSurname", "$user_details.surname" },
-                    { "PosName", "$pos_details.name" },
-                    { "OfferTitle", "$offerte_details.title" },
-                    { "OfferCost", "$offerte_details.payment.cost" }
+                    { "MerchantLastUpdate", "$lastUpdate" },
+                    { "UserEmail", "$userDetails.email" },
+                    { "UserName", "$userDetails.name" },
+                    { "UserSurname", "$userDetails.surname" },
+                    { "OfferTitle", "$offer.title" },
+                    { "OfferCost", "$offer.payment.cost" },
+                    { "OfferCreation", "$offer.createdOn" },
+                    { "OfferLastUpdate", "$offer.lastUpdate" },
                 })
-
             };
             return await MerchantCollection.Aggregate<MerchantReportDto>(pipeline).ToListAsync();
 

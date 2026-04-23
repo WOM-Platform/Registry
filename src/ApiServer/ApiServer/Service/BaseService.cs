@@ -85,9 +85,19 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        protected const string UserCollectionName = "Users";
+
         protected IMongoCollection<User> UserCollection {
             get {
-                return MainDatabase.GetCollection<User>("Users");
+                return MainDatabase.GetCollection<User>(UserCollectionName);
+            }
+        }
+
+        protected const string OfferCollectionName = "Offers";
+
+        protected IMongoCollection<Offer> OfferCollection {
+            get {
+                return MainDatabase.GetCollection<Offer>(OfferCollectionName);
             }
         }
 

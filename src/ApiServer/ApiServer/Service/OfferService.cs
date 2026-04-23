@@ -12,8 +12,6 @@ using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.DTO;
-using WomPlatform.Web.Api.OutputModels.Offers;
-using WomPlatform.Web.Api.Utilities;
 
 namespace WomPlatform.Web.Api.Service {
     public class OfferService : BaseService {
@@ -23,12 +21,6 @@ namespace WomPlatform.Web.Api.Service {
             IConfiguration configuration,
             ILogger<BackupService> logger
         ) : base(client, logger) {
-        }
-
-        private IMongoCollection<Offer> OfferCollection {
-            get {
-                return MainDatabase.GetCollection<Offer>("Offers");
-            }
         }
 
         public enum OfferOrder {

@@ -403,14 +403,14 @@ namespace WomPlatform.Web.Api.Controllers {
         }
 
         [HttpGet("download-merchants-report")]
-        public async Task<IActionResult> DownloadMerchantsCsv()
-        {
+        public async Task<IActionResult> DownloadMerchantsCsv() {
             await VerifyUserIsAdmin();
+
             var reportData = await MerchantService.GetMerchantReportDataAsync();
 
             var records = CsvFileHelper.GenerateMerchantCsvContent(reportData);
 
-            return File(records, "text/csv", $"{DateTime.Now:yyyy-MM-dd}_merchant_pos_offers.csv");
+            return File(records, "text/csv", $"{DateTime.Now:yyyy-MM-dd}_merchant_offers.csv");
         }
     }
 

@@ -154,14 +154,12 @@ namespace WomPlatform.Web.Api.Utilities {
 
         public static byte[] GenerateMerchantCsvContent(List<MerchantReportDto> data)
         {
-            using (var memoryStream = new MemoryStream())
-            using (var writer = new StreamWriter(memoryStream, Encoding.UTF8))
-            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
-            {
-                csv.WriteRecords(data);
-                writer.Flush();
-                return memoryStream.ToArray();
-            }
+            using var memoryStream = new MemoryStream();
+            using var writer = new StreamWriter(memoryStream, Encoding.UTF8);
+            using var csv = new CsvWriter(writer, new CultureInfo("it-IT"));
+            csv.WriteRecords(data);
+            writer.Flush();
+            return memoryStream.ToArray();
         }
     }
 }
