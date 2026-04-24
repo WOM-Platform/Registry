@@ -88,7 +88,7 @@ namespace WomPlatform.Web.Api.Controllers {
                     Description = input.Description,
                     WebsiteUrl = input.Url,
                     CreatedOn = DateTime.UtcNow,
-                    Access = new(),
+                    Access = [],
                     Enabled = true, // All merchants are automatically enabled for now
                     ActivationCode = input.ActivationCode.NormalizeCode(),
                 };
@@ -243,6 +243,10 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(existingMerchant.ToOutput());
         }
 
+        /// <summary>
+        /// Marks a merchant as deleted, preventing it from being visible and accessible.
+        /// This operation also deletes all POS and offers associated with the merchant.
+        /// </summary>
         [HttpDelete("{merchantId}")]
         [Authorize]
         [Produces(MediaTypeNames.Application.Json)]
@@ -253,7 +257,7 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId merchantId,
             [FromQuery] bool dryRun = false
         ) {
-            Logger.LogInformation("Deleting merchant {0} ({1})", merchantId, dryRun ? "dry run" : "effective run");
+            Logger.LogInformation("Flagging merchant {0} as deleted ({1})", merchantId, dryRun ? "dry run" : "effective run");
 
             _ = await VerifyUserIsAdminOfMerchant(merchantId);
 

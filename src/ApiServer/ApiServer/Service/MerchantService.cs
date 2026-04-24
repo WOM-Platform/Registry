@@ -159,8 +159,14 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        /// <summary>
+        /// Soft-deletes a merchant by setting the "enabled" flag to false.
+        /// </summary>
         public Task DeleteMerchant(ObjectId merchantId) {
-            return MerchantCollection.DeleteOneAsync(Builders<Merchant>.Filter.Eq(m => m.Id, merchantId));
+            return MerchantCollection.UpdateOneAsync(
+                Builders<Merchant>.Filter.Eq(m => m.Id, merchantId),
+                Builders<Merchant>.Update.Set(m => m.Enabled, false)
+            );
         }
 
         public async Task<List<MerchantReportDto>> GetMerchantReportDataAsync() {

@@ -349,18 +349,24 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         /// <summary>
-        /// Delete an offer by its ID.
+        /// Soft-deletes an offer by its ID.
         /// </summary>
         public Task DeleteOffer(ObjectId offerId) {
-            return OfferCollection.DeleteOneAsync(Builders<Offer>.Filter.Eq(o => o.Id, offerId));
+            return OfferCollection.UpdateOneAsync(
+                Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+                Builders<Offer>.Update.Set(o => o.Deactivated, true)
+            );
         }
 
         /// <summary>
-        /// Delete all offers of a POS.
+        /// Soft-deletes all offers of a POS.
         /// </summary>
         public async Task<long> DeleteOffersByPos(ObjectId posId) {
-            var result = await OfferCollection.DeleteManyAsync(Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId));
-            return result.DeletedCount;
+            var result = await OfferCollection.UpdateManyAsync(
+                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Update.Set(o => o.Deactivated, true)
+            );
+            return result.ModifiedCount;
         }
 
         /// <summary>

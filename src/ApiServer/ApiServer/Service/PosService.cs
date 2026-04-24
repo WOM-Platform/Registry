@@ -171,8 +171,14 @@ namespace WomPlatform.Web.Api.Service {
             );
         }
 
+        /// <summary>
+        /// Soft deletes a POS.
+        /// </summary>
         public Task DeletePos(ObjectId posId) {
-            return PosCollection.DeleteOneAsync(Builders<Pos>.Filter.Eq(p => p.Id, posId));
+            return PosCollection.UpdateOneAsync(
+                Builders<Pos>.Filter.Eq(p => p.Id, posId),
+                Builders<Pos>.Update.Set(p => p.IsActive, false)
+            );
         }
 
     }
