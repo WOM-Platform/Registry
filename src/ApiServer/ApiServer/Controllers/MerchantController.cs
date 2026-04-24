@@ -129,12 +129,13 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromQuery] string search = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] [DefaultValue(MerchantService.MerchantListOrder.Name)] MerchantService.MerchantListOrder orderBy = MerchantService.MerchantListOrder.Name
+            [FromQuery] [DefaultValue(MerchantService.MerchantListOrder.Name)] MerchantService.MerchantListOrder orderBy = MerchantService.MerchantListOrder.Name,
+            [FromQuery] bool? enabled = null
         ) {
             (var user, bool isAdmin) = await RequireLoggedUser();
             ObjectId? userFilter = isAdmin ? null : user.Id;
 
-            (var results, var count) = await MerchantService.ListMerchants(userFilter, search, page, pageSize, orderBy);
+            (var results, var count) = await MerchantService.ListMerchants(userFilter, search, page, pageSize, orderBy, enabled);
 
             return Ok(Paged<MerchantOutput>.FromPage(
                 (from m in results select m.ToOutput()).ToArray(),

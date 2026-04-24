@@ -43,13 +43,19 @@ namespace WomPlatform.Web.Api.Service {
         /// </summary>
         /// <param name="controlledBy">Search for merchants controlled by user ID.</param>
         /// <param name="textSearch">Search by text in name or description.</param>
-        public Task<(List<Merchant>, long Total)> ListMerchants(ObjectId? controlledBy, string textSearch, int page, int pageSize, MerchantListOrder orderBy) {
+        public Task<(List<Merchant>, long Total)> ListMerchants(ObjectId? controlledBy, string textSearch, int page, int pageSize, MerchantListOrder orderBy, bool? enabled) {
+
             var filters = GetBasicMerchantFilter();
             if(controlledBy.HasValue) {
                 filters.Add(Builders<Merchant>.Filter.Eq($"{nameof(Merchant.Access)}.{nameof(AccessControlEntry<MerchantRole>.UserId)}", controlledBy.Value));
             }
             if(!string.IsNullOrWhiteSpace(textSearch)) {
                 filters.Add(Builders<Merchant>.Filter.Regex(m => m.Name, regex: new BsonRegularExpression(Regex.Escape(textSearch), "i")));
+            }
+
+            if (enabled.HasValue)
+            {
+                filters.Add(Builders<Merchant>.Filter.Eq(m => m.Enabled, enabled.Value));
             }
 
             return MerchantCollection.FilteredPagedListAsync(
@@ -190,7 +196,7 @@ namespace WomPlatform.Web.Api.Service {
                     { "path", "$userDetails" },
                     { "preserveNullAndEmptyArrays", true }
                 }),
-                
+
                 // 3. Load offers and unwind
                 new("$lookup", new BsonDocument {
                     { "from", OfferCollectionName },
