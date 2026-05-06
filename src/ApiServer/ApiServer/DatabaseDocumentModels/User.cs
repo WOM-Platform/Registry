@@ -19,6 +19,9 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
 
         [BsonElement("surname")]
         public string Surname { get; set; }
+        [BsonElement("phoneNumber")]
+        [BsonIgnoreIfNull]
+        public string? PhoneNumber { get; set; }
 
         [BsonElement("verificationToken")]
         [BsonIgnoreIfNull]

@@ -74,7 +74,7 @@ namespace WomPlatform.Web.Api.Service {
 
         public async Task<User> CreateUser(
             IClientSessionHandle session,
-            string email, string name, string surname, string password,
+            string email, string name, string surname, string password, string? phoneNumber = null,
             bool isVerified = false,
             PlatformRole platformRole = PlatformRole.User
         ) {
@@ -92,6 +92,7 @@ namespace WomPlatform.Web.Api.Service {
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 Name = name.Trim(),
                 Surname = surname.Trim(),
+                PhoneNumber = phoneNumber?.Trim(),
                 VerificationToken = isVerified ? null : Random.GenerateReadableCode(tokenLength),
                 Role = platformRole,
                 RegisteredOn = DateTime.UtcNow,
@@ -110,6 +111,7 @@ namespace WomPlatform.Web.Api.Service {
             string? name = null,
             string? surname = null,
             string? email = null,
+            string? phoneNumber = null,
             string? password = null,
             PlatformRole? role = null
         ) {
@@ -124,6 +126,9 @@ namespace WomPlatform.Web.Api.Service {
             }
             if(email != null) {
                 chain.Set(u => u.Email, email);
+            }
+            if(phoneNumber != null) {
+                chain.Set(u => u.PhoneNumber, phoneNumber.Trim());
             }
             if(password != null) {
                 chain.Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(password));
