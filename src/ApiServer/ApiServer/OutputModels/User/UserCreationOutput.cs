@@ -14,6 +14,8 @@ namespace WomPlatform.Web.Api.OutputModels.User {
 
         public string Surname { get; set; }
 
+        public string? PhoneNumber { get; set; }
+
         public bool Verified { get; set; }
     }
 }

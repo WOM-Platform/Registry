@@ -40,7 +40,13 @@ namespace WomPlatform.Web.Api.Controllers {
         /// User registration payload.
         /// </summary>
         public record UserRegisterInput(
-            string Email, string Password, string Name, string Surname, bool Verified = false, PlatformRole Role = PlatformRole.User
+            string Email,
+            string Password,
+            string Name,
+            string Surname,
+            string? PhoneNumber = null,
+            bool Verified = false,
+            PlatformRole Role = PlatformRole.User
         );
 
         /// <summary>
@@ -66,7 +72,7 @@ namespace WomPlatform.Web.Api.Controllers {
             try {
                 var session = await CreateMongoSession();
                 var user = await session.WithTransactionAsync(async (session, token) => {
-                    var user = await UserService.CreateUser(session, input.Email, input.Name, input.Surname, input.Password, input.Verified, input.Role);
+                    var user = await UserService.CreateUser(session, input.Email, input.Name, input.Surname, input.Password, input.PhoneNumber, input.Verified, input.Role);
                     Logger.LogInformation("New user {0} created for {1}", user.Id, user.Email);
 
                     return user;
@@ -82,6 +88,7 @@ namespace WomPlatform.Web.Api.Controllers {
                         Email = user.Email,
                         Name = user.Name,
                         Surname = user.Surname,
+                        PhoneNumber = user.PhoneNumber,
                         Verified = user.VerificationToken == null,
                     }
                 );
@@ -158,6 +165,7 @@ namespace WomPlatform.Web.Api.Controllers {
                 Email = user.Email,
                 Name = user.Name,
                 Surname = user.Surname,
+                PhoneNumber = user.PhoneNumber,
                 Verified = user.VerificationToken == null,
                 Role = user.Role,
                 Merchants = (from m in taskMerchants.Result.Keys
@@ -199,7 +207,14 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok(user.ToOutput(userId != myself));
         }
 
-        public record UserUpdateInformationInput(string? Email, string? Password, string? Name, string? Surname, PlatformRole? Role);
+        public record UserUpdateInformationInput(
+            string? Email,
+            string? Password,
+            string? Name,
+            string? Surname,
+            PlatformRole? Role,
+            string? PhoneNumber = null
+            );
 
         /// <summary>
         /// Updates information about an existing user.
@@ -237,7 +252,7 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             try {
-                var updatedUser = await UserService.UpdateUser(userId, name: input.Name, surname: input.Surname, password: input.Password, role: input.Role);
+                var updatedUser = await UserService.UpdateUser(userId, name: input.Name, surname: input.Surname, phoneNumber: input.PhoneNumber, password: input.Password, role: input.Role);
 
                 return Ok(updatedUser.ToOutput(false));
             }
