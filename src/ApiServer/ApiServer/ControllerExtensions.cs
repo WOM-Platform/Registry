@@ -88,7 +88,7 @@ namespace WomPlatform.Web.Api {
         public static ActionResult PayloadVerificationFailure(this ControllerBase c, string title = null) {
             return new ObjectResult(
                 new ProblemDetails {
-                    Status = StatusCodes.Status403Forbidden,
+                    Status = StatusCodes.Status422UnprocessableEntity, // See https://httpstatuses.com/422
                     Type = "https://wom.social/api/problems/payload-verification-failure",
                     Title = title ?? "Failed to verify request contents"
                 }
