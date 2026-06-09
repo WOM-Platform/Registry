@@ -7,13 +7,9 @@ meta {
 get {
   url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers
   body: none
-  auth: bearer
+  auth: none
 }
 
 params:path {
   posId: 5e5e672800d98a60b7db9b2f
-}
-
-auth:bearer {
-  token: {{token}}
 }

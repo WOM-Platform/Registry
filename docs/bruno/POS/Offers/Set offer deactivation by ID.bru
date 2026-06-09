@@ -4,9 +4,9 @@ meta {
   seq: 6
 }
 
-get {
+put {
   url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers/:offerId/deactivation
-  body: none
+  body: json
   auth: bearer
 }
 
@@ -17,4 +17,10 @@ params:path {
 
 auth:bearer {
   token: {{token}}
+}
+
+body:json {
+  {
+    "deactivated": false
+  }
 }

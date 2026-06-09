@@ -4,8 +4,8 @@ meta {
   seq: 7
 }
 
-get {
-  url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers/:offerId/deactivation
+delete {
+  url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers/:offerId/
   body: none
   auth: bearer
 }

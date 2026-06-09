@@ -5,13 +5,16 @@ meta {
 }
 
 get {
-  url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId
+  url: {{protocol}}://{{baseUrl}}/api/v1/pos?search=&page=1&pageSize=10&orderBy=CreatedOn
   body: none
   auth: bearer
 }
 
-params:path {
-  posId: 65dc70732a0e94c0dc1f781c
+params:query {
+  search: 
+  page: 1
+  pageSize: 10
+  orderBy: CreatedOn
 }
 
 auth:bearer {
