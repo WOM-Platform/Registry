@@ -40,13 +40,14 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
+            // This is ugly: must be done differently, we can't change output based on login status without failing if user is not correctly logged-in
             if(IsUserLoggedIn() && await IsUserAdmin()) {
                 var (results, lastPaymentConfirmations) = await OfferService.GetOffersOfPosForAdmin(posId);
 
                 return Ok((from result in results select result.ToDetailsOutput(lastPaymentConfirmations.SafeGet(result.Id))).ToArray());
             }
             else {
-                var results = await OfferService.GetOffersOfPos(pos.Id);
+                var results = await OfferService.GetOffersOfPos(pos.Id, false);
 
                 return Ok((from result in results select result.ToDetailsOutput()).ToArray());
             }
@@ -241,7 +242,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Gets an offer's deactivation status.
         /// </summary>
         [HttpGet("{posId}/offers/{offerId}/deactivation")]
-        [Authorize]
         [ProducesResponseType(typeof(OfferDeactivationStatusOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
@@ -249,8 +249,6 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId posId,
             [FromRoute] ObjectId offerId
         ) {
-            (_, _) = await VerifyUserIsAdminOfPos(posId);
-
             var existingOffer = await OfferService.GetOfferById(offerId);
             if(existingOffer == null) {
                 return NotFound();

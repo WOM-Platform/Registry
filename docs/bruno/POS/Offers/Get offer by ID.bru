@@ -1,0 +1,20 @@
+meta {
+  name: Get offer by ID
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers/:offerId/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  offerId: 645902c6d06a17b46fb8d9c7
+  posId: 5e5e672800d98a60b7db9b2f
+}
+
+auth:bearer {
+  token: {{token}}
+}

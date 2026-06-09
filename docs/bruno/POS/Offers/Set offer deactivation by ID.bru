@@ -1,0 +1,20 @@
+meta {
+  name: Set offer deactivation by ID
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/pos/:posId/offers/:offerId/deactivation
+  body: none
+  auth: bearer
+}
+
+params:path {
+  offerId: 6452163c8d1afccf5761609b
+  posId: 5e5e672800d98a60b7db9b2f
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -100,10 +100,22 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime LastUpdate { get; set; }
 
+        /// <summary>
+        /// Deactivation flag, used to propagate POS activation.
+        /// If owning POS is deactivated (isActive = false) this flag is set to true in order to filter out offers.
+        /// </summary>
         [BsonElement("deactivated")]
         [BsonDefaultValue(false)]
         [BsonIgnoreIfDefault]
         public bool Deactivated { get; set; } = false;
+
+        /// <summary>
+        /// Soft-deletion flag. Used to permanently delete an offer.
+        /// </summary>
+        [BsonElement("isDeleted")]
+        [BsonDefaultValue(false)]
+        [BsonIgnoreIfDefault]
+        public bool IsDeleted { get; set; } = false;
 
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }

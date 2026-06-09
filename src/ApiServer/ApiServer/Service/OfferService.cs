@@ -43,29 +43,66 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        /// <summary>
+        /// Adds a new offer.
+        /// </summary>
         public Task AddOffer(Offer offer) {
+            if(offer.IsDeleted) {
+                throw new ArgumentException("Cannot add an offer marked as deleted");
+            }
+
             return OfferCollection.InsertOneAsync(offer);
         }
 
-        public Task ReplaceOffer(Offer offer) {
-            var filter = Builders<Offer>.Filter.Eq(o => o.Id, offer.Id);
-            return OfferCollection.ReplaceOneAsync(filter, offer);
+        /// <summary>
+        /// Fully replace the model of an existing offer.
+        /// </summary>
+        public async Task ReplaceOffer(Offer offer) {
+            var result = await OfferCollection.ReplaceOneAsync(Builders<Offer>.Filter.And(
+                Builders<Offer>.Filter.Eq(o => o.Id, offer.Id),
+                Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+            ), offer);
+
+            if(!result.IsAcknowledged || result.ModifiedCount == 0) {
+                throw new ArgumentException("Offer not found or deleted");
+            }
         }
 
-        public Task UpdateOfferDescription(ObjectId offerId, string title, string description) {
-            return OfferCollection.UpdateOneAsync(
-                Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+        /// <summary>
+        /// Replace title and description of an existing offer.
+        /// </summary>
+        public async Task UpdateOfferDescription(ObjectId offerId, string title, string description) {
+            var result = await OfferCollection.UpdateOneAsync(
+                Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+                    Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+                ),
                 Builders<Offer>.Update
                     .Set(o => o.Title, title)
                     .Set(o => o.Description, description)
             );
+
+            if(!result.IsAcknowledged || result.ModifiedCount == 0) {
+                throw new ArgumentException("Offer not found or deleted");
+            }
         }
 
-        public Task DeactivateOffer(ObjectId offerId, bool deactivated) {
-            return OfferCollection.UpdateOneAsync(
-                Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+        /// <summary>
+        /// Set offer activation status.
+        /// This allows to temporarily hide an offer without deleting it.
+        /// </summary>
+        public async Task DeactivateOffer(ObjectId offerId, bool deactivated) {
+            var result = await OfferCollection.UpdateOneAsync(
+                Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+                    Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+                ),
                 Builders<Offer>.Update.Set(o => o.Deactivated, deactivated)
             );
+
+            if(!result.IsAcknowledged || result.MatchedCount == 0) {
+                throw new ArgumentException("Offer not found or deleted");
+            }
         }
 
         public class GroupedOffersByPos {
@@ -152,7 +189,10 @@ namespace WomPlatform.Web.Api.Service {
                         spherical: true,
                     }}
                 }}", longitude, latitude, rangeKms * 1000.0)))
-                .Match(Builders<Offer>.Filter.Ne(o => o.Deactivated, true))
+                .Match(Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Ne(o => o.Deactivated, true),
+                    Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+                ))
                 .AppendStage<Offer, Offer, GroupedOffersByPos>(BsonDocument.Parse(@"{
                     $group: {
                         _id: ""$pos._id"",
@@ -185,7 +225,10 @@ namespace WomPlatform.Web.Api.Service {
 
         public Task<List<GroupedOffersByPos>> GetOffersInBox(double lowerLeftLong, double lowerLeftLat, double upperRightLong, double upperRightLat) {
             var pipeline = new EmptyPipelineDefinition<Offer>()
-                .Match(Builders<Offer>.Filter.Ne(o => o.Deactivated, true))
+                .Match(Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Ne(o => o.Deactivated, true),
+                    Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+                ))
                 // The geoWithin match automatically filters out offers without position
                 .AppendStage<Offer, Offer, Offer>(BsonDocument.Parse(string.Format(CultureInfo.InvariantCulture, @"{{
                     $match: {{
@@ -226,52 +269,65 @@ namespace WomPlatform.Web.Api.Service {
             return OfferCollection.Aggregate(pipeline).ToListAsync();
         }
 
-        [Obsolete]
-        public Task<List<GroupedOffersByPos>> GetOffersWithCover() {
-            var pipeline = new EmptyPipelineDefinition<Offer>()
-                .Match(Builders<Offer>.Filter.And(
-                    Builders<Offer>.Filter.Ne(o => o.Pos.CoverPath, null),
-                    Builders<Offer>.Filter.Ne(o => o.Pos.CoverBlurHash, null)
-                ))
-                .AppendStage<Offer, Offer, GroupedOffersByPos>(BsonDocument.Parse(@"{
-                    $group: {
-                        _id: ""$pos._id"",
-                        name: { $first: ""$pos.name"" },
-                        description: { $first: ""$pos.description"" },
-                        coverPath: { $first: ""$pos.coverPath"" },
-                        coverBlurHash: { $first: ""$pos.coverBlurHash"" },
-                        url: { $first: ""$pos.url"" },
-                        position: { $first: ""$pos.position"" },
-                        offerCount: { $sum: 1 },
-                        mostRecentUpdate: { $max: ""$pos.lastUpdate"" },
-                        offers: {
-                            $push: {
-                                _id: ""$_id"",
-                                title: ""$title"",
-                                description: ""$description"",
-                                cost: ""$cost"",
-                                filter: ""$filter"",
-                                createdOn: ""$createdOn"",
-                                lastUpdate: ""$lastUpdate""
-                            }
-                        }
-                    }
-                }"));
-
-            return OfferCollection.Aggregate(pipeline).ToListAsync();
-        }
-
         /// <summary>
         /// Retrieve all offers of a POS.
         /// </summary>
-        public Task<List<Offer>> GetOffersOfPos(ObjectId posId) {
-            return OfferCollection.Find(Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId)).ToListAsync();
+        public Task<List<Offer>> GetOffersOfPos(ObjectId posId, bool includeDeactivated) {
+            List<FilterDefinition<Offer>> filters = [
+                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Filter.Ne(o => o.IsDeleted, true),
+            ];
+
+            if (!includeDeactivated) {
+                filters.Add(Builders<Offer>.Filter.Ne(o => o.Deactivated, true));
+            }
+
+            return OfferCollection.Find(Builders<Offer>.Filter.And(filters)).ToListAsync();
         }
 
         /// <summary>
         /// Retrieve all offers of a POS with an optional last usage date.
+        /// This includes deactivated offers as well.
         /// </summary>
         public async Task<(List<Offer>, Dictionary<ObjectId, DateTime> lastUsage)> GetOffersOfPosForAdmin(ObjectId posId) {
+            var pipeline = PipelineDefinition<Offer, BsonDocument>.Create(
+                BsonDocument.Parse(string.Format(@"{{
+                    $match: {{
+                        ""pos._id"": ObjectId(""{0}""),
+                        ""isDeleted"": {{ $ne: true }}
+                    }}
+                }}", posId)),
+                BsonDocument.Parse(@"{
+                    $lookup: {
+                        from: 'PaymentRequests',
+                        localField: 'payment.otc',
+                        foreignField: '_id',
+                        as: 'paymentRequests'
+                    }
+                }"),
+                // Extract first element of array as separate field
+                BsonDocument.Parse(@"{
+                    $addFields: {
+                        paymentRequest: { $arrayElemAt: ['$paymentRequests', 0] }
+                    }
+                }"),
+                BsonDocument.Parse(@"{
+                    $project: {
+                        _id: 1,
+                        title: 1,
+                        description: 1,
+                        payment: 1,
+                        pos: 1,
+                        merchant: 1,
+                        createdOn: 1,
+                        lastUpdate: 1,
+                        deactivated: 1,
+                        latestPaymentConfirmation: { $arrayElemAt: ['$paymentRequest.confirmations.performedAt', -1] }
+                    }
+                }")
+            );
+
+            /*
             var pipeline = new BsonDocument[] {
                 new("$match",
                     new BsonDocument("pos._id", new BsonDocument("$eq", posId))
@@ -317,11 +373,12 @@ namespace WomPlatform.Web.Api.Service {
                     }
                 )
             };
+            */
 
-            var bsonResults = await OfferCollection.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            var bsonResults = await OfferCollection.Aggregate(pipeline).ToListAsync();
 
-            List<Offer> offers = [];
-            Dictionary<ObjectId, DateTime> lastUsages = [];
+            var offers = new List<Offer>();
+            var lastUsages = new Dictionary<ObjectId, DateTime>();
             foreach(BsonDocument bsonDocument in bsonResults) {
                 var offer = BsonSerializer.Deserialize<Offer>(bsonDocument);
                 offers.Add(offer);
@@ -338,24 +395,37 @@ namespace WomPlatform.Web.Api.Service {
         /// Get an offer by its ID.
         /// </summary>
         public Task<Offer> GetOfferById(ObjectId offerId) {
-            return OfferCollection.Find(Builders<Offer>.Filter.Eq(o => o.Id, offerId)).SingleOrDefaultAsync();
+            return OfferCollection.Find(
+                Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Eq(o => o.Id, offerId),
+                    Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+                )
+            ).SingleOrDefaultAsync();
         }
 
+        /// <summary>
+        /// Count the active offers of a POS.
+        /// </summary>
         public Task<long> CountActiveOffersOfPos(ObjectId posId) {
             return OfferCollection.CountDocumentsAsync(Builders<Offer>.Filter.And(
                 Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
-                Builders<Offer>.Filter.Ne(o => o.Deactivated, true)
+                Builders<Offer>.Filter.Ne(o => o.Deactivated, true),
+                Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
             ));
         }
 
         /// <summary>
         /// Soft-deletes an offer by its ID.
         /// </summary>
-        public Task DeleteOffer(ObjectId offerId) {
-            return OfferCollection.UpdateOneAsync(
+        public async Task DeleteOffer(ObjectId offerId) {
+            var result = await OfferCollection.UpdateOneAsync(
                 Builders<Offer>.Filter.Eq(o => o.Id, offerId),
-                Builders<Offer>.Update.Set(o => o.Deactivated, true)
+                Builders<Offer>.Update.Set(o => o.IsDeleted, true)
             );
+
+            if(!result.IsAcknowledged || result.ModifiedCount == 0) {
+                throw new Exception("Failed to delete offer");
+            }
         }
 
         /// <summary>
@@ -364,7 +434,7 @@ namespace WomPlatform.Web.Api.Service {
         public async Task<long> DeleteOffersByPos(ObjectId posId) {
             var result = await OfferCollection.UpdateManyAsync(
                 Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
-                Builders<Offer>.Update.Set(o => o.Deactivated, true)
+                Builders<Offer>.Update.Set(o => o.IsDeleted, true)
             );
             return result.ModifiedCount;
         }
@@ -378,7 +448,10 @@ namespace WomPlatform.Web.Api.Service {
                 null;
 
             return OfferCollection.UpdateManyAsync(
-                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                    Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+                ),
                 Builders<Offer>.Update
                     .Set(o => o.Pos.Name, name)
                     .Set(o => o.Pos.Description, description)
@@ -393,7 +466,10 @@ namespace WomPlatform.Web.Api.Service {
         /// </summary>
         public Task UpdatePosCovers(ObjectId posId, string coverPath, string coverBlurHash) {
             return OfferCollection.UpdateManyAsync(
-                Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                Builders<Offer>.Filter.And(
+                    Builders<Offer>.Filter.Eq(o => o.Pos.Id, posId),
+                    Builders<Offer>.Filter.Ne(o => o.IsDeleted, true)
+                ),
                 Builders<Offer>.Update.Set(o => o.Pos.CoverPath, coverPath).Set(o => o.Pos.CoverBlurHash, coverBlurHash)
             );
         }
@@ -429,7 +505,7 @@ namespace WomPlatform.Web.Api.Service {
         }
 
         /// <summary>
-        ///     Get list of active offers
+        /// Get list of active offers
         /// </summary>
         public async Task<List<Offer>> GetActiveOffers() {
             try {
