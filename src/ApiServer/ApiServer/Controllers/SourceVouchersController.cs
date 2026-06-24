@@ -55,5 +55,35 @@ namespace WomPlatform.Web.Api.Controllers {
                 Count = generationRequest.TotalVoucherCount.Value,
             });
         }
+
+        [HttpPost("admin")]
+        [Authorize]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(GenerationRequestOutput), 200)]
+        public async Task<ActionResult> AdminGenerateVouchers(
+            [FromRoute] ObjectId sourceId,
+            [FromBody] GenerateVouchersInput input
+        ) {
+            await VerifyUserIsAdmin();
+
+            var source = await SourceService.GetSourceById(sourceId);
+
+            (var generationRequest, _) =
+                await GenerationService.CreateGenerationRequest(
+                    source,
+                    input.Vouchers,
+                    isPreVerified: true
+                );
+
+            return Ok(new GenerationRequestOutput {
+                RegistryUrl = $"https://{SelfHostDomain}",
+                Nonce = generationRequest.Nonce,
+                Otc = generationRequest.Otc,
+                Password = generationRequest.Password,
+                Link = $"https://{SelfLinkDomain}/vouchers/{generationRequest.Otc:D}",
+                Count = generationRequest.TotalVoucherCount.Value,
+            });
+        }
+
     }
 }
