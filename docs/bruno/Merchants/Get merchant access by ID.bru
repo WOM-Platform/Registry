@@ -1,0 +1,19 @@
+meta {
+  name: Get merchant access by ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/api/v1/merchant/:merchantId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  merchantId: 626ea22ae412b10ebf04b44f
+}
+
+auth:bearer {
+  token: {{token}}
+}

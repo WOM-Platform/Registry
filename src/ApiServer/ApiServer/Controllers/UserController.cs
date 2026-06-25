@@ -371,28 +371,6 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Requests a password reset for an existing user.
         /// </summary>
         /// <param name="input">Password request payload.</param>
-        [HttpPost("password-reset")]
-        [Obsolete]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> RequestPasswordResetLegacy(
-            [Required] UserRequestPasswordResetInput input
-        ) {
-            try {
-                await UserService.RequestPasswordReset(input.Email);
-            }
-            catch(ServiceProblemException ex) when(ex.Type == ServiceProblemException.UserNotFoundType) {
-                // Ignore error to prevent data leakage to user
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Requests a password reset for an existing user.
-        /// </summary>
-        /// <param name="input">Password request payload.</param>
         [HttpPost("password/reset")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
@@ -438,31 +416,7 @@ namespace WomPlatform.Web.Api.Controllers {
             return Ok();
         }
 
-        public record UserIdExecutePasswordResetInput([Required] string Token, [Required] string Password);
-
-        /// <summary>
-        /// Performs a password reset for an existing user.
-        /// </summary>
-        /// <param name="userId">User ID.</param>
-        /// <param name="input">Password reset payload.</param>
-        [HttpPost("{userId}/password-reset")]
-        [Obsolete]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> ExecutePasswordResetLegacy(
-            [FromRoute] ObjectId userId,
-            [FromBody][Required] UserIdExecutePasswordResetInput input
-        ) {
-            if(!CheckUserPassword(input.Password)) {
-                return this.ProblemParameter("Password is not secure");
-            }
-
-            await UserService.PerformPasswordReset(userId, input.Token, input.Password);
-
-            return Ok();
-        }
+        public record UserIdExecutePasswordResetInput(string? Token, [Required] string Password);
 
         /// <summary>
         /// Performs a password reset for an existing user.
