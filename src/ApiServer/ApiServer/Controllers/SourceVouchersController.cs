@@ -25,7 +25,12 @@ namespace WomPlatform.Web.Api.Controllers {
 
         public record GenerateVouchersInput(VoucherGenerationSpecification[] Vouchers);
 
+        /// <summary>
+        /// Produce a voucher generation request on behalf of a source.
+        /// The request is pre-verified and can be used to generate vouchers without further verification.
+        /// </summary>
         [HttpPost]
+        [Authorize(Policy = Startup.StandardAuthPolicy)]
         [Authorize(AuthenticationSchemes = ApiKeyAuthenticationSchemeOptions.SchemeName)]
         [Produces(MediaTypeNames.Application.Json)]
         [ProducesResponseType(typeof(GenerationRequestOutput), StatusCodes.Status200OK)]
@@ -35,16 +40,12 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId sourceId,
             [FromBody] GenerateVouchersInput input
         ) {
-            if(!User.GetSourceId(out var controlledSourceId)) {
-                return Unauthorized();
-            }
-            if(sourceId != controlledSourceId) {
+            var controlledSourceId = await this.VerifyUserIsAdminOfSource(sourceId);
+            if(sourceId != controlledSourceId.Id) {
                 return Forbid();
             }
 
-            var source = await SourceService.GetSourceById(sourceId);
-
-            (var generationRequest, _) = await GenerationService.CreateGenerationRequest(source, input.Vouchers, isPreVerified: true);
+            (var generationRequest, _) = await GenerationService.CreateGenerationRequest(controlledSourceId, input.Vouchers, isPreVerified: true);
 
             return Ok(new GenerationRequestOutput {
                 RegistryUrl = $"https://{SelfHostDomain}",
@@ -55,35 +56,5 @@ namespace WomPlatform.Web.Api.Controllers {
                 Count = generationRequest.TotalVoucherCount.Value,
             });
         }
-
-        [HttpPost("admin")]
-        [Authorize]
-        [Produces("application/json")]
-        [ProducesResponseType(typeof(GenerationRequestOutput), 200)]
-        public async Task<ActionResult> AdminGenerateVouchers(
-            [FromRoute] ObjectId sourceId,
-            [FromBody] GenerateVouchersInput input
-        ) {
-            await VerifyUserIsAdmin();
-
-            var source = await SourceService.GetSourceById(sourceId);
-
-            (var generationRequest, _) =
-                await GenerationService.CreateGenerationRequest(
-                    source,
-                    input.Vouchers,
-                    isPreVerified: true
-                );
-
-            return Ok(new GenerationRequestOutput {
-                RegistryUrl = $"https://{SelfHostDomain}",
-                Nonce = generationRequest.Nonce,
-                Otc = generationRequest.Otc,
-                Password = generationRequest.Password,
-                Link = $"https://{SelfLinkDomain}/vouchers/{generationRequest.Otc:D}",
-                Count = generationRequest.TotalVoucherCount.Value,
-            });
-        }
-
     }
 }

@@ -37,7 +37,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpPost("merchant")]
         [Obsolete]
-        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [Authorize(Policy = Startup.StandardAuthPolicy)]
         [Produces("application/json")]
         [ProducesResponseType(typeof(MerchantDashboardOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
@@ -78,7 +78,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// </summary>
         [HttpPost("source")]
         [Obsolete]
-        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [Authorize(Policy = Startup.StandardAuthPolicy)]
         [Produces("application/json")]
         [ProducesResponseType(typeof(SourceDashboardOutput), StatusCodes.Status200OK)]
         public async Task<IActionResult> SourceLoginV2() {
@@ -115,7 +115,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Creates a new API key access for a given source.
         /// </summary>
         [HttpPost("source/{sourceId}/apikey")]
-        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [Authorize(Policy = Startup.StandardAuthPolicy)]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthV2CreateSourceApiKeyOutput), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

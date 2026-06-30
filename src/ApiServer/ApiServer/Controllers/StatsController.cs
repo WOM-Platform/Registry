@@ -94,7 +94,7 @@ public class StatsController : BaseRegistryController {
             try {
                 ObjectId[] sourceObjectIds = request.SourceId?.Select(id => new ObjectId(id)).ToArray() ?? Array.Empty<ObjectId>();
                 // Check if user is admin or owner of the source
-                await IsUserAdminOrOwnerSource(sourceObjectIds);
+                await VerifyUserIsAdminOfSources(sourceObjectIds);
 
                 (DateTime? parsedStartDate, DateTime? parsedEndDate) = DateRangeHelper.ParseAndValidateDates(request.StartDate, request.EndDate);
 

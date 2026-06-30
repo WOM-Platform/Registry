@@ -34,7 +34,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM sources for the authenticated user.
         /// </summary>
         [HttpGet("sources")]
-        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [Authorize(Policy = Startup.StandardAuthPolicy)]
         [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthSourceLoginOutput), StatusCodes.Status200OK)]
@@ -61,7 +61,7 @@ namespace WomPlatform.Web.Api.Controllers {
         /// Retrieves available WOM POS instances for the authenticated user.
         /// </summary>
         [HttpGet("pos")]
-        [Authorize(Policy = Startup.SimpleAuthPolicy)]
+        [Authorize(Policy = Startup.StandardAuthPolicy)]
         [RequireHttpsInProd]
         [Produces("application/json")]
         [ProducesResponseType(typeof(AuthPosLoginOutput), StatusCodes.Status200OK)]

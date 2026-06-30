@@ -60,8 +60,15 @@ namespace WomPlatform.Web.Api {
 
         public static string GetJwtIssuerName() => $"WOM Registry at {SelfDomain}";
 
+        /// <summary>
+        /// Name of the authorization policy that requires a valid JWT token to be present in the request.
+        /// </summary>
         public const string TokenSessionAuthPolicy = "AuthPolicyBearerOnly";
-        public const string SimpleAuthPolicy = "AuthPolicyBasicAlso";
+
+        /// <summary>
+        /// Name of the authorization policy that allows either a valid JWT token or a valid Basic authentication header to be present in the request.
+        /// </summary>
+        public const string StandardAuthPolicy = "AuthPolicyBasicAlso";
 
         public void ConfigureServices(IServiceCollection services) {
             services.AddGoogleDiagnosticsForAspNetCore(
@@ -150,7 +157,7 @@ namespace WomPlatform.Web.Api {
                 options.TagActionsBy(api => {
                     var controller = api.ActionDescriptor as ControllerActionDescriptor;
                     if(controller == null) {
-                        return new[] { string.Empty };
+                        return [string.Empty];
                     }
 
                     // Take tag value from OperationsTagsAttribute, if set
@@ -193,7 +200,7 @@ namespace WomPlatform.Web.Api {
                     .RequireClaim(ClaimTypes.NameIdentifier)
                     .Build()
                 );
-                options.AddPolicy(SimpleAuthPolicy,
+                options.AddPolicy(StandardAuthPolicy,
                     new AuthorizationPolicyBuilder(
                         BasicAuthenticationSchemeOptions.SchemeName,
                         JwtBearerDefaults.AuthenticationScheme
@@ -201,7 +208,7 @@ namespace WomPlatform.Web.Api {
                     .RequireAuthenticatedUser()
                     .Build()
                 );
-                options.DefaultPolicy = options.GetPolicy(SimpleAuthPolicy);
+                options.DefaultPolicy = options.GetPolicy(StandardAuthPolicy);
             });
 
             // Add services to dependency registry
