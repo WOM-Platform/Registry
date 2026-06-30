@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
@@ -332,11 +333,13 @@ namespace WomPlatform.Web.Api.Controllers {
 
         /// <summary>
         /// Checks whether the current user is an administrator of the given source.
+        /// Throws an exception if the user is not an administrator of the source.
         /// </summary>
         /// <remarks>
         /// This works for both logged-in users and API key authenticated requests.
         /// </remarks>
         protected async Task<Source> VerifyUserIsAdminOfSource(ObjectId sourceId) {
+            // Check if the user is authenticated via API key (one controlle source ID)
             if(User.GetSourceId(out var controlledSourceId)) {
                 if(sourceId == controlledSourceId) {
                     return await SourceService.GetSourceById(controlledSourceId);
@@ -351,17 +354,22 @@ namespace WomPlatform.Web.Api.Controllers {
                 throw ServiceProblemException.SourceNotFound;
             }
 
-            if(!isAdmin) {
-                if(!source.AdministratorUserIds.Contains(userProfile.Id)) {
-                    Logger.LogDebug("User {0} is not administrator of source {1}", userProfile.Id, sourceId);
-                    throw ServiceProblemException.UserIsNotAdminOfSource;
-                }
+            if(isAdmin) {
+                return source;
+            }
+            if(source.AdministratorUserIds.Contains(userProfile.Id)) {
+                return source;
             }
 
-            return source;
+            Logger.LogDebug("User {0} is not administrator of source {1}", userProfile.Id, sourceId);
+            throw ServiceProblemException.UserIsNotAdminOfSource;
         }
 
-        protected async Task IsUserAdminOrOwnerSource(ObjectId[] sourceIds) {
+        /// <summary>
+        /// Checks whether the current user is an administrator of all the given sources.
+        /// Throw an exception if the user is not an administrator of one of the sources.
+        /// </summary>
+        protected async Task VerifyUserIsAdminOfSources(ObjectId[] sourceIds) {
             // If a sourceId is provided, check if the user is an admin or the owner of the source
             if(sourceIds != null && sourceIds.Length > 0) {
                 foreach(var sourceId in sourceIds) {
