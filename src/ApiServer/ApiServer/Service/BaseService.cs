@@ -43,6 +43,12 @@ namespace WomPlatform.Web.Api.Service {
             }
         }
 
+        protected IMongoCollection<Campaign> CampaignCollection {
+            get {
+                return MainDatabase.GetCollection<Campaign>("Campaign");
+            }
+        }
+
         protected IMongoCollection<CheckInTotem> CheckInTotemCollection {
             get {
                 return MainDatabase.GetCollection<CheckInTotem>("CheckInTotems");

@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using WomPlatform.Connector;
 using WomPlatform.Web.Api.DatabaseDocumentModels;
@@ -82,6 +81,12 @@ namespace WomPlatform.Web.Api.Controllers {
         protected BadgeService BadgeService {
             get {
                 return _serviceProvider.GetRequiredService<BadgeService>();
+            }
+        }
+
+        protected CampaignService CampaignService {
+            get {
+                return _serviceProvider.GetRequiredService<CampaignService>();
             }
         }
 
@@ -394,7 +399,6 @@ namespace WomPlatform.Web.Api.Controllers {
                 await VerifyUserIsAdmin();
             }
         }
-
     }
 
 }

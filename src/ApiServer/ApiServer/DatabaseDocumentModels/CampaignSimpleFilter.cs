@@ -1,11 +1,8 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace WomPlatform.Web.Api.DatabaseDocumentModels {
-    public class BadgeSimpleFilter : BaseSimpleFilter {
-        [BsonElement("count")]
-        public int Count { get; set; }
-
+    public class CampaignSimpleFilter : BaseSimpleFilter {
         [BsonExtraElements]
         public BsonDocument CatchAll { get; set; }
     }
