@@ -287,37 +287,37 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             if(payload.PosId != payloadContent.PosId) {
-                Logger.LogError(LoggingEvents.PaymentStatus, "POS ID mismatch in payload ({0} != {1})", payload.PosId, payloadContent.PosId);
-                return BadRequest();
+                Logger.LogError($"Verification failed, POS ID {payload.PosId} differs from ID {payloadContent.PosId} in payload");
+                return this.PayloadVerificationFailure("Verification of POS ID in payload failed");
             }
 
             try {
                 var payment = await PaymentService.GetPaymentRequestByOtc(payloadContent.Otc);
                 if(payment == null) {
-                    Logger.LogInformation("Payment {0} not found", payloadContent.Otc);
+                    Logger.LogInformation(LoggingEvents.PaymentStatus, $"Payment {payloadContent.Otc} not found");
                     return this.OtcNotFound();
                 }
-                if(payment.PosId != payment.PosId) {
-                    Logger.LogWarning(LoggingEvents.PaymentStatus, "Payment {0} has not been created by POS {1}", payment.Otc, payment.PosId);
+                if(!payload.PosId.Matches(payment.PosId)) {
+                    Logger.LogWarning(LoggingEvents.PaymentStatus, $"Payment {payment.Otc} by POS {payment.PosId} was not created by POS specified in request ({payload.PosId})");
                     return this.OtcNotFound();
                 }
 
                 var pos = await PosService.GetPosById(payment.PosId);
                 if(pos == null) {
-                    Logger.LogWarning(LoggingEvents.PaymentStatus, "POS of payment {0} does not exist", payment.Otc);
+                    Logger.LogWarning(LoggingEvents.PaymentStatus, $"POS of payment {payment.Otc} does not exist");
                     return this.PosNotFound();
                 }
 
                 var posPublicKey = CryptoHelper.LoadKeyFromString<AsymmetricKeyParameter>(pos.PublicKey);
 
-                Logger.LogInformation(LoggingEvents.PaymentStatus, "Retrieved status of payment {0}", payloadContent.Otc);
+                Logger.LogInformation(LoggingEvents.PaymentStatus, $"Retrieved status of payment {payloadContent.Otc}");
 
                 return Ok(new PaymentStatusResponse {
                     PosId = payload.PosId,
                     Payload = Crypto.Encrypt(new PaymentStatusResponse.Content {
                         Persistent = payment.IsPersistent,
-                        HasBeenPerformed = (payment.Confirmations != null && payment.Confirmations.Count > 0),
-                        Confirmations = (from c in payment.Confirmations ?? new()
+                        HasBeenPerformed = payment.Confirmations != null && payment.Confirmations.Count > 0,
+                        Confirmations = (from c in payment.Confirmations ?? []
                                          select new PaymentStatusResponse.Confirmation {
                                              PerformedAt = DateTime.SpecifyKind(c.PerformedAt, DateTimeKind.Utc)
                                          }).ToList(),
