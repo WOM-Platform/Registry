@@ -51,6 +51,9 @@ namespace WomPlatform.Web.Api.Controllers {
             [FromRoute] ObjectId campaignId
         ) {
             Campaign? campaign = await CampaignService.GetCampaignById(campaignId);
+            if(campaign == null) {
+                return NotFound();
+            }
 
             return Ok(campaign.ToOutput(PicturesService));
         }
@@ -149,5 +152,101 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return NoContent();
         }
+
+
+        [HttpPost("{campaignId}/subscribers")]
+        [AllowAnonymous]
+        [ProducesResponseType(
+            typeof(CampaignSubscriberOutput),
+            StatusCodes.Status201Created
+        )]
+        [ProducesResponseType(
+            typeof(ProblemDetails),
+            StatusCodes.Status404NotFound
+        )]
+        public async Task<ActionResult> RegisterCampaignSubscriber(
+            [FromRoute] ObjectId campaignId
+        ) {
+            var campaign = await CampaignService.GetCampaignById(campaignId);
+
+            if(campaign == null) {
+                return NotFound();
+            }
+
+            try {
+                var subscriber = await CampaignSubscriberService.RegisterSubscriber(
+                    campaignId
+                );
+
+                return Created(
+                    (string?)null,
+                    subscriber.ToOutput()
+                );
+            }
+            catch(Exception) {
+                Logger.LogError(
+                    "Failed to register subscriber for campaign {CampaignId}",
+                    campaignId
+                );
+                throw;
+            }
+        }
+
+        [HttpPut("{campaignId}/subscribers/{token}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> UpdateCampaignSubscriber(
+            [FromRoute] ObjectId campaignId,
+            [FromRoute] string token,
+            [FromBody] UpdateCampaignSubscriberInput input
+        ) {
+            await VerifyUserIsAdmin();
+
+            if(input == null) {
+                return BadRequest("Input cannot be null.");
+            }
+
+            var subscriber = await CampaignSubscriberService.UpdateCampaignSubscriber(
+                campaignId,
+                token,
+                input.IsRevoked
+            );
+
+            if(subscriber == null) {
+                return NotFound();
+            }
+
+            return Ok();
+        }
+
+        [HttpGet("{campaignId}/subscribers")]
+        [Authorize]
+        [ProducesResponseType(typeof(CampaignSubscriberOutput[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetListSubscribers(
+            [FromRoute] ObjectId campaignId
+        ) {
+            await VerifyUserIsAdmin();
+
+            var campaign = await CampaignService.GetCampaignById(campaignId);
+
+            if(campaign == null) {
+                return NotFound();
+            }
+
+            var subscribers = await CampaignSubscriberService.GetSubscribers(campaignId);
+
+            return Ok(
+                from subscriber in subscribers
+                select new {
+                    token = subscriber.Token,
+                    registeredAt = subscriber.RegisteredAt,
+                    lastUsedAt = subscriber.LastUsedAt,
+                    isRevoked = subscriber.IsRevoked
+                }
+            );
+        }
+
     }
 }

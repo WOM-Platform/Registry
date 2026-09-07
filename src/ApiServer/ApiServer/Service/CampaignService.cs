@@ -32,7 +32,7 @@ namespace WomPlatform.Web.Api.Service {
                 .ToListAsync();
         }
 
-        public Task<Campaign> GetCampaignById(ObjectId id) {
+        public Task<Campaign?> GetCampaignById(ObjectId id) {
             FilterDefinition<Campaign>? filter = Builders<Campaign>.Filter.And(
                 Builders<Campaign>.Filter.Eq(c => c.Id, id),
                 Builders<Campaign>.Filter.Ne(m => m.IsDeleted, true)

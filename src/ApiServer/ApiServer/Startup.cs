@@ -243,6 +243,8 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<ApiKeyService>();
             services.AddScoped<BackupService>();
             services.AddScoped<BadgeService>();
+            services.AddScoped<CampaignService>();
+            services.AddScoped<CampaignSubscriberService>();
             services.AddScoped<GenerationService>();
             services.AddScoped<MapService>();
             services.AddScoped<MerchantService>();
@@ -283,7 +285,7 @@ namespace WomPlatform.Web.Api {
                     if(exceptionHandlerPathFeature?.Error is ServiceProblemException) {
                         var serviceException = (ServiceProblemException)exceptionHandlerPathFeature.Error;
 
-                        logger.LogError("Service problem “{0}” with status code {1} (code {2})", serviceException.Title, serviceException.HttpStatus, serviceException.Type);
+                        logger.LogError("Service problem ï¿½{0}ï¿½ with status code {1} (code {2})", serviceException.Title, serviceException.HttpStatus, serviceException.Type);
 
                         httpContext.Response.StatusCode = serviceException.HttpStatus;
 

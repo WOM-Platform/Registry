@@ -90,6 +90,11 @@ namespace WomPlatform.Web.Api.Controllers {
             }
         }
 
+        protected CampaignSubscriberService CampaignSubscriberService {
+            get {
+                return _serviceProvider.GetRequiredService<CampaignSubscriberService>();
+            }
+        }
         protected GenerationService GenerationService {
             get {
                 return _serviceProvider.GetRequiredService<GenerationService>();
