@@ -11,6 +11,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.InputModels.Campaign;
 using WomPlatform.Web.Api.OutputModels.Campaign;
+using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
     [Route("v1/campaign")]
@@ -248,5 +249,81 @@ namespace WomPlatform.Web.Api.Controllers {
             );
         }
 
+        [HttpPost("{campaignId}/subscribers/{token}/contributions")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> RegisterCampaignContribution(
+            [FromRoute] ObjectId campaignId,
+            [FromRoute] string token,
+            [FromBody] RegisterCampaignContributionInput input
+        ) {
+            var campaign = await CampaignService.GetCampaignById(campaignId);
+
+            if(campaign == null) {
+                return NotFound();
+            }
+
+            var subscriber = await CampaignSubscriberService.GetSubscriber(
+                campaignId, token
+            );
+
+            if(subscriber == null || subscriber.IsRevoked) {
+                return NotFound();
+            }
+            // check contributuion date is not older than 1 day, if it is, return 204 No Content
+            if(input.ContributedAt < DateTime.UtcNow.AddDays(-1)) {
+                return NoContent();
+            }
+
+            try {
+                var contribution = new CampaignContribution {
+                    CampaignId = campaignId,
+                    Token = token,
+                    ContributedAt = input.ContributedAt,
+                    WomCount = input.WomCount
+                };
+
+                await CampaignContributionService.RegisterContribution(
+                    contribution
+                );
+
+                return StatusCode(StatusCodes.Status201Created);
+            }
+            catch(Exception) {
+                Logger.LogError(
+                    "Failed to register contribution for campaign {CampaignId} and token {Token}",
+                    campaignId,
+                    token
+                );
+                throw;
+            }
+        }
+
+        [HttpGet("{campaignId}/contributions")]
+        [Authorize]
+        [ProducesResponseType(
+            typeof(List<CampaignContribution>),
+            StatusCodes.Status200OK
+        )]
+        [ProducesResponseType(
+            typeof(ProblemDetails),
+            StatusCodes.Status404NotFound
+        )]
+        public async Task<ActionResult> GetCampaignContributions(
+            [FromRoute] ObjectId campaignId
+        ) {
+            var campaign = await CampaignService.GetCampaignById(campaignId);
+
+            if(campaign == null) {
+                return NotFound();
+            }
+
+            var contributions =
+                await CampaignContributionService.GetContributions(campaignId);
+
+            return Ok(contributions);
+        }
     }
 }

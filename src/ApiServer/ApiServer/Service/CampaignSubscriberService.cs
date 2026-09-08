@@ -50,6 +50,18 @@ namespace WomPlatform.Web.Api.Service {
                 .ToListAsync();
         }
 
+        public Task<CampaignSubscriber?> GetSubscriber(
+            ObjectId campaignId,
+            string token
+        ) {
+            var filter = Builders<CampaignSubscriber>.Filter.And(
+                Builders<CampaignSubscriber>.Filter.Eq(s => s.CampaignId, campaignId),
+                Builders<CampaignSubscriber>.Filter.Eq(s => s.Token, token)
+            );
+
+            return CampaignSubscriberCollection.Find(filter).SingleOrDefaultAsync();
+        }
+
         public async Task<CampaignSubscriber?> UpdateCampaignSubscriber(
             ObjectId campaignId,
             string token,

@@ -244,6 +244,7 @@ namespace WomPlatform.Web.Api {
             services.AddScoped<BackupService>();
             services.AddScoped<BadgeService>();
             services.AddScoped<CampaignService>();
+            services.AddScoped<CampaignContributionService>();
             services.AddScoped<CampaignSubscriberService>();
             services.AddScoped<GenerationService>();
             services.AddScoped<MapService>();
@@ -266,6 +267,13 @@ namespace WomPlatform.Web.Api {
             IWebHostEnvironment env,
             ILogger<Startup> logger
         ) {
+            using(var scope = app.ApplicationServices.CreateScope()) {
+                var campaignContributionService =
+                    scope.ServiceProvider.GetRequiredService<CampaignContributionService>();
+
+                campaignContributionService.EnsureIndexes();
+            }
+
             // Registry setup
             app.SetupDevelopmentEntities();
             app.SetupKnownEntities();
