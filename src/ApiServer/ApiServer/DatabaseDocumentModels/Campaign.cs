@@ -19,9 +19,13 @@ namespace WomPlatform.Web.Api.DatabaseDocumentModels {
         [BsonElement("womCount")]
         public int WomCount { get; set; }
 
-        [BsonElement("imagePath")]
+        [BsonElement("coverPath")]
         [BsonIgnoreIfNull]
-        public string? ImagePath { get; set; }
+        public string? CoverPath { get; set; }
+
+        [BsonElement("coverBlurHash")]
+        [BsonIgnoreIfNull]
+        public string? CoverBlurHash { get; set; }
 
         [BsonElement("description")]
         [BsonIgnoreIfNull]

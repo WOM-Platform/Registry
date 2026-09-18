@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,6 +14,7 @@ using WomPlatform.Web.Api.DatabaseDocumentModels;
 using WomPlatform.Web.Api.InputModels;
 using WomPlatform.Web.Api.InputModels.Campaign;
 using WomPlatform.Web.Api.OutputModels.Campaign;
+using WomPlatform.Web.Api.OutputModels.Pos;
 using WomPlatform.Web.Api.Service;
 
 namespace WomPlatform.Web.Api.Controllers {
@@ -63,21 +67,20 @@ namespace WomPlatform.Web.Api.Controllers {
         [Authorize]
         [ProducesResponseType(typeof(CampaignOutput), StatusCodes.Status201Created)]
         public async Task<IActionResult> RegisterCampaign(
-            [FromBody] RegisterCampaignInput input
+            [FromBody] RegisterCampaignInput campaignInput
         ) {
             await VerifyUserIsAdmin();
 
             try {
                 Campaign? campaign = new Campaign {
-                    IsPublic = input.IsPublic,
-                    Name = input.Name,
-                    SimpleFilter = input.SimpleFilter.ToDocument() ?? new CampaignSimpleFilter(),
+                    IsPublic = campaignInput.IsPublic,
+                    Name = campaignInput.Name,
+                    SimpleFilter = campaignInput.SimpleFilter.ToDocument() ?? new CampaignSimpleFilter(),
                     WomCount = 0,
-                    ImagePath = input.ImagePath,
-                    Description = input.Description,
-                    InformationUrl = input.InformationUrl,
-                    StartDate = input.StartDate,
-                    EndDate = input.EndDate,
+                    Description = campaignInput.Description,
+                    InformationUrl = campaignInput.InformationUrl,
+                    StartDate = campaignInput.StartDate,
+                    EndDate = campaignInput.EndDate,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -101,11 +104,11 @@ namespace WomPlatform.Web.Api.Controllers {
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> UpdateCampaign(
             [FromRoute] ObjectId campaignId,
-            [FromBody] RegisterCampaignInput input
+            [FromBody] RegisterCampaignInput campaignInput
         ) {
             await VerifyUserIsAdmin();
 
-            if(input == null) {
+            if(campaignInput == null) {
                 return BadRequest("Input cannot be null.");
             }
 
@@ -114,14 +117,13 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            campaign.IsPublic = input.IsPublic;
-            campaign.Name = input.Name;
-            campaign.SimpleFilter = input.SimpleFilter.ToDocument();
-            campaign.ImagePath = input.ImagePath;
-            campaign.Description = input.Description;
-            campaign.InformationUrl = input.InformationUrl;
-            campaign.StartDate = input.StartDate;
-            campaign.EndDate = input.EndDate;
+            campaign.IsPublic = campaignInput.IsPublic;
+            campaign.Name = campaignInput.Name;
+            campaign.SimpleFilter = campaignInput.SimpleFilter.ToDocument() ?? new CampaignSimpleFilter();
+            campaign.Description = campaignInput.Description;
+            campaign.InformationUrl = campaignInput.InformationUrl;
+            campaign.StartDate = campaignInput.StartDate;
+            campaign.EndDate = campaignInput.EndDate;
             campaign.LastUpdate = DateTime.UtcNow;
 
             bool success = await CampaignService.ReplaceCampaign(campaign);
@@ -134,6 +136,57 @@ namespace WomPlatform.Web.Api.Controllers {
             }
 
             return Ok(campaign.ToOutput(PicturesService));
+        }
+
+         /// <summary>
+        /// Updates the cover of an existing campaign.
+        /// </summary>
+        [HttpPost("{campaignId}/cover")]
+        [HttpPut("{campaignId}/cover")]
+        [Authorize]
+        [DisableRequestSizeLimit]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(CampaignOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> UpdateCover(
+            [FromRoute] ObjectId campaignId,
+            [Required] IFormFile image
+        ) {
+             await VerifyUserIsAdmin();
+
+             Campaign? campaign = await CampaignService.GetCampaignById(campaignId);
+             if(campaign == null) {
+                 return NotFound();
+             }
+
+            // Safety checks on uploaded file
+            if(image == null || image.Length == 0) {
+                Logger.LogError("Image field null or empty");
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Image field null or empty");
+            }
+            if(image.Length > 4 * 1024 * 1024) {
+                Logger.LogError("Image too large ({0} bytes)", image.Length);
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Image too large");
+            }
+
+            try {
+                var campaignUrl = campaign.Name.ToCleanUrl();
+
+                // Process and upload image
+                using var stream = new MemoryStream();
+                await image.CopyToAsync(stream);
+                (var picturePath, var pictureBlurHash) = await PicturesService.ProcessAndUploadPicture(stream, campaignUrl, PicturesService.PictureUsage.CampaignCover);
+
+                await CampaignService.UpdateCampaignCover(campaignId, picturePath, pictureBlurHash);
+
+                return Ok(campaign.ToOutput(PicturesService));
+            }
+            catch(Exception) {
+                Logger.LogError("Failed to update POS {0}", campaignId);
+                throw;
+            }
         }
 
         [HttpDelete("{campaignId}")]
@@ -257,7 +310,7 @@ namespace WomPlatform.Web.Api.Controllers {
         public async Task<ActionResult> RegisterCampaignContribution(
             [FromRoute] ObjectId campaignId,
             [FromRoute] string token,
-            [FromBody] RegisterCampaignContributionInput input
+            [FromBody] RegisterCampaignContributionInput contributionInput
         ) {
             var campaign = await CampaignService.GetCampaignById(campaignId);
 
@@ -270,19 +323,19 @@ namespace WomPlatform.Web.Api.Controllers {
             );
 
             if(subscriber == null || subscriber.IsRevoked) {
-                return NotFound();
-            }
-            // check contributuion date is not older than 1 day, if it is, return 204 No Content
-            if(input.ContributedAt < DateTime.UtcNow.AddDays(-1)) {
                 return NoContent();
+            }
+            // check contribution date is not older than 1 day, if it is, return 204 No Content
+            if(contributionInput.ContributedAt < DateTime.UtcNow.AddDays(-1)) {
+                return BadRequest("Contribution date cannot be older than 1 day.");
             }
 
             try {
                 var contribution = new CampaignContribution {
                     CampaignId = campaignId,
                     Token = token,
-                    ContributedAt = input.ContributedAt,
-                    WomCount = input.WomCount
+                    ContributedAt = contributionInput.ContributedAt,
+                    WomCount = contributionInput.WomCount
                 };
 
                 await CampaignContributionService.RegisterContribution(

@@ -11,8 +11,6 @@ namespace WomPlatform.Web.Api.InputModels.Campaign {
 
         public CampaignSimpleFilterInput? SimpleFilter { get; init; }
 
-        public string? ImagePath { get; init; }
-
         public string? Description { get; init; }
 
         [Url]

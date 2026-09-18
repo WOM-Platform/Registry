@@ -63,6 +63,13 @@ namespace WomPlatform.Web.Api.Service {
             return result.IsAcknowledged && result.MatchedCount == 1;
         }
 
+        public Task UpdateCampaignCover(ObjectId campaignId, string coverPath, string coverBlurHash) {
+            return CampaignCollection.UpdateOneAsync(
+                Builders<Campaign>.Filter.Eq(campaign => campaign.Id, campaignId),
+                Builders<Campaign>.Update.Set(campaign => campaign.CoverPath, coverPath).Set(campaign => campaign.CoverBlurHash, coverBlurHash)
+            );
+        }
+
         public async Task<bool> DeleteCampaign(ObjectId campaignId) {
             var filter = Builders<Campaign>.Filter.Eq(c => c.Id, campaignId);
 

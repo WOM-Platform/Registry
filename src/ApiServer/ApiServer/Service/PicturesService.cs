@@ -30,6 +30,7 @@ namespace WomPlatform.Web.Api.Service {
         private readonly string _baseUrl;
 
         public readonly PictureOutput DefaultPosCover;
+        public readonly PictureOutput DefaultCampaignCover;
 
         private const string JpegPathPart = ".jpg";
 
@@ -55,6 +56,11 @@ namespace WomPlatform.Web.Api.Service {
             DefaultPosCover = GetPictureOutput(
                 picturesConfigSection["DefaultPosCoverPath"],
                 picturesConfigSection["DefaultPosCoverBlurHash"]
+            );
+
+            DefaultCampaignCover = GetPictureOutput(
+                picturesConfigSection["DefaultCampaignCoverPath"],
+                picturesConfigSection["DefaultCampaignCoverBlurHash"]
             );
 
             _storageClient = StorageClient.Create();
@@ -135,6 +141,7 @@ namespace WomPlatform.Web.Api.Service {
             PosCover,
             SourceLogo,
             BadgeImage,
+            CampaignCover,
         }
 
         private static string GenerateNewPath(string basePath, PictureUsage usage) {
@@ -146,6 +153,8 @@ namespace WomPlatform.Web.Api.Service {
                 PictureUsage.PosCover => $"pos-covers/{basePath}/{Guid.NewGuid():N}",
                 PictureUsage.SourceLogo => $"source-logos/{basePath}/{Guid.NewGuid():N}",
                 PictureUsage.BadgeImage => $"badge-images/{basePath}/{Guid.NewGuid():N}",
+                PictureUsage.CampaignCover => $"campaign-covers/{basePath}/{Guid.NewGuid():N}",
+
                 _ => throw new ArgumentException("Unsupported picture usage"),
             };
         }
@@ -177,6 +186,12 @@ namespace WomPlatform.Web.Api.Service {
         public PictureOutput GetPosCoverOutput(string basePath, string blurHash) {
             return (basePath == null) ?
                 DefaultPosCover :
+                GetPictureOutput(basePath, blurHash);
+        }
+
+        public PictureOutput GetCampaignCoverOutput(string basePath, string blurHash) {
+            return (basePath == null) ?
+                DefaultCampaignCover :
                 GetPictureOutput(basePath, blurHash);
         }
 

@@ -45,10 +45,12 @@ namespace WomPlatform.Web.Api.OutputModels.Campaign {
                 Name = campaign.Name,
                 SimpleFilter = campaign.SimpleFilter.ToOutput(),
                 WomCount = campaign.WomCount,
-                Image = pictureService.GetPictureOutput(
-                    campaign.ImagePath,
-                    null
-                ),
+                Image = string.IsNullOrWhiteSpace(campaign.CoverPath)
+                    ? pictureService.DefaultCampaignCover
+                    : pictureService.GetPictureOutput(
+                        campaign.CoverPath,
+                        campaign.CoverBlurHash
+                    ),
                 Description = campaign.Description,
                 InformationUrl = campaign.InformationUrl,
                 StartDate = campaign.StartDate,
