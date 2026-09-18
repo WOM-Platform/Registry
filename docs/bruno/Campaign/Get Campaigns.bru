@@ -1,0 +1,16 @@
+meta {
+  name: Get Campaigns
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{baseUrl}}/v1/campaign
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

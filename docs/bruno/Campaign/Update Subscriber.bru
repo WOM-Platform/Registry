@@ -1,0 +1,26 @@
+meta {
+  name: Update Subscriber
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{protocol}}://{{baseUrl}}/v1/campaign/{{campaignId}}/subscribers/{{token}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isRevoked": true
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
