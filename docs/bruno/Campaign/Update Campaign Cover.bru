@@ -1,0 +1,21 @@
+meta {
+  name: Update Campaign Cover
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/v1/campaign/{campaignId}/cover
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  image: File @contentType(.jpg)
+  : 0
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

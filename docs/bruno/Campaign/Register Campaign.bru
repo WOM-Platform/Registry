@@ -1,0 +1,36 @@
+meta {
+  name: Register Campaign
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/v1/campaign
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isPublic": true,
+    "name": "Test Campaign",
+    "simpleFilter": {},
+    "description": "Test campaign",
+    "informationUrl": "https://example.com",
+    "startDate": "2026-09-18T00:00:00Z",
+    "endDate": "2026-10-18T00:00:00Z"
+  }
+}
+
+body:multipart-form {
+  image: File @contentType(.jpg)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

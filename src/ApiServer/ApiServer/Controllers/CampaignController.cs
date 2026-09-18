@@ -44,7 +44,11 @@ namespace WomPlatform.Web.Api.Controllers {
 
             return Ok(
                 from campaign in campaigns
-                select campaign.ToOutput(PicturesService)
+                let picCover = PicturesService.GetPosCoverOutput(
+                    campaign.CoverPath,
+                    campaign.CoverBlurHash
+                )
+                select campaign.ToOutput(picCover)
             );
         }
 
@@ -60,7 +64,9 @@ namespace WomPlatform.Web.Api.Controllers {
                 return NotFound();
             }
 
-            return Ok(campaign.ToOutput(PicturesService));
+            var picCover = PicturesService.GetPosCoverOutput(campaign.CoverPath, campaign.CoverBlurHash);
+
+            return Ok(campaign.ToOutput(picCover));
         }
 
         [HttpPost]
@@ -88,7 +94,7 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 return Created(
                     Url.Action(nameof(GetCampaign), new { campaignId = campaign.Id }),
-                    campaign.ToOutput(PicturesService)
+                    campaign.ToOutput(PicturesService.DefaultCampaignCover)
                 );
             }
             catch(Exception) {
@@ -134,8 +140,9 @@ namespace WomPlatform.Web.Api.Controllers {
                     "Failed to update the campaign."
                 );
             }
+            var picPosCover = PicturesService.GetCampaignCoverOutput(campaign.CoverPath, campaign.CoverBlurHash);
 
-            return Ok(campaign.ToOutput(PicturesService));
+            return Ok(campaign.ToOutput(picPosCover));
         }
 
          /// <summary>
@@ -181,7 +188,9 @@ namespace WomPlatform.Web.Api.Controllers {
 
                 await CampaignService.UpdateCampaignCover(campaignId, picturePath, pictureBlurHash);
 
-                return Ok(campaign.ToOutput(PicturesService));
+                var picPosCover = PicturesService.GetCampaignCoverOutput(picturePath, pictureBlurHash);
+
+                return Ok(campaign.ToOutput(picPosCover));
             }
             catch(Exception) {
                 Logger.LogError("Failed to update POS {0}", campaignId);

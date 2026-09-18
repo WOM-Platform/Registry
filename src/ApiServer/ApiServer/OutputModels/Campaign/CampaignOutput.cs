@@ -37,7 +37,8 @@ namespace WomPlatform.Web.Api.OutputModels.Campaign {
     public static class CampaignOutputExtensions {
         public static CampaignOutput ToOutput(
             this DatabaseDocumentModels.Campaign campaign,
-            PicturesService pictureService
+            PictureOutput campaignCoverPicture
+
         ) {
             return new CampaignOutput {
                 Id = campaign.Id.ToString(),
@@ -45,12 +46,7 @@ namespace WomPlatform.Web.Api.OutputModels.Campaign {
                 Name = campaign.Name,
                 SimpleFilter = campaign.SimpleFilter.ToOutput(),
                 WomCount = campaign.WomCount,
-                Image = string.IsNullOrWhiteSpace(campaign.CoverPath)
-                    ? pictureService.DefaultCampaignCover
-                    : pictureService.GetPictureOutput(
-                        campaign.CoverPath,
-                        campaign.CoverBlurHash
-                    ),
+                Image = campaignCoverPicture,
                 Description = campaign.Description,
                 InformationUrl = campaign.InformationUrl,
                 StartDate = campaign.StartDate,

@@ -1,0 +1,15 @@
+meta {
+  name: Update Campaign
+  type: http
+  seq: NaN
+}
+
+put {
+  url: {{protocol}}://{{baseUrl}}/v1/campaign/{{campaignId}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

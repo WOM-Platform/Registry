@@ -1,0 +1,15 @@
+meta {
+  name: Register subscriber
+  type: http
+  seq: NaN
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/v1/campaign/{{campaignId}}/subscribers
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

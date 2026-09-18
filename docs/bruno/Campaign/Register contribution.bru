@@ -1,0 +1,23 @@
+meta {
+  name: Register contribution
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{baseUrl}}/v1/campaign/{{campaignId}}/subscribers/{{token}}/contributions
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "contributedAt": "2026-09-18T16:00:00Z",
+    "womCount": 10
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
